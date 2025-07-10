@@ -1,0 +1,16 @@
+# FluxStack Bun Configuration
+[build]
+target = "bun"
+
+[install]
+# Package installation settings
+cache = true
+lockfile = true
+
+# Path mapping (alias support)
+[build.alias]
+"@" = "."
+"@/core" = "./core"
+"@/app" = "./app"
+"@/config" = "./config"
+"@/shared" = "./app/shared"

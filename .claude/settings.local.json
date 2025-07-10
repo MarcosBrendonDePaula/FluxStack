@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bun init:*)",
+      "Bash(mkdir:*)",
+      "Bash(bun create:*)",
+      "Bash(bun install:*)",
+      "Bash(bun run:*)",
+      "Bash(bun add:*)",
+      "Bash(NODE_ENV=production bun run start)",
+      "Bash(NODE_ENV=production bun run dist/index.js)",
+      "Bash(cp:*)",
+      "Bash(mv:*)"
+    ],
+    "deny": []
+  }
+}
