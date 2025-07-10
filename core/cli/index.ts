@@ -11,15 +11,15 @@ switch (command) {
     console.log("🌐 Frontend + Backend: http://localhost:3000")
     console.log("📦 Starting services...")
     console.log()
-    await import("../../app/server")
+    await import("@/app/server")
     break
 
   case "frontend":
-    await import("../../app/client/frontend-only")
+    await import("@/app/client/frontend-only")
     break
 
   case "backend":
-    await import("../../app/server/backend-only")
+    await import("@/app/server/backend-only")
     break
 
   case "build":
@@ -39,7 +39,7 @@ switch (command) {
 
   case "start":
     console.log("🚀 Starting FluxStack production server...")
-    await import("../../dist/index.js")
+    await import("@/dist/index.js")
     break
 
   case "create":
