@@ -1,0 +1,158 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import App from '@/app/client/src/App'
+
+// Mock the API module
+vi.mock('@/app/client/src/lib/api', () => ({
+  api: {
+    api: {
+      index: {
+        get: vi.fn(() => Promise.resolve({
+          data: { message: 'Hello from FluxStack API!' }
+        }))
+      },
+      users: {
+        get: vi.fn(() => Promise.resolve({
+          data: {
+            users: [
+              { id: 1, name: 'Test User 1', email: 'test1@example.com' },
+              { id: 2, name: 'Test User 2', email: 'test2@example.com' }
+            ]
+          }
+        })),
+        post: vi.fn(() => Promise.resolve({
+          data: { success: true }
+        }))
+      }
+    }
+  }
+}))
+
+describe('App Component', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('should render main heading', async () => {
+    render(<App />)
+    
+    const heading = screen.getByText('FluxStack - Elysia + React + Eden')
+    expect(heading).toBeInTheDocument()
+  })
+
+  it('should render Vite and React logos', () => {
+    render(<App />)
+    
+    const viteLink = screen.getByRole('link', { name: /vite logo/i })
+    const reactLink = screen.getByRole('link', { name: /react logo/i })
+    
+    expect(viteLink).toBeInTheDocument()
+    expect(reactLink).toBeInTheDocument()
+    expect(viteLink).toHaveAttribute('href', 'https://vite.dev')
+    expect(reactLink).toHaveAttribute('href', 'https://react.dev')
+  })
+
+  it('should display counter with initial value of 0', () => {
+    render(<App />)
+    
+    const button = screen.getByRole('button', { name: /count is 0/i })
+    expect(button).toBeInTheDocument()
+  })
+
+  it('should increment counter when button is clicked', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    
+    const button = screen.getByRole('button', { name: /count is 0/i })
+    
+    await user.click(button)
+    expect(screen.getByRole('button', { name: /count is 1/i })).toBeInTheDocument()
+    
+    await user.click(button)
+    expect(screen.getByRole('button', { name: /count is 2/i })).toBeInTheDocument()
+  })
+
+  it('should load and display API message', async () => {
+    render(<App />)
+    
+    // Initially should show loading
+    expect(screen.getByText('Carregando...')).toBeInTheDocument()
+    
+    // Wait for API response
+    await waitFor(() => {
+      expect(screen.getByText('API Response: Hello from FluxStack API!')).toBeInTheDocument()
+    })
+  })
+
+  it('should load and display users list', async () => {
+    render(<App />)
+    
+    // Wait for users to load
+    await waitFor(() => {
+      expect(screen.getByText('Test User 1 - test1@example.com')).toBeInTheDocument()
+      expect(screen.getByText('Test User 2 - test2@example.com')).toBeInTheDocument()
+    })
+  })
+
+  it('should have user form inputs', async () => {
+    render(<App />)
+    
+    const nameInput = screen.getByPlaceholderText('Nome')
+    const emailInput = screen.getByPlaceholderText('Email')
+    const addButton = screen.getByRole('button', { name: /adicionar usuário/i })
+    
+    expect(nameInput).toBeInTheDocument()
+    expect(emailInput).toBeInTheDocument()
+    expect(addButton).toBeInTheDocument()
+  })
+
+  it('should handle user form submission', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    
+    const nameInput = screen.getByPlaceholderText('Nome')
+    const emailInput = screen.getByPlaceholderText('Email')
+    const addButton = screen.getByRole('button', { name: /adicionar usuário/i })
+    
+    await user.type(nameInput, 'New User')
+    await user.type(emailInput, 'newuser@example.com')
+    await user.click(addButton)
+    
+    // Wait for form to be submitted and cleared
+    await waitFor(() => {
+      expect(nameInput).toHaveValue('')
+      expect(emailInput).toHaveValue('')
+    })
+  })
+
+  it('should not submit form with empty fields', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    
+    const addButton = screen.getByRole('button', { name: /adicionar usuário/i })
+    
+    // Try to submit without filling fields
+    await user.click(addButton)
+    
+    // Form should not submit (inputs should remain empty)
+    const nameInput = screen.getByPlaceholderText('Nome')
+    const emailInput = screen.getByPlaceholderText('Email')
+    expect(nameInput).toHaveValue('')
+    expect(emailInput).toHaveValue('')
+  })
+
+  it('should display proper footer text', () => {
+    render(<App />)
+    
+    const footerText = screen.getByText('Backend Elysia + Frontend React + Eden Treaty (Type-safe API)')
+    expect(footerText).toBeInTheDocument()
+  })
+
+  it('should display HMR instruction', () => {
+    render(<App />)
+    
+    const hmrText = screen.getByText(/Edit.*src\/App\.tsx.*and save to test HMR/i)
+    expect(hmrText).toBeInTheDocument()
+  })
+})

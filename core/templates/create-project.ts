@@ -133,13 +133,25 @@ export class ProjectCreator {
         build: "bun run core/cli/index.ts build",
         "build:frontend": "bun run core/cli/index.ts build:frontend",
         "build:backend": "bun run core/cli/index.ts build:backend",
-        start: "bun run core/cli/index.ts start"
+        start: "bun run core/cli/index.ts start",
+        test: "vitest",
+        "test:ui": "vitest --ui",
+        "test:run": "vitest run",
+        "test:coverage": "vitest run --coverage",
+        "test:watch": "vitest --watch"
       },
       devDependencies: {
         "@types/bun": "latest",
         "@types/react": "^18.2.0",
         "@types/react-dom": "^18.2.0",
-        typescript: "^5.0.0"
+        "@testing-library/react": "^14.0.0",
+        "@testing-library/jest-dom": "^6.1.0",
+        "@testing-library/user-event": "^14.5.0",
+        "@vitest/ui": "^1.0.0",
+        "@vitest/coverage-v8": "^1.0.0",
+        "jsdom": "^23.0.0",
+        typescript: "^5.0.0",
+        vitest: "^1.0.0"
       },
       dependencies: {
         "@elysiajs/eden": "^1.3.2",
