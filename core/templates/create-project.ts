@@ -1,0 +1,416 @@
+import { spawn } from "bun"
+import { join, resolve } from "path"
+import { mkdir } from "fs/promises"
+
+export interface CreateProjectOptions {
+  name: string
+  targetDir?: string
+  template?: 'basic' | 'full'
+}
+
+export class ProjectCreator {
+  private projectName: string
+  private targetDir: string
+  private template: string
+
+  constructor(options: CreateProjectOptions) {
+    this.projectName = options.name
+    this.targetDir = options.targetDir || resolve(process.cwd(), options.name)
+    this.template = options.template || 'basic'
+  }
+
+  async create() {
+    console.log(`🎉 Creating FluxStack project: ${this.projectName}`)
+    console.log(`📁 Target directory: ${this.targetDir}`)
+    console.log()
+
+    try {
+      // 1. Create project directory
+      await this.createDirectory()
+      
+      // 2. Copy template files
+      await this.copyTemplate()
+      
+      // 3. Generate package.json
+      await this.generatePackageJson()
+      
+      // 4. Generate config files
+      await this.generateConfigFiles()
+      
+      // 5. Install dependencies
+      await this.installDependencies()
+      
+      // 6. Initialize git
+      await this.initGit()
+      
+      console.log()
+      console.log("🎉 Project created successfully!")
+      console.log()
+      console.log("Next steps:")
+      console.log(`  cd ${this.projectName}`)
+      console.log(`  bun run dev`)
+      console.log()
+      console.log("Happy coding! 🚀")
+      
+    } catch (error) {
+      console.error("❌ Error creating project:", error.message)
+      process.exit(1)
+    }
+  }
+
+  private async createDirectory() {
+    console.log("📁 Creating project directory...")
+    await mkdir(this.targetDir, { recursive: true })
+  }
+
+  private async copyTemplate() {
+    console.log("📋 Copying template files...")
+    
+    // Copy files using Bun's built-in functions for better performance
+    const rootDir = join(__dirname, '..', '..')
+    
+    // Copy app structure (exclude node_modules and dist)
+    await this.copyDirectory(
+      join(rootDir, 'app'),
+      join(this.targetDir, 'app'),
+      ['node_modules', 'dist', '.vite']
+    )
+    
+    // Copy core framework (exclude node_modules)
+    await this.copyDirectory(
+      join(rootDir, 'core'),
+      join(this.targetDir, 'core'),
+      ['node_modules']
+    )
+    
+    // Copy config
+    await this.copyDirectory(
+      join(rootDir, 'config'),
+      join(this.targetDir, 'config')
+    )
+  }
+
+  private async copyDirectory(src: string, dest: string, exclude: string[] = []) {
+    await mkdir(dest, { recursive: true })
+    
+    const entries = await Bun.file(src).exists() ? 
+      await (await import("fs/promises")).readdir(src, { withFileTypes: true }) : []
+    
+    for (const entry of entries) {
+      if (exclude.includes(entry.name)) continue
+      
+      const srcPath = join(src, entry.name)
+      const destPath = join(dest, entry.name)
+      
+      if (entry.isDirectory()) {
+        await this.copyDirectory(srcPath, destPath, exclude)
+      } else {
+        const content = await Bun.file(srcPath).text()
+        await Bun.write(destPath, content)
+      }
+    }
+  }
+
+  private async generatePackageJson() {
+    console.log("📦 Generating package.json...")
+    
+    const packageJson = {
+      name: this.projectName,
+      version: "1.0.0",
+      description: `FluxStack project: ${this.projectName}`,
+      keywords: ["fluxstack", "full-stack", "typescript", "elysia", "react", "bun"],
+      author: "FluxStack Developer",
+      license: "MIT",
+      module: "app/server/index.ts",
+      type: "module",
+      bin: {
+        flux: "./core/cli/index.ts"
+      },
+      scripts: {
+        dev: "bun run core/cli/index.ts dev",
+        "dev:frontend": "bun run core/cli/index.ts frontend", 
+        "dev:backend": "bun run core/cli/index.ts backend",
+        build: "bun run core/cli/index.ts build",
+        "build:frontend": "bun run core/cli/index.ts build:frontend",
+        "build:backend": "bun run core/cli/index.ts build:backend",
+        start: "bun run core/cli/index.ts start"
+      },
+      devDependencies: {
+        "@types/bun": "latest",
+        "@types/react": "^18.2.0",
+        "@types/react-dom": "^18.2.0",
+        typescript: "^5.0.0"
+      },
+      dependencies: {
+        "@elysiajs/eden": "^1.3.2",
+        "@vitejs/plugin-react": "^4.0.0",
+        elysia: "latest",
+        react: "^18.2.0",
+        "react-dom": "^18.2.0",
+        vite: "^5.0.0"
+      }
+    }
+
+    await Bun.write(
+      join(this.targetDir, "package.json"),
+      JSON.stringify(packageJson, null, 2)
+    )
+  }
+
+  private async generateConfigFiles() {
+    console.log("⚙️ Generating config files...")
+
+    // TypeScript config
+    const tsConfig = {
+      compilerOptions: {
+        lib: ["ESNext", "DOM"],
+        target: "ESNext",
+        module: "ESNext",
+        moduleDetection: "force",
+        jsx: "react-jsx",
+        allowJs: true,
+        moduleResolution: "bundler",
+        allowImportingTsExtensions: true,
+        verbatimModuleSyntax: true,
+        noEmit: true,
+        baseUrl: ".",
+        paths: {
+          "@/*": ["./*"],
+          "@/core/*": ["./core/*"],
+          "@/app/*": ["./app/*"],
+          "@/config/*": ["./config/*"],
+          "@/shared/*": ["./app/shared/*"]
+        },
+        strict: true,
+        skipLibCheck: true,
+        noFallthroughCasesInSwitch: true,
+        noUnusedLocals: false,
+        noUnusedParameters: false,
+        noPropertyAccessFromIndexSignature: false
+      }
+    }
+
+    await Bun.write(
+      join(this.targetDir, "tsconfig.json"),
+      JSON.stringify(tsConfig, null, 2)
+    )
+
+    // Bun config
+    const bunConfig = `# FluxStack Bun Configuration
+[build]
+target = "bun"
+
+[install]
+cache = true
+lockfile = true
+
+# Path mapping (alias support)
+[build.alias]
+"@" = "."
+"@/core" = "./core"
+"@/app" = "./app"
+"@/config" = "./config"
+"@/shared" = "./app/shared"
+`
+
+    await Bun.write(join(this.targetDir, "bunfig.toml"), bunConfig)
+
+    // Environment file
+    const envContent = `# FluxStack Environment Variables
+
+# Development Mode
+NODE_ENV=development
+
+# Server Configuration
+PORT=3000
+HOST=localhost
+
+# Frontend Configuration
+FRONTEND_PORT=5173
+VITE_API_URL=http://localhost:3000
+
+# Backend Configuration
+BACKEND_PORT=3001
+
+# CORS Configuration
+CORS_ORIGINS=http://localhost:3000,http://localhost:5173
+CORS_METHODS=GET,POST,PUT,DELETE,OPTIONS
+CORS_HEADERS=Content-Type,Authorization
+
+# Logging
+LOG_LEVEL=info
+
+# Build Configuration
+BUILD_TARGET=bun
+BUILD_OUTDIR=dist
+`
+
+    await Bun.write(join(this.targetDir, ".env"), envContent)
+
+    // README
+    const readme = `# ${this.projectName}
+
+Modern full-stack TypeScript application built with FluxStack framework.
+
+## Tech Stack
+
+- **Backend**: Elysia.js (high-performance web framework)
+- **Frontend**: React + Vite (modern development experience)
+- **Runtime**: Bun (ultra-fast JavaScript runtime)
+- **Type Safety**: Eden Treaty (end-to-end type safety)
+
+## Getting Started
+
+### Install Dependencies
+\`\`\`bash
+bun install
+\`\`\`
+
+### Development
+
+#### Full-Stack (Recommended)
+\`\`\`bash
+bun run dev
+# Frontend + Backend integrated at http://localhost:3000
+\`\`\`
+
+#### Separate Development
+\`\`\`bash
+# Terminal 1: Backend API
+bun run dev:backend
+# API at http://localhost:3001
+
+# Terminal 2: Frontend 
+bun run dev:frontend  
+# Frontend at http://localhost:5173
+\`\`\`
+
+### Production
+
+\`\`\`bash
+# Build everything
+bun run build
+
+# Start production server
+bun run start
+\`\`\`
+
+## Project Structure
+
+\`\`\`
+${this.projectName}/
+├── app/                    # Your application code
+│   ├── server/            # Backend (controllers, routes)
+│   ├── client/            # Frontend (React components)
+│   └── shared/            # Shared types
+├── core/                   # FluxStack framework (don't edit)
+├── config/                 # Configuration files
+└── dist/                  # Production build
+\`\`\`
+
+## Available Commands
+
+- \`bun run dev\` - Full-stack development
+- \`bun run dev:frontend\` - Frontend only
+- \`bun run dev:backend\` - Backend only
+- \`bun run build\` - Build for production
+- \`bun run start\` - Start production server
+
+## Health Check
+
+\`\`\`bash
+curl http://localhost:3000/api/health
+\`\`\`
+
+Built with ❤️ using FluxStack framework.
+`
+
+    await Bun.write(join(this.targetDir, "README.md"), readme)
+
+    // .gitignore
+    const gitignore = `# Dependencies
+node_modules/
+*.lockb
+
+# Build outputs
+dist/
+build/
+.next/
+
+# Environment variables
+.env.local
+.env.production
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Runtime
+.tmp/
+.cache/
+
+# Bun
+bun.lockb
+`
+
+    await Bun.write(join(this.targetDir, ".gitignore"), gitignore)
+  }
+
+  private async installDependencies() {
+    console.log("📦 Installing dependencies...")
+    
+    const installProcess = spawn({
+      cmd: ["bun", "install"],
+      cwd: this.targetDir,
+      stdout: "pipe",
+      stderr: "pipe"
+    })
+
+    const exitCode = await installProcess.exited
+    
+    if (exitCode !== 0) {
+      throw new Error("Failed to install dependencies")
+    }
+  }
+
+  private async initGit() {
+    console.log("🔧 Initializing git repository...")
+    
+    const gitInitProcess = spawn({
+      cmd: ["git", "init"],
+      cwd: this.targetDir,
+      stdout: "pipe",
+      stderr: "pipe"
+    })
+
+    await gitInitProcess.exited
+
+    const gitAddProcess = spawn({
+      cmd: ["git", "add", "."],
+      cwd: this.targetDir,
+      stdout: "pipe",
+      stderr: "pipe"
+    })
+
+    await gitAddProcess.exited
+
+    const gitCommitProcess = spawn({
+      cmd: ["git", "commit", "-m", "Initial commit - FluxStack project created"],
+      cwd: this.targetDir,
+      stdout: "pipe",
+      stderr: "pipe"
+    })
+
+    await gitCommitProcess.exited
+  }
+}

@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 
 import { FluxStackBuilder } from "../build"
+import { ProjectCreator } from "../templates/create-project"
 import { config } from "@/config/fluxstack.config"
 
 const command = process.argv[2]
@@ -44,12 +45,37 @@ switch (command) {
 
   case "create":
     const projectName = process.argv[3]
+    const template = process.argv[4]
+    
     if (!projectName) {
       console.error("❌ Please provide a project name: flux create my-app")
+      console.error()
+      console.error("Usage:")
+      console.error("  flux create <project-name> [template]")
+      console.error()
+      console.error("Templates:")
+      console.error("  basic    Basic FluxStack project (default)")
+      console.error("  full     Full-featured project with examples")
       process.exit(1)
     }
-    console.log(`🎉 Creating new FluxStack project: ${projectName}`)
-    // TODO: Implementar criação de projeto
+
+    // Validate project name
+    if (!/^[a-zA-Z0-9-_]+$/.test(projectName)) {
+      console.error("❌ Project name can only contain letters, numbers, hyphens, and underscores")
+      process.exit(1)
+    }
+
+    try {
+      const creator = new ProjectCreator({
+        name: projectName,
+        template: template as 'basic' | 'full' || 'basic'
+      })
+      
+      await creator.create()
+    } catch (error) {
+      console.error("❌ Failed to create project:", error.message)
+      process.exit(1)
+    }
     break
 
   default:
