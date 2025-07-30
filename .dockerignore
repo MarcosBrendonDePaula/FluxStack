@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Build outputs (will be generated in container)
+dist/
+build/
+.next/
+
+# Development files
+.env.local
+.env.development
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Runtime
+.tmp/
+.cache/
+
+# Git
+.git/
+.gitignore
+
+# Testing
+coverage/
+.nyc_output
+
+# Context AI (not needed in production)
+context_ai/
+
+# Tests (not needed in production)  
+tests/
+*.test.*
+*.spec.*
+
+# Documentation
+*.md
+!README.md

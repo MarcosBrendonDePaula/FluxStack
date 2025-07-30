@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  # Frontend-Only Service
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "80:80"
+    environment:
+      - API_URL=http://backend:3001
+    depends_on:
+      - backend
+    networks:
+      - fluxstack-network
+    restart: unless-stopped
+
+  # Backend-Only Service
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - BACKEND_PORT=3001
+      - DATABASE_URL=postgresql://fluxstack:password@postgres:5432/fluxstack
+      - CORS_ORIGINS=http://frontend:80,http://localhost:80
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - fluxstack-network
+    restart: unless-stopped
+
+  # Database
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=fluxstack
+      - POSTGRES_USER=fluxstack
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - fluxstack-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fluxstack -d fluxstack"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Load Balancer (opcional)
+  nginx-lb:
+    image: nginx:alpine
+    ports:
+      - "3000:80"
+    volumes:
+      - ./nginx-lb.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - fluxstack-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  fluxstack-network:
+    driver: bridge
