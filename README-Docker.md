@@ -73,7 +73,8 @@ nginx-lb:
 
 - **Development**: Use `docker-compose.simple.yml`
 - **External access**: Services bind to `0.0.0.0` by default
-- **CORS**: Configure in backend environment variables
+- **CORS**: Configure your specific IPs in backend environment variables
+- **Custom IPs**: Add your network IP to CORS_ORIGINS for external access
 
 ## 📊 Resource Usage
 

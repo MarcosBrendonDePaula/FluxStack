@@ -27,7 +27,7 @@ services:
       - NODE_ENV=production
       - BACKEND_PORT=3001
       - DATABASE_URL=postgresql://fluxstack:password@postgres:5432/fluxstack
-      - CORS_ORIGINS=http://frontend:80,http://localhost:3000,http://192.168.1.22:3000
+      - CORS_ORIGINS=http://frontend:80,http://localhost:3000
     depends_on:
       postgres:
         condition: service_healthy
