@@ -335,7 +335,8 @@ PORT=3000
 ### Development Commands
 ```bash
 # Framework CLI
-flux dev                    # Full-stack development
+flux create <name>         # Create new FluxStack project
+flux dev                   # Full-stack development
 flux frontend              # Frontend only
 flux backend               # Backend only
 flux build                 # Build all
@@ -349,6 +350,13 @@ bun run dev:frontend       # Same as flux frontend
 bun run dev:backend        # Same as flux backend
 bun run build              # Same as flux build
 bun run start              # Same as flux start
+
+# Testing Commands
+bun run test               # Run tests in watch mode
+bun run test:run           # Run tests once
+bun run test:ui            # Open Vitest UI
+bun run test:coverage      # Generate coverage report
+bun run test:watch         # Run tests in watch mode (explicit)
 ```
 
 ### Health Check Endpoints
@@ -387,6 +395,91 @@ curl http://localhost:3001/api/health
 "@/assets/*"       // ./src/assets/*
 "@/lib/*"          // ./src/lib/*
 "@/types/*"        // ./src/types/*
+```
+
+## Testing System API
+
+### Vitest Configuration
+```typescript
+// vitest.config.ts
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['./tests/setup.ts'],
+    include: ['**/*.{test,spec}.{js,ts,jsx,tsx}'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html']
+    }
+  }
+})
+```
+
+### Test Structure
+```typescript
+// Unit Test Example
+import { describe, it, expect } from 'vitest'
+import { UsersController } from '@/app/server/controllers/users.controller'
+
+describe('UsersController', () => {
+  it('should create user successfully', async () => {
+    const result = await UsersController.createUser({
+      name: 'Test User',
+      email: 'test@example.com'
+    })
+    
+    expect(result.success).toBe(true)
+    expect(result.user?.name).toBe('Test User')
+  })
+})
+```
+
+### React Component Testing
+```typescript
+// Component Test Example
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+
+describe('MyComponent', () => {
+  it('should handle user interaction', async () => {
+    const user = userEvent.setup()
+    render(<MyComponent />)
+    
+    const button = screen.getByRole('button')
+    await user.click(button)
+    
+    expect(screen.getByText('Clicked!')).toBeInTheDocument()
+  })
+})
+```
+
+### API Integration Testing
+```typescript
+// Integration Test Example
+import { Elysia } from 'elysia'
+import { usersRoutes } from '@/app/server/routes/users.routes'
+
+describe('Users API', () => {
+  let app: Elysia
+
+  beforeEach(() => {
+    app = new Elysia().use(usersRoutes)
+  })
+
+  it('should create user via API', async () => {
+    const response = await app.handle(new Request('http://localhost/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Test', email: 'test@example.com' })
+    }))
+    
+    expect(response.status).toBe(200)
+    const data = await response.json()
+    expect(data.success).toBe(true)
+  })
+})
 ```
 
 ## Common Response Patterns

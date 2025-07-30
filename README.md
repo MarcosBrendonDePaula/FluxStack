@@ -13,11 +13,24 @@ Um framework moderno e ultra-performático para criar aplicações full-stack co
 - 🔌 **Sistema de Plugins** - Extensível
 - 🏗️ **CLI Integrado** - Comandos simples
 - 📦 **Build Otimizado** - Produção ready
+- 🎯 **Criação de Projetos** - `flux create` comando
+- 🧪 **Sistema de Testes** - Vitest + Testing Library
+- 📋 **Documentação AI** - Guias para IAs em `context_ai/`
 
 ## 🚀 Início Rápido
 
-### Instalação
+### Criar Novo Projeto
 ```bash
+# Instalar FluxStack globalmente (opcional)
+bun add -g fluxstack
+
+# Criar novo projeto
+flux create meu-projeto
+cd meu-projeto
+
+# Ou clonar este repositório
+git clone https://github.com/fluxstack/fluxstack.git
+cd fluxstack
 bun install
 ```
 
@@ -26,6 +39,13 @@ bun install
 bun run dev
 ```
 Acesse: `http://localhost:3000`
+
+### Testes
+```bash
+bun run test              # Modo watch
+bun run test:run         # Executar uma vez
+bun run test:coverage    # Com cobertura
+```
 
 ### Produção
 ```bash
@@ -44,6 +64,7 @@ fluxstack/
 │   ├── client/             # Cliente base React
 │   ├── build/              # Sistema de build
 │   ├── cli/                # CLI tools
+│   ├── templates/          # Templates para flux create
 │   └── types/              # Types do framework
 ├── app/                    # 👨‍💻 Seu código aqui
 │   ├── server/             # APIs e controllers
@@ -52,8 +73,18 @@ fluxstack/
 │   │   └── index.ts        # Entry point da app
 │   ├── client/             # Componentes React
 │   └── shared/             # Types compartilhados
+├── tests/                  # 🧪 Sistema de testes
+│   ├── unit/               # Testes unitários
+│   ├── integration/        # Testes de integração
+│   ├── __mocks__/          # Mocks para testes
+│   └── fixtures/           # Dados de teste
+├── context_ai/             # 📋 Documentação para IAs
+│   ├── project-overview.md # Visão geral do projeto
+│   ├── architecture-guide.md # Guia de arquitetura
+│   └── development-patterns.md # Padrões de desenvolvimento
 ├── config/                 # ⚙️ Configurações
 │   └── fluxstack.config.ts # Config principal
+├── vitest.config.ts        # Configuração de testes
 └── dist/                   # 📦 Build de produção
 ```
 
@@ -92,11 +123,41 @@ flux backend                # ou bun run dev:backend
 flux build:backend          # ou bun run build:backend
 ```
 
+### **Criação de Projetos**
+```bash
+# Criar novo projeto FluxStack
+flux create my-app          # Projeto básico
+flux create my-app basic    # Projeto básico (explícito)
+flux create my-app full     # Projeto completo com exemplos
+
+# O comando cria:
+# - Estrutura completa do projeto
+# - Configurações (package.json, tsconfig, etc.)
+# - Dependências instaladas automaticamente
+# - Repositório git inicializado
+# - Pronto para 'bun run dev'
+```
+
+### **Sistema de Testes**
+```bash
+# Executar testes
+bun run test               # Modo watch (desenvolvimento)
+bun run test:run          # Executar uma vez
+bun run test:ui           # Interface visual do Vitest
+bun run test:coverage     # Relatório de cobertura
+bun run test:watch        # Modo watch explícito
+
+# Estrutura de testes
+tests/
+├── unit/           # Testes unitários
+├── integration/    # Testes de integração
+├── e2e/           # Testes end-to-end
+├── __mocks__/     # Mocks para testes
+└── fixtures/      # Dados de teste
+```
+
 ### **Outros Comandos**
 ```bash
-# Criar novo projeto (futuro)
-flux create my-app
-
 # Help
 flux                        # Mostra todos os comandos
 ```
