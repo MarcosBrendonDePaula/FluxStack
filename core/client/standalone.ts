@@ -1,14 +1,16 @@
 // Standalone frontend development
 import { spawn } from "bun"
 import { join } from "path"
+import { getEnvironmentConfig } from "../config/env"
 
 export const startFrontendOnly = (config: any = {}) => {
+  const envConfig = getEnvironmentConfig()
   const clientPath = config.clientPath || "app/client"
-  const port = config.vitePort || 5173
-  const apiUrl = config.apiUrl || "http://localhost:3001"
+  const port = config.vitePort || envConfig.FRONTEND_PORT
+  const apiUrl = config.apiUrl || envConfig.API_URL
   
   console.log(`⚛️  FluxStack Frontend`)
-  console.log(`🌐 http://localhost:${port}`)
+  console.log(`🌐 http://${envConfig.HOST}:${port}`)
   console.log(`🔗 API: ${apiUrl}`)
   console.log()
   
@@ -20,7 +22,8 @@ export const startFrontendOnly = (config: any = {}) => {
     env: {
       ...process.env,
       VITE_API_URL: apiUrl,
-      PORT: port.toString()
+      PORT: port.toString(),
+      HOST: envConfig.HOST
     }
   })
 

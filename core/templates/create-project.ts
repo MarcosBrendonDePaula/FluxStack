@@ -243,6 +243,7 @@ VITE_API_URL=http://localhost:3000
 
 # Backend Configuration
 BACKEND_PORT=3001
+API_URL=http://localhost:3001
 
 # CORS Configuration
 CORS_ORIGINS=http://localhost:3000,http://localhost:5173
@@ -255,6 +256,32 @@ LOG_LEVEL=info
 # Build Configuration
 BUILD_TARGET=bun
 BUILD_OUTDIR=dist
+
+# Database (optional - uncomment to use)
+# DATABASE_URL=postgresql://user:password@localhost:5432/${this.projectName}
+# DATABASE_HOST=localhost
+# DATABASE_PORT=5432
+# DATABASE_NAME=${this.projectName}
+# DATABASE_USER=user
+# DATABASE_PASSWORD=password
+
+# Authentication (optional - uncomment to use)
+# JWT_SECRET=your-super-secret-jwt-key-here
+# JWT_EXPIRES_IN=24h
+
+# External APIs (optional - uncomment to use)
+# STRIPE_SECRET_KEY=sk_test_...
+# STRIPE_PUBLISHABLE_KEY=pk_test_...
+
+# Email Service (optional - uncomment to use)
+# SMTP_HOST=smtp.gmail.com
+# SMTP_PORT=587
+# SMTP_USER=your-email@gmail.com
+# SMTP_PASS=your-app-password
+
+# File Upload (optional - uncomment to use)
+# UPLOAD_PATH=uploads
+# MAX_FILE_SIZE=10485760
 `
 
     await Bun.write(join(this.targetDir, ".env"), envContent)

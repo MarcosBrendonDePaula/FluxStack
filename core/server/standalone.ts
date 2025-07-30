@@ -1,9 +1,12 @@
 // Standalone backend server (sem frontend integrado)
 import { FluxStackFramework, loggerPlugin } from "./index"
+import { getEnvironmentConfig } from "../config/env"
 
 export const createStandaloneServer = (userConfig: any = {}) => {
+  const envConfig = getEnvironmentConfig()
+  
   const app = new FluxStackFramework({
-    port: userConfig.port || 3001,
+    port: userConfig.port || envConfig.BACKEND_PORT,
     apiPrefix: userConfig.apiPrefix || "/api",
     ...userConfig
   })
@@ -25,11 +28,12 @@ export const createStandaloneServer = (userConfig: any = {}) => {
 }
 
 export const startBackendOnly = async (userRoutes?: any, config: any = {}) => {
-  const port = config.port || 3001
+  const envConfig = getEnvironmentConfig()
+  const port = config.port || envConfig.BACKEND_PORT
   
-  console.log(`🦊 FluxStack Backend`)  
-  console.log(`🚀 http://localhost:${port}`)
-  console.log(`📋 Health: http://localhost:${port}/health`)
+  console.log(`🦊 FluxStack Backend`)
+  console.log(`🚀 http://${envConfig.HOST}:${port}`)
+  console.log(`📋 Health: http://${envConfig.HOST}:${port}/health`)
   console.log()
 
   const app = createStandaloneServer(config)

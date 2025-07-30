@@ -1,3 +1,5 @@
+import type { EnvironmentConfig } from "../config/env"
+
 // FluxStack framework types
 export interface FluxStackConfig {
   port?: number
@@ -19,6 +21,7 @@ export interface FluxStackContext {
   config: FluxStackConfig
   isDevelopment: boolean
   isProduction: boolean
+  envConfig: EnvironmentConfig
 }
 
 export interface Plugin {

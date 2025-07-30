@@ -1,5 +1,6 @@
 import { Elysia } from "elysia"
 import type { FluxStackConfig, FluxStackContext, Plugin } from "../types"
+import { getEnvironmentConfig, isDevelopment, isProduction } from "../config/env"
 
 export class FluxStackFramework {
   private app: Elysia
@@ -7,25 +8,29 @@ export class FluxStackFramework {
   private plugins: Plugin[] = []
 
   constructor(config: FluxStackConfig = {}) {
+    const envConfig = getEnvironmentConfig()
+    
     this.context = {
       config: {
-        port: 3000,
-        vitePort: 5173,
+        port: envConfig.PORT,
+        vitePort: envConfig.FRONTEND_PORT,
         clientPath: "app/client",
         apiPrefix: "/api",
         cors: {
-          origins: ["*"],
-          methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-          headers: ["Content-Type", "Authorization"]
+          origins: envConfig.CORS_ORIGINS,
+          methods: envConfig.CORS_METHODS,
+          headers: envConfig.CORS_HEADERS
         },
         build: {
-          outDir: "dist",
-          target: "bun"
+          outDir: envConfig.BUILD_OUTDIR,
+          target: envConfig.BUILD_TARGET
         },
+        // Allow user config to override environment config
         ...config
       },
-      isDevelopment: process.env.NODE_ENV !== "production",
-      isProduction: process.env.NODE_ENV === "production"
+      isDevelopment: isDevelopment(),
+      isProduction: isProduction(),
+      envConfig
     }
 
     this.app = new Elysia()
