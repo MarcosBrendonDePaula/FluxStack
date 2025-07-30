@@ -1,13 +1,9 @@
-version: '3.8'
-
 services:
-  # Frontend-Only Service
+  # Frontend-Only Service (React app)
   frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
+    image: fluxstack-frontend:latest
     ports:
-      - "8080:80"
+      - "8080:80"  # Acesso direto ao frontend
     environment:
       - API_URL=http://backend:3001
     depends_on:
@@ -16,18 +12,16 @@ services:
       - fluxstack-network
     restart: unless-stopped
 
-  # Backend-Only Service
+  # Backend-Only Service (API)
   backend:
-    build:
-      context: .
-      dockerfile: Dockerfile.backend
+    image: fluxstack-backend:latest
     ports:
-      - "3001:3001"
+      - "3001:3001"  # Acesso direto à API
     environment:
       - NODE_ENV=production
       - BACKEND_PORT=3001
       - DATABASE_URL=postgresql://fluxstack:password@postgres:5432/fluxstack
-      - CORS_ORIGINS=http://frontend:80,http://localhost:3000,http://192.168.1.22:3000
+      - CORS_ORIGINS=http://localhost:8080,http://192.168.1.22:8080
     depends_on:
       postgres:
         condition: service_healthy
@@ -44,6 +38,8 @@ services:
       - POSTGRES_PASSWORD=password
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"  # Acesso direto ao DB para debug
     networks:
       - fluxstack-network
     restart: unless-stopped
@@ -52,20 +48,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
-  # Load Balancer (opcional)
-  nginx-lb:
-    image: nginx:alpine
-    ports:
-      - "0.0.0.0:3000:80"
-    volumes:
-      - ./nginx-lb.conf:/etc/nginx/conf.d/default.conf
-    depends_on:
-      - frontend
-      - backend
-    networks:
-      - fluxstack-network
-    restart: unless-stopped
 
 volumes:
   postgres_data:

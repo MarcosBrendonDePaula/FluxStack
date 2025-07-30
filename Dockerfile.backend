@@ -12,6 +12,7 @@ COPY core/ ./core/
 COPY app/server/ ./app/server/
 COPY app/shared/ ./app/shared/
 COPY config/ ./config/
+COPY tsconfig.json ./tsconfig.json
 
 # Production stage
 FROM oven/bun:1.1-alpine AS production
@@ -22,11 +23,13 @@ WORKDIR /app
 COPY package.json bun.lockb* bunfig.toml ./
 RUN bun install --frozen-lockfile --production
 
-# Copy backend files
+# Copy backend files and required config
 COPY --from=base /app/core ./core
 COPY --from=base /app/app/server ./app/server
 COPY --from=base /app/app/shared ./app/shared
 COPY --from=base /app/config ./config
+COPY --from=base /app/tsconfig.json ./tsconfig.json
+COPY --from=base /app/bunfig.toml ./bunfig.toml
 
 # Create non-root user
 RUN addgroup -g 1001 -S fluxstack && \
