@@ -58,5 +58,5 @@ if (context.isDevelopment) {
 // Iniciar servidor
 app.listen()
 
-// Exportar tipo da aplicação para Eden
+// Exportar tipo da aplicação para Eden Treaty (método correto)
 export type App = typeof framework
