@@ -17,7 +17,7 @@
     "flux": "./core/cli/index.ts"
   },
   "scripts": {
-    "install": "bun install && cd app/client && bun install",
+    "postinstall": "cd app/client && bun install",
     "dev": "bun run core/cli/index.ts dev",
     "dev:frontend": "bun run core/cli/index.ts frontend",
     "dev:backend": "bun run core/cli/index.ts backend",
