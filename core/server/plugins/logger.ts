@@ -3,7 +3,7 @@ import { log } from "../../utils/logger"
 
 export const loggerPlugin: Plugin = {
   name: "logger",
-  setup: (context) => {
+  setup: (context, app) => {
     log.plugin("logger", "Logger plugin initialized", {
       logLevel: context.envConfig.LOG_LEVEL,
       environment: context.envConfig.NODE_ENV

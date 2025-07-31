@@ -2,7 +2,13 @@ import { Elysia, t } from "elysia"
 import { UsersController } from "../controllers/users.controller"
 
 export const usersRoutes = new Elysia({ prefix: "/users" })
-  .get("/", () => UsersController.getUsers())
+  .get("/", () => UsersController.getUsers(), {
+    detail: {
+      tags: ['Users'],
+      summary: 'List Users',
+      description: 'Retrieve a list of all users in the system'
+    }
+  })
   
   .get("/:id", ({ params: { id } }) => {
     const userId = parseInt(id)
@@ -16,7 +22,12 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
   }, {
     params: t.Object({
       id: t.String()
-    })
+    }),
+    detail: {
+      tags: ['Users'],
+      summary: 'Get User by ID',
+      description: 'Retrieve a specific user by their ID'
+    }
   })
   
   .post("/", async ({ body, set }) => {
@@ -35,6 +46,11 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
       name: t.String({ minLength: 2 }),
       email: t.String({ format: "email" })
     }),
+    detail: {
+      tags: ['Users'],
+      summary: 'Create User',
+      description: 'Create a new user with name and email'
+    },
     error({ code, error, set }) {
       switch (code) {
         case 'VALIDATION':
@@ -60,5 +76,10 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
   }, {
     params: t.Object({
       id: t.String()
-    })
+    }),
+    detail: {
+      tags: ['Users'],
+      summary: 'Delete User',
+      description: 'Delete a user by their ID'
+    }
   })

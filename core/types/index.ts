@@ -26,7 +26,7 @@ export interface FluxStackContext {
 
 export interface Plugin {
   name: string
-  setup: (context: FluxStackContext) => void
+  setup: (context: FluxStackContext, app: any) => void
 }
 
 export interface RouteDefinition {

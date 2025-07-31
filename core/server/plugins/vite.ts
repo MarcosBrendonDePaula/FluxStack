@@ -6,7 +6,7 @@ let viteProcess: any = null
 
 export const vitePlugin: Plugin = {
   name: "vite",
-  setup: (context) => {
+  setup: (context, app) => {
     if (!context.isDevelopment) return
     
     // Iniciar Vite dev server

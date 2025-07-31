@@ -9,7 +9,10 @@ interface User {
   createdAt?: string
 }
 
+type TabType = 'overview' | 'demo' | 'api-docs'
+
 function App() {
+  const [activeTab, setActiveTab] = useState<TabType>('overview')
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(false)
   const [apiStatus, setApiStatus] = useState<'online' | 'offline'>('offline')
@@ -89,13 +92,343 @@ function App() {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
   }
 
+  const renderOverview = () => (
+    <div className="overview-content">
+      <div className="hero-section">
+        <div className="hero-text">
+          <h1>⚡ FluxStack</h1>
+          <p className="hero-subtitle">
+            Framework full-stack TypeScript moderno com type-safety end-to-end
+          </p>
+          <div className="features-grid">
+            <div className="feature-item">
+              <div className="feature-icon">🚀</div>
+              <h3>Elysia.js</h3>
+              <p>Backend rápido e type-safe com Bun runtime</p>
+            </div>
+            <div className="feature-item">
+              <div className="feature-icon">⚛️</div>
+              <h3>React + Vite</h3>
+              <p>Frontend moderno com hot-reload ultrarrápido</p>
+            </div>
+            <div className="feature-item">
+              <div className="feature-icon">🔗</div>
+              <h3>Eden Treaty</h3>
+              <p>API type-safe com inferência automática de tipos</p>
+            </div>
+            <div className="feature-item">
+              <div className="feature-icon">🐳</div>
+              <h3>Docker Ready</h3>
+              <p>Deploy fácil com configurações otimizadas</p>
+            </div>
+            <div className="feature-item">
+              <div className="feature-icon">🧪</div>
+              <h3>Testing</h3>
+              <p>Vitest + Testing Library configurados</p>
+            </div>
+            <div className="feature-item">
+              <div className="feature-icon">📦</div>
+              <h3>Bun Package Manager</h3>
+              <p>Instalação e builds extremamente rápidos</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div className="tech-stack">
+        <h2>Stack Tecnológica</h2>
+        <div className="stack-items">
+          <div className="stack-category">
+            <h3>Backend</h3>
+            <ul>
+              <li>Elysia.js - Web framework</li>
+              <li>Bun - Runtime & package manager</li>
+              <li>TypeScript - Type safety</li>
+            </ul>
+          </div>
+          <div className="stack-category">
+            <h3>Frontend</h3>
+            <ul>
+              <li>React 19 - UI library</li>
+              <li>Vite - Build tool</li>
+              <li>TypeScript - Type safety</li>
+            </ul>
+          </div>
+          <div className="stack-category">
+            <h3>Comunicação</h3>
+            <ul>
+              <li>Eden Treaty - Type-safe API</li>
+              <li>End-to-end TypeScript</li>
+              <li>Automatic type inference</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+
+  const renderDemo = () => (
+    <div className="demo-content">
+      <h2>Demo Interativo</h2>
+      <p className="demo-subtitle">Teste a API em tempo real</p>
+
+      {/* Stats */}
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-number">{users.length}</div>
+          <div className="stat-label">Usuários</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-number">{apiStatus === 'online' ? '✅' : '❌'}</div>
+          <div className="stat-label">API Status</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-number">🚀</div>
+          <div className="stat-label">Eden Treaty</div>
+        </div>
+      </div>
+
+      {/* Add User Form */}
+      <div className="form-section">
+        <h3 className="section-title">Adicionar Usuário</h3>
+        <form onSubmit={handleSubmit} className="form-grid">
+          <div className="form-group">
+            <label className="form-label">Nome</label>
+            <input
+              type="text"
+              className="form-input"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Nome completo"
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Email</label>
+            <input
+              type="email"
+              className="form-input"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="email@exemplo.com"
+              required
+            />
+          </div>
+          <button 
+            type="submit" 
+            className="btn btn-primary"
+            disabled={submitting || !name.trim() || !email.trim()}
+          >
+            {submitting ? 'Adicionando...' : 'Adicionar'}
+          </button>
+        </form>
+      </div>
+
+      {/* Users List */}
+      <div className="users-section">
+        <div className="section-header">
+          <h3 className="section-title">Usuários ({users.length})</h3>
+          <button 
+            className="btn btn-secondary"
+            onClick={loadUsers}
+            disabled={loading}
+          >
+            {loading ? <span className="spinner"></span> : '↻'} Atualizar
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="loading">
+            <span className="spinner"></span>
+            Carregando usuários...
+          </div>
+        ) : users.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-icon">👥</div>
+            <h4>Nenhum usuário encontrado</h4>
+            <p>Adicione o primeiro usuário usando o formulário acima</p>
+          </div>
+        ) : (
+          <div className="users-grid">
+            {users.map(user => (
+              <div key={user.id} className="user-card">
+                <div className="user-avatar">
+                  {getInitials(user.name)}
+                </div>
+                <div className="user-name">{user.name}</div>
+                <div className="user-email">{user.email}</div>
+                <div className="user-actions">
+                  <button 
+                    className="btn btn-sm btn-danger"
+                    onClick={() => handleDelete(user.id, user.name)}
+                  >
+                    Remover
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+
+  const renderApiDocs = () => (
+    <div className="api-docs">
+      <h2>Documentação da API</h2>
+      <p className="api-subtitle">Documentação interativa gerada automaticamente com Swagger</p>
+      
+      <div className="swagger-links">
+        <div className="swagger-card">
+          <h3>📋 Swagger UI Interativo</h3>
+          <p>Interface completa para testar todos os endpoints da API</p>
+          <a 
+            href="/swagger" 
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-primary"
+          >
+            🚀 Abrir em Nova Aba
+          </a>
+        </div>
+        
+        <div className="swagger-card">
+          <h3>📄 OpenAPI Spec (JSON)</h3>
+          <p>Especificação OpenAPI em formato JSON para integração</p>
+          <a 
+            href="/swagger/json" 
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-secondary"
+          >
+            📋 Ver JSON
+          </a>
+        </div>
+      </div>
+
+      <div className="swagger-iframe-container">
+        <h3>🔧 Documentação Integrada</h3>
+        <iframe 
+          src="/swagger"
+          className="swagger-iframe"
+          title="Swagger UI"
+          frameBorder="0"
+        />
+      </div>
+
+      <div className="swagger-preview">
+        <h3>🔧 Como usar Eden Treaty</h3>
+        <div className="code-examples">
+          <div className="example-section">
+            <h4>Configuração do Cliente:</h4>
+            <pre className="code-block">{`import { treaty } from '@elysiajs/eden'
+import type { App } from './server'
+
+const client = treaty<App>('http://localhost:3000')
+export const api = client.api`}</pre>
+          </div>
+
+          <div className="example-section">
+            <h4>Exemplos de Uso:</h4>
+            <pre className="code-block">{`// Listar usuários
+const users = await api.users.get()
+
+// Criar usuário
+const newUser = await api.users.post({
+  name: "João Silva",
+  email: "joao@example.com"
+})
+
+// Deletar usuário
+await api.users["1"].delete()
+
+// Health check
+const health = await api.health.get()`}</pre>
+          </div>
+
+          <div className="example-section">
+            <h4>Com tratamento de erros:</h4>
+            <pre className="code-block">{`try {
+  const result = await apiCall(api.users.post({
+    name: "Maria Silva",
+    email: "maria@example.com"
+  }))
+  
+  if (result.success) {
+    console.log('Usuário criado:', result.user)
+  }
+} catch (error) {
+  console.error('Erro:', getErrorMessage(error))
+}`}</pre>
+          </div>
+        </div>
+      </div>
+
+      <div className="api-features">
+        <h3>✨ Funcionalidades</h3>
+        <div className="features-list">
+          <div className="feature">
+            <span className="feature-icon">🔒</span>
+            <div>
+              <h4>Type Safety</h4>
+              <p>Tipos TypeScript inferidos automaticamente</p>
+            </div>
+          </div>
+          <div className="feature">
+            <span className="feature-icon">⚡</span>
+            <div>
+              <h4>Auto-complete</h4>
+              <p>IntelliSense completo no editor</p>
+            </div>
+          </div>
+          <div className="feature">
+            <span className="feature-icon">🔄</span>
+            <div>
+              <h4>Sincronização</h4>
+              <p>Mudanças no backend refletem automaticamente no frontend</p>
+            </div>
+          </div>
+          <div className="feature">
+            <span className="feature-icon">🐛</span>
+            <div>
+              <h4>Debugging</h4>
+              <p>Erros de tipo detectados em tempo de compilação</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+
   return (
     <div className="app">
       {/* Header */}
       <header className="header">
         <div className="header-content">
-          <div className="logo">
-            ⚡ FluxStack
+          <div className="header-left">
+            <div className="logo">
+              ⚡ FluxStack
+            </div>
+            <nav className="header-tabs">
+              <button 
+                className={`tab ${activeTab === 'overview' ? 'active' : ''}`}
+                onClick={() => setActiveTab('overview')}
+              >
+                📋 Visão Geral
+              </button>
+              <button 
+                className={`tab ${activeTab === 'demo' ? 'active' : ''}`}
+                onClick={() => setActiveTab('demo')}
+              >
+                🚀 Demo
+              </button>
+              <button 
+                className={`tab ${activeTab === 'api-docs' ? 'active' : ''}`}
+                onClick={() => setActiveTab('api-docs')}
+              >
+                📚 API Docs
+              </button>
+            </nav>
           </div>
           <div className={`status-badge ${apiStatus}`}>
             <span className="status-dot"></span>
@@ -106,107 +439,9 @@ function App() {
 
       {/* Main Content */}
       <main className="main">
-        <h1 className="page-title">Dashboard</h1>
-        <p className="page-subtitle">Gerenciar usuários do sistema</p>
-
-        {/* Stats */}
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-number">{users.length}</div>
-            <div className="stat-label">Usuários</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-number">{apiStatus === 'online' ? '✅' : '❌'}</div>
-            <div className="stat-label">API Status</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-number">🚀</div>
-            <div className="stat-label">Eden Treaty</div>
-          </div>
-        </div>
-
-        {/* Add User Form */}
-        <div className="form-section">
-          <h2 className="section-title">Adicionar Usuário</h2>
-          <form onSubmit={handleSubmit} className="form-grid">
-            <div className="form-group">
-              <label className="form-label">Nome</label>
-              <input
-                type="text"
-                className="form-input"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Nome completo"
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Email</label>
-              <input
-                type="email"
-                className="form-input"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="email@exemplo.com"
-                required
-              />
-            </div>
-            <button 
-              type="submit" 
-              className="btn btn-primary"
-              disabled={submitting || !name.trim() || !email.trim()}
-            >
-              {submitting ? 'Adicionando...' : 'Adicionar'}
-            </button>
-          </form>
-        </div>
-
-        {/* Users List */}
-        <div className="users-section">
-          <div className="section-header">
-            <h2 className="section-title">Usuários ({users.length})</h2>
-            <button 
-              className="btn btn-secondary"
-              onClick={loadUsers}
-              disabled={loading}
-            >
-              {loading ? <span className="spinner"></span> : '↻'} Atualizar
-            </button>
-          </div>
-
-          {loading ? (
-            <div className="loading">
-              <span className="spinner"></span>
-              Carregando usuários...
-            </div>
-          ) : users.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon">👥</div>
-              <h3>Nenhum usuário encontrado</h3>
-              <p>Adicione o primeiro usuário usando o formulário acima</p>
-            </div>
-          ) : (
-            <div className="users-grid">
-              {users.map(user => (
-                <div key={user.id} className="user-card">
-                  <div className="user-avatar">
-                    {getInitials(user.name)}
-                  </div>
-                  <div className="user-name">{user.name}</div>
-                  <div className="user-email">{user.email}</div>
-                  <div className="user-actions">
-                    <button 
-                      className="btn btn-sm btn-danger"
-                      onClick={() => handleDelete(user.id, user.name)}
-                    >
-                      Remover
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        {activeTab === 'overview' && renderOverview()}
+        {activeTab === 'demo' && renderDemo()}
+        {activeTab === 'api-docs' && renderApiDocs()}
       </main>
 
       {/* Toast Notification */}

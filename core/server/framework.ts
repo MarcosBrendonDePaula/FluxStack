@@ -54,7 +54,7 @@ export class FluxStackFramework {
 
   use(plugin: Plugin) {
     this.plugins.push(plugin)
-    plugin.setup(this.context)
+    plugin.setup(this.context, this.app)
     return this
   }
 

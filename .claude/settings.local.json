@@ -19,7 +19,13 @@
       "Bash(ls:*)",
       "Bash(rm:*)",
       "Bash(grep:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(docker:*)",
+      "Bash(curl:*)",
+      "Bash(npm run dev:*)",
+      "Bash(bun core/cli/index.ts dev)",
+      "Bash(npm run build:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": []
   }

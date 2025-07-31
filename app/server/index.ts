@@ -1,5 +1,5 @@
 // User application entry point
-import { FluxStackFramework, loggerPlugin, vitePlugin } from "@/core/server"
+import { FluxStackFramework, loggerPlugin, vitePlugin, swaggerPlugin } from "@/core/server"
 import { apiRoutes } from "./routes"
 
 // Criar aplicação com framework
@@ -9,13 +9,18 @@ const app = new FluxStackFramework({
   clientPath: "app/client"
 })
 
-// Usar plugins
+
+// Usar plugins básicos primeiro
 app
+  .use(swaggerPlugin)
   .use(loggerPlugin)
   .use(vitePlugin)
+  
 
-// Registrar rotas da aplicação
+// Registrar rotas da aplicação ANTES do Swagger
 app.routes(apiRoutes)
+
+
 
 // Configurar proxy/static files
 const framework = app.getApp()
