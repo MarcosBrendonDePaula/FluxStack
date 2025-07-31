@@ -15,7 +15,9 @@ Um framework moderno e ultra-performático para criar aplicações full-stack co
 - 📦 **Build Otimizado** - Produção ready
 - 🎯 **Criação de Projetos** - `flux create` comando
 - 🧪 **Sistema de Testes** - Vitest + Testing Library
-- 📋 **Documentação AI** - Guias para IAs em `context_ai/`
+- 📚 **API Documentation** - Swagger UI integrado
+- 🔗 **Eden Treaty** - Type-safe API client
+- 📋 **Documentação AI** - Guias para IAs em `CLAUDE.md`
 
 ## 🚀 Início Rápido
 
@@ -38,7 +40,11 @@ bun install
 ```bash
 bun run dev
 ```
-Acesse: `http://localhost:3000`
+
+**URLs disponíveis:**
+- 🌐 **Frontend**: `http://localhost:3000`
+- 📚 **API Docs (Swagger)**: `http://localhost:3000/swagger`
+- 🔍 **Health Check**: `http://localhost:3000/api/health`
 
 ### Testes
 ```bash
@@ -69,16 +75,22 @@ fluxstack/
 ├── app/                    # 👨‍💻 Seu código aqui
 │   ├── server/             # APIs e controllers
 │   │   ├── controllers/    # Lógica de negócio
-│   │   ├── routes/         # Definição de rotas
+│   │   ├── routes/         # Definição de rotas (com Swagger docs)
 │   │   └── index.ts        # Entry point da app
-│   ├── client/             # Componentes React
+│   ├── client/             # Frontend React moderno
+│   │   ├── src/
+│   │   │   ├── App.tsx     # Interface com tabs integradas
+│   │   │   ├── App.css     # Estilos modernos
+│   │   │   └── lib/
+│   │   │       └── eden-api.ts  # Cliente Eden Treaty
 │   └── shared/             # Types compartilhados
 ├── tests/                  # 🧪 Sistema de testes
 │   ├── unit/               # Testes unitários
 │   ├── integration/        # Testes de integração
 │   ├── __mocks__/          # Mocks para testes
 │   └── fixtures/           # Dados de teste
-├── context_ai/             # 📋 Documentação para IAs
+├── CLAUDE.md               # 📋 Documentação AI (contexto completo)
+├── context_ai/             # 📋 Documentação para IAs (legado)
 │   ├── project-overview.md # Visão geral do projeto
 │   ├── architecture-guide.md # Guia de arquitetura
 │   └── development-patterns.md # Padrões de desenvolvimento
@@ -198,8 +210,8 @@ curl http://localhost:5173/api/users
 O framework possui um sistema de plugins extensível:
 
 ### Plugins Inclusos:
-- **Logger**: Log automático de requests
-- **CORS**: Cross-origin resource sharing
+- **Logger**: Log automático de requests/responses
+- **Swagger**: Documentação automática da API
 - **Vite**: Integração com Vite dev server
 - **Static**: Servir arquivos estáticos
 
@@ -209,9 +221,9 @@ import type { Plugin } from "../core/types"
 
 export const meuPlugin: Plugin = {
   name: "meu-plugin",
-  setup: (context) => {
+  setup: (context, app) => {
     console.log("🔌 Meu plugin ativado")
-    // Sua lógica aqui
+    // Sua lógica aqui - agora com acesso ao app Elysia
   }
 }
 ```
@@ -257,14 +269,29 @@ flux backend
 # API standalone na porta 3001
 ```
 
-### **Adicionando Rotas**
+### **Adicionando Rotas com Swagger**
 ```typescript
 // app/server/routes/example.routes.ts
-import { Elysia } from "elysia"
+import { Elysia, t } from "elysia"
 
 export const exampleRoutes = new Elysia({ prefix: "/example" })
-  .get("/", () => ({ message: "Hello World!" }))
-  .post("/", ({ body }) => ({ received: body }))
+  .get("/", () => ({ message: "Hello World!" }), {
+    detail: {
+      tags: ['Example'],
+      summary: 'Get example message',
+      description: 'Returns a simple hello world message'
+    }
+  })
+  .post("/", ({ body }) => ({ received: body }), {
+    body: t.Object({
+      message: t.String()
+    }),
+    detail: {
+      tags: ['Example'],
+      summary: 'Echo message',
+      description: 'Echoes back the received message'
+    }
+  })
 ```
 
 ### **Criando Controllers**
@@ -277,11 +304,34 @@ export class ExampleController {
 }
 ```
 
-### **Componentes React**
+### **Componentes React com Eden Treaty**
 ```tsx
 // app/client/src/components/Example.tsx
+import { useState, useEffect } from 'react'
+import { api, apiCall } from '@/lib/eden-api'
+
 export function Example() {
-  return <div>Meu componente</div>
+  const [data, setData] = useState<any>(null)
+  
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const result = await apiCall(api.example.get())
+        setData(result)
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error)
+      }
+    }
+    
+    loadData()
+  }, [])
+  
+  return (
+    <div>
+      <h2>Exemplo com Eden Treaty</h2>
+      {data ? <p>{data.message}</p> : <p>Carregando...</p>}
+    </div>
+  )
 }
 ```
 
