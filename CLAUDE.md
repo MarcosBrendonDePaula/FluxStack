@@ -162,12 +162,20 @@ export interface Plugin {
 
 ## Desenvolvimento
 
+### Instalação
+```bash
+git clone <repo>
+cd FluxStack
+bun install          # Instala backend + frontend via postinstall hook
+```
+
 ### Comandos Principais
 ```bash
 bun run dev          # Inicia servidor de desenvolvimento
 bun run build        # Build para produção
 bun run test         # Executa testes
-bun run lint         # Linting do código
+bun run test:ui      # Interface visual do Vitest
+bun run test:coverage # Relatório de cobertura
 ```
 
 ### Estrutura de Desenvolvimento
@@ -178,12 +186,14 @@ bun run lint         # Linting do código
 
 ## Mudanças Recentes Importantes
 
-### v1.2.0 - Swagger Integration & Frontend Redesign
+### v1.3.0 - Complete Integration & Install Fix
 1. **Swagger UI integrado** com iframe na aba API Docs
 2. **Frontend completamente redesenhado** com interface em abas
 3. **Eden Treaty otimizado** com tratamento de erros melhorado
 4. **Documentação automática** para todos os endpoints
 5. **Interface moderna** com design limpo e responsivo
+6. **Script de instalação corrigido** com postinstall hook
+7. **Documentação AI atualizada** com contexto completo
 
 ### Problemas Resolvidos
 - ✅ Compatibilidade de tipos Eden Treaty entre client/server
@@ -191,6 +201,7 @@ bun run lint         # Linting do código
 - ✅ Botão delete não funcionava -> implementado Eden Treaty
 - ✅ Plugin system error -> interface atualizada
 - ✅ Swagger sem rotas -> ordem de registro corrigida
+- ✅ Script install com loop infinito -> mudado para postinstall hook
 
 ## Próximos Passos Sugeridos
 
@@ -211,17 +222,34 @@ bun run lint         # Linting do código
 ## Comandos de Desenvolvimento Úteis
 
 ```bash
-# Verificar tipos
-bun run typecheck
+# Instalação completa (backend + frontend)
+bun install
 
-# Limpar build
-bun run clean
+# Desenvolvimento
+bun run dev                    # Full-stack development server
+bun run dev:frontend          # Frontend apenas (porta 5173)
+bun run dev:backend           # Backend apenas (porta 3001)
+
+# Testes
+bun run test                  # Modo watch
+bun run test:run             # Executar uma vez
+bun run test:ui              # Interface visual
+bun run test:coverage        # Com cobertura
+
+# Build
+bun run build                # Build completo
+bun run build:frontend       # Build frontend
+bun run build:backend        # Build backend
+
+# Produção
+bun run start                # Servidor de produção
 
 # Docker development
 docker-compose up -d
 
 # Testar API
 curl http://localhost:3000/api/health
+curl http://localhost:3000/swagger/json
 ```
 
 Esta documentação deve ser atualizada sempre que houver mudanças significativas na arquitetura ou funcionalidades do projeto.

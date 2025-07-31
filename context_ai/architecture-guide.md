@@ -53,10 +53,33 @@ class FluxStackFramework {
 ```typescript
 export const loggerPlugin: Plugin = {
   name: "logger",
-  setup: (context) => ({
-    onRequest: ({ request, path }) => console.log(`${request.method} ${path}`),
-    onError: ({ error, request, path }) => console.error(`ERROR ${request.method} ${path}`)
-  })
+  setup: (context, app) => {
+    app.onRequest(({ request, path }) => console.log(`${request.method} ${path}`))
+    app.onError(({ error, request, path }) => console.error(`ERROR ${request.method} ${path}`))
+  }
+}
+```
+
+#### Swagger Plugin
+```typescript
+export const swaggerPlugin: Plugin = {
+  name: 'swagger',
+  setup(context: FluxStackContext, app: any) {
+    app.use(swagger({
+      path: '/swagger',
+      documentation: {
+        info: {
+          title: 'FluxStack API',
+          version: '1.0.0',
+          description: 'Modern full-stack TypeScript framework'
+        },
+        tags: [
+          { name: 'Health', description: 'Health check endpoints' },
+          { name: 'Users', description: 'User management endpoints' }
+        ]
+      }
+    }))
+  }
 }
 ```
 
@@ -109,58 +132,109 @@ export class UsersController {
 }
 ```
 
-#### Routes Pattern
+#### Routes Pattern com Swagger
 ```typescript
 // app/server/routes/users.routes.ts
 export const usersRoutes = new Elysia({ prefix: "/users" })
-  .get("/", () => UsersController.getUsers())
+  .get("/", () => UsersController.getUsers(), {
+    detail: {
+      tags: ['Users'],
+      summary: 'List Users',
+      description: 'Retrieve a list of all users in the system'
+    }
+  })
   .post("/", ({ body }) => UsersController.createUser(body), {
     body: t.Object({
       name: t.String({ minLength: 2 }),
       email: t.String({ format: "email" })
-    })
+    }),
+    detail: {
+      tags: ['Users'],
+      summary: 'Create User',
+      description: 'Create a new user with name and email'
+    }
   })
 ```
 
 #### Application Entry Point
 ```typescript
 // app/server/index.ts
-const app = new FluxStackFramework({ port: 3000 })
+const app = new FluxStackFramework({ 
+  port: 3000,
+  clientPath: "app/client"
+})
 
+// IMPORTANTE: Ordem de registro dos plugins
 app
+  .use(swaggerPlugin)  // Primeiro: Swagger
   .use(loggerPlugin)
   .use(vitePlugin)
-  .routes(apiRoutes)
+
+// Registrar rotas DEPOIS do Swagger
+app.routes(apiRoutes)
 
 app.listen()
 ```
 
 ### Client Architecture (`app/client/`)
 
-#### API Integration
+#### API Integration com Eden Treaty
 ```typescript
-// app/client/src/lib/api.ts
-export const api = {
-  api: {
-    users: {
-      get: async () => fetch(`${baseUrl}/api/users`).then(r => r.json()),
-      post: async (body: CreateUserRequest) => /* ... */
-    }
+// app/client/src/lib/eden-api.ts
+import { treaty } from '@elysiajs/eden'
+import type { App } from '../../../server/app'
+
+const client = treaty<App>(getBaseUrl())
+export const api = client.api
+
+// Wrapper para chamadas com tratamento de erro
+export const apiCall = async (promise: Promise<any>) => {
+  try {
+    const response = await promise
+    if (response.error) throw new Error(response.error)
+    return response.data || response
+  } catch (error) {
+    throw error
   }
 }
 ```
 
-#### Component Structure
+#### Component Structure - Interface Moderna com Tabs
 ```typescript
 // app/client/src/App.tsx
+type TabType = 'overview' | 'demo' | 'api-docs'
+
 function App() {
+  const [activeTab, setActiveTab] = useState<TabType>('overview')
   const [users, setUsers] = useState<User[]>([])
   
   useEffect(() => {
-    api.api.users.get().then(({ data }) => setUsers(data.users))
+    // Eden Treaty com type safety
+    apiCall(api.users.get()).then(data => setUsers(data.users))
   }, [])
   
-  return /* JSX */
+  const handleDelete = async (userId: number) => {
+    await apiCall(api.users[userId.toString()].delete())
+    setUsers(prev => prev.filter(user => user.id !== userId))
+  }
+  
+  return (
+    <div className="app">
+      <header className="header">
+        <nav className="header-tabs">
+          <button onClick={() => setActiveTab('overview')}>📋 Visão Geral</button>
+          <button onClick={() => setActiveTab('demo')}>🚀 Demo</button>
+          <button onClick={() => setActiveTab('api-docs')}>📚 API Docs</button>
+        </nav>
+      </header>
+      
+      <main>
+        {activeTab === 'overview' && <OverviewContent />}
+        {activeTab === 'demo' && <DemoContent users={users} onDelete={handleDelete} />}
+        {activeTab === 'api-docs' && <ApiDocsContent />}
+      </main>
+    </div>
+  )
 }
 ```
 
@@ -250,7 +324,7 @@ resolve: {
 ```typescript
 interface Plugin {
   name: string
-  setup: (context: FluxStackContext) => void
+  setup: (context: FluxStackContext, app: any) => void
 }
 ```
 
@@ -267,14 +341,21 @@ interface FluxStackContext {
 ```typescript
 export const customPlugin: Plugin = {
   name: "custom-plugin",
-  setup: (context) => {
+  setup: (context, app) => {
     console.log(`🔌 Plugin ${name} ativo em modo ${context.isDevelopment ? 'dev' : 'prod'}`)
-    // Sua lógica aqui
+    
+    // Agora você tem acesso ao app Elysia
+    app.onRequest(({ request }) => {
+      console.log(`Custom plugin intercepting: ${request.method}`)
+    })
   }
 }
 
-// Uso
-app.use(customPlugin)
+// Uso - ordem importa!
+app
+  .use(swaggerPlugin)  // Primeiro
+  .use(customPlugin)   // Depois
+  .use(loggerPlugin)
 ```
 
 ## Configuração (`config/fluxstack.config.ts`)

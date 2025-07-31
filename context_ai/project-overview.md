@@ -4,9 +4,11 @@
 
 FluxStack é um framework full-stack moderno em TypeScript que combina:
 - **Backend**: Elysia.js (web framework ultra-performático)
-- **Frontend**: React + Vite (desenvolvimento moderno)
+- **Frontend**: React 19 + Vite (desenvolvimento moderno)
 - **Runtime**: Bun (JavaScript runtime ultra-rápido)
 - **Type Safety**: Eden Treaty para APIs completamente tipadas
+- **Documentação**: Swagger UI integrado automaticamente
+- **Interface**: Design moderno com tabs integradas
 
 ## Estrutura do Projeto
 
@@ -78,10 +80,19 @@ flux create meu-projeto full    # Projeto completo
 # - Projeto pronto para 'bun run dev'
 ```
 
+### Instalação
+```bash
+git clone <repo>
+cd FluxStack
+bun install              # Instala backend + frontend via postinstall hook
+```
+
 ### Desenvolvimento
 ```bash
 # Full-stack (recomendado)
 bun run dev              # Frontend + Backend integrados (porta 3000)
+                        # URLs: http://localhost:3000 (app)
+                        #       http://localhost:3000/swagger (docs)
 
 # Separados (para equipes grandes)
 bun run dev:frontend     # Frontend apenas (porta 5173)
@@ -150,23 +161,46 @@ O framework suporta aliases para imports limpos:
 FluxStack usa Eden Treaty para APIs completamente tipadas:
 
 ```typescript
-// Backend: definir API
+// Backend: definir API com documentação Swagger
 export const usersRoutes = new Elysia({ prefix: "/users" })
-  .get("/", () => UsersController.getUsers())
-  .post("/", ({ body }) => UsersController.createUser(body))
+  .get("/", () => UsersController.getUsers(), {
+    detail: {
+      tags: ['Users'],
+      summary: 'List Users',
+      description: 'Retrieve a list of all users'
+    }
+  })
+  .post("/", ({ body }) => UsersController.createUser(body), {
+    body: t.Object({
+      name: t.String({ minLength: 2 }),
+      email: t.String({ format: "email" })
+    }),
+    detail: {
+      tags: ['Users'],
+      summary: 'Create User'
+    }
+  })
 
-// Frontend: usar API tipada
-const { data } = await api.api.users.get()  // Tipos automáticos!
+// Frontend: usar API tipada com Eden Treaty
+import { api, apiCall } from '@/lib/eden-api'
+
+const users = await apiCall(api.users.get())  // Tipos automáticos!
+const newUser = await apiCall(api.users.post({
+  name: "João Silva", 
+  email: "joao@example.com"
+}))
 ```
 
 ## Principais Tecnologias
 
 - **Elysia.js**: Web framework com performance excepcional
 - **Bun**: Runtime JavaScript ultra-rápido
-- **React**: Biblioteca de interface moderna
+- **React 19**: Biblioteca de interface moderna
 - **Vite**: Build tool com HMR instantâneo
 - **TypeScript**: Type safety completo
 - **Eden Treaty**: Cliente HTTP type-safe
+- **Swagger UI**: Documentação automática integrada
+- **Vitest**: Sistema de testes rápido e moderno
 
 ## Sistema de Testes
 
@@ -201,6 +235,22 @@ bun run test:coverage     # Relatório de cobertura
 - **Component Tests**: Renderização, interação com usuário
 - **Mocks**: APIs, dados de teste, fixtures
 
+## Estado Atual da Interface
+
+### Frontend Moderno (App.tsx)
+- **Interface em abas integradas**: Visão Geral, Demo, API Docs
+- **Tab Visão Geral**: Apresentação da stack com funcionalidades
+- **Tab Demo**: CRUD interativo de usuários usando Eden Treaty
+- **Tab API Docs**: Swagger UI integrado via iframe + links externos
+
+### Funcionalidades Implementadas
+- ✅ Type-safe API calls com Eden Treaty
+- ✅ Sistema de notificações (toasts) para feedback
+- ✅ Estados de carregamento e tratamento de erros
+- ✅ Interface responsiva moderna
+- ✅ Documentação automática Swagger
+- ✅ Script de instalação com postinstall hook
+
 ## Para IAs: Pontos Importantes
 
 1. **NÃO EDITAR** arquivos em `core/` - são do framework
@@ -209,5 +259,7 @@ bun run test:coverage     # Relatório de cobertura
 4. **Manter tipos compartilhados** em `app/shared/types.ts`
 5. **Seguir padrão MVC**: Controllers → Routes → Framework
 6. **Type safety**: Sempre usar Eden Treaty para APIs
-7. **Criar testes** para novas funcionalidades em `tests/`
-8. **Usar `flux create`** para novos projetos
+7. **Documentar APIs**: Adicionar tags Swagger em todas as rotas
+8. **Criar testes** para novas funcionalidades em `tests/`
+9. **Usar `bun install`** para instalação completa
+10. **URLs disponíveis**: `http://localhost:3000` (app), `/swagger` (docs)
