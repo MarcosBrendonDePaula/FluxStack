@@ -10,7 +10,7 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
-        target: process.env.API_URL || 'http://localhost:3001',
+        target: 'http://localhost:3001',
         changeOrigin: true,
         secure: false,
       }
@@ -31,7 +31,8 @@ export default defineConfig({
       '@/hooks': resolve(__dirname, './src/hooks'),
       '@/assets': resolve(__dirname, './src/assets'),
       '@/lib': resolve(__dirname, './src/lib'),
-      '@/types': resolve(__dirname, './src/types')
+      '@/types': resolve(__dirname, './src/types'),
+      'elysia': resolve(__dirname, '../../node_modules/elysia')
     }
   }
 })

@@ -27,7 +27,8 @@
       "@/types/*": ["./src/types/*"],
       "@/shared/*": ["../shared/*"],
       "@/core/*": ["../../core/*"],
-      "@/config/*": ["../../config/*"]
+      "@/config/*": ["../../config/*"],
+      "elysia": ["../../node_modules/elysia"]
     },
 
     /* Linting */
