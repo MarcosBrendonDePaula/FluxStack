@@ -33,7 +33,7 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest --watch",
-    "legacy:dev": "bun run app/server/index.ts"
+    "legacy:dev": "bun --watch app/server/index.ts"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.4",

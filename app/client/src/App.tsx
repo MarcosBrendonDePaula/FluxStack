@@ -73,7 +73,7 @@ function App() {
     
     try {
       // Chamar API de delete via Eden Treaty
-      await apiCall(api.users[userId.toString()].delete())
+      await apiCall(api.users({ id: userId.toString() }).delete())
       
       // Remover da lista local após sucesso da API
       setUsers(prev => prev.filter(user => user.id !== userId))

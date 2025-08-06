@@ -25,8 +25,10 @@
       "Bash(npm run dev:*)",
       "Bash(bun core/cli/index.ts dev)",
       "Bash(npm run build:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(bun:*)"
     ],
     "deny": []
-  }
+  },
+  "$schema": "https://json.schemastore.org/claude-code-settings.json"
 }

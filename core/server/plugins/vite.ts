@@ -1,48 +1,78 @@
-import { spawn } from "bun"
 import { join } from "path"
 import type { Plugin } from "../../types"
 
-let viteProcess: any = null
-
 export const vitePlugin: Plugin = {
   name: "vite",
-  setup: (context, app) => {
+  setup: async (context, app) => {
     if (!context.isDevelopment) return
     
-    // Iniciar Vite dev server
-    startViteServer(context)
+    // Verificar se Vite já está rodando
+    const vitePort = context.config.vitePort || 5173
+    const isViteRunning = await checkViteRunning(vitePort)
     
-    // Cleanup ao sair
-    process.on("SIGINT", () => {
-      stopViteServer()
-      process.exit(0)
-    })
+    if (isViteRunning) {
+      console.log(`   ✅ Vite já está rodando na porta ${vitePort}`)
+      console.log("   🔄 Backend hot reload independente do frontend")
+      return
+    }
+    
+    try {
+      console.log("   🎨 Iniciando Vite dev server integrado...")
+      
+      // Usar spawn para iniciar Vite como processo filho
+      const { spawn } = await import("child_process")
+      const viteProcess = spawn("bun", ["run", "dev"], {
+        cwd: join(process.cwd(), context.config.clientPath),
+        stdio: ["ignore", "pipe", "pipe"],
+        detached: false
+      })
+      
+      // Capturar output do Vite
+      viteProcess.stdout?.on('data', (data) => {
+        const output = data.toString()
+        if (output.includes("ready in") || output.includes("Local:")) {
+          console.log(`   ${output.trim()}`)
+        }
+      })
+      
+      viteProcess.stderr?.on('data', (data) => {
+        const error = data.toString()
+        // Filtrar saídas normais do Bun que não são erros reais
+        if (!error.includes("SIGTERM") && 
+            !error.includes("$ vite") && 
+            !error.trim().startsWith("$") && 
+            error.trim().length > 0) {
+          console.error(`   [Vite Error] ${error.trim()}`)
+        }
+      })
+      
+      console.log(`   ✅ Vite iniciado na porta ${vitePort}`)
+      console.log("   🔄 Hot reload independente entre frontend e backend")
+      
+      // Cleanup específico para este processo
+      const cleanup = () => {
+        if (viteProcess && !viteProcess.killed) {
+          viteProcess.kill('SIGTERM')
+        }
+      }
+      
+      process.on("SIGINT", cleanup)
+      process.on("SIGTERM", cleanup)
+      
+    } catch (error) {
+      console.error("   ❌ Erro ao inicializar Vite:", error.message)
+    }
   }
 }
 
-function startViteServer(context: any) {
-  viteProcess = spawn({
-    cmd: ["bun", "run", "dev"],
-    cwd: join(process.cwd(), context.config.clientPath),
-    stdout: "pipe",
-    stderr: "pipe",
-  })
-
-  viteProcess.stdout.readable?.pipeTo(new WritableStream({
-    write(chunk) {
-      const output = new TextDecoder().decode(chunk)
-      // Filtrar apenas mensagens importantes do Vite
-      if (output.includes("ready in") || output.includes("Local:") || output.includes("Network:")) {
-        console.log(`   ${output.trim()}`)
-      }
-    }
-  }))
-}
-
-function stopViteServer() {
-  if (viteProcess) {
-    viteProcess.kill()
-    viteProcess = null
+async function checkViteRunning(port: number): Promise<boolean> {
+  try {
+    const response = await fetch(`http://localhost:${port}`, {
+      signal: AbortSignal.timeout(1000)
+    })
+    return response.status >= 200 && response.status < 500
+  } catch (error) {
+    return false
   }
 }
 

@@ -12,7 +12,19 @@ switch (command) {
     console.log("🌐 Frontend + Backend: http://localhost:3000")
     console.log("📦 Starting services...")
     console.log()
-    await import("@/app/server")
+    
+    // Start with Bun watch for hot reload (usando servidor principal com plugin inteligente)
+    const { spawn } = await import("child_process")
+    const devProcess = spawn("bun", ["--watch", "app/server/index.ts"], {
+      stdio: "inherit",
+      cwd: process.cwd()
+    })
+    
+    // Handle process cleanup
+    process.on('SIGINT', () => {
+      devProcess.kill('SIGINT')
+      process.exit(0)
+    })
     break
 
   case "frontend":
@@ -20,7 +32,23 @@ switch (command) {
     break
 
   case "backend":
-    await import("@/app/server/backend-only")
+    console.log("⚡ FluxStack Backend Development")
+    console.log("🚀 API Server: http://localhost:3001")
+    console.log("📦 Starting backend with hot reload...")
+    console.log()
+    
+    // Start backend with Bun watch for hot reload
+    const { spawn: spawnBackend } = await import("child_process")
+    const backendProcess = spawnBackend("bun", ["--watch", "app/server/backend-only.ts"], {
+      stdio: "inherit",
+      cwd: process.cwd()
+    })
+    
+    // Handle process cleanup
+    process.on('SIGINT', () => {
+      backendProcess.kill('SIGINT')
+      process.exit(0)
+    })
     break
 
   case "build":

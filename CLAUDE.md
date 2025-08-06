@@ -171,20 +171,32 @@ bun install          # Instala backend + frontend via postinstall hook
 
 ### Comandos Principais
 ```bash
-bun run dev          # Inicia servidor de desenvolvimento
+bun run dev          # ✅ Full-stack: Backend (3000) + Vite integrado (5173)
+bun run dev:backend  # ✅ Backend apenas com hot reload (porta 3001)
+bun run dev:frontend # ✅ Frontend apenas com Vite (porta 5173)
 bun run build        # Build para produção
 bun run test         # Executa testes
 bun run test:ui      # Interface visual do Vitest
 bun run test:coverage # Relatório de cobertura
+bun run legacy:dev   # Comando direto com Bun watch (alternativo)
 ```
 
 ### Estrutura de Desenvolvimento
-- **Hot reload** automático no frontend via Vite
+- **Hot reload independente** - Backend e frontend se recarregam separadamente
+- **Vite integrado** - Frontend roda no mesmo processo do backend (portas diferentes)
+- **Detecção inteligente** - Não reinicia Vite se já estiver rodando
 - **Type safety** end-to-end com TypeScript
 - **API auto-documentada** com Swagger
 - **Testes integrados** com Vitest
 
 ## Mudanças Recentes Importantes
+
+### v1.3.1 - Hot Reload & Vite Integration Fix
+1. **Hot reload backend corrigido** - CLI agora usa `bun --watch` para recarregamento automático
+2. **Vite integrado ao backend** - Frontend e backend no mesmo processo, hot reload independente
+3. **Detecção inteligente** - Plugin verifica se Vite já está rodando antes de iniciar
+4. **Backend isolamento melhorado** - Comando `bun run dev:backend` com hot reload próprio
+5. **Comando legacy atualizado** - `bun run legacy:dev` agora usa watch mode
 
 ### v1.3.0 - Complete Integration & Install Fix
 1. **Swagger UI integrado** com iframe na aba API Docs
@@ -202,6 +214,9 @@ bun run test:coverage # Relatório de cobertura
 - ✅ Plugin system error -> interface atualizada
 - ✅ Swagger sem rotas -> ordem de registro corrigida
 - ✅ Script install com loop infinito -> mudado para postinstall hook
+- ✅ **Hot reload backend não funcionava** -> CLI agora usa `bun --watch`
+- ✅ **Teste deleteUser falhava** -> adicionado reset de dados entre testes
+- ✅ **Erros TypeScript na build** -> tipos corrigidos em routes e frontend
 
 ## Próximos Passos Sugeridos
 

@@ -7,6 +7,7 @@ describe('UsersController', () => {
     // Reset users array before each test
     // Note: In a real app, you'd want to use a test database
     // For now, we'll test the logic with the in-memory array
+    UsersController.resetForTesting()
   })
 
   describe('getUsers', () => {

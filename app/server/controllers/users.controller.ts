@@ -10,6 +10,14 @@ export class UsersController {
     return { users }
   }
 
+  static resetForTesting() {
+    users.splice(0, users.length)
+    users.push(
+      { id: 1, name: "João", email: "joao@example.com", createdAt: new Date() },
+      { id: 2, name: "Maria", email: "maria@example.com", createdAt: new Date() }
+    )
+  }
+
   static async createUser(userData: CreateUserRequest): Promise<UserResponse> {
     const existingUser = users.find(u => u.email === userData.email)
     
