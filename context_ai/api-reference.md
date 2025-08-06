@@ -1,6 +1,6 @@
-# FluxStack - API Reference
+# FluxStack v1.4.0 - API Reference Monorepo
 
-## Core Framework APIs
+## Core Framework APIs v1.4.0
 
 ### FluxStackFramework Class
 
@@ -85,7 +85,7 @@ interface PluginHandlers {
 }
 ```
 
-#### Built-in Plugins
+#### Built-in Plugins v1.4.0
 
 ##### Logger Plugin
 ```typescript
@@ -95,11 +95,27 @@ import { loggerPlugin } from '@/core/server'
 app.use(loggerPlugin)
 ```
 
-##### Vite Plugin
+##### ✨ Swagger Plugin (NOVO)
+```typescript
+import { swaggerPlugin } from '@/core/server'
+
+// ⚠️ IMPORTANTE: Registrar ANTES das rotas
+app.use(swaggerPlugin)  // Primeiro
+app.routes(apiRoutes)   // Depois
+
+// URLs disponíveis:
+// http://localhost:3000/swagger     - Swagger UI
+// http://localhost:3000/swagger/json - OpenAPI spec
+```
+
+##### ✨ Vite Plugin com Detecção Inteligente
 ```typescript
 import { vitePlugin } from '@/core/server'
 
-// Integração automática com Vite dev server
+// Integração inteligente:
+// - Detecta se Vite já está rodando
+// - Não reinicia processo existente
+// - Hot reload independente
 app.use(vitePlugin)
 ```
 
@@ -187,17 +203,41 @@ startFrontendOnly({
 })
 ```
 
-## Elysia Route Patterns
+## Elysia Route Patterns com Swagger v1.4.0
 
-### Basic Routes
+### Basic Routes com Documentation
 ```typescript
 import { Elysia } from "elysia"
 
 export const routes = new Elysia({ prefix: "/api" })
-  .get("/", () => ({ message: "Hello World" }))
-  .post("/users", ({ body }) => createUser(body))
-  .get("/users/:id", ({ params: { id } }) => getUserById(id))
-  .delete("/users/:id", ({ params: { id } }) => deleteUser(id))
+  .get("/", () => ({ message: "Hello World" }), {
+    detail: {
+      tags: ['General'],
+      summary: 'Welcome message',
+      description: 'Returns a welcome message from the API'
+    }
+  })
+  .post("/users", ({ body }) => createUser(body), {
+    detail: {
+      tags: ['Users'],
+      summary: 'Create User',
+      description: 'Create a new user in the system'
+    }
+  })
+  .get("/users/:id", ({ params: { id } }) => getUserById(id), {
+    detail: {
+      tags: ['Users'],
+      summary: 'Get User by ID',
+      description: 'Retrieve a specific user by their ID'
+    }
+  })
+  .delete("/users/:id", ({ params: { id } }) => deleteUser(id), {
+    detail: {
+      tags: ['Users'],
+      summary: 'Delete User',
+      description: 'Delete a user from the system'
+    }
+  })
 ```
 
 ### Route with Validation
@@ -223,7 +263,7 @@ export const routes = new Elysia()
   })
 ```
 
-### Route with Error Handling
+### Route with Error Handling v1.4.0
 ```typescript
 export const routes = new Elysia()
   .post("/users", async ({ body, set }) => {
@@ -234,14 +274,20 @@ export const routes = new Elysia()
       return { 
         success: false, 
         error: "Validation failed",
-        details: error.message 
+        // ✨ CORRIGIDO: Type-safe error handling
+        details: error instanceof Error ? error.message : 'Unknown error'
       }
     }
   }, {
     body: t.Object({
-      name: t.String(),
-      email: t.String()
+      name: t.String({ minLength: 2 }),
+      email: t.String({ format: "email" })
     }),
+    detail: {
+      tags: ['Users'],
+      summary: 'Create User with Validation',
+      description: 'Create a new user with proper validation and error handling'
+    },
     error({ code, error, set }) {
       switch (code) {
         case 'VALIDATION':
@@ -330,71 +376,121 @@ NODE_ENV=production
 PORT=3000
 ```
 
-## CLI Commands Reference
+## CLI Commands Reference v1.4.0
 
-### Development Commands
+### 📦 Monorepo Installation
+```bash
+# ✨ Unified installation
+bun install                # Install ALL dependencies (backend + frontend)
+
+# ✨ Add libraries (works for both!)
+bun add <library>          # Available in frontend AND backend
+bun add -d <dev-library>   # Dev dependency for both
+
+# Examples:
+bun add zod                # ✅ Available in frontend AND backend
+bun add react-router-dom   # ✅ Frontend (types in backend)
+bun add prisma             # ✅ Backend (types in frontend)
+```
+
+### ⚡ Development Commands with Independent Hot Reload
 ```bash
 # Framework CLI
 flux create <name>         # Create new FluxStack project
-flux dev                   # Full-stack development
-flux frontend              # Frontend only
-flux backend               # Backend only
+flux dev                   # ✨ Full-stack: Backend:3000 + Frontend integrated:5173
+flux frontend              # ✨ Frontend only: Vite:5173
+flux backend               # ✨ Backend only: API:3001
 flux build                 # Build all
 flux build:frontend        # Build frontend only
 flux build:backend         # Build backend only
 flux start                 # Production server
 
-# NPM Scripts
-bun run dev                # Same as flux dev
-bun run dev:frontend       # Same as flux frontend
-bun run dev:backend        # Same as flux backend
-bun run build              # Same as flux build
-bun run start              # Same as flux start
+# NPM Scripts (recommended)
+bun run dev                # ✨ Independent hot reload for backend & frontend
+bun run dev:frontend       # Vite dev server pure (5173)
+bun run dev:backend        # Backend standalone (3001)
+bun run build              # Unified build system
+bun run start              # Production server
+bun run legacy:dev         # Direct Bun watch mode
 
-# Testing Commands
-bun run test               # Run tests in watch mode
-bun run test:run           # Run tests once
-bun run test:ui            # Open Vitest UI
-bun run test:coverage      # Generate coverage report
-bun run test:watch         # Run tests in watch mode (explicit)
+# ✨ Testing Commands (30 tests included)
+bun run test               # Watch mode (development)
+bun run test:run          # Run once (CI/CD)
+bun run test:ui           # Vitest visual interface
+bun run test:coverage     # Coverage report
 ```
 
-### Health Check Endpoints
+### Health Check Endpoints v1.4.0
 
 ```bash
-# Full-stack mode
+# ✨ Full-stack mode (integrated)
 curl http://localhost:3000/api/health
 
-# Backend only mode
+# ✨ Backend standalone mode
 curl http://localhost:3001/api/health
 
-# Expected response
+# ✨ Expected response (enhanced)
 {
   "status": "ok",
-  "timestamp": "2024-01-01T12:00:00.000Z",
-  "uptime": 123.456
+  "timestamp": "2025-01-01T12:00:00.000Z",
+  "uptime": 123.456,
+  "version": "1.4.0",
+  "environment": "development"
 }
 ```
 
-## Path Aliases Reference
+### ✨ New API Endpoints v1.4.0
 
-### Root Level Aliases
-```typescript
-"@/core/*"     // ./core/*
-"@/app/*"      // ./app/*
-"@/config/*"   // ./config/*
-"@/shared/*"   // ./app/shared/*
+```bash
+# Swagger Documentation
+curl http://localhost:3000/swagger/json     # OpenAPI spec
+open http://localhost:3000/swagger          # Swagger UI
+
+# API Root
+curl http://localhost:3000/api              # Welcome message
+
+# Users CRUD (example)
+curl http://localhost:3000/api/users        # List users
+curl -X POST http://localhost:3000/api/users \
+  -H "Content-Type: application/json" \
+  -d '{"name": "João", "email": "joao@example.com"}'
 ```
 
-### Client Level Aliases
+## Path Aliases Reference v1.4.0 (Unified)
+
+### ✨ Root Level Aliases (Available Everywhere)
 ```typescript
-"@/*"              // ./src/*
-"@/components/*"   // ./src/components/*
-"@/utils/*"        // ./src/utils/*
-"@/hooks/*"        // ./src/hooks/*
-"@/assets/*"       // ./src/assets/*
-"@/lib/*"          // ./src/lib/*
-"@/types/*"        // ./src/types/*
+// Framework level - available in backend AND frontend
+"@/core/*"     // ./core/*              (framework core)
+"@/app/*"      // ./app/*               (your application)
+"@/config/*"   // ./config/*            (configurations)
+"@/shared/*"   // ./app/shared/*        (shared types)
+```
+
+### ✨ Frontend Level Aliases (Within app/client/src)
+```typescript
+// Frontend specific - within React components
+"@/*"              // ./app/client/src/*
+"@/components/*"   // ./app/client/src/components/*
+"@/lib/*"          // ./app/client/src/lib/*
+"@/hooks/*"        // ./app/client/src/hooks/*
+"@/types/*"        // ./app/client/src/types/*
+"@/assets/*"       // ./app/client/src/assets/*
+```
+
+### ✨ Cross-System Access (Monorepo Magic)
+```typescript
+// ✅ Frontend accessing backend types
+import type { User } from '@/app/server/types'
+import type { CreateUserRequest } from '@/shared/types'
+
+// ✅ Backend using shared types
+import type { User, CreateUserRequest } from '@/shared/types'
+
+// ✅ Example usage
+// app/client/src/components/UserList.tsx
+import { api, apiCall } from '@/lib/eden-api'
+import type { User } from '@/shared/types'  // ✨ Automatic sharing!
 ```
 
 ## Testing System API
@@ -417,13 +513,18 @@ export default defineConfig({
 })
 ```
 
-### Test Structure
+### Test Structure v1.4.0 (With Isolation)
 ```typescript
-// Unit Test Example
-import { describe, it, expect } from 'vitest'
+// Unit Test Example with Data Isolation
+import { describe, it, expect, beforeEach } from 'vitest'
 import { UsersController } from '@/app/server/controllers/users.controller'
 
 describe('UsersController', () => {
+  // ✨ NOVO: Reset data before each test
+  beforeEach(() => {
+    UsersController.resetForTesting()
+  })
+
   it('should create user successfully', async () => {
     const result = await UsersController.createUser({
       name: 'Test User',
@@ -432,6 +533,18 @@ describe('UsersController', () => {
     
     expect(result.success).toBe(true)
     expect(result.user?.name).toBe('Test User')
+  })
+
+  it('should delete user successfully', async () => {
+    // Create user first
+    await UsersController.createUser({
+      name: 'Delete Me',
+      email: 'delete@example.com'
+    })
+    
+    // Then delete
+    const result = await UsersController.deleteUser(3) // New ID
+    expect(result.success).toBe(true)
   })
 })
 ```
@@ -516,54 +629,296 @@ interface ListResponse<T> {
 
 ## File Structure Templates
 
-### Controller Template
+### Controller Template v1.4.0 (With Test Support)
 ```typescript
 // app/server/controllers/entity.controller.ts
-import type { Entity, CreateEntityRequest, EntityResponse } from '../types'
+import type { Entity, CreateEntityRequest, EntityResponse } from '@/shared/types' // ✨ Unified import
+
+// ✨ In-memory storage (replace with DB in production)
+let entities: Entity[] = []
 
 export class EntityController {
   static async getEntities() {
-    // Implementation
+    return { entities }
   }
 
   static async createEntity(data: CreateEntityRequest): Promise<EntityResponse> {
-    // Implementation
+    const newEntity: Entity = {
+      id: Date.now(),
+      ...data,
+      createdAt: new Date()
+    }
+
+    entities.push(newEntity)
+
+    return {
+      success: true,
+      entity: newEntity
+    }
   }
 
   static async getEntityById(id: number) {
-    // Implementation
+    const entity = entities.find(e => e.id === id)
+    return entity ? { entity } : null
   }
 
   static async updateEntity(id: number, data: Partial<Entity>): Promise<EntityResponse> {
-    // Implementation
+    const index = entities.findIndex(e => e.id === id)
+    
+    if (index === -1) {
+      return {
+        success: false,
+        message: "Entity não encontrada"
+      }
+    }
+
+    entities[index] = { ...entities[index], ...data }
+    
+    return {
+      success: true,
+      entity: entities[index],
+      message: "Entity atualizada com sucesso"
+    }
   }
 
   static async deleteEntity(id: number): Promise<EntityResponse> {
-    // Implementation
+    const index = entities.findIndex(e => e.id === id)
+    
+    if (index === -1) {
+      return {
+        success: false,
+        message: "Entity não encontrada"
+      }
+    }
+
+    const deletedEntity = entities.splice(index, 1)[0]
+    
+    return {
+      success: true,
+      entity: deletedEntity,
+      message: "Entity deletada com sucesso"
+    }
+  }
+
+  // ✨ NOVO: Method for test isolation
+  static resetForTesting() {
+    entities.splice(0, entities.length)
+    // Add default test data if needed
+    entities.push(
+      {
+        id: 1,
+        name: "Test Entity 1",
+        createdAt: new Date()
+      },
+      {
+        id: 2,
+        name: "Test Entity 2",
+        createdAt: new Date()
+      }
+    )
   }
 }
 ```
 
-### Route Template
+### Route Template v1.4.0 (With Swagger Docs)
 ```typescript
 // app/server/routes/entity.routes.ts
 import { Elysia, t } from "elysia"
 import { EntityController } from "../controllers/entity.controller"
 
 export const entityRoutes = new Elysia({ prefix: "/entities" })
-  .get("/", () => EntityController.getEntities())
-  .get("/:id", ({ params: { id } }) => EntityController.getEntityById(parseInt(id)))
-  .post("/", ({ body }) => EntityController.createEntity(body), {
-    body: t.Object({
-      // Define schema
-    })
+  .get("/", () => EntityController.getEntities(), {
+    detail: {
+      tags: ['Entities'],
+      summary: 'List Entities',
+      description: 'Retrieve a list of all entities in the system'
+    }
   })
-  .put("/:id", ({ params: { id }, body }) => 
-    EntityController.updateEntity(parseInt(id), body)
-  )
+  
+  .get("/:id", ({ params: { id } }) => {
+    const result = EntityController.getEntityById(parseInt(id))
+    if (!result) {
+      return { error: "Entity não encontrada" }
+    }
+    return result
+  }, {
+    params: t.Object({
+      id: t.String()
+    }),
+    detail: {
+      tags: ['Entities'],
+      summary: 'Get Entity by ID',
+      description: 'Retrieve a specific entity by its ID'
+    }
+  })
+  
+  .post("/", async ({ body, set }) => {
+    try {
+      return await EntityController.createEntity(body)
+    } catch (error) {
+      set.status = 400
+      return {
+        success: false,
+        error: "Dados inválidos",
+        details: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  }, {
+    body: t.Object({
+      name: t.String({ minLength: 2 }),
+      // Add other required fields
+    }),
+    detail: {
+      tags: ['Entities'],
+      summary: 'Create Entity',
+      description: 'Create a new entity with validation'
+    }
+  })
+  
+  .put("/:id", async ({ params: { id }, body, set }) => {
+    try {
+      return await EntityController.updateEntity(parseInt(id), body)
+    } catch (error) {
+      set.status = 400
+      return {
+        success: false,
+        error: "Erro ao atualizar entity",
+        details: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  }, {
+    params: t.Object({
+      id: t.String()
+    }),
+    body: t.Object({
+      name: t.Optional(t.String({ minLength: 2 }))
+      // Add other optional fields
+    }),
+    detail: {
+      tags: ['Entities'],
+      summary: 'Update Entity',
+      description: 'Update an existing entity by ID'
+    }
+  })
+  
   .delete("/:id", ({ params: { id } }) => 
-    EntityController.deleteEntity(parseInt(id))
-  )
+    EntityController.deleteEntity(parseInt(id)), {
+    params: t.Object({
+      id: t.String()
+    }),
+    detail: {
+      tags: ['Entities'],
+      summary: 'Delete Entity',
+      description: 'Delete an entity by its ID'
+    }
+  })
 ```
 
-Esta referência cobre todas as APIs principais do FluxStack para desenvolvimento eficiente.
+## ✨ Eden Treaty Type-Safe Client API v1.4.0
+
+### Eden Treaty Setup
+```typescript
+// app/client/src/lib/eden-api.ts
+import { treaty } from '@elysiajs/eden'
+import type { App } from '@/app/server/app' // ✨ Import server types
+
+function getBaseUrl() {
+  if (import.meta.env.DEV) {
+    return 'http://localhost:3000'
+  }
+  return window.location.origin
+}
+
+// ✨ Type-safe client
+const client = treaty<App>(getBaseUrl())
+export const api = client.api
+
+// ✨ Error handling wrapper
+export const apiCall = async (promise: Promise<any>) => {
+  try {
+    const response = await promise
+    if (response.error) throw new Error(response.error)
+    return response.data || response
+  } catch (error) {
+    throw error
+  }
+}
+```
+
+### Eden Treaty Usage Examples
+```typescript
+// ✨ Completely type-safe API calls!
+
+// List entities
+const entities = await apiCall(api.entities.get())
+
+// Create entity (with validation)
+const newEntity = await apiCall(api.entities.post({
+  name: "My Entity",          // ✅ Type-safe
+  description: "Test"         // ✅ Validated automatically
+}))
+
+// Get by ID
+const entity = await apiCall(api.entities({ id: '1' }).get())
+
+// Update entity
+const updated = await apiCall(api.entities({ id: '1' }).put({
+  name: "Updated Name"
+}))
+
+// Delete entity
+await apiCall(api.entities({ id: '1' }).delete())
+
+// ✨ All with full TypeScript autocomplete and validation!
+```
+
+## 🌐 Environment Variables v1.4.0
+
+### Development (.env)
+```bash
+# Framework
+NODE_ENV=development
+FRAMEWORK_VERSION=1.4.0
+
+# Ports
+FRONTEND_PORT=5173          # Vite dev server
+BACKEND_PORT=3000           # Main server (full-stack)
+BACKEND_STANDALONE_PORT=3001 # Backend-only server
+
+# API Configuration
+API_URL=http://localhost:3000
+API_PREFIX=/api
+
+# Vite Configuration
+VITE_API_URL=http://localhost:3000
+```
+
+### Production (.env.production)
+```bash
+NODE_ENV=production
+PORT=3000
+API_URL=https://yourdomain.com
+VITE_API_URL=https://yourdomain.com
+```
+
+## 📊 Performance Metrics v1.4.0
+
+### Development Performance
+```bash
+# Installation speed (monorepo)
+bun install                 # ~3-15s (vs ~30-60s dual package.json)
+
+# Startup times
+bun run dev                 # ~1-2s full-stack startup
+
+# Hot reload performance
+# Backend change: ~500ms (Bun --watch)
+# Frontend change: ~100ms (Vite HMR)
+
+# Build performance
+bun run build              # ~10-30s total
+bun run build:frontend     # ~5-20s (Vite + React 19)
+bun run build:backend      # ~2-5s (Bun native)
+```
+
+Esta referência v1.4.0 cobre todas as APIs principais do FluxStack com foco na **arquitetura monorepo unificada**, **type-safety end-to-end** e **hot reload independente** para desenvolvimento eficiente e moderno! ⚡
