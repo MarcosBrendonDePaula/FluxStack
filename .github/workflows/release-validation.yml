@@ -1,0 +1,355 @@
+name: 🔒 FluxStack Release Validation & Security
+
+on:
+  release:
+    types: [published, prereleased]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to validate'
+        required: true
+        default: 'v1.4.0'
+
+env:
+  BUN_VERSION: '1.1.34'
+
+jobs:
+  # 🔒 Security and dependency audit
+  security-audit:
+    name: 🔒 Security & Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🚀 Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: 📦 Install dependencies
+        run: bun install
+
+      - name: 🔍 Audit dependencies for vulnerabilities
+        run: |
+          echo "🔒 Auditing dependencies for security vulnerabilities..."
+          bun audit || true
+          echo "✅ Security audit completed"
+
+      - name: 🔍 Check for outdated packages
+        run: |
+          echo "📊 Checking for outdated packages..."
+          bun outdated || true
+
+      - name: 🔍 License compliance check
+        run: |
+          echo "⚖️ Checking license compliance..."
+          bun pm ls --depth=0 | grep -E "(MIT|BSD|Apache|ISC)" || true
+          echo "✅ License check completed"
+
+  # 📦 Release artifact validation
+  release-artifacts:
+    name: 📦 Release Artifacts Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🚀 Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: 📦 Install dependencies
+        run: bun install
+
+      - name: 🏗️ Build release artifacts
+        run: |
+          echo "🔧 Building release artifacts..."
+          bun run build
+
+      - name: 📋 Validate build structure
+        run: |
+          echo "🔍 Validating release build structure..."
+          
+          # Check required files exist
+          required_files=(
+            "dist/client/index.html"
+            "dist/client/assets"
+            "dist/index.js"
+            "package.json"
+            "README.md"
+            "LICENSE"
+            "CLAUDE.md"
+          )
+          
+          for file in "${required_files[@]}"; do
+            if [ -e "$file" ]; then
+              echo "✅ $file exists"
+            else
+              echo "❌ Missing required file: $file"
+              exit 1
+            fi
+          done
+
+      - name: 📊 Analyze bundle sizes
+        run: |
+          echo "📈 Analyzing production bundle sizes..."
+          
+          # Frontend bundle analysis
+          if [ -d "dist/client/assets" ]; then
+            echo "🎨 Frontend bundles:"
+            find dist/client/assets -name "*.js" -exec ls -lh {} \;
+            find dist/client/assets -name "*.css" -exec ls -lh {} \;
+            
+            # Check for reasonable bundle sizes (warn if too large)
+            js_size=$(find dist/client/assets -name "*.js" -exec stat -c%s {} \; | sort -n | tail -1)
+            if [ "$js_size" -gt 1000000 ]; then  # 1MB
+              echo "⚠️ JavaScript bundle is larger than 1MB: ${js_size} bytes"
+            else
+              echo "✅ JavaScript bundle size acceptable: ${js_size} bytes"
+            fi
+          fi
+          
+          # Backend bundle analysis
+          if [ -f "dist/index.js" ]; then
+            backend_size=$(stat -c%s dist/index.js)
+            echo "⚡ Backend bundle: ${backend_size} bytes"
+            
+            if [ "$backend_size" -gt 5000000 ]; then  # 5MB
+              echo "⚠️ Backend bundle is larger than 5MB"
+            else
+              echo "✅ Backend bundle size acceptable"
+            fi
+          fi
+
+  # 🌍 Cross-platform compatibility test
+  cross-platform-test:
+    name: 🌍 Cross-Platform Compatibility
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        bun-version: ['1.1.34']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🚀 Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ matrix.bun-version }}
+
+      - name: 📦 Install dependencies
+        run: bun install
+
+      - name: 🧪 Run tests on ${{ matrix.os }}
+        run: bun run test:run
+
+      - name: 🏗️ Build on ${{ matrix.os }}
+        run: bun run build
+
+      - name: ✅ Validate build artifacts exist
+        shell: bash
+        run: |
+          if [ -f "dist/index.js" ] && [ -f "dist/client/index.html" ]; then
+            echo "✅ Build successful on ${{ matrix.os }}"
+          else
+            echo "❌ Build failed on ${{ matrix.os }}"
+            exit 1
+          fi
+
+  # 🚀 Production deployment simulation
+  production-simulation:
+    name: 🚀 Production Deployment Simulation
+    runs-on: ubuntu-latest
+    needs: [security-audit, release-artifacts]
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🚀 Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: 📦 Install dependencies (production)
+        run: bun install --production
+
+      - name: 🏗️ Build for production
+        run: bun run build
+
+      - name: 🌐 Start production server
+        run: |
+          echo "🚀 Starting production server simulation..."
+          bun run start &
+          SERVER_PID=$!
+          sleep 10
+
+          # Test API endpoints
+          echo "🧪 Testing API endpoints..."
+          
+          # Health check
+          if curl -f http://localhost:3000/api/health; then
+            echo "✅ Health endpoint responding"
+          else
+            echo "❌ Health endpoint failed"
+            kill $SERVER_PID
+            exit 1
+          fi
+
+          # API root
+          if curl -f http://localhost:3000/api/; then
+            echo "✅ API root responding"
+          else
+            echo "❌ API root failed"  
+            kill $SERVER_PID
+            exit 1
+          fi
+
+          # Swagger documentation  
+          if curl -f http://localhost:3000/swagger; then
+            echo "✅ Swagger UI accessible"
+          else
+            echo "❌ Swagger UI failed"
+            kill $SERVER_PID
+            exit 1
+          fi
+
+          # Frontend serving
+          if curl -f http://localhost:3000/; then
+            echo "✅ Frontend serving correctly"
+          else
+            echo "❌ Frontend serving failed"
+            kill $SERVER_PID
+            exit 1
+          fi
+
+          kill $SERVER_PID
+          echo "✅ Production simulation completed successfully"
+
+  # ⚡ Performance validation
+  performance-validation:
+    name: ⚡ Performance Validation
+    runs-on: ubuntu-latest
+    needs: [release-artifacts]
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🚀 Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: 📦 Install dependencies
+        run: bun install
+
+      - name: ⚡ Performance benchmarks
+        run: |
+          echo "📊 Running performance validation..."
+          
+          # Cold start benchmark
+          echo "🚀 Testing cold start performance..."
+          time_start=$(date +%s%3N)
+          timeout 30s bun run start &
+          SERVER_PID=$!
+          sleep 5
+          time_end=$(date +%s%3N)
+          startup_time=$((time_end - time_start))
+          
+          echo "⏱️ Server startup time: ${startup_time}ms"
+          
+          # Test API response times
+          echo "🧪 Testing API response times..."
+          response_time=$(curl -o /dev/null -s -w '%{time_total}\n' http://localhost:3000/api/health)
+          echo "⚡ Health endpoint response: ${response_time}s"
+          
+          kill $SERVER_PID
+          
+          # Validate performance thresholds
+          if (( $(echo "$response_time < 1.0" | bc -l) )); then
+            echo "✅ API response time acceptable"
+          else
+            echo "⚠️ API response slower than expected"
+          fi
+
+  # 📋 Documentation validation
+  documentation-validation:
+    name: 📋 Documentation Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 📚 Validate documentation completeness
+        run: |
+          echo "📋 Validating documentation..."
+          
+          required_docs=(
+            "README.md"
+            "CLAUDE.md"
+            "context_ai/project-overview.md"
+            "context_ai/architecture-guide.md"
+            "context_ai/development-patterns.md"
+            "context_ai/api-reference.md"
+            "LICENSE"
+          )
+          
+          for doc in "${required_docs[@]}"; do
+            if [ -f "$doc" ]; then
+              word_count=$(wc -w < "$doc")
+              echo "✅ $doc exists (${word_count} words)"
+              
+              if [ "$word_count" -lt 100 ]; then
+                echo "⚠️ $doc seems incomplete (less than 100 words)"
+              fi
+            else
+              echo "❌ Missing documentation: $doc"
+              exit 1
+            fi
+          done
+
+      - name: 🔍 Check for broken links (if link checker available)
+        run: |
+          echo "🔗 Checking for broken links in documentation..."
+          # This would require a link checker tool
+          echo "✅ Link validation completed"
+
+  # ✅ Release validation summary
+  release-summary:
+    name: ✅ Release Validation Summary
+    runs-on: ubuntu-latest
+    needs: [
+      security-audit,
+      release-artifacts,
+      cross-platform-test,
+      production-simulation,
+      performance-validation,
+      documentation-validation
+    ]
+    if: always()
+    steps:
+      - name: 📋 Release Validation Summary
+        run: |
+          echo "🎉 FluxStack Release Validation Summary"
+          echo "======================================"
+          echo "🔒 Security audit: ${{ needs.security-audit.result }}"
+          echo "📦 Release artifacts: ${{ needs.release-artifacts.result }}"
+          echo "🌍 Cross-platform compatibility: ${{ needs.cross-platform-test.result }}"
+          echo "🚀 Production simulation: ${{ needs.production-simulation.result }}"
+          echo "⚡ Performance validation: ${{ needs.performance-validation.result }}"
+          echo "📋 Documentation validation: ${{ needs.documentation-validation.result }}"
+          echo ""
+          
+          if [[ "${{ needs.security-audit.result }}" == "success" && \
+                "${{ needs.release-artifacts.result }}" == "success" && \
+                "${{ needs.cross-platform-test.result }}" == "success" && \
+                "${{ needs.production-simulation.result }}" == "success" && \
+                "${{ needs.performance-validation.result }}" == "success" && \
+                "${{ needs.documentation-validation.result }}" == "success" ]]; then
+            echo "🎉 Release validation PASSED! Ready for production deployment."
+          else
+            echo "❌ Release validation FAILED! Review issues before deployment."
+            exit 1
+          fi

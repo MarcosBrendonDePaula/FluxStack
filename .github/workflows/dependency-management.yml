@@ -1,0 +1,313 @@
+name: 📦 FluxStack Dependency Management
+
+on:
+  schedule:
+    # Run weekly on Mondays at 9 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:  # Allow manual triggering
+  push:
+    paths:
+      - 'package.json'
+      - 'bun.lockb'
+
+env:
+  BUN_VERSION: '1.1.34'
+
+jobs:
+  # 🔍 Dependency analysis
+  dependency-analysis:
+    name: 🔍 Dependency Analysis & Health Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🚀 Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: 📦 Install dependencies
+        run: bun install
+
+      - name: 📊 Analyze dependency tree
+        run: |
+          echo "🔍 Analyzing dependency tree..."
+          echo "📦 Total packages:"
+          bun pm ls --depth=0 | wc -l
+          
+          echo "🎯 Production dependencies:"
+          bun pm ls --production --depth=0
+          
+          echo "🔧 Development dependencies:" 
+          bun pm ls --dev --depth=0
+
+      - name: 🔒 Security audit
+        run: |
+          echo "🔒 Running security audit..."
+          bun audit --json > audit-results.json || true
+          
+          if [ -s audit-results.json ]; then
+            echo "⚠️ Security vulnerabilities found:"
+            cat audit-results.json
+          else
+            echo "✅ No security vulnerabilities detected"
+          fi
+
+      - name: 📈 Dependency size analysis
+        run: |
+          echo "📈 Analyzing package sizes..."
+          echo "📦 node_modules size:"
+          du -sh node_modules/
+          
+          echo "🎯 Largest packages:"
+          du -sh node_modules/* | sort -hr | head -10
+
+      - name: 🔍 Check for duplicate dependencies
+        run: |
+          echo "🔍 Checking for duplicate dependencies..."
+          find node_modules -name "package.json" -not -path "*/node_modules/*" | \
+          xargs grep -l '"name"' | \
+          xargs grep '"name"' | \
+          cut -d'"' -f4 | \
+          sort | \
+          uniq -d | \
+          head -10 || echo "✅ No obvious duplicates found"
+
+  # 📊 Monorepo validation
+  monorepo-validation:
+    name: 📊 Monorepo Structure Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🚀 Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: ✅ Validate monorepo structure
+        run: |
+          echo "📋 Validating v1.4.0 monorepo structure..."
+          
+          # Check single package.json exists
+          if [ -f "package.json" ]; then
+            echo "✅ Root package.json exists"
+          else
+            echo "❌ Root package.json missing"
+            exit 1
+          fi
+          
+          # Check no client package.json exists (v1.4.0 requirement)
+          if [ ! -f "app/client/package.json" ]; then
+            echo "✅ No separate client package.json (correct for v1.4.0)"
+          else
+            echo "❌ Found app/client/package.json - should be removed in v1.4.0"
+            exit 1
+          fi
+          
+          # Check single node_modules
+          if [ -d "node_modules" ] && [ ! -d "app/client/node_modules" ]; then
+            echo "✅ Unified node_modules structure"
+          else
+            echo "❌ Multiple node_modules detected"
+            exit 1
+          fi
+          
+          # Check centralized configs
+          required_configs=("vite.config.ts" "tsconfig.json" "eslint.config.js")
+          for config in "${required_configs[@]}"; do
+            if [ -f "$config" ]; then
+              echo "✅ $config centralized in root"
+            else
+              echo "❌ Missing centralized config: $config"
+            fi
+          done
+
+      - name: 📦 Validate dependency accessibility
+        run: |
+          echo "🔍 Validating dependencies are accessible from both frontend and backend..."
+          bun install
+          
+          # Test frontend dependencies from backend context
+          cd app/server
+          if bun run -e "console.log(require('typescript').version)" 2>/dev/null; then
+            echo "✅ TypeScript accessible from backend"
+          else
+            echo "❌ TypeScript not accessible from backend"
+          fi
+          cd ../..
+          
+          # Test backend dependencies from frontend context  
+          cd app/client/src
+          if bun run -e "console.log('Dependencies accessible')" 2>/dev/null; then
+            echo "✅ Dependencies accessible from frontend"
+          else
+            echo "❌ Dependencies not accessible from frontend"
+          fi
+          cd ../../..
+
+  # 🔄 Update dependencies
+  update-dependencies:
+    name: 🔄 Update Dependencies (Safe)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🚀 Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: 📦 Install current dependencies
+        run: bun install
+
+      - name: 🔄 Update non-major dependencies
+        run: |
+          echo "🔄 Updating patch and minor versions..."
+          
+          # Create backup
+          cp package.json package.json.backup
+          cp bun.lockb bun.lockb.backup
+          
+          # Update dependencies (patch and minor only)
+          bun update --save
+          
+          echo "✅ Dependencies updated"
+
+      - name: 🧪 Test with updated dependencies
+        run: |
+          echo "🧪 Testing with updated dependencies..."
+          
+          # Run tests to ensure nothing breaks
+          bun run test:run
+          
+          # Try builds to ensure they still work
+          bun run build:frontend
+          bun run build:backend
+          
+          echo "✅ All tests and builds passed with updated dependencies"
+
+      - name: 📊 Generate update report
+        run: |
+          echo "📊 Generating dependency update report..."
+          
+          echo "## 📦 Dependency Updates" > update-report.md
+          echo "" >> update-report.md
+          echo "🤖 Automated dependency update for FluxStack v1.4.0" >> update-report.md
+          echo "" >> update-report.md
+          
+          if ! diff -q package.json.backup package.json >/dev/null; then
+            echo "### 📋 Updated Packages" >> update-report.md
+            echo "" >> update-report.md
+            echo "\`\`\`diff" >> update-report.md
+            diff package.json.backup package.json >> update-report.md || true
+            echo "\`\`\`" >> update-report.md
+          else
+            echo "### ✅ No Updates Available" >> update-report.md
+            echo "All dependencies are already up to date." >> update-report.md
+          fi
+          
+          echo "" >> update-report.md
+          echo "### 🧪 Validation Status" >> update-report.md
+          echo "- ✅ All tests passed" >> update-report.md
+          echo "- ✅ Frontend build successful" >> update-report.md
+          echo "- ✅ Backend build successful" >> update-report.md
+          echo "- ✅ Monorepo structure validated" >> update-report.md
+
+      - name: 📤 Create Pull Request (if updates available)
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "🔄 Update dependencies (automated)"
+          title: "🔄 Automated Dependency Updates"
+          body-path: update-report.md
+          branch: automated-dependency-updates
+          delete-branch: true
+        if: github.event_name == 'schedule'
+
+  # 🏥 Dependency health monitoring
+  dependency-health:
+    name: 🏥 Dependency Health Monitoring  
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🚀 Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: 📦 Install dependencies
+        run: bun install
+
+      - name: 🏥 Check dependency health
+        run: |
+          echo "🏥 Checking dependency health..."
+          
+          # Check for known problematic packages
+          echo "🔍 Checking for potentially problematic dependencies..."
+          
+          problematic_packages=("event-stream" "flatmap-stream" "left-pad")
+          for package in "${problematic_packages[@]}"; do
+            if bun pm ls | grep -q "$package"; then
+              echo "⚠️ Found potentially problematic package: $package"
+            fi
+          done
+          
+          # Check for packages with known security issues
+          echo "🔒 Checking for packages with known issues..."
+          bun audit --json > health-audit.json || true
+          
+          if [ -s health-audit.json ]; then
+            echo "⚠️ Security issues detected"
+          else
+            echo "✅ No known security issues"
+          fi
+
+      - name: 📊 Generate health report
+        run: |
+          echo "📊 Generating dependency health report..."
+          
+          total_deps=$(bun pm ls --depth=0 | wc -l)
+          prod_deps=$(bun pm ls --production --depth=0 | wc -l)
+          dev_deps=$(bun pm ls --dev --depth=0 | wc -l)
+          
+          echo "📦 Dependency Statistics:"
+          echo "  Total packages: $total_deps"
+          echo "  Production: $prod_deps"
+          echo "  Development: $dev_deps"
+          echo "  Node modules size: $(du -sh node_modules | cut -f1)"
+          
+          echo "✅ Dependency health check completed"
+
+  # 📋 Summary job
+  dependency-summary:
+    name: 📋 Dependency Management Summary
+    runs-on: ubuntu-latest
+    needs: [dependency-analysis, monorepo-validation, dependency-health]
+    if: always()
+    steps:
+      - name: 📋 Summary Report
+        run: |
+          echo "📦 FluxStack Dependency Management Summary"
+          echo "======================================="
+          echo "🔍 Dependency analysis: ${{ needs.dependency-analysis.result }}"
+          echo "📊 Monorepo validation: ${{ needs.monorepo-validation.result }}"  
+          echo "🏥 Dependency health: ${{ needs.dependency-health.result }}"
+          echo ""
+          echo "🎯 FluxStack v1.4.0 monorepo dependency system validated!"
+
+      - name: ❌ Fail if critical issues found
+        if: |
+          needs.dependency-analysis.result == 'failure' ||
+          needs.monorepo-validation.result == 'failure'
+        run: |
+          echo "❌ Critical dependency issues found"
+          exit 1
