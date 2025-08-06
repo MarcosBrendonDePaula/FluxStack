@@ -28,7 +28,21 @@ switch (command) {
     break
 
   case "frontend":
-    await import("@/app/client/frontend-only")
+    console.log("🎨 FluxStack Frontend Development")
+    console.log("🌐 Frontend: http://localhost:5173")
+    console.log("📦 Starting Vite dev server...")
+    console.log()
+    
+    const { spawn: spawnFrontend } = await import("child_process")
+    const frontendProcess = spawnFrontend("vite", ["--config", "vite.config.ts"], {
+      stdio: "inherit",
+      cwd: process.cwd()
+    })
+    
+    process.on('SIGINT', () => {
+      frontendProcess.kill('SIGINT')
+      process.exit(0)
+    })
     break
 
   case "backend":
@@ -68,7 +82,7 @@ switch (command) {
 
   case "start":
     console.log("🚀 Starting FluxStack production server...")
-    await import("@/dist/index.js")
+    await import(process.cwd() + "/dist/index.js")
     break
 
   case "create":

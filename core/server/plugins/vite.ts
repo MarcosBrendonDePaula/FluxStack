@@ -19,10 +19,10 @@ export const vitePlugin: Plugin = {
     try {
       console.log("   🎨 Iniciando Vite dev server integrado...")
       
-      // Usar spawn para iniciar Vite como processo filho
+      // Usar spawn para iniciar Vite como processo filho (agora no root)
       const { spawn } = await import("child_process")
-      const viteProcess = spawn("bun", ["run", "dev"], {
-        cwd: join(process.cwd(), context.config.clientPath),
+      const viteProcess = spawn("vite", ["--config", "vite.config.ts"], {
+        cwd: process.cwd(),
         stdio: ["ignore", "pipe", "pipe"],
         detached: false
       })

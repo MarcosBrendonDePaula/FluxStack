@@ -11,11 +11,9 @@ export class FluxStackBuilder {
   async buildClient() {
     console.log("⚡ Building client...")
     
-    const clientPath = join(process.cwd(), this.config.clientPath)
-    
     const buildProcess = spawn({
-      cmd: ["bun", "run", "build"],
-      cwd: clientPath,
+      cmd: ["bunx", "vite", "build", "--config", "vite.config.ts"],
+      cwd: process.cwd(),
       stdout: "pipe",
       stderr: "pipe"
     })

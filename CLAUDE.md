@@ -162,11 +162,11 @@ export interface Plugin {
 
 ## Desenvolvimento
 
-### Instalação
+### Instalação Unificada ⚡
 ```bash
 git clone <repo>
 cd FluxStack
-bun install          # Instala backend + frontend via postinstall hook
+bun install          # Uma única instalação para todo o projeto! 🎉
 ```
 
 ### Comandos Principais
@@ -190,6 +190,13 @@ bun run legacy:dev   # Comando direto com Bun watch (alternativo)
 - **Testes integrados** com Vitest
 
 ## Mudanças Recentes Importantes
+
+### v1.4.0 - Monorepo Unificado 🎯
+1. **Estrutura monorepo** - Um único `package.json` para todo o projeto
+2. **Instalação simplificada** - Apenas `bun install` une backend e frontend
+3. **Dependências centralizadas** - Sem duplicação, gerenciamento mais fácil
+4. **Configuração unificada** - Vite, ESLint e TypeScript no root
+5. **Build otimizado** - Sistema de build simplificado e mais rápido
 
 ### v1.3.1 - Hot Reload & Vite Integration Fix
 1. **Hot reload backend corrigido** - CLI agora usa `bun --watch` para recarregamento automático
@@ -217,6 +224,9 @@ bun run legacy:dev   # Comando direto com Bun watch (alternativo)
 - ✅ **Hot reload backend não funcionava** -> CLI agora usa `bun --watch`
 - ✅ **Teste deleteUser falhava** -> adicionado reset de dados entre testes
 - ✅ **Erros TypeScript na build** -> tipos corrigidos em routes e frontend
+- ✅ **Estrutura de instalação complexa** -> unificado em monorepo
+- ✅ **Duplicação de dependências** -> centralizadas no root
+- ✅ **Build em 2 etapas** -> processo unificado e otimizado
 
 ## Próximos Passos Sugeridos
 
