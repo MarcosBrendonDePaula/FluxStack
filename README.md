@@ -1,427 +1,352 @@
 # ⚡ FluxStack
 
-**Modern full-stack TypeScript framework with Elysia + React + Bun**
+**Modern full-stack TypeScript framework with unified monorepo architecture**
 
-Um framework moderno e ultra-performático para criar aplicações full-stack com type-safety end-to-end e experiência de desenvolvimento excepcional.
+> **🚀 v1.4.0** - Now with simplified installation and unified dependency management!
+
+Um framework moderno e ultra-performático para criar aplicações full-stack com type-safety end-to-end, hot reload independente, e experiência de desenvolvimento excepcional.
 
 ## ✨ Características
 
-- 🚀 **Bun** - Runtime ultra-rápido
-- 🦊 **Elysia** - Web framework performático  
-- ⚛️ **React + Vite** - Frontend moderno
-- 🔒 **TypeScript** - Type-safety completo
-- 🔌 **Sistema de Plugins** - Extensível
-- 🏗️ **CLI Integrado** - Comandos simples
-- 📦 **Build Otimizado** - Produção ready
-- 🎯 **Criação de Projetos** - `flux create` comando
-- 🧪 **Sistema de Testes** - Vitest + Testing Library
-- 📚 **API Documentation** - Swagger UI integrado
-- 🔗 **Eden Treaty** - Type-safe API client
-- 📋 **Documentação AI** - Guias para IAs em `CLAUDE.md`
+### 🏗️ **Arquitetura Moderna**
+- 🚀 **Bun** - Runtime ultra-rápido para JavaScript/TypeScript
+- 🦊 **Elysia** - Web framework performático baseado em Bun  
+- ⚛️ **React 19 + Vite** - Frontend moderno com hot reload
+- 🔒 **TypeScript 5** - Type-safety completo end-to-end
+- 📦 **Monorepo Unificado** - Uma única instalação para tudo
 
-## 🚀 Início Rápido
+### ⚡ **Developer Experience**
+- 🔄 **Hot Reload Independente** - Backend e frontend se recarregam separadamente
+- 🔗 **Eden Treaty** - Type-safe API client (TypeScript compartilhado)
+- 📚 **Swagger UI Integrado** - Documentação automática da API
+- 🧪 **Sistema de Testes** - Vitest + Testing Library + 30 testes inclusos
+- 🏗️ **CLI Integrado** - Comandos simples para tudo
 
-### Criar Novo Projeto
+### 🔧 **Produção Ready**  
+- 🐳 **Docker** - Configuração completa para containers
+- 📦 **Build Otimizado** - Frontend e backend otimizados independentemente
+- 🔌 **Sistema de Plugins** - Extensível e modular
+- ♻️ **Environment Configs** - Desenvolvimento, produção, testes
+
+## 🚀 Instalação Simplificada
+
+### **Instalação Ultra-Rápida** ⚡
 ```bash
-# Instalar FluxStack globalmente (opcional)
-bun add -g fluxstack
-
-# Criar novo projeto
-flux create meu-projeto
-cd meu-projeto
-
-# Ou clonar este repositório
-git clone https://github.com/fluxstack/fluxstack.git
+# Clone o projeto
+git clone https://github.com/your-org/fluxstack.git
 cd fluxstack
-bun install
-```
 
-### Desenvolvimento
-```bash
+# ✨ UMA única instalação para TUDO!
+bun install
+
+# 🎉 Pronto! Inicie o desenvolvimento
 bun run dev
 ```
 
-**URLs disponíveis:**
-- 🌐 **Frontend**: `http://localhost:3000`
-- 📚 **API Docs (Swagger)**: `http://localhost:3000/swagger`
+**🎯 Isso é tudo!** Não há mais postinstall hooks, dependências duplicadas ou configurações complexas.
+
+### **URLs Disponíveis Imediatamente:**
+- 🌐 **Frontend**: `http://localhost:5173` (Vite dev server)
+- 🔧 **Backend**: `http://localhost:3000` (API + proxy para frontend)
+- 📚 **API Docs**: `http://localhost:3000/swagger`
 - 🔍 **Health Check**: `http://localhost:3000/api/health`
 
-### Testes
+## 🎯 Modos de Desenvolvimento
+
+### **1. 🚀 Full-Stack (Recomendado)**
 ```bash
-bun run test              # Modo watch
-bun run test:run         # Executar uma vez
-bun run test:coverage    # Com cobertura
+bun run dev
 ```
+✅ **Backend (3000)** + **Frontend Integrado (5173)**  
+✅ Hot reload independente entre eles  
+✅ Um comando para tudo
 
-### Produção
+### **2. 🎨 Frontend Apenas**
 ```bash
-bun run build
-bun run start
+bun run dev:frontend
 ```
+✅ **Vite dev server** puro na porta 5173  
+✅ Proxy automático `/api/*` → backend externo
 
-## 📁 Estrutura do Projeto
-
-```
-fluxstack/
-├── core/                    # 🔧 Framework (não editar)
-│   ├── server/             # Servidor base Elysia
-│   │   ├── framework.ts    # Core do framework
-│   │   └── plugins/        # Plugins do sistema
-│   ├── client/             # Cliente base React
-│   ├── build/              # Sistema de build
-│   ├── cli/                # CLI tools
-│   ├── templates/          # Templates para flux create
-│   └── types/              # Types do framework
-├── app/                    # 👨‍💻 Seu código aqui
-│   ├── server/             # APIs e controllers
-│   │   ├── controllers/    # Lógica de negócio
-│   │   ├── routes/         # Definição de rotas (com Swagger docs)
-│   │   └── index.ts        # Entry point da app
-│   ├── client/             # Frontend React moderno
-│   │   ├── src/
-│   │   │   ├── App.tsx     # Interface com tabs integradas
-│   │   │   ├── App.css     # Estilos modernos
-│   │   │   └── lib/
-│   │   │       └── eden-api.ts  # Cliente Eden Treaty
-│   └── shared/             # Types compartilhados
-├── tests/                  # 🧪 Sistema de testes
-│   ├── unit/               # Testes unitários
-│   ├── integration/        # Testes de integração
-│   ├── __mocks__/          # Mocks para testes
-│   └── fixtures/           # Dados de teste
-├── CLAUDE.md               # 📋 Documentação AI (contexto completo)
-├── context_ai/             # 📋 Documentação para IAs (legado)
-│   ├── project-overview.md # Visão geral do projeto
-│   ├── architecture-guide.md # Guia de arquitetura
-│   └── development-patterns.md # Padrões de desenvolvimento
-├── config/                 # ⚙️ Configurações
-│   └── fluxstack.config.ts # Config principal
-├── vitest.config.ts        # Configuração de testes
-└── dist/                   # 📦 Build de produção
-```
-
-## 🔧 CLI Comandos
-
-### **Full-Stack (Padrão)**
+### **3. ⚡ Backend Apenas** 
 ```bash
-# Desenvolvimento completo (frontend + backend)
-flux dev                    # ou bun run dev
+bun run dev:backend
+```
+✅ **API standalone** na porta 3001  
+✅ Perfeito para desenvolvimento de APIs
 
-# Build completo
-flux build                  # ou bun run build
+## 📁 Arquitetura Monorepo Unificada
 
-# Produção completa
-flux start                  # ou bun run start
+```
+FluxStack/
+├── 📦 package.json              # ✨ ÚNICO package.json (backend + frontend)
+├── 🔧 vite.config.ts            # Configuração Vite no root
+├── 🔧 eslint.config.js          # ESLint unificado
+├── 🔧 tsconfig.json            # TypeScript config
+├── 📁 app/
+│   ├── 🖥️ server/              # Backend Elysia.js
+│   │   ├── controllers/        # Lógica de negócio
+│   │   ├── routes/             # Rotas com Swagger docs
+│   │   └── index.ts           # Entry point
+│   ├── 🎨 client/              # Frontend React (sem package.json!)
+│   │   └── src/
+│   │       ├── App.tsx         # Interface com tabs integradas
+│   │       └── lib/            # Eden Treaty type-safe API
+│   └── 🔗 shared/              # Tipos compartilhados
+├── 🔧 core/                    # Framework engine (não editar)
+├── 🧪 tests/                   # Sistema completo de testes
+├── 📋 CLAUDE.md                # Documentação AI (contexto completo)
+└── 📦 dist/                    # Build de produção
 ```
 
-### **Frontend Apenas** ⚛️
+### **🎉 Benefícios da Nova Arquitetura:**
+
+| Antes (v1.3) | Agora (v1.4) |
+|---------------|---------------|
+| 2x `package.json` | ✅ 1x `package.json` unificado |
+| 2x `node_modules/` | ✅ 1x `node_modules/` |
+| 2x `bun.lockb` | ✅ 1x `bun.lockb` |
+| `bun install` + postinstall | ✅ `bun install` (uma vez!) |
+| Dependências duplicadas | ✅ Dependências centralizadas |
+
+## 🔧 Comandos CLI
+
+### **Desenvolvimento**
 ```bash
-# Desenvolvimento frontend (Vite dev server)
-flux frontend               # ou bun run dev:frontend
-# Porta: 5173
-
-# Build frontend
-flux build:frontend         # ou bun run build:frontend
+bun run dev          # 🚀 Full-stack: Backend (3000) + Frontend integrado (5173)
+bun run dev:frontend # 🎨 Frontend apenas: Vite dev server (5173)
+bun run dev:backend  # ⚡ Backend apenas: API server (3001)
 ```
 
-### **Backend Apenas** 🦊
+### **Build e Produção**
 ```bash
-# Desenvolvimento backend (API server)
-flux backend                # ou bun run dev:backend  
-# API: http://localhost:3001
-# Health: http://localhost:3001/health
-
-# Build backend
-flux build:backend          # ou bun run build:backend
+bun run build               # 📦 Build completo (frontend + backend)
+bun run build:frontend     # 🎨 Build apenas frontend
+bun run build:backend      # ⚡ Build apenas backend
+bun run start              # 🚀 Servidor de produção
 ```
 
-### **Criação de Projetos**
+### **Testes**
 ```bash
-# Criar novo projeto FluxStack
-flux create my-app          # Projeto básico
-flux create my-app basic    # Projeto básico (explícito)
-flux create my-app full     # Projeto completo com exemplos
-
-# O comando cria:
-# - Estrutura completa do projeto
-# - Configurações (package.json, tsconfig, etc.)
-# - Dependências instaladas automaticamente
-# - Repositório git inicializado
-# - Pronto para 'bun run dev'
+bun run test               # 🧪 Testes em modo watch
+bun run test:run          # 🎯 Executar testes uma vez
+bun run test:ui           # 🖥️ Interface visual do Vitest
+bun run test:coverage     # 📊 Relatório de cobertura
 ```
 
-### **Sistema de Testes**
+### **Utilitários**
 ```bash
-# Executar testes
-bun run test               # Modo watch (desenvolvimento)
-bun run test:run          # Executar uma vez
-bun run test:ui           # Interface visual do Vitest
-bun run test:coverage     # Relatório de cobertura
-bun run test:watch        # Modo watch explícito
-
-# Estrutura de testes
-tests/
-├── unit/           # Testes unitários
-├── integration/    # Testes de integração
-├── e2e/           # Testes end-to-end
-├── __mocks__/     # Mocks para testes
-└── fixtures/      # Dados de teste
+bun run legacy:dev        # 🔧 Modo direto com Bun watch
 ```
 
-### **Outros Comandos**
-```bash
-# Help
-flux                        # Mostra todos os comandos
-```
+## 🧪 Sistema de Testes Completo
 
-### **Variáveis de Ambiente**
-```bash
-FRONTEND_PORT=5173          # Porta do frontend
-BACKEND_PORT=3001           # Porta do backend
-API_URL=http://localhost:3001  # URL da API para o frontend
-```
-
-### **🌐 Mapeamento de Portas**
-
-| Modo | Frontend | Backend | Observações |
-|------|----------|---------|-------------|
-| **Full-Stack** | - | `3000` | Elysia serve tudo junto |
-| **Frontend Only** | `5173` | - | Vite dev server + proxy para API externa |
-| **Backend Only** | - | `3001` | API standalone |
-| **Separados** | `5173` | `3001` | **Proxy**: `/api/*` → `3001` |
-
-### **📋 Testando APIs**
+**30 testes inclusos** cobrindo:
+- ✅ **Testes unitários** - Controllers e lógica de negócio
+- ✅ **Testes de integração** - API endpoints com requests reais
+- ✅ **Testes de componentes** - Interface React com Testing Library  
+- ✅ **Testes do framework** - Core do FluxStack
 
 ```bash
-# Modo Full-Stack (porta 3000)
-curl http://localhost:3000/api/users
+# Executar todos os testes
+bun run test:run
 
-# Modo Backend Only (porta 3001)
-curl http://localhost:3001/api/users
-
-# Modo Frontend + Backend separados
-# Frontend: http://localhost:5173
-# API via proxy: http://localhost:5173/api/users → 3001
-curl http://localhost:5173/api/users
+# Resultado esperado:
+# ✓ 4 test files passed
+# ✓ 30 tests passed (100%)
 ```
 
-## 🔌 Sistema de Plugins
+## 🔗 Eden Treaty: Type-Safe API Client
 
-O framework possui um sistema de plugins extensível:
+**Sem configuração extra!** O Eden Treaty permite chamadas type-safe do frontend para backend:
 
-### Plugins Inclusos:
-- **Logger**: Log automático de requests/responses
-- **Swagger**: Documentação automática da API
-- **Vite**: Integração com Vite dev server
-- **Static**: Servir arquivos estáticos
-
-### Criando um Plugin:
 ```typescript
-import type { Plugin } from "../core/types"
+// ✨ Frontend: Chamadas type-safe automáticas
+import { api, apiCall } from '@/lib/eden-api'
 
+// Type-safe! Autocomplete completo!
+const users = await apiCall(api.users.get())
+const newUser = await apiCall(api.users.post({
+  name: "João Silva",
+  email: "joao@example.com"  
+}))
+```
+
+```typescript
+// 🔧 Backend: Rotas automaticamente tipadas
+export const usersRoutes = new Elysia({ prefix: "/users" })
+  .get("/", () => UsersController.getUsers())
+  .post("/", ({ body }) => UsersController.createUser(body), {
+    body: t.Object({
+      name: t.String({ minLength: 2 }),
+      email: t.String({ format: "email" })
+    })
+  })
+```
+
+**✨ Magia**: O TypeScript é compartilhado automaticamente entre frontend e backend!
+
+## 📚 Swagger UI Integrado
+
+A documentação da API é **gerada automaticamente** e disponível em:
+- **Swagger UI**: `http://localhost:3000/swagger`
+- **OpenAPI JSON**: `http://localhost:3000/swagger/json`
+
+```typescript
+// Documentar rotas é simples:
+.get("/users", () => getUsers(), {
+  detail: {
+    tags: ['Users'],
+    summary: 'List Users', 
+    description: 'Retrieve all users in the system'
+  }
+})
+```
+
+## 🔄 Hot Reload Inteligente
+
+### **Como Funciona:**
+1. **Mudança no backend** → Apenas backend reinicia
+2. **Mudança no frontend** → Apenas Vite faz hot reload  
+3. **Vite já rodando** → FluxStack detecta e não reinicia
+
+### **Logs Esperados:**
+```bash
+⚡ FluxStack Full-Stack Development
+🚀 API ready at http://localhost:3000/api
+✅ Vite já está rodando na porta 5173  
+🔄 Backend hot reload independente do frontend
+```
+
+## 🎨 Interface Moderna Incluída
+
+O projeto vem com uma **interface React moderna** já configurada:
+
+- 📱 **Design responsivo** com CSS moderno
+- 📑 **Navegação em abas** (Visão Geral, Demo, API Docs)
+- 🧪 **Demo CRUD** funcional usando Eden Treaty
+- 📚 **Swagger UI integrado** via iframe
+- 🎨 **Componentes reutilizáveis** e bem estruturados
+
+## 🐳 Docker Pronto para Produção
+
+```bash
+# Desenvolvimento
+docker-compose up -d
+
+# Produção otimizada
+docker build -f Dockerfile .
+```
+
+Configurações incluídas:
+- ✅ **Multi-stage builds** para otimização
+- ✅ **Frontend e backend** separados ou juntos
+- ✅ **Load balancer** Nginx configurado
+- ✅ **Microservices** ready
+
+## 🔌 Sistema de Plugins Extensível
+
+```typescript
+// Criar plugin personalizado
 export const meuPlugin: Plugin = {
   name: "meu-plugin",
   setup: (context, app) => {
-    console.log("🔌 Meu plugin ativado")
-    // Sua lógica aqui - agora com acesso ao app Elysia
+    // Sua lógica aqui
+    app.get("/custom", () => ({ message: "Plugin funcionando!" }))
   }
 }
+
+// Usar no seu app
+app.use(meuPlugin)
 ```
 
-## 📖 Desenvolvimento
+**Plugins inclusos:**
+- 🪵 **Logger** - Logging automático de requests
+- 📚 **Swagger** - Documentação automática  
+- ⚡ **Vite** - Integração inteligente com frontend
+- 📁 **Static** - Servir arquivos estáticos
 
-### **Cenários de Uso** 🎯
+## 🌐 Perfeito para SaaS
 
-#### **1. Full-Stack Integrado** (Recomendado para pequenos/médios projetos)
-```bash
-flux dev  # Frontend + Backend juntos
-```
-- ✅ Um só comando para tudo
-- ✅ Proxy automático Elysia → Vite
-- ✅ Ideal para desenvolvimento rápido
+O FluxStack é uma base **excelente para SaaS**:
 
-#### **2. Frontend e Backend Separados** (Ideal para equipes grandes)
-```bash
-# Terminal 1: Backend API (porta 3001)
-flux backend
-# API disponível em: http://localhost:3001
+### **✅ Já Incluído:**
+- Type-safety end-to-end
+- Hot reload otimizado  
+- Sistema de testes robusto
+- API documentada automaticamente
+- Build de produção otimizado
+- Docker pronto para deploy
+- Sistema de plugins extensível
 
-# Terminal 2: Frontend (porta 5173)  
-flux frontend  
-# Frontend disponível em: http://localhost:5173
-# Proxy automático: /api/* → http://localhost:3001
-```
-- ✅ Desenvolvimento independente
-- ✅ Equipes separadas (front/back)
-- ✅ Deploy independente
-- ✅ Microserviços ready
-- ✅ **Proxy automático configurado**
+### **🚀 Para Adicionar (conforme necessário):**
+- Autenticação (JWT, OAuth)
+- Banco de dados (Prisma, Drizzle)
+- Pagamentos (Stripe, PayPal)  
+- Multi-tenancy
+- Monitoring (Sentry)
+- Email/Notifications
 
-#### **3. Apenas Frontend** (Para criar SPAs)
-```bash
-flux frontend
-# Configure API_URL para API externa
-```
+**O FluxStack fornece a fundação sólida - você adiciona as features específicas do seu SaaS!**
 
-#### **4. Apenas Backend** (Para criar APIs)
-```bash
-flux backend  
-# API standalone na porta 3001
-```
+## 🚀 Performance
 
-### **Adicionando Rotas com Swagger**
-```typescript
-// app/server/routes/example.routes.ts
-import { Elysia, t } from "elysia"
+### **Desenvolvimento:**
+- ✅ **Bun install**: ~13-50s (dependendo da conexão)
+- ✅ **Startup full-stack**: ~1-2s  
+- ✅ **Hot reload backend**: ~500ms
+- ✅ **Hot reload frontend**: ~100ms (Vite)
 
-export const exampleRoutes = new Elysia({ prefix: "/example" })
-  .get("/", () => ({ message: "Hello World!" }), {
-    detail: {
-      tags: ['Example'],
-      summary: 'Get example message',
-      description: 'Returns a simple hello world message'
-    }
-  })
-  .post("/", ({ body }) => ({ received: body }), {
-    body: t.Object({
-      message: t.String()
-    }),
-    detail: {
-      tags: ['Example'],
-      summary: 'Echo message',
-      description: 'Echoes back the received message'
-    }
-  })
-```
-
-### **Criando Controllers**
-```typescript
-// app/server/controllers/example.controller.ts
-export class ExampleController {
-  static async getData() {
-    return { data: "exemplo" }
-  }
-}
-```
-
-### **Componentes React com Eden Treaty**
-```tsx
-// app/client/src/components/Example.tsx
-import { useState, useEffect } from 'react'
-import { api, apiCall } from '@/lib/eden-api'
-
-export function Example() {
-  const [data, setData] = useState<any>(null)
-  
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const result = await apiCall(api.example.get())
-        setData(result)
-      } catch (error) {
-        console.error('Erro ao carregar dados:', error)
-      }
-    }
-    
-    loadData()
-  }, [])
-  
-  return (
-    <div>
-      <h2>Exemplo com Eden Treaty</h2>
-      {data ? <p>{data.message}</p> : <p>Carregando...</p>}
-    </div>
-  )
-}
-```
-
-## 🔀 **Path Aliases (@)**
-
-FluxStack suporta aliases de path para imports mais limpos e organizados:
-
-### **Alias Disponíveis:**
-
-```typescript
-// Framework
-"@/core/*"       // ./core/*
-"@/app/*"        // ./app/*  
-"@/config/*"     // ./config/*
-"@/shared/*"     // ./app/shared/*
-
-// Frontend (dentro do client)
-"@/*"            // ./src/*
-"@/components/*" // ./src/components/*
-"@/utils/*"      // ./src/utils/*
-"@/hooks/*"      // ./src/hooks/*
-"@/assets/*"     // ./src/assets/*
-"@/lib/*"        // ./src/lib/*
-"@/types/*"      // ./src/types/*
-```
-
-### **Exemplos de Uso:**
-
-#### **Frontend (React):**
-```tsx
-// ❌ Antes
-import { api } from '../../../lib/api'
-import Logo from '../../../assets/logo.svg'
-import { Button } from '../../components/Button'
-
-// ✅ Agora
-import { api } from '@/lib/api'
-import Logo from '@/assets/logo.svg'
-import { Button } from '@/components/Button'
-```
-
-#### **Backend (Server):**
-```typescript
-// ❌ Antes  
-import { FluxStackFramework } from '../../core/server'
-import { config } from '../../config/fluxstack.config'
-import { UserType } from '../shared/types'
-
-// ✅ Agora
-import { FluxStackFramework } from '@/core/server'
-import { config } from '@/config/fluxstack.config'
-import { UserType } from '@/shared/types'
-```
-
-### **Configuração Automática:**
-✅ **TypeScript**: `tsconfig.json` + `tsconfig.app.json`  
-✅ **Vite**: `vite.config.ts`  
-✅ **Bun**: `bunfig.toml`  
-✅ **Intellisense**: Autocomplete funciona em VSCode
-
-## 🏗️ Build e Deploy
-
-### Build Local
-```bash
-bun run build
-```
-
-### Deploy
-O build gera:
-- `dist/index.js` - Servidor otimizado
-- `app/client/dist/` - Assets do React
-
-### Variáveis de Ambiente
-```bash
-NODE_ENV=production  # Modo produção
-PORT=3000           # Porta do servidor
-```
+### **Produção:**
+- ✅ **Build time**: ~10-30s
+- ✅ **Bundle size**: Otimizado com tree-shaking
+- ✅ **Runtime**: Bun nativo (ultra-rápido)
 
 ## 🤝 Contribuindo
 
-1. Fork o projeto
-2. Crie uma branch: `git checkout -b feature/nova-feature`
-3. Commit: `git commit -m 'Adiciona nova feature'`
-4. Push: `git push origin feature/nova-feature`
-5. Abra um Pull Request
+1. **Fork** o projeto
+2. **Clone**: `git clone <seu-fork>`
+3. **Install**: `bun install` 
+4. **Desenvolva**: Faça suas melhorias
+5. **Teste**: `bun run test:run`
+6. **Build**: `bun run build`
+7. **PR**: Abra um Pull Request
+
+## 📝 Versionamento
+
+- **v1.4.0** - Monorepo unificado, instalação simplificada
+- **v1.3.1** - Hot reload independente, Vite integrado  
+- **v1.3.0** - Swagger UI, Eden Treaty, interface moderna
+- **v1.2.x** - Sistema de plugins, CLI robusto
+- **v1.1.x** - Testes integrados, Docker
+- **v1.0.x** - Framework base
 
 ## 📄 Licença
 
 MIT License - veja [LICENSE](LICENSE) para detalhes.
 
+## 🎯 Por Que FluxStack?
+
+### **vs. Next.js**
+✅ **Bun nativo** (mais rápido que Node.js)  
+✅ **Eden Treaty** (type-safety melhor que tRPC)  
+✅ **Elysia** (performance superior ao Next.js API routes)  
+✅ **Monorepo unificado** (mais simples que T3 Stack)
+
+### **vs. Remix**
+✅ **Hot reload independente** (backend não afeta frontend)  
+✅ **Swagger automático** (documentação sem esforço)  
+✅ **Deploy flexível** (fullstack ou separado)  
+✅ **Sistema de plugins** (mais extensível)
+
+### **vs. SvelteKit/Nuxt**
+✅ **React 19** (ecosystem mais maduro)  
+✅ **TypeScript first** (não adicional)  
+✅ **Bun runtime** (performance superior)  
+✅ **Eden Treaty** (type-safety automática)
+
 ---
 
-**Built with ❤️ by the FluxStack Team using Bun, Elysia and React**
+**🚀 Built with ❤️ using Bun, Elysia, React 19, and TypeScript 5**
+
+**⚡ FluxStack - Where performance meets developer happiness!**
