@@ -6,62 +6,20 @@ export const vitePlugin: Plugin = {
   setup: async (context, app) => {
     if (!context.isDevelopment) return
     
-    // Verificar se Vite já está rodando
     const vitePort = context.config.vitePort || 5173
-    const isViteRunning = await checkViteRunning(vitePort)
     
-    if (isViteRunning) {
-      console.log(`   ✅ Vite já está rodando na porta ${vitePort}`)
-      console.log("   🔄 Backend hot reload independente do frontend")
-      return
-    }
-    
-    try {
-      console.log("   🎨 Iniciando Vite dev server integrado...")
+    // Wait for Vite to start (when using concurrently)
+    setTimeout(async () => {
+      const isViteRunning = await checkViteRunning(vitePort)
       
-      // Usar spawn para iniciar Vite como processo filho (agora no root)
-      const { spawn } = await import("child_process")
-      const viteProcess = spawn("vite", ["--config", "vite.config.ts"], {
-        cwd: process.cwd(),
-        stdio: ["ignore", "pipe", "pipe"],
-        detached: false
-      })
-      
-      // Capturar output do Vite
-      viteProcess.stdout?.on('data', (data) => {
-        const output = data.toString()
-        if (output.includes("ready in") || output.includes("Local:")) {
-          console.log(`   ${output.trim()}`)
-        }
-      })
-      
-      viteProcess.stderr?.on('data', (data) => {
-        const error = data.toString()
-        // Filtrar saídas normais do Bun que não são erros reais
-        if (!error.includes("SIGTERM") && 
-            !error.includes("$ vite") && 
-            !error.trim().startsWith("$") && 
-            error.trim().length > 0) {
-          console.error(`   [Vite Error] ${error.trim()}`)
-        }
-      })
-      
-      console.log(`   ✅ Vite iniciado na porta ${vitePort}`)
-      console.log("   🔄 Hot reload independente entre frontend e backend")
-      
-      // Cleanup específico para este processo
-      const cleanup = () => {
-        if (viteProcess && !viteProcess.killed) {
-          viteProcess.kill('SIGTERM')
-        }
+      if (isViteRunning) {
+        console.log(`   ✅ Vite detectado na porta ${vitePort}`)
+        console.log("   🔄 Hot reload coordenado via concurrently")
       }
-      
-      process.on("SIGINT", cleanup)
-      process.on("SIGTERM", cleanup)
-      
-    } catch (error) {
-      console.error("   ❌ Erro ao inicializar Vite:", error.message)
-    }
+    }, 2000)
+    
+    // Don't block server startup
+    console.log(`   🔄 Aguardando Vite na porta ${vitePort}...`)
   }
 }
 

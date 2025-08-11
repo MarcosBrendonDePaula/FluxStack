@@ -2,7 +2,7 @@ import { Elysia } from "elysia"
 import { usersRoutes } from "./users.routes"
 
 export const apiRoutes = new Elysia({ prefix: "/api" })
-  .get("/", () => ({ message: "Hello from FluxStack API!" }), {
+  .get("/", () => ({ message: "🔥 Hot Reload funcionando! FluxStack API v1.4.0 ⚡" }), {
     detail: {
       tags: ['Health'],
       summary: 'API Root',
@@ -10,9 +10,11 @@ export const apiRoutes = new Elysia({ prefix: "/api" })
     }
   })
   .get("/health", () => ({ 
-    status: "ok", 
+    status: "🚀 Hot Reload ativo!", 
     timestamp: new Date().toISOString(),
-    uptime: process.uptime()
+    uptime: `${Math.floor(process.uptime())}s`,
+    version: "1.4.0",
+    environment: "development"
   }), {
     detail: {
       tags: ['Health'],

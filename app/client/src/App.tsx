@@ -96,9 +96,9 @@ function App() {
     <div className="overview-content">
       <div className="hero-section">
         <div className="hero-text">
-          <h1>⚡ FluxStack</h1>
+          <h1>🔥 FluxStack - Hot Reload Ativo! ⚡</h1>
           <p className="hero-subtitle">
-            Framework full-stack TypeScript moderno com type-safety end-to-end
+            Framework full-stack TypeScript moderno com hot reload coordenado! 🚀
           </p>
           <div className="features-grid">
             <div className="feature-item">
@@ -169,8 +169,8 @@ function App() {
 
   const renderDemo = () => (
     <div className="demo-content">
-      <h2>Demo Interativo</h2>
-      <p className="demo-subtitle">Teste a API em tempo real</p>
+      <h2>🔥 Demo Interativo - Hot Reload Testando!</h2>
+      <p className="demo-subtitle">Teste a API em tempo real com hot reload coordenado 🚀</p>
 
       {/* Stats */}
       <div className="stats-grid">
@@ -407,7 +407,7 @@ const health = await api.health.get()`}</pre>
         <div className="header-content">
           <div className="header-left">
             <div className="logo">
-              ⚡ FluxStack
+              🔥 FluxStack v1.4.0
             </div>
             <nav className="header-tabs">
               <button 

@@ -9,21 +9,35 @@ const command = process.argv[2]
 switch (command) {
   case "dev":
     console.log("⚡ FluxStack Full-Stack Development")
-    console.log("🌐 Frontend + Backend: http://localhost:3000")
+    console.log("🌐 Frontend: http://localhost:5173")  
+    console.log("🚀 Backend: http://localhost:3000")
+    console.log("🔄 Hot Reload Coordenado: Backend + Vite automático")
     console.log("📦 Starting services...")
     console.log()
     
-    // Start with Bun watch for hot reload (usando servidor principal com plugin inteligente)
+    // Use concurrently for coordinated hot reload
     const { spawn } = await import("child_process")
-    const devProcess = spawn("bun", ["--watch", "app/server/index.ts"], {
+    const devProcess = spawn("concurrently", [
+      "--prefix", "{name}",
+      "--names", "BACKEND,VITE", 
+      "--prefix-colors", "blue,green",
+      "--kill-others-on-fail",
+      "\"bun --watch app/server/index.ts\"",
+      "\"vite --config vite.config.ts\""
+    ], {
       stdio: "inherit",
-      cwd: process.cwd()
+      cwd: process.cwd(),
+      shell: true
     })
     
     // Handle process cleanup
     process.on('SIGINT', () => {
       devProcess.kill('SIGINT')
       process.exit(0)
+    })
+    
+    devProcess.on('close', (code) => {
+      process.exit(code || 0)
     })
     break
 
