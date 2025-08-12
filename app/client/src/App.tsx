@@ -3,6 +3,7 @@ import './App.css'
 import { api, apiCall, getErrorMessage } from './lib/eden-api'
 import { LiveProvider, LiveDebugPanel } from './components/live/LiveProvider'
 import { Counter } from './components/live/Counter'
+import { Clock } from './components/live/Clock'
 
 interface User {
   id: number
@@ -475,6 +476,61 @@ const health = await api.health.get()`}</pre>
             <li>Observe as notificações quando atingir limites</li>
             <li>Abra múltiplas abas para ver sincronização entre clients</li>
             <li>Verifique o painel de debug no terceiro contador</li>
+          </ul>
+        </div>
+      </div>
+
+      <div className="clocks-demo" style={{ marginTop: '3rem' }}>
+        <h3>⏰ Demo: Relógios em Tempo Real</h3>
+        <p>Relógios sincronizados com o servidor - atualizações automáticas a cada segundo:</p>
+        
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', 
+          gap: '1rem',
+          marginTop: '2rem'
+        }}>
+          {/* Clock Brasil */}
+          <Clock 
+            timezone="America/Sao_Paulo"
+            format="24h"
+            theme="light"
+            componentId="clock-brazil"
+            showDate={true}
+            showControls={true}
+          />
+          
+          {/* Clock Nova York */}
+          <Clock 
+            timezone="America/New_York"
+            format="12h"
+            theme="dark"
+            componentId="clock-ny"
+            showDate={false}
+            showControls={true}
+          />
+          
+          {/* Clock Londres */}
+          <Clock 
+            timezone="Europe/London"
+            format="24h"
+            theme="neon"
+            componentId="clock-london"
+            showDate={true}
+            showControls={false}
+          />
+        </div>
+
+        <div className="demo-explanation" style={{ marginTop: '2rem', padding: '1rem', background: '#f0f9ff', borderRadius: '8px' }}>
+          <h4>⏰ Recursos do Clock:</h4>
+          <ul>
+            <li><strong>Tempo Real:</strong> Servidor envia atualizações automáticas a cada segundo</li>
+            <li><strong>Múltiplos Fusos:</strong> Cada relógio pode ter timezone diferente</li>
+            <li><strong>Formato 12h/24h:</strong> Alternância dinâmica de formato</li>
+            <li><strong>Controles Live:</strong> Start/Stop, mudança de timezone</li>
+            <li><strong>Temas:</strong> Light, Dark e Neon com estilos diferentes</li>
+            <li><strong>Server Info:</strong> Informações do servidor em tempo real</li>
+            <li><strong>Push Updates:</strong> Servidor envia dados sem requisição do cliente</li>
           </ul>
         </div>
       </div>

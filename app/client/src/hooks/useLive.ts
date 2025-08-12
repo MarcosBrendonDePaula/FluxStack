@@ -25,6 +25,13 @@ function getInitialClientState(componentName: string, props: any): Record<string
                 email: props.email || "",
                 isLoading: false
             }
+        case 'clock':
+            return {
+                currentTime: "",
+                timezone: props.timezone || "America/Sao_Paulo",
+                format: props.format || "24h",
+                isRunning: false
+            }
         default:
             return {}
     }

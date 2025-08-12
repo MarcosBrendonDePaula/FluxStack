@@ -106,7 +106,10 @@ export abstract class LiveAction {
             
             // Return serialized state
             const finalState = this.serializeState(instance)
-            console.log(`📤 Returning state for ${opts.componentName}[${opts.componentId}]:`, { count: finalState.count, step: finalState.step })
+            console.log(`📤 Returning state for ${opts.componentName}[${opts.componentId}]:`, { 
+                ...(finalState.count !== undefined && { count: finalState.count, step: finalState.step }),
+                ...(finalState.currentTime !== undefined && { currentTime: finalState.currentTime, isRunning: finalState.isRunning })
+            })
             return finalState
             
         } catch (error) {
