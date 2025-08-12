@@ -68,36 +68,93 @@ export abstract class LiveAction {
             // Call requested method
             const method = instance[opts.methodName]
             if (typeof method === 'function') {
-                const result = method.apply(instance, opts.params)
-                
-                // Handle promises
-                if (result instanceof Promise) {
-                    result
-                        .then(() => {
-                            // Send updated state after async operation
-                            const newState = this.serializeState(instance)
-                            console.log(`🔄 Sending async state update for ${instance.$ID}:`, { count: newState.count })
-                            instance.ws.send(JSON.stringify({
-                                updates: [{
-                                    type: 'state_update',
-                                    id: instance.$ID,
-                                    state: newState
-                                }]
-                            }))
-                        })
-                        .catch((error) => {
-                            console.error(`❌ Async error in ${opts.componentName}.${opts.methodName}:`, error)
-                            instance.ws.send(JSON.stringify({
-                                updates: [{
-                                    type: 'error',
-                                    componentId: instance.$ID,
-                                    error: error.message || 'Unknown async error'
-                                }]
-                            }))
-                        })
+                try {
+                    const result = method.apply(instance, opts.params)
                     
-                    // Return current state immediately (async will update later)
-                    return this.serializeState(instance)
+                    // Handle promises (async functions)
+                    if (result instanceof Promise) {
+                        result
+                            .then((asyncResult) => {
+                                // Send updated state + async result back to client
+                                const newState = this.serializeState(instance)
+                                console.log(`✅ Async function ${opts.methodName} completed for ${instance.$ID}`)
+                                instance.ws.send(JSON.stringify({
+                                    updates: [{
+                                        type: 'function_result',
+                                        id: instance.$ID,
+                                        methodName: opts.methodName,
+                                        result: asyncResult,
+                                        state: newState,
+                                        isAsync: true,
+                                        error: null
+                                    }]
+                                }))
+                            })
+                            .catch((error) => {
+                                console.error(`❌ Async error in ${opts.componentName}.${opts.methodName}:`, error)
+                                const currentState = this.serializeState(instance)
+                                instance.ws.send(JSON.stringify({
+                                    updates: [{
+                                        type: 'function_error',
+                                        id: instance.$ID,
+                                        methodName: opts.methodName,
+                                        error: error.message || 'Unknown async error',
+                                        state: {
+                                            ...currentState,
+                                            __functionResult: {
+                                                methodName: opts.methodName,
+                                                isAsync: true,
+                                                isLoading: false,
+                                                result: null,
+                                                error: error.message || 'Unknown async error'
+                                            }
+                                        },
+                                        isAsync: true
+                                    }]
+                                }))
+                            })
+                        
+                        // Return current state + loading indicator for async
+                        const currentState = this.serializeState(instance)
+                        return {
+                            ...currentState,
+                            __functionResult: {
+                                methodName: opts.methodName,
+                                isAsync: true,
+                                isLoading: true,
+                                result: null,
+                                error: null
+                            }
+                        }
+                    }
+                    
+                    // Handle synchronous functions with return values
+                    const currentState = this.serializeState(instance)
+                    return {
+                        ...currentState,
+                        __functionResult: {
+                            methodName: opts.methodName,
+                            isAsync: false,
+                            isLoading: false,
+                            result: result,
+                            error: null
+                        }
+                    }
+                    
+                } catch (error) {
+                    // Handle synchronous function errors
+                    console.error(`❌ Sync error in ${opts.componentName}.${opts.methodName}:`, error)
+                    const currentState = this.serializeState(instance)
+                    return {
+                        ...currentState,
+                        __functionResult: {
+                            methodName: opts.methodName,
+                            isAsync: false,
+                            isLoading: false,
+                            result: null,
+                            error: error instanceof Error ? error.message : 'Unknown sync error'
+                        }
+                    }
                 }
             } else {
                 console.warn(`⚠️  Method '${opts.methodName}' not found on '${opts.componentName}'`)

@@ -62,6 +62,39 @@ export function LiveProvider({
                                 setComponentError(update.id, null)
                                 break
                                 
+                            case 'function_result':
+                                console.log(`🔄 Function result for ${update.methodName} (async: ${update.isAsync}):`, update.result)
+                                updateComponent(update.id, update.state)
+                                setComponentLoading(update.id, false)
+                                setComponentError(update.id, null)
+                                
+                                // Dispatch function result event
+                                window.dispatchEvent(new CustomEvent(`live:function-result`, {
+                                    detail: { 
+                                        componentId: update.id,
+                                        methodName: update.methodName,
+                                        result: update.result,
+                                        isAsync: update.isAsync
+                                    }
+                                }))
+                                break
+                                
+                            case 'function_error':
+                                console.error(`❌ Function error for ${update.methodName}:`, update.error)
+                                setComponentLoading(update.id, false)
+                                setComponentError(update.id, `${update.methodName}: ${update.error}`)
+                                
+                                // Dispatch function error event
+                                window.dispatchEvent(new CustomEvent(`live:function-error`, {
+                                    detail: { 
+                                        componentId: update.id,
+                                        methodName: update.methodName,
+                                        error: update.error,
+                                        isAsync: update.isAsync
+                                    }
+                                }))
+                                break
+                                
                             case 'event':
                                 console.log(`🔔 Event ${update.event} for component ${update.componentId}:`, update.data)
                                 

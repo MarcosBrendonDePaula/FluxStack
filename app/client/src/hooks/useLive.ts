@@ -34,6 +34,13 @@ function getInitialClientState(componentName: string, props: any): Record<string
                 format: props.format || "24h",
                 isRunning: false
             }
+        case 'calculator':
+            return {
+                displayValue: "0",
+                result: 0,
+                operation: "",
+                waitingForOperand: false
+            }
         default:
             return {}
     }
@@ -113,40 +120,70 @@ export function useLive({ name, props = {}, componentId, eventHandlers = {} }: U
         }
     }, [eventHandlers, id])
 
-    // Call backend method
-    const callMethod = useCallback(async (methodName: string, ...params: any[]) => {
-        if (!ws || ws.readyState !== WebSocket.OPEN) {
-            const error = 'WebSocket not connected'
-            console.error(`❌ ${error}`)
-            setComponentError(id, error)
-            return
-        }
+    // Call backend method with return value support
+    const callMethod = useCallback(async (methodName: string, ...params: any[]): Promise<any> => {
+        return new Promise((resolve, reject) => {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                const error = 'WebSocket not connected'
+                console.error(`❌ ${error}`)
+                setComponentError(id, error)
+                reject(new Error(error))
+                return
+            }
 
-        console.log(`🎯 Calling ${name}.${methodName}(${JSON.stringify(params)})`)
-        
-        setComponentLoading(id, true)
-        setComponentError(id, null)
+            console.log(`🎯 Calling ${name}.${methodName}(${JSON.stringify(params)})`)
+            
+            setComponentLoading(id, true)
+            setComponentError(id, null)
 
-        const message = JSON.stringify({
-            updates: [{
-                type: 'callMethod',
-                payload: {
-                    name,
-                    id,
-                    methodName,
-                    params,
-                    state: state || { $props: props, $ID: id }
+            // Create unique listeners for this specific function call
+            const handleFunctionResult = (event: CustomEvent) => {
+                if (event.detail.componentId === id && event.detail.methodName === methodName) {
+                    console.log(`✅ Function result received for ${methodName}:`, event.detail.result)
+                    window.removeEventListener('live:function-result', handleFunctionResult as EventListener)
+                    window.removeEventListener('live:function-error', handleFunctionError as EventListener)
+                    resolve(event.detail.result)
                 }
-            }]
-        })
+            }
 
-        try {
-            ws.send(message)
-        } catch (error) {
-            console.error(`❌ Error sending message:`, error)
-            setComponentError(id, error instanceof Error ? error.message : 'Send failed')
-            setComponentLoading(id, false)
-        }
+            const handleFunctionError = (event: CustomEvent) => {
+                if (event.detail.componentId === id && event.detail.methodName === methodName) {
+                    console.error(`❌ Function error received for ${methodName}:`, event.detail.error)
+                    window.removeEventListener('live:function-result', handleFunctionResult as EventListener)
+                    window.removeEventListener('live:function-error', handleFunctionError as EventListener)
+                    reject(new Error(event.detail.error))
+                }
+            }
+
+            // Listen for function result
+            window.addEventListener('live:function-result', handleFunctionResult as EventListener)
+            window.addEventListener('live:function-error', handleFunctionError as EventListener)
+
+            const message = JSON.stringify({
+                updates: [{
+                    type: 'callMethod',
+                    payload: {
+                        name,
+                        id,
+                        methodName,
+                        params,
+                        state: state || { $props: props, $ID: id }
+                    }
+                }]
+            })
+
+            try {
+                ws.send(message)
+            } catch (error) {
+                console.error(`❌ Error sending message:`, error)
+                setComponentError(id, error instanceof Error ? error.message : 'Send failed')
+                setComponentLoading(id, false)
+                // Cleanup listeners
+                window.removeEventListener('live:function-result', handleFunctionResult as EventListener)
+                window.removeEventListener('live:function-error', handleFunctionError as EventListener)
+                reject(error)
+            }
+        })
     }, [ws, name, id, state, props])
 
     // Optimistic updates (immediate UI feedback)
@@ -169,12 +206,18 @@ export function useLive({ name, props = {}, componentId, eventHandlers = {} }: U
         optimisticUpdate,
         componentId: id,
         
+        // Function call state (para chamadas sync/async)
+        functionResult: currentState.__functionResult || null,
+        isFunctionLoading: currentState.__functionResult?.isLoading || false,
+        functionError: currentState.__functionResult?.error || null,
+        
         // Debug info (useful for development)
         __debug: {
             componentName: name,
             hasState: !!state,
             wsReady: !!ws && ws.readyState === WebSocket.OPEN,
-            registeredEvents: Object.keys(eventHandlers)
+            registeredEvents: Object.keys(eventHandlers),
+            functionCallState: currentState.__functionResult
         }
     }
 }

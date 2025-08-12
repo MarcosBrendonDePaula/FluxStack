@@ -4,6 +4,7 @@ import { api, apiCall, getErrorMessage } from './lib/eden-api'
 import { LiveProvider, LiveDebugPanel } from './components/live/LiveProvider'
 import { Counter } from './components/live/Counter'
 import { Clock } from './components/live/Clock'
+import { Calculator } from './components/live/Calculator'
 
 interface User {
   id: number
@@ -546,6 +547,41 @@ const health = await api.health.get()`}</pre>
             <li><strong>Server Info:</strong> Informações do servidor em tempo real</li>
             <li><strong>Push Updates:</strong> Servidor envia dados sem requisição do cliente</li>
             <li><strong>🔥 Event Handlers:</strong> onTick, onClockStarted, onTimezoneChanged - estilo Livewire!</li>
+          </ul>
+        </div>
+      </div>
+
+      <div className="calculator-demo" style={{ marginTop: '3rem' }}>
+        <h3>🧮 Demo: Calculator com Funções Síncronas e Assíncronas</h3>
+        <p>Calculadora demonstrando chamadas de funções com retorno de valores:</p>
+        
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', 
+          gap: '2rem',
+          marginTop: '2rem'
+        }}>
+          {/* Calculator Standard */}
+          <Calculator 
+            componentId="calculator-standard"
+            theme="standard"
+            onCalculationCompleted={(data) => console.log(`🧮 Calculation completed:`, data)}
+            onExpressionValidated={(data) => console.log(`📝 Expression validated:`, data)}
+          />
+        </div>
+
+        <div className="demo-explanation" style={{ marginTop: '2rem', padding: '1rem', background: '#fef3c7', borderRadius: '8px' }}>
+          <h4>🧮 Funcionalidades da Calculadora:</h4>
+          <ul>
+            <li><strong>🔄 Funções Síncronas:</strong> addDigit(), setOperation(), equals(), clear() - retorno imediato</li>
+            <li><strong>⏳ Funções Assíncronas:</strong> calculateSquareRoot() (2s), calculateFactorial() (steps), validateExpression() (1.5s)</li>
+            <li><strong>🎯 Estado de Loading:</strong> isFunctionLoading indica se função async está executando</li>
+            <li><strong>📊 Retorno de Valores:</strong> Todas as funções retornam valores que podem ser capturados</li>
+            <li><strong>🔥 Event Handlers:</strong> onCalculationCompleted, onExpressionValidated</li>
+            <li><strong>❌ Tratamento de Erros:</strong> Erros síncronos e assíncronos com functionError</li>
+            <li><strong>⚠️ Teste Erros:</strong> safeDivision() por zero, factorial() &gt; 20, sqrt() números negativos</li>
+            <li><strong>📋 Histórico:</strong> Resultados das operações ficam salvos com timestamp</li>
+            <li><strong>🐛 Debug:</strong> Painel de debug mostra estado da última chamada de função</li>
           </ul>
         </div>
       </div>
