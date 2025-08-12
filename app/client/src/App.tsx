@@ -493,12 +493,11 @@ const health = await api.health.get()`}</pre>
         <p>Relógios sincronizados com o servidor - atualizações automáticas a cada segundo:</p>
         
         <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', 
-          gap: '1rem',
+          display: 'flex', 
+          justifyContent: 'center',
           marginTop: '2rem'
         }}>
-          {/* Clock Brasil */}
+          {/* Clock Brasil - único para debug */}
           <Clock 
             timezone="America/Sao_Paulo"
             format="24h"
@@ -507,32 +506,11 @@ const health = await api.health.get()`}</pre>
             showDate={true}
             showControls={true}
             onClockStarted={(data) => console.log(`🟢 Clock Brazil started:`, data)}
-            onTick={(data) => { /* Silent for tick events */ }}
+            onClockStopped={(data) => console.log(`🔴 Clock Brazil stopped:`, data)}
+            onTick={(data) => { /* Silent for reduced logs */ }}
             onTimezoneChanged={(data) => console.log(`🌍 Brazil timezone changed:`, data)}
-          />
-          
-          {/* Clock Nova York */}
-          <Clock 
-            timezone="America/New_York"
-            format="12h"
-            theme="dark"
-            componentId="clock-ny"
-            showDate={false}
-            showControls={true}
-            onFormatChanged={(data) => console.log(`🕐 NY format changed:`, data)}
-            onServerInfo={(data) => console.log(`🖥️ NY server info:`, data)}
-          />
-          
-          {/* Clock Londres */}
-          <Clock 
-            timezone="Europe/London"
-            format="24h"
-            theme="neon"
-            componentId="clock-london"
-            showDate={true}
-            showControls={false}
-            onClockStopped={(data) => console.log(`🔴 London clock stopped:`, data)}
-            onTick={(data) => console.log(`⏰ London tick: ${data.time}`)}
+            onFormatChanged={(data) => console.log(`🕐 Brazil format changed:`, data)}
+            onServerInfo={(data) => console.log(`🖥️ Brazil server info:`, data)}
           />
         </div>
 

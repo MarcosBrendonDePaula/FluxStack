@@ -9,39 +9,67 @@ interface UseLiveOptions {
     eventHandlers?: Record<string, (data?: any) => void>
 }
 
-// Helper para estado inicial no cliente
-function getInitialClientState(componentName: string, props: any): Record<string, any> {
+// Dynamic helper para estado inicial do cliente via WebSocket
+async function getInitialClientState(componentName: string, props: any, ws: WebSocket | null): Promise<Record<string, any>> {
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+        console.warn(`⚠️  WebSocket not available for getting initial state of ${componentName}, using fallback`)
+        return getFallbackInitialState(componentName, props)
+    }
+
+    return new Promise((resolve) => {
+        const handleMessage = (event: MessageEvent) => {
+            try {
+                const data = JSON.parse(event.data)
+                if (data.updates && Array.isArray(data.updates)) {
+                    for (const update of data.updates) {
+                        if (update.type === 'initial_state' && update.componentName === componentName) {
+                            ws.removeEventListener('message', handleMessage)
+                            resolve(update.state)
+                            return
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error parsing initial state message:', error)
+                ws.removeEventListener('message', handleMessage)
+                resolve(getFallbackInitialState(componentName, props))
+            }
+        }
+
+        ws.addEventListener('message', handleMessage)
+
+        // Send request for initial state
+        ws.send(JSON.stringify({
+            updates: [{
+                type: 'getInitialState',
+                componentName,
+                props
+            }]
+        }))
+
+        // Timeout fallback
+        setTimeout(() => {
+            ws.removeEventListener('message', handleMessage)
+            console.warn(`⚠️  Timeout getting initial state for ${componentName}, using fallback`)
+            resolve(getFallbackInitialState(componentName, props))
+        }, 1000)
+    })
+}
+
+// Fallback para quando não conseguir obter estado via WebSocket
+function getFallbackInitialState(componentName: string, props: any): Record<string, any> {
     const baseName = componentName.toLowerCase().replace('action', '')
     
+    // Fallbacks básicos para componentes conhecidos
     switch (baseName) {
         case 'counter':
-            return {
-                count: props.initialCount || 0,
-                step: props.step || 1,
-                label: props.label || "Counter",
-                maxCount: props.maxCount || 100
-            }
-        case 'userprofile':
-            return {
-                name: props.name || "",
-                email: props.email || "",
-                isLoading: false
-            }
+            return { count: props.initialCount || 0, step: props.step || 1, label: props.label || "Counter", maxCount: props.maxCount || 100 }
         case 'clock':
-            return {
-                currentTime: "",
-                timezone: props.timezone || "America/Sao_Paulo",
-                format: props.format || "24h",
-                isRunning: false
-            }
+            return { currentTime: "", timezone: props.timezone || "America/Sao_Paulo", format: props.format || "24h", isRunning: false }
         case 'calculator':
-            return {
-                displayValue: "0",
-                result: 0,
-                operation: "",
-                waitingForOperand: false
-            }
+            return { displayValue: "0", result: 0, operation: "", waitingForOperand: false }
         default:
+            console.warn(`⚠️  No fallback state for ${componentName}, using empty object`)
             return {}
     }
 }
@@ -73,20 +101,38 @@ export function useLive({ name, props = {}, componentId, eventHandlers = {} }: U
         
         // Initialize com props se ainda não existir estado
         if (!state) {
-            const initialState = {
-                $props: props,
-                $ID: id,
-                ...getInitialClientState(name, props)
+            // Tentar obter estado inicial dinamicamente
+            const initializeState = async () => {
+                try {
+                    const dynamicInitialState = await getInitialClientState(name, props, ws)
+                    const initialState = {
+                        $props: props,
+                        $ID: id,
+                        ...dynamicInitialState
+                    }
+                    updateComponent(id, initialState)
+                    console.log(`🏗️  Initialized ${id} dynamically with:`, initialState)
+                } catch (error) {
+                    console.error(`❌ Error initializing ${id}:`, error)
+                    // Fallback para estado básico
+                    const initialState = {
+                        $props: props,
+                        $ID: id,
+                        ...getFallbackInitialState(name, props)
+                    }
+                    updateComponent(id, initialState)
+                    console.log(`🏗️  Initialized ${id} with fallback:`, initialState)
+                }
             }
-            updateComponent(id, initialState)
-            console.log(`🏗️  Initialized ${id} with:`, initialState)
+            
+            initializeState()
         }
         
         return () => {
             console.log(`🗑️  Cleaning up live component: ${id}`)
             removeConnection(id)
         }
-    }, [id, name])
+    }, [id, name, ws])
 
     // Update connection status when WebSocket changes
     useEffect(() => {

@@ -29,7 +29,8 @@
       "Bash(npx tsc:*)",
       "Bash(bun:*)",
       "Bash(vite build:*)",
-      "Bash(start http://localhost:5174)"
+      "Bash(start http://localhost:5174)",
+      "Bash(start http://localhost:3000)"
     ],
     "deny": []
   }

@@ -70,7 +70,20 @@ async function handleLiveMessage(ws: any, message: any) {
                         
                     case 'unmount':
                         console.log(`🗑️  Unmounting component: ${update.componentId}`)
-                        // Component cleanup logic if needed
+                        // Destroy persistent instance
+                        LiveAction.destroyInstance(update.componentId)
+                        break
+                        
+                    case 'getInitialState':
+                        const { componentName: requestedComponent, props: requestedProps } = update
+                        console.log(`📊 Getting initial state for: ${requestedComponent}`)
+                        
+                        const initialState = LiveAction.getClientInitialState(requestedComponent, requestedProps)
+                        result.updates.push({
+                            type: 'initial_state',
+                            componentName: requestedComponent,
+                            state: initialState
+                        })
                         break
                         
                     default:

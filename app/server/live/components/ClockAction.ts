@@ -37,10 +37,10 @@ export class ClockAction extends LiveAction {
         this.isRunning = true
         this.updateTime() // Update immediately
         
-        // Update every second
+        // Update every 30 seconds (reduced for debugging)
         this.timer = setInterval(() => {
             this.updateTime()
-        }, 1000)
+        }, 30000)
         
         console.log(`⏰ Clock ${this.$ID} started (${this.timezone}, ${this.format})`)
         this.emit('clock-started', { 
@@ -62,9 +62,13 @@ export class ClockAction extends LiveAction {
         }
         
         console.log(`⏰ Clock ${this.$ID} stopped`)
+        
         this.emit('clock-stopped', { 
             componentId: this.$ID 
         })
+        
+        // ✨ Return value to indicate state change (trigger will send state_update automatically)
+        return { success: true, action: 'stopped' }
     }
     
     // Action: Change timezone
@@ -76,6 +80,9 @@ export class ClockAction extends LiveAction {
             componentId: this.$ID,
             timezone: this.timezone
         })
+        
+        // ✨ Return value to indicate state change (trigger will send state_update automatically)
+        return { success: true, action: 'timezone_changed', timezone: this.timezone }
     }
     
     // Action: Change format (12h/24h)
@@ -87,6 +94,9 @@ export class ClockAction extends LiveAction {
             componentId: this.$ID,
             format: this.format
         })
+        
+        // ✨ Return value to indicate state change (trigger will send state_update automatically)
+        return { success: true, action: 'format_changed', format: this.format }
     }
     
     // Private: Update time and send to client

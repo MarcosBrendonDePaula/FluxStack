@@ -11,6 +11,8 @@ export type LiveActionRequest = {
 
 export abstract class LiveAction {
     private static registry = new Map<string, typeof LiveAction>()
+    private static clientStateRegistry = new Map<string, (props: any) => Record<string, any>>()
+    private static instanceRegistry = new Map<string, LiveAction>()
     
     public $ID!: string
     public ws!: ElysiaWS
@@ -23,11 +25,59 @@ export abstract class LiveAction {
     public static add(actionClass: typeof LiveAction) {
         const componentName = actionClass.name.toLowerCase()
         this.registry.set(componentName, actionClass)
-        console.log(`🔌 Live component registered: ${componentName}`)
+        
+        // Registrar função de estado inicial do cliente
+        // Cria uma instância temporária para obter o estado inicial
+        try {
+            // @ts-expect-error - Constructor instantiation
+            const tempInstance: LiveAction = new actionClass()
+            const getClientInitialState = (props: any) => {
+                return tempInstance.getInitialState(props || {})
+            }
+            this.clientStateRegistry.set(componentName, getClientInitialState)
+            console.log(`🔌 Live component registered: ${componentName} (with client state)`)
+        } catch (error) {
+            console.warn(`⚠️  Could not register client state for ${componentName}:`, error)
+            this.clientStateRegistry.set(componentName, () => ({}))
+            console.log(`🔌 Live component registered: ${componentName} (fallback state)`)
+        }
     }
     
     public static get(name: string): typeof LiveAction | undefined {
         return this.registry.get(name.toLowerCase())
+    }
+    
+    // Obter estado inicial para o cliente (frontend)
+    public static getClientInitialState(componentName: string, props: any): Record<string, any> {
+        const normalizedName = componentName.toLowerCase().replace('action', '')
+        const stateFunction = this.clientStateRegistry.get(`${normalizedName}action`)
+        
+        if (stateFunction) {
+            return stateFunction(props)
+        }
+        
+        // Fallback: tentar buscar diretamente pelo nome
+        const directStateFunction = this.clientStateRegistry.get(normalizedName)
+        if (directStateFunction) {
+            return directStateFunction(props)
+        }
+        
+        console.warn(`⚠️  No client state registered for component: ${componentName}`)
+        return {}
+    }
+    
+    // Clean up persistent instance (when component unmounts)
+    public static destroyInstance(componentId: string) {
+        const instance = this.instanceRegistry.get(componentId)
+        if (instance) {
+            // Call unmount lifecycle if available
+            if (typeof instance.unmount === 'function') {
+                instance.unmount()
+            }
+            
+            this.instanceRegistry.delete(componentId)
+            console.log(`🗑️  Destroyed persistent instance for ${componentId}`)
+        }
     }
     
     // Hydration - restaura estado do cliente no servidor
@@ -54,16 +104,33 @@ export abstract class LiveAction {
         }
         
         try {
-            // @ts-expect-error - Constructor instantiation
-            const instance: LiveAction = new ActionClass()
-            instance.ws = opts.ws
-            instance.$ID = opts.componentId
+            // ✨ Use persistent instance or create new one
+            let instance = this.instanceRegistry.get(opts.componentId)
             
-            // Merge initial state (with props) + client state
-            const initialState = instance.getInitialState(opts.clientState.$props || {})
-            const fullState = { ...initialState, ...opts.clientState }
-            
-            this.hydrate(instance, fullState, opts.clientState.$props)
+            if (!instance) {
+                // @ts-expect-error - Constructor instantiation
+                instance = new ActionClass()
+                instance.ws = opts.ws
+                instance.$ID = opts.componentId
+                
+                // Merge initial state (with props) + client state
+                const initialState = instance.getInitialState(opts.clientState.$props || {})
+                const fullState = { ...initialState, ...opts.clientState }
+                
+                this.hydrate(instance, fullState, opts.clientState.$props)
+                
+                // Store persistent instance
+                this.instanceRegistry.set(opts.componentId, instance)
+                console.log(`🏗️  Created persistent instance for ${opts.componentId}`)
+            } else {
+                // Update existing instance with latest WebSocket and props
+                instance.ws = opts.ws
+                instance.$props = opts.clientState.$props || {}
+                
+                // Only update state from client if it's different
+                this.hydrate(instance, opts.clientState, opts.clientState.$props)
+                console.log(`🔄 Reusing persistent instance for ${opts.componentId}`)
+            }
             
             // Call requested method
             const method = instance[opts.methodName]
