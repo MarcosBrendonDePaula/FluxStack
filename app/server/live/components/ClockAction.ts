@@ -40,7 +40,7 @@ export class ClockAction extends LiveAction {
         // Update every 30 seconds (reduced for debugging)
         this.timer = setInterval(() => {
             this.updateTime()
-        }, 30000)
+        }, 1000)
         
         console.log(`⏰ Clock ${this.$ID} started (${this.timezone}, ${this.format})`)
         this.emit('clock-started', { 

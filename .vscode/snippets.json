@@ -1,0 +1,249 @@
+{
+  "LiveAction Class": {
+    "prefix": "liveaction",
+    "body": [
+      "import { LiveAction } from '@/core/live'",
+      "import { Action, State, Lifecycle, LiveComponent } from '@/core/decorators/LiveActionDecorators'",
+      "",
+      "interface ${1:ComponentName}Props {",
+      "    ${2:// Add your props here}",
+      "}",
+      "",
+      "@LiveComponent('${1:ComponentName}Action')",
+      "export class ${1:ComponentName}Action extends LiveAction {",
+      "    @State({ required: true, type: 'string' })",
+      "    ${3:exampleProperty}: string = '${4:default value}'",
+      "",
+      "    getInitialState(props: ${1:ComponentName}Props) {",
+      "        return {",
+      "            ${3:exampleProperty}: props.${3:exampleProperty} || '${4:default value}'",
+      "        }",
+      "    }",
+      "",
+      "    @Lifecycle('mount')",
+      "    mount() {",
+      "        ${5:// Add mount logic here}",
+      "    }",
+      "",
+      "    @Action({ description: '${6:Action description}', emit: '${7:action-completed}' })",
+      "    ${8:exampleAction}() {",
+      "        ${9:// Add your action logic here}",
+      "        return { success: true, message: '${8:exampleAction} completed' }",
+      "    }",
+      "}"
+    ],
+    "description": "Create a complete LiveAction component with decorators"
+  },
+  
+  "LiveAction Simple": {
+    "prefix": "liveaction-simple", 
+    "body": [
+      "import { LiveAction, SimpleAction, SimpleLifecycle, SimpleValidate, Validators, ValidationMessages } from '@/core'",
+      "",
+      "export class ${1:ComponentName}Action extends LiveAction {",
+      "    ${2:property}: ${3:string} = '${4:default}'",
+      "",
+      "    getInitialState(props: any) {",
+      "        return {",
+      "            ${2:property}: '${4:default}'",
+      "        }",
+      "    }",
+      "",
+      "    @SimpleLifecycle('mount')",
+      "    mount() {",
+      "        // Mount logic here",
+      "    }",
+      "",
+      "    @SimpleAction('${6:Action description}')",
+      "    @SimpleValidate(Validators.required, ValidationMessages.required)",
+      "    ${5:exampleAction}(${7:param}: ${8:string}) {",
+      "        // Action logic here",
+      "        return { success: true }",
+      "    }",
+      "}",
+      "",
+      "LiveAction.add(${1:ComponentName}Action)"
+    ],
+    "description": "Create a simple LiveAction component with decorators"
+  },
+
+  "LiveAction Method": {
+    "prefix": "livemethod",
+    "body": [
+      "@Action({ description: '${1:Method description}', emit: '${2:event-name}' })",
+      "${3:methodName}(${4:params}) {",
+      "    ${5:// Add your logic here}",
+      "    ",
+      "    return { success: true, message: '${3:methodName} completed' }",
+      "}"
+    ],
+    "description": "Add a decorated action method to LiveAction"
+  },
+
+  "LiveAction State Property": {
+    "prefix": "livestate",
+    "body": [
+      "@State({ required: ${1:true}, type: '${2:string}', default: '${3:defaultValue}' })",
+      "${4:propertyName}: ${2:string} = '${3:defaultValue}'"
+    ],
+    "description": "Add a validated state property"
+  },
+
+  "LiveAction Validation": {
+    "prefix": "livevalidate",
+    "body": [
+      "@Validate(",
+      "    ValidationRules.required('${1:Property is required}'),",
+      "    ValidationRules.${2:minLength}(${3:3}, '${4:Validation message}'),",
+      "    ValidationRules.custom(",
+      "        (value) => ${5:/* custom validation */},",
+      "        '${6:Custom validation message}'",
+      "    )",
+      ")",
+      "${7:propertyName}: ${8:string}"
+    ],
+    "description": "Add validation decorators to a property or method"
+  },
+
+  "LiveAction Lifecycle": {
+    "prefix": "livelifecycle",
+    "body": [
+      "@Lifecycle('${1|mount,unmount,update|}')",
+      "${1:mount}() {",
+      "    ${2:// Add lifecycle logic here}",
+      "}"
+    ],
+    "description": "Add a lifecycle method"
+  },
+
+  "LiveAction Builder": {
+    "prefix": "livebuilder",
+    "body": [
+      "import { createLiveAction } from '@/core/helpers/LiveActionHelpers'",
+      "",
+      "const ${1:ComponentName}Action = createLiveAction('${1:ComponentName}Action')",
+      "    .withProps<{${2:// Props interface}}>(",
+      "    .withInitialState((props) => ({",
+      "        ${3:property}: props.${3:property} || '${4:default}'",
+      "    }))",
+      "    .withAction('${5:actionName}', function(${6:params}) {",
+      "        ${7:// Action logic}",
+      "        return { success: true }",
+      "    })",
+      "    .withLifecycle('mount', function() {",
+      "        ${8:// Mount logic}",
+      "    })",
+      "    .build()",
+      "",
+      "export default ${1:ComponentName}Action"
+    ],
+    "description": "Create LiveAction using the builder pattern"
+  },
+
+  "React Live Component": {
+    "prefix": "livecomponent",
+    "body": [
+      "import { useLive } from '@/hooks/useLive'",
+      "",
+      "interface ${1:ComponentName}Props {",
+      "    componentId?: string",
+      "    ${2:// Add your props here}",
+      "}",
+      "",
+      "export function ${1:ComponentName}({",
+      "    componentId,",
+      "    ${3:...props}",
+      "}: ${1:ComponentName}Props) {",
+      "    const {",
+      "        state,",
+      "        loading,", 
+      "        error,",
+      "        connected,",
+      "        callMethod",
+      "    } = useLive({",
+      "        name: '${1:ComponentName}Action',",
+      "        props: ${3:props},",
+      "        componentId",
+      "    })",
+      "",
+      "    return (",
+      "        <div>",
+      "            <h3>${1:ComponentName}</h3>",
+      "            <div>Status: {connected ? '🟢 Live' : '🔴 Offline'}</div>",
+      "            ",
+      "            <button ",
+      "                onClick={() => callMethod('${4:methodName}')}",
+      "                disabled={loading}",
+      "            >",
+      "                {loading ? 'Loading...' : '${5:Button Text}'}",
+      "            </button>",
+      "            ",
+      "            {error && <div style={{color: 'red'}}>{error}</div>}",
+      "        </div>",
+      "    )",
+      "}"
+    ],
+    "description": "Create a React component that uses LiveAction"
+  },
+
+  "Validation Rules": {
+    "prefix": "validationrules",
+    "body": [
+      "import { ValidationRules } from '@/core/validators/LiveActionValidators'",
+      "",
+      "const ${1:validationRules} = [",
+      "    ValidationRules.required('${2:Field is required}'),",
+      "    ValidationRules.${3:minLength}(${4:3}, '${5:Minimum 3 characters}'),",
+      "    ValidationRules.${6:pattern}(/${7:regex}/, '${8:Invalid format}'),",
+      "    ValidationRules.custom(",
+      "        (value) => ${9:/* validation logic */},",
+      "        '${10:Custom validation message}'",
+      "    )",
+      "]"
+    ],
+    "description": "Create validation rules array"
+  },
+
+  "Simple Action Method": {
+    "prefix": "simpleaction",
+    "body": [
+      "@SimpleAction('${1:Method description}')",
+      "@SimpleValidate(Validators.${2:required}, ValidationMessages.${2:required})",
+      "${3:methodName}(${4:param}: ${5:string}) {",
+      "    ${6:// Action logic here}",
+      "    return { success: true }",
+      "}"
+    ],
+    "description": "Add a simple action method with validation"
+  },
+
+  "Simple Lifecycle": {
+    "prefix": "simplelifecycle",
+    "body": [
+      "@SimpleLifecycle('${1|mount,unmount|}')",
+      "${1:mount}() {",
+      "    ${2:// Lifecycle logic here}",
+      "}"
+    ],
+    "description": "Add a simple lifecycle method"
+  },
+
+  "Simple Validate": {
+    "prefix": "simplevalidate",
+    "body": [
+      "@SimpleValidate(",
+      "    Validators.${1:safeString}(${2:2}, ${3:50}),",
+      "    ValidationMessages.${1:safeString}(${2:2}, ${3:50})",
+      ")"
+    ],
+    "description": "Add simple validation to a method"
+  },
+
+  "CLI Component Generation": {
+    "prefix": "makeLive",
+    "body": [
+      "bun run make:component ${1:ComponentName} --props --lifecycle --events --controls --method=${2:methodName}"
+    ],
+    "description": "CLI command to generate LiveAction component"
+  }
+}

@@ -33,7 +33,9 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest --watch",
-    "legacy:dev": "bun --watch app/server/index.ts"
+    "legacy:dev": "bun --watch app/server/index.ts",
+    "generate:component": "bun run core/cli/generator.ts",
+    "make:component": "bun run generate:component"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",

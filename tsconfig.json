@@ -24,6 +24,10 @@
       "@/shared/*": ["./app/shared/*"]
     },
 
+    // Decorators support
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+
     // Best practices
     "strict": true,
     "skipLibCheck": true,

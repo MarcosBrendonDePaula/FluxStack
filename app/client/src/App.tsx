@@ -6,6 +6,8 @@ import { Counter } from './components/live/Counter'
 import { Clock } from './components/live/Clock'
 import { Calculator } from './components/live/Calculator'
 import { Toast } from './components/live/Toast'
+import { UserProfile } from './components/live/UserProfile'
+import { ExampleEnhanced } from './components/live/ExampleEnhanced'
 
 interface User {
   id: number
@@ -673,6 +675,55 @@ const health = await api.health.get()`}</pre>
               onToastsAutoCleaned={(data) => console.log(`🧹 Auto-cleaned toasts:`, data)}
               onStatsRequested={(data) => console.log(`📊 Toast stats:`, data)}
             />
+
+            {/* Test Generated Component */}
+            <div style={{ marginTop: '2rem' }}>
+              <h3>🧪 Teste: Componente Gerado</h3>
+              <UserProfile 
+                componentId="test-user-profile"
+                onActionCompleted={(data) => console.log(`👤 UserProfile action:`, data)}
+              />
+            </div>
+
+            {/* Test Enhanced Component with All Features */}
+            <div style={{ marginTop: '3rem' }}>
+              <h3>🚀 Teste: Componente Enhanced com Helpers</h3>
+              <p style={{ marginBottom: '1rem', color: '#64748b', fontSize: '0.9rem' }}>
+                Este componente demonstra todos os helpers criados: decorators, validação, state management e event handling.
+              </p>
+              <ExampleEnhanced 
+                componentId="example-enhanced"
+                title="Exemplo com Helpers"
+                maxItems={15}
+                isEnabled={true}
+                onItemAdded={(data) => console.log(`➕ Item added:`, data)}
+                onItemRemoved={(data) => console.log(`➖ Item removed:`, data)}
+                onAllItemsCleared={(data) => console.log(`🧹 All items cleared:`, data)}
+                onTitleUpdated={(data) => console.log(`✏️ Title updated:`, data)}
+                onStateToggled={(data) => console.log(`🔄 State toggled:`, data)}
+                onComponentChanged={(data) => console.log(`🔄 Component changed:`, data)}
+              />
+              
+              <div style={{ 
+                marginTop: '1rem', 
+                padding: '1rem', 
+                background: '#f0f9ff', 
+                borderRadius: '8px',
+                fontSize: '0.85rem',
+                color: '#1e40af'
+              }}>
+                <h4 style={{ margin: '0 0 0.5rem 0' }}>🎯 Recursos testados:</h4>
+                <ul style={{ margin: 0, paddingLeft: '1.2rem' }}>
+                  <li><strong>@Action decorators</strong> com auto-emit de eventos</li>
+                  <li><strong>@State decorators</strong> com validação automática</li>
+                  <li><strong>@Validate decorators</strong> com ValidationRules</li>
+                  <li><strong>@Lifecycle decorators</strong> para mount/unmount</li>
+                  <li><strong>@LiveComponent</strong> auto-registration</li>
+                  <li><strong>Event handlers</strong> estilo Livewire</li>
+                  <li><strong>Type safety</strong> end-to-end</li>
+                </ul>
+              </div>
+            </div>
           </div>
         )}
       </main>
