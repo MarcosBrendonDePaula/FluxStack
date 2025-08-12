@@ -1,4 +1,5 @@
 import type { ElysiaWS } from 'elysia/ws'
+import { hydrationManager } from './HydrationManager'
 
 export type LiveActionRequest = {
     componentId: string
@@ -7,6 +8,9 @@ export type LiveActionRequest = {
     methodName: string
     params: any[]
     ws: ElysiaWS
+    // Hydration support
+    fingerprint?: string
+    hydrationAttempt?: boolean
 }
 
 export abstract class LiveAction {
@@ -78,6 +82,60 @@ export abstract class LiveAction {
             this.instanceRegistry.delete(componentId)
             console.log(`🗑️  Destroyed persistent instance for ${componentId}`)
         }
+        
+        // Also remove from hydration manager
+        hydrationManager.removeSession(componentId)
+    }
+    
+    // Create hydration snapshot
+    public static createHydrationSnapshot(
+        componentId: string,
+        componentName: string,
+        state: Record<string, any>,
+        props: Record<string, any>
+    ): string {
+        return hydrationManager.storeSnapshot(componentId, componentName, state, props)
+    }
+    
+    // Attempt hydration recovery
+    public static attemptHydration(
+        componentId: string,
+        componentName: string,
+        clientFingerprint?: string,
+        clientState?: Record<string, any>
+    ): { success: boolean; instance?: LiveAction; reason?: string } {
+        // Try to hydrate from stored snapshot
+        const hydrationResult = hydrationManager.attemptHydration(componentId, clientFingerprint || '', clientState)
+        
+        if (!hydrationResult.success) {
+            console.log(`⚠️  Hydration failed for ${componentId}: ${hydrationResult.reason}`)
+            return { success: false, reason: hydrationResult.reason }
+        }
+        
+        // Create new instance with hydrated state
+        const ActionClass = this.get(componentName)
+        if (!ActionClass) {
+            return { success: false, reason: 'component_not_found' }
+        }
+        
+        try {
+            // @ts-expect-error - Constructor instantiation
+            const instance: LiveAction = new ActionClass()
+            instance.$ID = componentId
+            
+            // Hydrate with recovered state
+            this.hydrate(instance, hydrationResult.state!, {})
+            
+            // Store in registry
+            this.instanceRegistry.set(componentId, instance)
+            
+            console.log(`✨ Successfully hydrated instance for ${componentId}`)
+            return { success: true, instance }
+            
+        } catch (error) {
+            console.error(`❌ Error creating hydrated instance for ${componentId}:`, error)
+            return { success: false, reason: 'hydration_error' }
+        }
     }
     
     // Hydration - restaura estado do cliente no servidor
@@ -104,33 +162,60 @@ export abstract class LiveAction {
         }
         
         try {
-            // ✨ Use persistent instance or create new one
+            // ✨ Use persistent instance, attempt hydration, or create new one
             let instance = this.instanceRegistry.get(opts.componentId)
+            let isNewInstance = false
+            let isHydrated = false
             
             if (!instance) {
-                // @ts-expect-error - Constructor instantiation
-                instance = new ActionClass()
-                instance.ws = opts.ws
-                instance.$ID = opts.componentId
+                // Try hydration first if fingerprint provided
+                if (opts.fingerprint && opts.hydrationAttempt) {
+                    const hydrationResult = this.attemptHydration(
+                        opts.componentId,
+                        opts.componentName,
+                        opts.fingerprint,
+                        opts.clientState
+                    )
+                    
+                    if (hydrationResult.success && hydrationResult.instance) {
+                        instance = hydrationResult.instance
+                        isHydrated = true
+                        console.log(`🔄 Hydrated instance for ${opts.componentId}`)
+                    }
+                }
                 
-                // Merge initial state (with props) + client state
-                const initialState = instance.getInitialState(opts.clientState.$props || {})
-                const fullState = { ...initialState, ...opts.clientState }
-                
-                this.hydrate(instance, fullState, opts.clientState.$props)
-                
-                // Store persistent instance
-                this.instanceRegistry.set(opts.componentId, instance)
-                console.log(`🏗️  Created persistent instance for ${opts.componentId}`)
+                // Create new instance if hydration failed
+                if (!instance) {
+                    // @ts-expect-error - Constructor instantiation
+                    instance = new ActionClass()
+                    instance.ws = opts.ws
+                    instance.$ID = opts.componentId
+                    
+                    // Merge initial state (with props) + client state
+                    const initialState = instance.getInitialState(opts.clientState.$props || {})
+                    const fullState = { ...initialState, ...opts.clientState }
+                    
+                    this.hydrate(instance, fullState, opts.clientState.$props)
+                    
+                    // Store persistent instance
+                    this.instanceRegistry.set(opts.componentId, instance)
+                    isNewInstance = true
+                    console.log(`🏗️  Created persistent instance for ${opts.componentId}`)
+                }
             } else {
                 // Update existing instance with latest WebSocket and props
                 instance.ws = opts.ws
                 instance.$props = opts.clientState.$props || {}
                 
-                // Only update state from client if it's different
-                this.hydrate(instance, opts.clientState, opts.clientState.$props)
+                // Only update state from client if it's different (avoid overwriting server state)
+                if (!isHydrated) {
+                    this.hydrate(instance, opts.clientState, opts.clientState.$props)
+                }
                 console.log(`🔄 Reusing persistent instance for ${opts.componentId}`)
             }
+            
+            // Update WebSocket reference (always needed)
+            instance.ws = opts.ws
             
             // Call requested method
             const method = instance[opts.methodName]
@@ -230,9 +315,22 @@ export abstract class LiveAction {
             
             // Return serialized state
             const finalState = this.serializeState(instance)
+            
+            // 💾 Create hydration snapshot after successful operation
+            const fingerprint = this.createHydrationSnapshot(
+                opts.componentId,
+                opts.componentName,
+                finalState,
+                opts.clientState.$props || {}
+            )
+            
+            // Add fingerprint to state for client storage
+            finalState.__fingerprint = fingerprint
+            
             console.log(`📤 Returning state for ${opts.componentName}[${opts.componentId}]:`, { 
                 ...(finalState.count !== undefined && { count: finalState.count, step: finalState.step }),
-                ...(finalState.currentTime !== undefined && { currentTime: finalState.currentTime, isRunning: finalState.isRunning })
+                ...(finalState.currentTime !== undefined && { currentTime: finalState.currentTime, isRunning: finalState.isRunning }),
+                fingerprint: fingerprint.substring(0, 8) + '...'
             })
             return finalState
             

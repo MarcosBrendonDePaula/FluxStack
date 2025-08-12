@@ -40,7 +40,9 @@ async function handleLiveMessage(ws: any, message: any) {
                             id: instanceId, 
                             methodName, 
                             params, 
-                            state: clientState 
+                            state: clientState,
+                            fingerprint,
+                            hydrationAttempt
                         } = payload
                         
                         console.log(`🎯 Live action: ${componentName}.${methodName}(${params?.length || 0} params)`)
@@ -51,7 +53,9 @@ async function handleLiveMessage(ws: any, message: any) {
                             methodName,
                             params: params || [],
                             ws,
-                            componentId: instanceId
+                            componentId: instanceId,
+                            fingerprint,
+                            hydrationAttempt
                         })
                         
                         if (newState) {

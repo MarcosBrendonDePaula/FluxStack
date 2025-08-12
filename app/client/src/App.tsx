@@ -5,6 +5,7 @@ import { LiveProvider, LiveDebugPanel } from './components/live/LiveProvider'
 import { Counter } from './components/live/Counter'
 import { Clock } from './components/live/Clock'
 import { Calculator } from './components/live/Calculator'
+import { Toast } from './components/live/Toast'
 
 interface User {
   id: number
@@ -13,7 +14,7 @@ interface User {
   createdAt?: string
 }
 
-type TabType = 'overview' | 'demo' | 'api-docs' | 'live-components'
+type TabType = 'overview' | 'demo' | 'api-docs' | 'live-components' | 'toast-test'
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('overview')
@@ -604,6 +605,12 @@ const health = await api.health.get()`}</pre>
               >
                 🔥 Live Components
               </button>
+              <button 
+                className={`tab ${activeTab === 'toast-test' ? 'active' : ''}`}
+                onClick={() => setActiveTab('toast-test')}
+              >
+                🍞 Toast & Hydration
+              </button>
             </nav>
           </div>
           <div className={`status-badge ${apiStatus}`}>
@@ -619,6 +626,55 @@ const health = await api.health.get()`}</pre>
         {activeTab === 'demo' && renderDemo()}
         {activeTab === 'api-docs' && renderApiDocs()}
         {activeTab === 'live-components' && renderLiveComponents()}
+        {activeTab === 'toast-test' && (
+          <div className="toast-test-demo">
+            <div className="demo-header">
+              <h2>🍞 Toast & Hydration Test</h2>
+              <p className="demo-subtitle">
+                Test state persistence and recovery with Toast notifications
+              </p>
+            </div>
+
+            <div className="demo-description">
+              <div className="info-card">
+                <h3>🧪 How to Test Hydration:</h3>
+                <ol>
+                  <li>🍞 <strong>Create Toasts</strong>: Click buttons to create different types of toasts</li>
+                  <li>🧪 <strong>Test Hydration</strong>: Click "Test Hydration" to create multiple toasts</li>
+                  <li>🔄 <strong>Refresh Page</strong>: Press F5 - toasts should be restored from localStorage</li>
+                  <li>🔌 <strong>Restart Server</strong>: Stop (Ctrl+C) and start server - state should recover</li>
+                  <li>💾 <strong>Check Storage</strong>: DevTools → Application → LocalStorage → see snapshots</li>
+                  <li>🔍 <strong>Monitor Logs</strong>: Console shows hydration process with fingerprints</li>
+                </ol>
+              </div>
+
+              <div className="info-card" style={{ marginTop: '2rem' }}>
+                <h3>🎯 Hydration Features:</h3>
+                <ul>
+                  <li>🔒 <strong>Hash Validation</strong>: SHA-256 checksums prevent state tampering</li>
+                  <li>💾 <strong>Local Persistence</strong>: State saved in localStorage with fingerprints</li>
+                  <li>⏱️ <strong>Auto Expiration</strong>: Snapshots expire after 1 hour</li>
+                  <li>🔄 <strong>Smart Recovery</strong>: Automatic hydration on server reconnection</li>
+                  <li>🧹 <strong>Auto Cleanup</strong>: Expired toasts and snapshots cleaned automatically</li>
+                  <li>🛡️ <strong>Security</strong>: Secret key prevents state manipulation</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Toast Component */}
+            <Toast 
+              componentId="main-toast-manager"
+              maxToasts={6}
+              defaultDuration={8000}
+              position="top-right"
+              onToastShown={(data) => console.log(`🍞 Toast shown:`, data)}
+              onToastDismissed={(data) => console.log(`🗑️ Toast dismissed:`, data)}
+              onToastsCleared={(data) => console.log(`🧹 All toasts cleared:`, data)}
+              onToastsAutoCleaned={(data) => console.log(`🧹 Auto-cleaned toasts:`, data)}
+              onStatsRequested={(data) => console.log(`📊 Toast stats:`, data)}
+            />
+          </div>
+        )}
       </main>
 
       {/* Toast Notification */}

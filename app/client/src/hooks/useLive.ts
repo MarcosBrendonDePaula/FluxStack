@@ -1,6 +1,46 @@
 import { useLiveStore } from '@/stores/live/liveStore'
 import { useCallback, useEffect, useRef } from 'react'
 
+// Local storage keys for hydration
+const HYDRATION_PREFIX = 'fluxstack_hydration_'
+const FINGERPRINT_PREFIX = 'fluxstack_fingerprint_'
+
+// Hydration utilities
+const saveHydrationState = (componentId: string, state: any, fingerprint: string) => {
+    try {
+        localStorage.setItem(HYDRATION_PREFIX + componentId, JSON.stringify(state))
+        localStorage.setItem(FINGERPRINT_PREFIX + componentId, fingerprint)
+    } catch (error) {
+        console.warn('Failed to save hydration state:', error)
+    }
+}
+
+const loadHydrationState = (componentId: string): { state?: any; fingerprint?: string } => {
+    try {
+        const stateStr = localStorage.getItem(HYDRATION_PREFIX + componentId)
+        const fingerprint = localStorage.getItem(FINGERPRINT_PREFIX + componentId)
+        
+        if (stateStr && fingerprint) {
+            return {
+                state: JSON.parse(stateStr),
+                fingerprint
+            }
+        }
+    } catch (error) {
+        console.warn('Failed to load hydration state:', error)
+    }
+    return {}
+}
+
+const clearHydrationState = (componentId: string) => {
+    try {
+        localStorage.removeItem(HYDRATION_PREFIX + componentId)
+        localStorage.removeItem(FINGERPRINT_PREFIX + componentId)
+    } catch (error) {
+        console.warn('Failed to clear hydration state:', error)
+    }
+}
+
 interface UseLiveOptions {
     name: string
     props?: Record<string, any>
@@ -131,6 +171,8 @@ export function useLive({ name, props = {}, componentId, eventHandlers = {} }: U
         return () => {
             console.log(`🗑️  Cleaning up live component: ${id}`)
             removeConnection(id)
+            // Clear hydration state on cleanup (component unmounted)
+            clearHydrationState(id)
         }
     }, [id, name, ws])
 
@@ -205,6 +247,10 @@ export function useLive({ name, props = {}, componentId, eventHandlers = {} }: U
             window.addEventListener('live:function-result', handleFunctionResult as EventListener)
             window.addEventListener('live:function-error', handleFunctionError as EventListener)
 
+            // Get hydration state for resilience
+            const hydrationData = loadHydrationState(id)
+            const currentState = state || { $props: props, $ID: id }
+            
             const message = JSON.stringify({
                 updates: [{
                     type: 'callMethod',
@@ -213,7 +259,9 @@ export function useLive({ name, props = {}, componentId, eventHandlers = {} }: U
                         id,
                         methodName,
                         params,
-                        state: state || { $props: props, $ID: id }
+                        state: currentState,
+                        fingerprint: hydrationData.fingerprint,
+                        hydrationAttempt: !!hydrationData.fingerprint
                     }
                 }]
             })
