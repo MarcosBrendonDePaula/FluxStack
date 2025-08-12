@@ -9,6 +9,13 @@ interface CounterProps {
     minCount?: number
     componentId?: string
     showDebug?: boolean
+    
+    // Livewire-style event handlers
+    onCountChanged?: (data: { count: number, action: string }) => void
+    onLimitReached?: (data: { type: 'max' | 'min', limit: number }) => void
+    onCounterReset?: (data?: any) => void
+    onInvalidValue?: (data: { attempted: number, min: number, max: number }) => void
+    onStepChanged?: (data: { step: number }) => void
 }
 
 export function Counter({ 
@@ -18,65 +25,68 @@ export function Counter({
     maxCount = 100,
     minCount = 0,
     componentId,
-    showDebug = false
+    showDebug = false,
+    // Event handlers
+    onCountChanged,
+    onLimitReached,
+    onCounterReset,
+    onInvalidValue,
+    onStepChanged
 }: CounterProps) {
+    const [notification, setNotification] = useState<string>('')
+
+    // Handle notifications from events (separate from event handlers)
+    const handleLimitReached = (data: { type: 'max' | 'min', limit: number }) => {
+        const message = `⚠️ ${data.type === 'max' ? 'Máximo' : 'Mínimo'} atingido: ${data.limit}`
+        setNotification(message)
+        setTimeout(() => setNotification(''), 3000)
+        // Also call user's handler if provided
+        onLimitReached?.(data)
+    }
+
+    const handleCounterReset = (data?: any) => {
+        setNotification('🔄 Contador resetado!')
+        setTimeout(() => setNotification(''), 2000)
+        onCounterReset?.(data)
+    }
+
+    const handleInvalidValue = (data: { attempted: number, min: number, max: number }) => {
+        setNotification(`❌ Valor inválido: ${data.attempted} (min: ${data.min}, max: ${data.max})`)
+        setTimeout(() => setNotification(''), 3000)
+        onInvalidValue?.(data)
+    }
+
+    const handleStepChanged = (data: { step: number }) => {
+        setNotification(`⚡ Step alterado para: ${data.step}`)
+        setTimeout(() => setNotification(''), 2000)
+        onStepChanged?.(data)
+    }
+
     const { 
         state, 
         loading, 
         error, 
         connected, 
         callMethod, 
-        optimisticUpdate, 
-        listen,
+        optimisticUpdate,
         componentId: id,
         __debug
     } = useLive({
         name: 'CounterAction',
         props: { initialCount, step, label, maxCount, minCount },
-        componentId
-    })
-    
-    const [notification, setNotification] = useState<string>('')
-    
-    // Listen to events from backend
-    useEffect(() => {
-        const unsubscribes: Array<() => void> = []
-        
-        // Count changed event
-        unsubscribes.push(listen('count-changed', (data) => {
-            console.log(`📊 Count changed to ${data.count} (${data.action})`)
-        }))
-        
-        // Limit reached event
-        unsubscribes.push(listen('limit-reached', (data) => {
-            const message = `⚠️ ${data.type === 'max' ? 'Máximo' : 'Mínimo'} atingido: ${data.limit}`
-            setNotification(message)
-            setTimeout(() => setNotification(''), 3000)
-        }))
-        
-        // Counter reset event
-        unsubscribes.push(listen('counter-reset', () => {
-            setNotification('🔄 Contador resetado!')
-            setTimeout(() => setNotification(''), 2000)
-        }))
-        
-        // Invalid value event  
-        unsubscribes.push(listen('invalid-value', (data) => {
-            setNotification(`❌ Valor inválido: ${data.attempted} (min: ${data.min}, max: ${data.max})`)
-            setTimeout(() => setNotification(''), 3000)
-        }))
-        
-        // Step changed event
-        unsubscribes.push(listen('step-changed', (data) => {
-            setNotification(`⚡ Step alterado para: ${data.step}`)
-            setTimeout(() => setNotification(''), 2000)
-        }))
-        
-        // Cleanup
-        return () => {
-            unsubscribes.forEach(unsub => unsub())
+        componentId,
+        eventHandlers: {
+            // Internal handlers with user callbacks
+            onCountChanged: (data: any) => {
+                console.log(`📊 Count changed to ${data.count} (${data.action})`)
+                onCountChanged?.(data)
+            },
+            onLimitReached: handleLimitReached,
+            onCounterReset: handleCounterReset,
+            onInvalidValue: handleInvalidValue,
+            onStepChanged: handleStepChanged
         }
-    }, [listen])
+    })
     
     // Optimistic increment
     const handleOptimisticIncrement = () => {

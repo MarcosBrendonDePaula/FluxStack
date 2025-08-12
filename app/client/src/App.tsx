@@ -443,6 +443,8 @@ const health = await api.health.get()`}</pre>
             maxCount={50}
             componentId="basic-counter"
             showDebug={false}
+            onCountChanged={(data) => console.log(`📊 Basic counter: ${data.count} (${data.action})`)}
+            onLimitReached={(data) => console.log(`⚠️ Basic counter limit reached: ${data.limit}`)}
           />
           
           {/* Counter avançado */}
@@ -454,6 +456,8 @@ const health = await api.health.get()`}</pre>
             minCount={5}
             componentId="fast-counter"
             showDebug={false}
+            onStepChanged={(data) => console.log(`⚡ Fast counter step changed to: ${data.step}`)}
+            onCounterReset={() => console.log(`🔄 Fast counter was reset!`)}
           />
           
           {/* Counter com debug */}
@@ -464,6 +468,8 @@ const health = await api.health.get()`}</pre>
             maxCount={200}
             componentId="debug-counter"
             showDebug={true}
+            onInvalidValue={(data) => console.log(`❌ Debug counter invalid value: ${data.attempted}`)}
+            onCountChanged={(data) => console.log(`📊 Debug counter count: ${data.count}`)}
           />
         </div>
 
@@ -476,6 +482,7 @@ const health = await api.health.get()`}</pre>
             <li>Observe as notificações quando atingir limites</li>
             <li>Abra múltiplas abas para ver sincronização entre clients</li>
             <li>Verifique o painel de debug no terceiro contador</li>
+            <li><strong>🔥 Event Handlers Livewire-style:</strong> Abra o console do navegador para ver os event handlers sendo chamados automaticamente!</li>
           </ul>
         </div>
       </div>
@@ -498,6 +505,9 @@ const health = await api.health.get()`}</pre>
             componentId="clock-brazil"
             showDate={true}
             showControls={true}
+            onClockStarted={(data) => console.log(`🟢 Clock Brazil started:`, data)}
+            onTick={(data) => { /* Silent for tick events */ }}
+            onTimezoneChanged={(data) => console.log(`🌍 Brazil timezone changed:`, data)}
           />
           
           {/* Clock Nova York */}
@@ -508,6 +518,8 @@ const health = await api.health.get()`}</pre>
             componentId="clock-ny"
             showDate={false}
             showControls={true}
+            onFormatChanged={(data) => console.log(`🕐 NY format changed:`, data)}
+            onServerInfo={(data) => console.log(`🖥️ NY server info:`, data)}
           />
           
           {/* Clock Londres */}
@@ -518,6 +530,8 @@ const health = await api.health.get()`}</pre>
             componentId="clock-london"
             showDate={true}
             showControls={false}
+            onClockStopped={(data) => console.log(`🔴 London clock stopped:`, data)}
+            onTick={(data) => console.log(`⏰ London tick: ${data.time}`)}
           />
         </div>
 
@@ -531,6 +545,7 @@ const health = await api.health.get()`}</pre>
             <li><strong>Temas:</strong> Light, Dark e Neon com estilos diferentes</li>
             <li><strong>Server Info:</strong> Informações do servidor em tempo real</li>
             <li><strong>Push Updates:</strong> Servidor envia dados sem requisição do cliente</li>
+            <li><strong>🔥 Event Handlers:</strong> onTick, onClockStarted, onTimezoneChanged - estilo Livewire!</li>
           </ul>
         </div>
       </div>

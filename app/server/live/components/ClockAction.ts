@@ -95,7 +95,7 @@ export class ClockAction extends LiveAction {
         this.currentTime = this.formatTime(now)
         
         // ✨ Push update to client automatically
-        if (this.ws && this.ws.raw.readyState === WebSocket.OPEN) {
+        if (this.ws && this.ws.raw.readyState === 1) { // 1 = OPEN state
             this.ws.send(JSON.stringify({
                 updates: [{
                     type: 'state_update',

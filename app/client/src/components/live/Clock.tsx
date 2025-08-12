@@ -8,6 +8,14 @@ interface ClockProps {
     showDate?: boolean
     showControls?: boolean
     theme?: 'light' | 'dark' | 'neon'
+    
+    // Livewire-style event handlers
+    onTick?: (data: { componentId: string, time: string, timestamp: number }) => void
+    onClockStarted?: (data: { componentId: string, timezone: string, format: string }) => void
+    onClockStopped?: (data: { componentId: string }) => void
+    onTimezoneChanged?: (data: { componentId: string, timezone: string }) => void
+    onFormatChanged?: (data: { componentId: string, format: string }) => void
+    onServerInfo?: (data: { componentId: string, serverTime: string, serverTimezone: string, uptime: number }) => void
 }
 
 export function Clock({ 
@@ -16,69 +24,39 @@ export function Clock({
     componentId,
     showDate = true,
     showControls = true,
-    theme = 'light'
+    theme = 'light',
+    // Event handlers
+    onTick,
+    onClockStarted,
+    onClockStopped,
+    onTimezoneChanged,
+    onFormatChanged,
+    onServerInfo
 }: ClockProps) {
     const { 
         state, 
         loading, 
         error, 
         connected, 
-        callMethod, 
-        listen,
+        callMethod,
         componentId: id
     } = useLive({
         name: 'ClockAction',
         props: { timezone, format },
-        componentId
+        componentId,
+        eventHandlers: {
+            // Livewire-style event mapping
+            onTick,
+            onClockStarted,
+            onClockStopped, 
+            onTimezoneChanged,
+            onFormatChanged,
+            onServerInfo
+        }
     })
     
     const [notifications, setNotifications] = useState<string[]>([])
     const [serverInfo, setServerInfo] = useState<any>(null)
-    
-    // Listen to events from backend
-    useEffect(() => {
-        const unsubscribes: Array<() => void> = []
-        
-        // Clock started event
-        unsubscribes.push(listen('clock-started', (data) => {
-            console.log(`🟢 Clock started:`, data)
-            addNotification(`⏰ Relógio iniciado (${data.timezone})`)
-        }))
-        
-        // Clock stopped event
-        unsubscribes.push(listen('clock-stopped', () => {
-            console.log(`🔴 Clock stopped`)
-            addNotification(`⏸️ Relógio pausado`)
-        }))
-        
-        // Timezone changed event
-        unsubscribes.push(listen('timezone-changed', (data) => {
-            console.log(`🌍 Timezone changed:`, data)
-            addNotification(`🌍 Fuso alterado: ${data.timezone}`)
-        }))
-        
-        // Format changed event
-        unsubscribes.push(listen('format-changed', (data) => {
-            console.log(`🕐 Format changed:`, data)
-            addNotification(`🕐 Formato: ${data.format}`)
-        }))
-        
-        // Tick event (every second)
-        unsubscribes.push(listen('tick', (data) => {
-            // console.log(`⏱️ Tick:`, data.time) // Too verbose
-        }))
-        
-        // Server info event
-        unsubscribes.push(listen('server-info', (data) => {
-            console.log(`🖥️ Server info:`, data)
-            setServerInfo(data)
-        }))
-        
-        // Cleanup
-        return () => {
-            unsubscribes.forEach(unsub => unsub())
-        }
-    }, [listen])
     
     // Start clock on mount
     useEffect(() => {

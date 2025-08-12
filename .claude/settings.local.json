@@ -28,7 +28,8 @@
       "Bash(npm run build:*)",
       "Bash(npx tsc:*)",
       "Bash(bun:*)",
-      "Bash(vite build:*)"
+      "Bash(vite build:*)",
+      "Bash(start http://localhost:5174)"
     ],
     "deny": []
   }

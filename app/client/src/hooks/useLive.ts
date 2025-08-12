@@ -5,6 +5,8 @@ interface UseLiveOptions {
     name: string
     props?: Record<string, any>
     componentId?: string
+    // Livewire-style event handlers
+    eventHandlers?: Record<string, (data?: any) => void>
 }
 
 // Helper para estado inicial no cliente
@@ -37,7 +39,7 @@ function getInitialClientState(componentName: string, props: any): Record<string
     }
 }
 
-export function useLive({ name, props = {}, componentId }: UseLiveOptions) {
+export function useLive({ name, props = {}, componentId, eventHandlers = {} }: UseLiveOptions) {
     // ID único automático se não fornecido
     const autoId = useRef(
         componentId || `${name}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`
@@ -84,6 +86,33 @@ export function useLive({ name, props = {}, componentId }: UseLiveOptions) {
         setComponentConnected(id, !!ws && ws.readyState === WebSocket.OPEN)
     }, [ws, id])
 
+    // Auto-register event handlers (Livewire-style)
+    useEffect(() => {
+        const eventListeners: Array<() => void> = []
+        
+        Object.entries(eventHandlers).forEach(([eventName, handler]) => {
+            const fullEventName = `live:${eventName.replace(/^on/, '').toLowerCase().replace(/([a-z])([A-Z])/g, '$1-$2')}`
+            
+            const eventListener = (e: CustomEvent) => {
+                if (e.detail.componentId === id) {
+                    console.log(`🎯 Auto-calling handler for ${eventName}:`, e.detail.data)
+                    handler(e.detail.data)
+                }
+            }
+
+            window.addEventListener(fullEventName, eventListener as EventListener)
+            eventListeners.push(() => {
+                window.removeEventListener(fullEventName, eventListener as EventListener)
+            })
+            
+            console.log(`🎯 Auto-registered ${eventName} -> ${fullEventName} for ${id}`)
+        })
+
+        return () => {
+            eventListeners.forEach(cleanup => cleanup())
+        }
+    }, [eventHandlers, id])
+
     // Call backend method
     const callMethod = useCallback(async (methodName: string, ...params: any[]) => {
         if (!ws || ws.readyState !== WebSocket.OPEN) {
@@ -128,25 +157,6 @@ export function useLive({ name, props = {}, componentId }: UseLiveOptions) {
         }
     }, [id, state, updateComponent])
 
-    // Listen to events with cleanup
-    const listen = useCallback((event: string, callback: (data: any) => void) => {
-        const eventName = `live:${event}`
-        
-        const handler = (e: CustomEvent) => {
-            if (e.detail.componentId === id) {
-                console.log(`🔔 Event ${event} received for ${id}:`, e.detail.data)
-                callback(e.detail.data)
-            }
-        }
-
-        window.addEventListener(eventName, handler as EventListener)
-        console.log(`👂 Listening to ${eventName} for component ${id}`)
-        
-        return () => {
-            window.removeEventListener(eventName, handler as EventListener)
-            console.log(`🔇 Stopped listening to ${eventName} for component ${id}`)
-        }
-    }, [id])
 
     const currentState = state || { $props: props, $ID: id }
 
@@ -157,14 +167,14 @@ export function useLive({ name, props = {}, componentId }: UseLiveOptions) {
         connected: connection?.connected || false,
         callMethod,
         optimisticUpdate,
-        listen,
         componentId: id,
         
         // Debug info (useful for development)
         __debug: {
             componentName: name,
             hasState: !!state,
-            wsReady: !!ws && ws.readyState === WebSocket.OPEN
+            wsReady: !!ws && ws.readyState === WebSocket.OPEN,
+            registeredEvents: Object.keys(eventHandlers)
         }
     }
 }
