@@ -1,6 +1,10 @@
 // User application entry point
 import { FluxStackFramework, loggerPlugin, vitePlugin, swaggerPlugin } from "@/core/server"
+import { livePlugin } from "@/core/server/plugins/live"
 import { apiRoutes } from "./routes"
+
+// Import live components to auto-register them
+import "./live"
 
 // Criar aplicação com framework
 const app = new FluxStackFramework({
@@ -14,6 +18,7 @@ const app = new FluxStackFramework({
 app
   .use(swaggerPlugin)
   .use(loggerPlugin)
+  .use(livePlugin)  // Live Components WebSocket
   .use(vitePlugin)
   
 

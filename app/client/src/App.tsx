@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import './App.css'
 import { api, apiCall, getErrorMessage } from './lib/eden-api'
+import { LiveProvider, LiveDebugPanel } from './components/live/LiveProvider'
+import { Counter } from './components/live/Counter'
 
 interface User {
   id: number
@@ -9,7 +11,7 @@ interface User {
   createdAt?: string
 }
 
-type TabType = 'overview' | 'demo' | 'api-docs'
+type TabType = 'overview' | 'demo' | 'api-docs' | 'live-components'
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('overview')
@@ -400,8 +402,91 @@ const health = await api.health.get()`}</pre>
     </div>
   )
 
+  const renderLiveComponents = () => (
+    <div className="live-components-demo">
+      <div className="demo-header">
+        <h2>🔥 FluxStack Live Components</h2>
+        <p className="demo-subtitle">
+          Componentes interativos em tempo real com WebSocket + Zustand + Elysia
+        </p>
+      </div>
+
+      <div className="demo-description">
+        <div className="info-card">
+          <h3>✨ Como funciona:</h3>
+          <ul>
+            <li>🔌 <strong>WebSocket</strong>: Comunicação bidirecional em tempo real</li>
+            <li>🐻 <strong>Zustand</strong>: Estado global otimizado no frontend</li>
+            <li>⚡ <strong>LiveAction</strong>: Classes no backend para lógica de negócio</li>
+            <li>🔄 <strong>Sincronização</strong>: Estado sincronizado automaticamente</li>
+            <li>🎯 <strong>Type-safe</strong>: Tipagem end-to-end completa</li>
+          </ul>
+        </div>
+      </div>
+
+      <div className="counters-demo">
+        <h3>🧮 Demo: Contadores Interativos</h3>
+        <p>Cada contador tem seu próprio estado isolado no servidor:</p>
+        
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', 
+          gap: '1rem',
+          marginTop: '2rem'
+        }}>
+          {/* Counter básico */}
+          <Counter 
+            initialCount={0}
+            step={1}
+            label="Contador Básico"
+            maxCount={50}
+            componentId="basic-counter"
+            showDebug={false}
+          />
+          
+          {/* Counter avançado */}
+          <Counter 
+            initialCount={10}
+            step={2}
+            label="Contador Rápido"
+            maxCount={100}
+            minCount={5}
+            componentId="fast-counter"
+            showDebug={false}
+          />
+          
+          {/* Counter com debug */}
+          <Counter 
+            initialCount={25}
+            step={5}
+            label="Contador Debug"
+            maxCount={200}
+            componentId="debug-counter"
+            showDebug={true}
+          />
+        </div>
+
+        <div className="demo-explanation" style={{ marginTop: '2rem', padding: '1rem', background: '#f8fafc', borderRadius: '8px' }}>
+          <h4>🎯 Teste os recursos:</h4>
+          <ul>
+            <li>Clique nos botões +/- para ver atualizações em tempo real</li>
+            <li>Use o controle deslizante de Step</li>
+            <li>Teste os botões +10, Reset e Random (🎲)</li>
+            <li>Observe as notificações quando atingir limites</li>
+            <li>Abra múltiplas abas para ver sincronização entre clients</li>
+            <li>Verifique o painel de debug no terceiro contador</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  )
+
   return (
-    <div className="app">
+    <LiveProvider debug={true}>
+      {/* Debug panel - uncomment to see WebSocket activity */}
+      <LiveDebugPanel />
+      
+      <div className="app">
       {/* Header */}
       <header className="header">
         <div className="header-content">
@@ -428,6 +513,12 @@ const health = await api.health.get()`}</pre>
               >
                 📚 API Docs
               </button>
+              <button 
+                className={`tab ${activeTab === 'live-components' ? 'active' : ''}`}
+                onClick={() => setActiveTab('live-components')}
+              >
+                🔥 Live Components
+              </button>
             </nav>
           </div>
           <div className={`status-badge ${apiStatus}`}>
@@ -442,6 +533,7 @@ const health = await api.health.get()`}</pre>
         {activeTab === 'overview' && renderOverview()}
         {activeTab === 'demo' && renderDemo()}
         {activeTab === 'api-docs' && renderApiDocs()}
+        {activeTab === 'live-components' && renderLiveComponents()}
       </main>
 
       {/* Toast Notification */}
@@ -454,6 +546,7 @@ const health = await api.health.get()`}</pre>
         </div>
       )}
     </div>
+    </LiveProvider>
   )
 }
 
