@@ -2,12 +2,8 @@ import { useState, useEffect } from 'react'
 import './App.css'
 import { api, apiCall, getErrorMessage } from './lib/eden-api'
 import { LiveProvider, LiveDebugPanel } from './components/live/LiveProvider'
-import { Counter } from './components/live/Counter'
-import { Clock } from './components/live/Clock'
-import { Calculator } from './components/live/Calculator'
-import { Toast } from './components/live/Toast'
-import { UserProfile } from './components/live/UserProfile'
-import { ExampleEnhanced } from './components/live/ExampleEnhanced'
+import { LiveComponentsPage } from './pages/LiveComponentsPage'
+import './pages/LiveComponentsPage.css'
 
 interface User {
   id: number
@@ -16,7 +12,7 @@ interface User {
   createdAt?: string
 }
 
-type TabType = 'overview' | 'demo' | 'api-docs' | 'live-components' | 'toast-test'
+type TabType = 'overview' | 'demo' | 'api-docs' | 'live-components'
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('overview')
@@ -607,12 +603,6 @@ const health = await api.health.get()`}</pre>
               >
                 🔥 Live Components
               </button>
-              <button 
-                className={`tab ${activeTab === 'toast-test' ? 'active' : ''}`}
-                onClick={() => setActiveTab('toast-test')}
-              >
-                🍞 Toast & Hydration
-              </button>
             </nav>
           </div>
           <div className={`status-badge ${apiStatus}`}>
@@ -627,105 +617,7 @@ const health = await api.health.get()`}</pre>
         {activeTab === 'overview' && renderOverview()}
         {activeTab === 'demo' && renderDemo()}
         {activeTab === 'api-docs' && renderApiDocs()}
-        {activeTab === 'live-components' && renderLiveComponents()}
-        {activeTab === 'toast-test' && (
-          <div className="toast-test-demo">
-            <div className="demo-header">
-              <h2>🍞 Toast & Hydration Test</h2>
-              <p className="demo-subtitle">
-                Test state persistence and recovery with Toast notifications
-              </p>
-            </div>
-
-            <div className="demo-description">
-              <div className="info-card">
-                <h3>🧪 How to Test Hydration:</h3>
-                <ol>
-                  <li>🍞 <strong>Create Toasts</strong>: Click buttons to create different types of toasts</li>
-                  <li>🧪 <strong>Test Hydration</strong>: Click "Test Hydration" to create multiple toasts</li>
-                  <li>🔄 <strong>Refresh Page</strong>: Press F5 - toasts should be restored from localStorage</li>
-                  <li>🔌 <strong>Restart Server</strong>: Stop (Ctrl+C) and start server - state should recover</li>
-                  <li>💾 <strong>Check Storage</strong>: DevTools → Application → LocalStorage → see snapshots</li>
-                  <li>🔍 <strong>Monitor Logs</strong>: Console shows hydration process with fingerprints</li>
-                </ol>
-              </div>
-
-              <div className="info-card" style={{ marginTop: '2rem' }}>
-                <h3>🎯 Hydration Features:</h3>
-                <ul>
-                  <li>🔒 <strong>Hash Validation</strong>: SHA-256 checksums prevent state tampering</li>
-                  <li>💾 <strong>Local Persistence</strong>: State saved in localStorage with fingerprints</li>
-                  <li>⏱️ <strong>Auto Expiration</strong>: Snapshots expire after 1 hour</li>
-                  <li>🔄 <strong>Smart Recovery</strong>: Automatic hydration on server reconnection</li>
-                  <li>🧹 <strong>Auto Cleanup</strong>: Expired toasts and snapshots cleaned automatically</li>
-                  <li>🛡️ <strong>Security</strong>: Secret key prevents state manipulation</li>
-                </ul>
-              </div>
-            </div>
-
-            {/* Toast Component */}
-            <Toast 
-              componentId="main-toast-manager"
-              maxToasts={6}
-              defaultDuration={8000}
-              position="top-right"
-              onToastShown={(data) => console.log(`🍞 Toast shown:`, data)}
-              onToastDismissed={(data) => console.log(`🗑️ Toast dismissed:`, data)}
-              onToastsCleared={(data) => console.log(`🧹 All toasts cleared:`, data)}
-              onToastsAutoCleaned={(data) => console.log(`🧹 Auto-cleaned toasts:`, data)}
-              onStatsRequested={(data) => console.log(`📊 Toast stats:`, data)}
-            />
-
-            {/* Test Generated Component */}
-            <div style={{ marginTop: '2rem' }}>
-              <h3>🧪 Teste: Componente Gerado</h3>
-              <UserProfile 
-                componentId="test-user-profile"
-                onActionCompleted={(data) => console.log(`👤 UserProfile action:`, data)}
-              />
-            </div>
-
-            {/* Test Enhanced Component with All Features */}
-            <div style={{ marginTop: '3rem' }}>
-              <h3>🚀 Teste: Componente Enhanced com Helpers</h3>
-              <p style={{ marginBottom: '1rem', color: '#64748b', fontSize: '0.9rem' }}>
-                Este componente demonstra todos os helpers criados: decorators, validação, state management e event handling.
-              </p>
-              <ExampleEnhanced 
-                componentId="example-enhanced"
-                title="Exemplo com Helpers"
-                maxItems={15}
-                isEnabled={true}
-                onItemAdded={(data) => console.log(`➕ Item added:`, data)}
-                onItemRemoved={(data) => console.log(`➖ Item removed:`, data)}
-                onAllItemsCleared={(data) => console.log(`🧹 All items cleared:`, data)}
-                onTitleUpdated={(data) => console.log(`✏️ Title updated:`, data)}
-                onStateToggled={(data) => console.log(`🔄 State toggled:`, data)}
-                onComponentChanged={(data) => console.log(`🔄 Component changed:`, data)}
-              />
-              
-              <div style={{ 
-                marginTop: '1rem', 
-                padding: '1rem', 
-                background: '#f0f9ff', 
-                borderRadius: '8px',
-                fontSize: '0.85rem',
-                color: '#1e40af'
-              }}>
-                <h4 style={{ margin: '0 0 0.5rem 0' }}>🎯 Recursos testados:</h4>
-                <ul style={{ margin: 0, paddingLeft: '1.2rem' }}>
-                  <li><strong>@Action decorators</strong> com auto-emit de eventos</li>
-                  <li><strong>@State decorators</strong> com validação automática</li>
-                  <li><strong>@Validate decorators</strong> com ValidationRules</li>
-                  <li><strong>@Lifecycle decorators</strong> para mount/unmount</li>
-                  <li><strong>@LiveComponent</strong> auto-registration</li>
-                  <li><strong>Event handlers</strong> estilo Livewire</li>
-                  <li><strong>Type safety</strong> end-to-end</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        )}
+        {activeTab === 'live-components' && <LiveComponentsPage />}
       </main>
 
       {/* Toast Notification */}
