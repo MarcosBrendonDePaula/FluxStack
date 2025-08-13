@@ -182,7 +182,41 @@ export function LiveDebugPanel() {
     
     // State management
     const [isExpanded, setIsExpanded] = React.useState(false)
+    const [isVisible, setIsVisible] = React.useState(() => {
+        // Load visibility preference from localStorage
+        try {
+            const saved = localStorage.getItem('fluxstack-debugbar-visible')
+            return saved !== null ? JSON.parse(saved) : true
+        } catch {
+            return true
+        }
+    })
     const [activeTab, setActiveTab] = React.useState<'overview' | 'components' | 'events' | 'ws' | 'performance'>('overview')
+    
+    // Save visibility preference to localStorage
+    React.useEffect(() => {
+        try {
+            localStorage.setItem('fluxstack-debugbar-visible', JSON.stringify(isVisible))
+        } catch {
+            // Ignore localStorage errors
+        }
+    }, [isVisible])
+    
+    // Keyboard shortcut: Ctrl/Cmd + Shift + D to toggle debugbar
+    React.useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'D') {
+                e.preventDefault()
+                setIsVisible(prev => !prev)
+                if (!isVisible) {
+                    setIsExpanded(false) // Close panel when hiding
+                }
+            }
+        }
+        
+        document.addEventListener('keydown', handleKeyDown)
+        return () => document.removeEventListener('keydown', handleKeyDown)
+    }, [isVisible])
     
     // Stats
     const connectedComponents = Object.values(connections).filter(c => c.connected).length
@@ -256,8 +290,48 @@ export function LiveDebugPanel() {
     
     return (
         <>
+            {/* Show DebugBar Button (when hidden) */}
+            {!isVisible && (
+                <button
+                    onClick={() => setIsVisible(true)}
+                    style={{
+                        position: 'fixed',
+                        bottom: '20px',
+                        right: '20px',
+                        background: 'linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%)',
+                        border: 'none',
+                        color: 'white',
+                        padding: '12px 16px',
+                        borderRadius: '50px',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        zIndex: 9999,
+                        boxShadow: '0 8px 25px rgba(99, 102, 241, 0.4)',
+                        transition: 'all 0.3s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+                    }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'scale(1.05)'
+                        e.currentTarget.style.boxShadow = '0 12px 32px rgba(99, 102, 241, 0.5)'
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'scale(1)'
+                        e.currentTarget.style.boxShadow = '0 8px 25px rgba(99, 102, 241, 0.4)'
+                    }}
+                    title="Show FluxStack DebugBar (Ctrl+Shift+D)"
+                >
+                    <span style={{ fontSize: '16px' }}>🔥</span>
+                    <span>Debug</span>
+                </button>
+            )}
+
             {/* Main Debug Bar - Fixed at bottom */}
-            <div style={{
+            {isVisible && (
+                <div style={{
                 position: 'fixed',
                 bottom: 0,
                 left: 0,
@@ -328,41 +402,78 @@ export function LiveDebugPanel() {
                     ))}
                 </div>
                 
-                {/* Toggle Button */}
-                <button
-                    onClick={() => setIsExpanded(!isExpanded)}
-                    style={{
-                        background: isExpanded ? '#6366f1' : 'rgba(99, 102, 241, 0.2)',
-                        border: '1px solid #6366f1',
-                        color: isExpanded ? 'white' : '#6366f1',
-                        padding: '6px 12px',
-                        borderRadius: '6px',
-                        fontSize: '11px',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                    }}
-                    onMouseEnter={(e) => {
-                        if (!isExpanded) {
-                            e.currentTarget.style.background = 'rgba(99, 102, 241, 0.3)'
-                        }
-                    }}
-                    onMouseLeave={(e) => {
-                        if (!isExpanded) {
-                            e.currentTarget.style.background = 'rgba(99, 102, 241, 0.2)'
-                        }
-                    }}
-                >
-                    <span>{isExpanded ? '⬇️' : '⬆️'}</span>
-                    <span>{isExpanded ? 'Hide' : 'Debug'}</span>
-                </button>
+                {/* Control Buttons */}
+                <div style={{ display: 'flex', gap: '8px' }}>
+                    {/* Toggle Expand Button */}
+                    <button
+                        onClick={() => setIsExpanded(!isExpanded)}
+                        style={{
+                            background: isExpanded ? '#6366f1' : 'rgba(99, 102, 241, 0.2)',
+                            border: '1px solid #6366f1',
+                            color: isExpanded ? 'white' : '#6366f1',
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            fontSize: '11px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                        }}
+                        onMouseEnter={(e) => {
+                            if (!isExpanded) {
+                                e.currentTarget.style.background = 'rgba(99, 102, 241, 0.3)'
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            if (!isExpanded) {
+                                e.currentTarget.style.background = 'rgba(99, 102, 241, 0.2)'
+                            }
+                        }}
+                        title={isExpanded ? 'Collapse Debug Panel' : 'Expand Debug Panel'}
+                    >
+                        <span>{isExpanded ? '⬇️' : '⬆️'}</span>
+                        <span>{isExpanded ? 'Hide' : 'Debug'}</span>
+                    </button>
+                    
+                    {/* Hide DebugBar Button */}
+                    <button
+                        onClick={() => {
+                            setIsVisible(false)
+                            setIsExpanded(false)
+                        }}
+                        style={{
+                            background: 'rgba(239, 68, 68, 0.2)',
+                            border: '1px solid #ef4444',
+                            color: '#ef4444',
+                            padding: '6px 10px',
+                            borderRadius: '6px',
+                            fontSize: '11px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(239, 68, 68, 0.3)'
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'
+                        }}
+                        title="Hide DebugBar completely"
+                    >
+                        <span>✕</span>
+                        <span>Hide</span>
+                    </button>
+                </div>
             </div>
+            )}
             
             {/* Expanded Panel */}
-            {isExpanded && (
+            {isVisible && isExpanded && (
                 <div style={{
                     position: 'fixed',
                     bottom: '40px',
