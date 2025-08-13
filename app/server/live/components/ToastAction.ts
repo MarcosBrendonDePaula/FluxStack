@@ -1,4 +1,5 @@
 import { LiveAction } from '@/core/live'
+import { generateShortUUID } from '@/core'
 
 interface Toast {
     id: string
@@ -44,7 +45,7 @@ export class ToastAction extends LiveAction {
         persistent = false
     ) {
         const toast: Toast = {
-            id: `toast-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+            id: `toast-${generateShortUUID()}`,
             title,
             message,
             type,

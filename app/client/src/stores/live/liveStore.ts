@@ -104,7 +104,7 @@ export const useLiveStore = create<LiveStore>()(
 
             addGlobalEvent: (type, data, componentId) => {
                 const event = {
-                    id: Math.random().toString(36),
+                    id: Math.random().toString(36).substring(2, 10),
                     type,
                     data,
                     componentId,

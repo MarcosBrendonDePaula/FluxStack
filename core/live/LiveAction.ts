@@ -1,5 +1,6 @@
 import type { ElysiaWS } from 'elysia/ws'
 import { hydrationManager } from './HydrationManager'
+import { generateShortUUID } from '../utils/uuid'
 
 export type LiveActionRequest = {
     componentId: string
@@ -11,6 +12,8 @@ export type LiveActionRequest = {
     // Hydration support
     fingerprint?: string
     hydrationAttempt?: boolean
+    // Request ID for race condition prevention
+    requestId?: string
 }
 
 export abstract class LiveAction {
@@ -56,19 +59,18 @@ export abstract class LiveAction {
     
     // Generate secure unique component ID
     public static generateComponentId(componentName: string, userProvidedId?: string): string {
-        const timestamp = Date.now().toString(36)
-        const randomPart = Math.random().toString(36).substring(2, 8)
         const normalizedName = componentName.toLowerCase().replace('action', '')
+        const uniquePart = generateShortUUID()
         
         // If user provided an ID, use it as a prefix for consistency but add uniqueness
         if (userProvidedId) {
             // Sanitize user input
             const sanitizedId = userProvidedId.replace(/[^a-zA-Z0-9-_]/g, '').slice(0, 32)
-            return `${sanitizedId}-${timestamp}-${randomPart}`
+            return `${sanitizedId}-${uniquePart}`
         }
         
         // Generate fully automatic ID
-        return `${normalizedName}-${timestamp}-${randomPart}`
+        return `${normalizedName}-${uniquePart}`
     }
 
     // Obter estado inicial para o cliente (frontend)
@@ -281,10 +283,25 @@ export abstract class LiveAction {
             // Update WebSocket reference (always needed)
             instance.ws = opts.ws
             
-            // Call requested method
+            // Call requested method with basic input validation
             const method = instance[opts.methodName]
             if (typeof method === 'function') {
                 try {
+                    // Basic parameter validation
+                    if (opts.params && opts.params.length > 10) {
+                        throw new Error('Too many parameters provided')
+                    }
+                    
+                    // Validate parameter types for common issues
+                    for (const param of opts.params || []) {
+                        if (typeof param === 'string' && param.length > 10000) {
+                            throw new Error('Parameter string too long')
+                        }
+                        if (typeof param === 'object' && param !== null && JSON.stringify(param).length > 50000) {
+                            throw new Error('Parameter object too large')
+                        }
+                    }
+                    
                     const result = method.apply(instance, opts.params)
                     
                     // Handle promises (async functions)
@@ -302,7 +319,8 @@ export abstract class LiveAction {
                                         result: asyncResult,
                                         state: newState,
                                         isAsync: true,
-                                        error: null
+                                        error: null,
+                                        requestId: opts.requestId
                                     }]
                                 }))
                             })
@@ -325,7 +343,8 @@ export abstract class LiveAction {
                                                 error: error.message || 'Unknown async error'
                                             }
                                         },
-                                        isAsync: true
+                                        isAsync: true,
+                                        requestId: opts.requestId
                                     }]
                                 }))
                             })
@@ -414,8 +433,8 @@ export abstract class LiveAction {
     // Extract client ID from WebSocket for cleanup tracking
     private static extractClientId(ws: ElysiaWS): string | null {
         try {
-            // Try to get client ID from WebSocket properties
-            return (ws.data as any)?.clientId || (ws as any)?.id || (ws.raw as any)?.id || null
+            // Use standardized client ID from ws.data (set in live plugin)
+            return (ws.data as any)?.clientId || null
         } catch (error) {
             console.warn('⚠️  Could not extract client ID from WebSocket')
             return null

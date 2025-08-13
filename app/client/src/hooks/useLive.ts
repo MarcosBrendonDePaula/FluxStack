@@ -1,5 +1,6 @@
 import { useLiveStore } from '@/stores/live/liveStore'
 import { useCallback, useEffect, useRef } from 'react'
+import { v4 as uuidv4 } from 'uuid'
 
 // Local storage keys for hydration
 const HYDRATION_PREFIX = 'fluxstack_hydration_'
@@ -49,6 +50,11 @@ interface UseLiveOptions {
     eventHandlers?: Record<string, (data?: any) => void>
 }
 
+// Simple UUID generation using uuid library
+function generateRequestUUID(): string {
+    return uuidv4()
+}
+
 // Dynamic helper para estado inicial do cliente via WebSocket com ID gerado pelo backend
 async function getInitialClientStateWithId(
     componentName: string, 
@@ -59,7 +65,7 @@ async function getInitialClientStateWithId(
     if (!ws || ws.readyState !== WebSocket.OPEN) {
         console.warn(`⚠️  WebSocket not available for getting initial state of ${componentName}, using fallback`)
         const fallbackState = getFallbackInitialState(componentName, props)
-        const fallbackId = userProvidedId || `${componentName}-fallback-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`
+        const fallbackId = userProvidedId || `${componentName}-fallback-${Math.random().toString(36).substring(2, 15)}`
         return { 
             state: fallbackState, 
             $ID: fallbackId 
@@ -86,7 +92,7 @@ async function getInitialClientStateWithId(
                 console.error('Error parsing initial state message:', error)
                 ws.removeEventListener('message', handleMessage)
                 const fallbackState = getFallbackInitialState(componentName, props)
-                const fallbackId = userProvidedId || `${componentName}-error-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`
+                const fallbackId = userProvidedId || `${componentName}-error-${Math.random().toString(36).substring(2, 15)}`
                 resolve({ 
                     state: fallbackState, 
                     $ID: fallbackId 
@@ -106,17 +112,28 @@ async function getInitialClientStateWithId(
             }]
         }))
 
-        // Timeout fallback
-        setTimeout(() => {
+        // Timeout fallback with proper cleanup
+        const timeoutId = setTimeout(() => {
             ws.removeEventListener('message', handleMessage)
             console.warn(`⚠️  Timeout getting initial state for ${componentName}, using fallback`)
             const fallbackState = getFallbackInitialState(componentName, props)
-            const fallbackId = userProvidedId || `${componentName}-timeout-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`
+            const fallbackId = userProvidedId || `${componentName}-timeout-${Math.random().toString(36).substring(2, 15)}`
             resolve({ 
                 state: fallbackState, 
                 $ID: fallbackId 
             })
         }, 1000)
+
+        // Modify handleMessage to cleanup timeout if message received
+        const originalHandleMessage = handleMessage
+        const modifiedHandleMessage = (event: MessageEvent) => {
+            clearTimeout(timeoutId)
+            originalHandleMessage(event)
+        }
+        
+        // Replace the event listener
+        ws.removeEventListener('message', handleMessage)
+        ws.addEventListener('message', modifiedHandleMessage)
     })
 }
 
@@ -142,6 +159,11 @@ export function useLive({ name, props = {}, componentId, eventHandlers = {} }: U
     // O ID será obtido do backend ou usado o fornecido pelo usuário
     const finalIdRef = useRef<string | null>(null)
     const isInitializedRef = useRef(false)
+    
+    // Rate limiting state
+    const lastCallTimestampRef = useRef<number>(0)
+    const callCountRef = useRef<number>(0)
+    const rateLimitWindowRef = useRef<number>(Date.now())
 
     // Zustand selectors (re-render otimizado) - usar ID final se disponível
     const currentId = finalIdRef.current || 'initializing'
@@ -195,7 +217,7 @@ export function useLive({ name, props = {}, componentId, eventHandlers = {} }: U
                 console.error(`❌ Error initializing component:`, error)
                 
                 // Fallback com ID local se tudo falhar
-                const fallbackId = componentId || `${name}-error-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`
+                const fallbackId = componentId || `${name}-error-${Math.random().toString(36).substring(2, 15)}`
                 finalIdRef.current = fallbackId
                 
                 addConnection(fallbackId)
@@ -242,7 +264,11 @@ export function useLive({ name, props = {}, componentId, eventHandlers = {} }: U
             const eventListener = (e: CustomEvent) => {
                 if (e.detail.componentId === finalIdRef.current) {
                     console.log(`🎯 Auto-calling handler for ${eventName}:`, e.detail.data)
-                    handler(e.detail.data)
+                    if (typeof handler === 'function') {
+                        handler(e.detail.data)
+                    } else {
+                        console.warn(`⚠️ Handler for ${eventName} is not a function:`, typeof handler)
+                    }
                 }
             }
 
@@ -259,34 +285,59 @@ export function useLive({ name, props = {}, componentId, eventHandlers = {} }: U
         }
     }, [eventHandlers, finalIdRef.current])
 
-    // Call backend method with return value support
+    // Call backend method with return value support and rate limiting
     const callMethod = useCallback(async (methodName: string, ...params: any[]): Promise<any> => {
-        return new Promise((resolve, reject) => {
-            const currentComponentId = finalIdRef.current
-            
-            if (!currentComponentId) {
-                const error = 'Component not initialized yet'
-                console.error(`❌ ${error}`)
-                reject(new Error(error))
-                return
-            }
-            
-            if (!ws || ws.readyState !== WebSocket.OPEN) {
-                const error = 'WebSocket not connected'
-                console.error(`❌ ${error}`)
-                setComponentError(currentComponentId, error)
-                reject(new Error(error))
-                return
-            }
+        const currentComponentId = finalIdRef.current
+        
+        if (!currentComponentId) {
+            const error = 'Component not initialized yet'
+            console.error(`❌ ${error}`)
+            throw new Error(error)
+        }
+        
+        // Basic rate limiting (max 20 calls per 10 seconds)
+        const now = Date.now()
+        const windowDuration = 10000 // 10 seconds
+        const maxCallsPerWindow = 20
+        
+        // Reset counter if window expired
+        if (now - rateLimitWindowRef.current > windowDuration) {
+            rateLimitWindowRef.current = now
+            callCountRef.current = 0
+        }
+        
+        // Check rate limit
+        if (callCountRef.current >= maxCallsPerWindow) {
+            const error = 'Rate limit exceeded. Too many method calls.'
+            console.error(`❌ ${error}`)
+            setComponentError(currentComponentId, error)
+            throw new Error(error)
+        }
+        
+        // Increment call count
+        callCountRef.current++
+        lastCallTimestampRef.current = now
+        
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+            const error = 'WebSocket not connected'
+            console.error(`❌ ${error}`)
+            setComponentError(currentComponentId, error)
+            throw new Error(error)
+        }
 
-            console.log(`🎯 Calling ${name}.${methodName}(${JSON.stringify(params)}) on ${currentComponentId}`)
-            
-            setComponentLoading(currentComponentId, true)
-            setComponentError(currentComponentId, null)
+        console.log(`🎯 Calling ${name}.${methodName}(${JSON.stringify(params)}) on ${currentComponentId}`)
+        
+        setComponentLoading(currentComponentId, true)
+        setComponentError(currentComponentId, null)
+
+        // Generate unique request ID to avoid race conditions
+        const requestId = generateRequestUUID()
+
+        return new Promise((resolve, reject) => {
 
             // Create unique listeners for this specific function call
             const handleFunctionResult = (event: CustomEvent) => {
-                if (event.detail.componentId === currentComponentId && event.detail.methodName === methodName) {
+                if (event.detail.requestId === requestId) {
                     console.log(`✅ Function result received for ${methodName}:`, event.detail.result)
                     window.removeEventListener('live:function-result', handleFunctionResult as EventListener)
                     window.removeEventListener('live:function-error', handleFunctionError as EventListener)
@@ -295,7 +346,7 @@ export function useLive({ name, props = {}, componentId, eventHandlers = {} }: U
             }
 
             const handleFunctionError = (event: CustomEvent) => {
-                if (event.detail.componentId === currentComponentId && event.detail.methodName === methodName) {
+                if (event.detail.requestId === requestId) {
                     console.error(`❌ Function error received for ${methodName}:`, event.detail.error)
                     window.removeEventListener('live:function-result', handleFunctionResult as EventListener)
                     window.removeEventListener('live:function-error', handleFunctionError as EventListener)
@@ -321,7 +372,8 @@ export function useLive({ name, props = {}, componentId, eventHandlers = {} }: U
                         params,
                         state: currentState,
                         fingerprint: hydrationData.fingerprint,
-                        hydrationAttempt: !!hydrationData.fingerprint
+                        hydrationAttempt: !!hydrationData.fingerprint,
+                        requestId: requestId
                     }
                 }]
             })
@@ -366,6 +418,9 @@ export function useLive({ name, props = {}, componentId, eventHandlers = {} }: U
         isFunctionLoading: currentState.__functionResult?.isLoading || false,
         functionError: currentState.__functionResult?.error || null,
         
+        // UUID generation function for components to use
+        generateUUID: useCallback(() => uuidv4(), []),
+        
         // Debug info (useful for development)
         __debug: {
             componentName: name,
@@ -379,3 +434,6 @@ export function useLive({ name, props = {}, componentId, eventHandlers = {} }: U
         }
     }
 }
+
+// Export UUID generation for standalone use
+export { generateRequestUUID as generateUUID }

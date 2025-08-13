@@ -1,5 +1,6 @@
 import { Plugin, FluxStackContext } from '@/core/types'
 import { LiveAction } from '@/core/live'
+import { generateUUID } from '@/core/utils'
 
 export const livePlugin: Plugin = {
     name: 'live',
@@ -10,16 +11,22 @@ export const livePlugin: Plugin = {
         app.ws('/live', {
             message: handleLiveMessage,
             open: (ws: any) => {
-                console.log(`🔌 Live client connected: ${ws.id}`)
+                // Generate standardized client ID using centralized UUID function
+                const clientId = generateUUID()
+                ws.data = ws.data || {}
+                ws.data.clientId = clientId
+                
+                console.log(`🔌 Live client connected: ${clientId}`)
                 
                 // Subscribe to broadcasts
                 ws.subscribe('component.broadcast')
             },
             close: (ws: any) => {
-                console.log(`❌ Live client disconnected: ${ws.id}`)
+                const clientId = ws.data?.clientId || ws.id
+                console.log(`❌ Live client disconnected: ${clientId}`)
                 
                 // Clean up all components owned by this client
-                LiveAction.cleanupClient(ws.id)
+                LiveAction.cleanupClient(clientId)
             }
         })
         
@@ -45,10 +52,11 @@ async function handleLiveMessage(ws: any, message: any) {
                             params, 
                             state: clientState,
                             fingerprint,
-                            hydrationAttempt
+                            hydrationAttempt,
+                            requestId
                         } = payload
                         
-                        console.log(`🎯 Live action: ${componentName}.${methodName}(${params?.length || 0} params)`)
+                        console.log(`🎯 Live action: ${componentName}.${methodName}(${params?.length || 0} params) [${requestId}]`)
                         
                         const newState = LiveAction.trigger({
                             componentName,
@@ -58,7 +66,8 @@ async function handleLiveMessage(ws: any, message: any) {
                             ws,
                             componentId: instanceId,
                             fingerprint,
-                            hydrationAttempt
+                            hydrationAttempt,
+                            requestId
                         })
                         
                         if (newState) {
@@ -80,6 +89,8 @@ async function handleLiveMessage(ws: any, message: any) {
                         // Destroy persistent instance
                         LiveAction.destroyInstance(update.componentId)
                         break
+                        
+                    // Removed: UUID generation is now handled client-side with uuid library
                         
                     case 'getInitialState':
                         const { 

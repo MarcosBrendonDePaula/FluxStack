@@ -46,6 +46,16 @@ export {
     type LiveActionConfig
 } from './helpers/LiveActionHelpers'
 
+// Core utilities
+export {
+    generateUUID,
+    generateShortUUID,
+    isValidUUID,
+    generatePrefixedUUID,
+    uuid,
+    Utils
+} from './utils'
+
 // Advanced class definition helpers (NEW)
 export {
     LiveActionClassBuilder,

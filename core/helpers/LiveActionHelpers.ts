@@ -4,6 +4,7 @@
  */
 
 import { LiveAction } from '@/core/live'
+import { generateShortUUID } from '../utils/uuid'
 
 // Type-safe method caller
 export function createTypedAction<TProps = any, TState = any>() {
@@ -100,7 +101,7 @@ export const CommonEvents = {
 export const LiveActionUtils = {
     // Generate unique component ID
     generateId: (prefix = 'component') => {
-        return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        return `${prefix}-${generateShortUUID()}`
     },
 
     // Validate component state

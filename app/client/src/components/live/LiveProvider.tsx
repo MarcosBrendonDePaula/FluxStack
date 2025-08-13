@@ -86,13 +86,14 @@ export function LiveProvider({
                                 setComponentLoading(update.id, false)
                                 setComponentError(update.id, null)
                                 
-                                // Dispatch function result event
+                                // Dispatch function result event with requestId for proper matching
                                 window.dispatchEvent(new CustomEvent(`live:function-result`, {
                                     detail: { 
                                         componentId: update.id,
                                         methodName: update.methodName,
                                         result: update.result,
-                                        isAsync: update.isAsync
+                                        isAsync: update.isAsync,
+                                        requestId: update.requestId  // Include requestId for matching
                                     }
                                 }))
                                 break
@@ -102,13 +103,14 @@ export function LiveProvider({
                                 setComponentLoading(update.id, false)
                                 setComponentError(update.id, `${update.methodName}: ${update.error}`)
                                 
-                                // Dispatch function error event
+                                // Dispatch function error event with requestId for proper matching
                                 window.dispatchEvent(new CustomEvent(`live:function-error`, {
                                     detail: { 
                                         componentId: update.id,
                                         methodName: update.methodName,
                                         error: update.error,
-                                        isAsync: update.isAsync
+                                        isAsync: update.isAsync,
+                                        requestId: update.requestId  // Include requestId for matching
                                     }
                                 }))
                                 break
@@ -148,6 +150,16 @@ export function LiveProvider({
                                 if (update.componentId) {
                                     setComponentLoading(update.componentId, false)
                                     setComponentError(update.componentId, update.error)
+                                }
+                                break
+                                
+                            // Removed: UUID generation is now handled client-side with uuid library
+                                
+                            case 'initial_state':
+                                // Initial state responses are handled by individual components
+                                // No need to process here, just log for debugging
+                                if (debug) {
+                                    console.log(`📊 Initial state response for ${update.componentName}: ${update.$ID}`)
                                 }
                                 break
                                 
