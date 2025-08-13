@@ -46,6 +46,21 @@ export {
     type LiveActionConfig
 } from './helpers/LiveActionHelpers'
 
+// Advanced class definition helpers (NEW)
+export {
+    LiveActionClassBuilder,
+    SmartClassGenerator,
+    QuickGenerators,
+    generateClassFromConfig,
+    type PropertyType,
+    type PropertyDefinition,
+    type ActionOptions,
+    type ValidationConfig,
+    type CrudField,
+    type FormField,
+    type ClassConfig
+} from './helpers/AdvancedClassHelpers'
+
 // Validation system
 export {
     ValidationRules,

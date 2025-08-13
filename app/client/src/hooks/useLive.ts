@@ -49,11 +49,21 @@ interface UseLiveOptions {
     eventHandlers?: Record<string, (data?: any) => void>
 }
 
-// Dynamic helper para estado inicial do cliente via WebSocket
-async function getInitialClientState(componentName: string, props: any, ws: WebSocket | null): Promise<Record<string, any>> {
+// Dynamic helper para estado inicial do cliente via WebSocket com ID gerado pelo backend
+async function getInitialClientStateWithId(
+    componentName: string, 
+    props: any, 
+    ws: WebSocket | null,
+    userProvidedId?: string
+): Promise<{ state: Record<string, any>; $ID: string }> {
     if (!ws || ws.readyState !== WebSocket.OPEN) {
         console.warn(`⚠️  WebSocket not available for getting initial state of ${componentName}, using fallback`)
-        return getFallbackInitialState(componentName, props)
+        const fallbackState = getFallbackInitialState(componentName, props)
+        const fallbackId = userProvidedId || `${componentName}-fallback-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`
+        return { 
+            state: fallbackState, 
+            $ID: fallbackId 
+        }
     }
 
     return new Promise((resolve) => {
@@ -64,7 +74,10 @@ async function getInitialClientState(componentName: string, props: any, ws: WebS
                     for (const update of data.updates) {
                         if (update.type === 'initial_state' && update.componentName === componentName) {
                             ws.removeEventListener('message', handleMessage)
-                            resolve(update.state)
+                            resolve({ 
+                                state: update.state, 
+                                $ID: update.$ID 
+                            })
                             return
                         }
                     }
@@ -72,18 +85,24 @@ async function getInitialClientState(componentName: string, props: any, ws: WebS
             } catch (error) {
                 console.error('Error parsing initial state message:', error)
                 ws.removeEventListener('message', handleMessage)
-                resolve(getFallbackInitialState(componentName, props))
+                const fallbackState = getFallbackInitialState(componentName, props)
+                const fallbackId = userProvidedId || `${componentName}-error-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`
+                resolve({ 
+                    state: fallbackState, 
+                    $ID: fallbackId 
+                })
             }
         }
 
         ws.addEventListener('message', handleMessage)
 
-        // Send request for initial state
+        // Send request for initial state with user provided ID if available
         ws.send(JSON.stringify({
             updates: [{
                 type: 'getInitialState',
                 componentName,
-                props
+                props,
+                userProvidedId
             }]
         }))
 
@@ -91,7 +110,12 @@ async function getInitialClientState(componentName: string, props: any, ws: WebS
         setTimeout(() => {
             ws.removeEventListener('message', handleMessage)
             console.warn(`⚠️  Timeout getting initial state for ${componentName}, using fallback`)
-            resolve(getFallbackInitialState(componentName, props))
+            const fallbackState = getFallbackInitialState(componentName, props)
+            const fallbackId = userProvidedId || `${componentName}-timeout-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`
+            resolve({ 
+                state: fallbackState, 
+                $ID: fallbackId 
+            })
         }, 1000)
     })
 }
@@ -115,15 +139,14 @@ function getFallbackInitialState(componentName: string, props: any): Record<stri
 }
 
 export function useLive({ name, props = {}, componentId, eventHandlers = {} }: UseLiveOptions) {
-    // ID único automático se não fornecido
-    const autoId = useRef(
-        componentId || `${name}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`
-    )
-    const id = componentId || autoId.current
+    // O ID será obtido do backend ou usado o fornecido pelo usuário
+    const finalIdRef = useRef<string | null>(null)
+    const isInitializedRef = useRef(false)
 
-    // Zustand selectors (re-render otimizado)
-    const state = useLiveStore(s => s.components[id])
-    const connection = useLiveStore(s => s.connections[id])
+    // Zustand selectors (re-render otimizado) - usar ID final se disponível
+    const currentId = finalIdRef.current || 'initializing'
+    const state = useLiveStore(s => finalIdRef.current ? s.components[finalIdRef.current] : undefined)
+    const connection = useLiveStore(s => finalIdRef.current ? s.connections[finalIdRef.current] : undefined)
     const ws = useLiveStore(s => s.ws)
     
     // Zustand actions
@@ -136,60 +159,88 @@ export function useLive({ name, props = {}, componentId, eventHandlers = {} }: U
 
     // Setup inicial do componente
     useEffect(() => {
-        console.log(`🔌 Setting up live component: ${id}`)
-        addConnection(id)
-        
-        // Initialize com props se ainda não existir estado
-        if (!state) {
-            // Tentar obter estado inicial dinamicamente
-            const initializeState = async () => {
-                try {
-                    const dynamicInitialState = await getInitialClientState(name, props, ws)
-                    const initialState = {
-                        $props: props,
-                        $ID: id,
-                        ...dynamicInitialState
-                    }
-                    updateComponent(id, initialState)
-                    console.log(`🏗️  Initialized ${id} dynamically with:`, initialState)
-                } catch (error) {
-                    console.error(`❌ Error initializing ${id}:`, error)
-                    // Fallback para estado básico
-                    const initialState = {
-                        $props: props,
-                        $ID: id,
-                        ...getFallbackInitialState(name, props)
-                    }
-                    updateComponent(id, initialState)
-                    console.log(`🏗️  Initialized ${id} with fallback:`, initialState)
+        if (isInitializedRef.current) return
+        isInitializedRef.current = true
+
+        const initializeState = async () => {
+            try {
+                console.log(`🔌 Setting up live component: ${name} (user ID: ${componentId || 'auto'})`)
+                
+                // Obter estado inicial e ID seguro do backend
+                const { state: dynamicInitialState, $ID } = await getInitialClientStateWithId(
+                    name, 
+                    props, 
+                    ws, 
+                    componentId
+                )
+                
+                // Salvar o ID final gerado pelo backend
+                finalIdRef.current = $ID
+                
+                console.log(`🆔 Using secure backend-generated ID: ${$ID}`)
+                
+                // Adicionar conexão com o ID final
+                addConnection($ID)
+                
+                const initialState = {
+                    $props: props,
+                    $ID: $ID,
+                    ...dynamicInitialState
                 }
+                
+                updateComponent($ID, initialState)
+                console.log(`🏗️  Initialized ${$ID} with backend state:`, initialState)
+                
+            } catch (error) {
+                console.error(`❌ Error initializing component:`, error)
+                
+                // Fallback com ID local se tudo falhar
+                const fallbackId = componentId || `${name}-error-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`
+                finalIdRef.current = fallbackId
+                
+                addConnection(fallbackId)
+                
+                const initialState = {
+                    $props: props,
+                    $ID: fallbackId,
+                    ...getFallbackInitialState(name, props)
+                }
+                
+                updateComponent(fallbackId, initialState)
+                console.log(`🏗️  Initialized ${fallbackId} with fallback:`, initialState)
             }
-            
-            initializeState()
         }
+        
+        initializeState()
         
         return () => {
-            console.log(`🗑️  Cleaning up live component: ${id}`)
-            removeConnection(id)
-            // Clear hydration state on cleanup (component unmounted)
-            clearHydrationState(id)
+            if (finalIdRef.current) {
+                console.log(`🗑️  Cleaning up live component: ${finalIdRef.current}`)
+                removeConnection(finalIdRef.current)
+                // Clear hydration state on cleanup (component unmounted)
+                clearHydrationState(finalIdRef.current)
+            }
         }
-    }, [id, name, ws])
+    }, [name, ws, componentId])
 
     // Update connection status when WebSocket changes
     useEffect(() => {
-        setComponentConnected(id, !!ws && ws.readyState === WebSocket.OPEN)
-    }, [ws, id])
+        if (finalIdRef.current) {
+            setComponentConnected(finalIdRef.current, !!ws && ws.readyState === WebSocket.OPEN)
+        }
+    }, [ws, finalIdRef.current])
 
     // Auto-register event handlers (Livewire-style)
     useEffect(() => {
+        if (!finalIdRef.current) return
+        
         const eventListeners: Array<() => void> = []
         
         Object.entries(eventHandlers).forEach(([eventName, handler]) => {
             const fullEventName = `live:${eventName.replace(/^on/, '').toLowerCase().replace(/([a-z])([A-Z])/g, '$1-$2')}`
             
             const eventListener = (e: CustomEvent) => {
-                if (e.detail.componentId === id) {
+                if (e.detail.componentId === finalIdRef.current) {
                     console.log(`🎯 Auto-calling handler for ${eventName}:`, e.detail.data)
                     handler(e.detail.data)
                 }
@@ -200,33 +251,42 @@ export function useLive({ name, props = {}, componentId, eventHandlers = {} }: U
                 window.removeEventListener(fullEventName, eventListener as EventListener)
             })
             
-            console.log(`🎯 Auto-registered ${eventName} -> ${fullEventName} for ${id}`)
+            console.log(`🎯 Auto-registered ${eventName} -> ${fullEventName} for ${finalIdRef.current}`)
         })
 
         return () => {
             eventListeners.forEach(cleanup => cleanup())
         }
-    }, [eventHandlers, id])
+    }, [eventHandlers, finalIdRef.current])
 
     // Call backend method with return value support
     const callMethod = useCallback(async (methodName: string, ...params: any[]): Promise<any> => {
         return new Promise((resolve, reject) => {
+            const currentComponentId = finalIdRef.current
+            
+            if (!currentComponentId) {
+                const error = 'Component not initialized yet'
+                console.error(`❌ ${error}`)
+                reject(new Error(error))
+                return
+            }
+            
             if (!ws || ws.readyState !== WebSocket.OPEN) {
                 const error = 'WebSocket not connected'
                 console.error(`❌ ${error}`)
-                setComponentError(id, error)
+                setComponentError(currentComponentId, error)
                 reject(new Error(error))
                 return
             }
 
-            console.log(`🎯 Calling ${name}.${methodName}(${JSON.stringify(params)})`)
+            console.log(`🎯 Calling ${name}.${methodName}(${JSON.stringify(params)}) on ${currentComponentId}`)
             
-            setComponentLoading(id, true)
-            setComponentError(id, null)
+            setComponentLoading(currentComponentId, true)
+            setComponentError(currentComponentId, null)
 
             // Create unique listeners for this specific function call
             const handleFunctionResult = (event: CustomEvent) => {
-                if (event.detail.componentId === id && event.detail.methodName === methodName) {
+                if (event.detail.componentId === currentComponentId && event.detail.methodName === methodName) {
                     console.log(`✅ Function result received for ${methodName}:`, event.detail.result)
                     window.removeEventListener('live:function-result', handleFunctionResult as EventListener)
                     window.removeEventListener('live:function-error', handleFunctionError as EventListener)
@@ -235,7 +295,7 @@ export function useLive({ name, props = {}, componentId, eventHandlers = {} }: U
             }
 
             const handleFunctionError = (event: CustomEvent) => {
-                if (event.detail.componentId === id && event.detail.methodName === methodName) {
+                if (event.detail.componentId === currentComponentId && event.detail.methodName === methodName) {
                     console.error(`❌ Function error received for ${methodName}:`, event.detail.error)
                     window.removeEventListener('live:function-result', handleFunctionResult as EventListener)
                     window.removeEventListener('live:function-error', handleFunctionError as EventListener)
@@ -248,15 +308,15 @@ export function useLive({ name, props = {}, componentId, eventHandlers = {} }: U
             window.addEventListener('live:function-error', handleFunctionError as EventListener)
 
             // Get hydration state for resilience
-            const hydrationData = loadHydrationState(id)
-            const currentState = state || { $props: props, $ID: id }
+            const hydrationData = loadHydrationState(currentComponentId)
+            const currentState = state || { $props: props, $ID: currentComponentId }
             
             const message = JSON.stringify({
                 updates: [{
                     type: 'callMethod',
                     payload: {
                         name,
-                        id,
+                        id: currentComponentId,
                         methodName,
                         params,
                         state: currentState,
@@ -270,26 +330,27 @@ export function useLive({ name, props = {}, componentId, eventHandlers = {} }: U
                 ws.send(message)
             } catch (error) {
                 console.error(`❌ Error sending message:`, error)
-                setComponentError(id, error instanceof Error ? error.message : 'Send failed')
-                setComponentLoading(id, false)
+                setComponentError(currentComponentId, error instanceof Error ? error.message : 'Send failed')
+                setComponentLoading(currentComponentId, false)
                 // Cleanup listeners
                 window.removeEventListener('live:function-result', handleFunctionResult as EventListener)
                 window.removeEventListener('live:function-error', handleFunctionError as EventListener)
                 reject(error)
             }
         })
-    }, [ws, name, id, state, props])
+    }, [ws, name, state, props])
 
     // Optimistic updates (immediate UI feedback)
     const optimisticUpdate = useCallback((updates: Partial<any>) => {
-        if (state) {
-            updateComponent(id, { ...state, ...updates })
-            console.log(`⚡ Optimistic update for ${id}:`, updates)
+        const currentComponentId = finalIdRef.current
+        if (state && currentComponentId) {
+            updateComponent(currentComponentId, { ...state, ...updates })
+            console.log(`⚡ Optimistic update for ${currentComponentId}:`, updates)
         }
-    }, [id, state, updateComponent])
+    }, [state, updateComponent])
 
-
-    const currentState = state || { $props: props, $ID: id }
+    const currentComponentId = finalIdRef.current || 'initializing'
+    const currentState = state || { $props: props, $ID: currentComponentId }
 
     return {
         state: currentState,
@@ -298,7 +359,7 @@ export function useLive({ name, props = {}, componentId, eventHandlers = {} }: U
         connected: connection?.connected || false,
         callMethod,
         optimisticUpdate,
-        componentId: id,
+        componentId: currentComponentId,
         
         // Function call state (para chamadas sync/async)
         functionResult: currentState.__functionResult || null,
@@ -311,7 +372,10 @@ export function useLive({ name, props = {}, componentId, eventHandlers = {} }: U
             hasState: !!state,
             wsReady: !!ws && ws.readyState === WebSocket.OPEN,
             registeredEvents: Object.keys(eventHandlers),
-            functionCallState: currentState.__functionResult
+            functionCallState: currentState.__functionResult,
+            backendGeneratedId: finalIdRef.current,
+            userProvidedId: componentId,
+            isInitialized: !!finalIdRef.current
         }
     }
 }

@@ -499,6 +499,17 @@ bun run legacy:dev   # Comando direto com Bun watch (alternativo)
 
 ## Mudanças Recentes Importantes
 
+### v1.6.0 - Correções Críticas de Memory Leak + Monitoramento 🛡️
+1. **Memory Leak Fixes** - Corrigidos 4 vazamentos críticos de memória:
+   - Instâncias temporárias na registração não eram liberadas
+   - Instâncias persistentes acumulavam sem cleanup
+   - Sessions de hidratação não eram limpas adequadamente
+   - Falta de monitoramento de uso de memória
+2. **Cleanup Automático** - Sistema de cleanup por cliente com rastreamento de ownership
+3. **Monitoramento de Memória** - Endpoints `/api/memory/stats`, `/api/memory/health`, `/api/memory/cleanup`
+4. **Session Management Agressivo** - Cleanup mais frequente (5min + 1min) e retention reduzida (30min)
+5. **Production Ready** - Sistema agora pronto para produção com gestão robusta de memória
+
 ### v1.5.0 - Sistema Completo de Helpers para LiveAction 🚀
 1. **Decorators TypeScript** - @SimpleAction, @SimpleLifecycle, @SimpleValidate para automatizar logging, lifecycle e validação
 2. **Sistema de Validação** - Validators pré-definidos (email, range, safeString, etc.) com mensagens de erro padronizadas

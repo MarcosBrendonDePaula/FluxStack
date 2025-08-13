@@ -35,7 +35,9 @@
     "test:watch": "vitest --watch",
     "legacy:dev": "bun --watch app/server/index.ts",
     "generate:component": "bun run core/cli/generator.ts",
-    "make:component": "bun run generate:component"
+    "make:component": "bun run generate:component",
+    "quick:gen": "bun run core/cli/quick-generator.ts",
+    "quick:preview": "bun run core/cli/quick-generator.ts --preview"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",
@@ -58,6 +60,7 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
+    "@elysiajs/cors": "^1.3.3",
     "@elysiajs/eden": "^1.3.2",
     "@elysiajs/swagger": "^1.3.1",
     "@vitejs/plugin-react": "^4.6.0",

@@ -18,15 +18,18 @@ export class HydrationManager {
     private static instance: HydrationManager | null = null
     private sessions = new Map<string, HydrationSession>()
     private secret: string
-    private maxAge: number = 3600000 // 1 hour
+    private maxAge: number = 1800000 // 30 minutes (reduced from 1 hour)
     private maxRecoveryAttempts: number = 3
 
     private constructor() {
         // Generate or load secret (in production, this should come from environment)
         this.secret = process.env.FLUXSTACK_SECRET || 'default-secret-change-in-production'
         
-        // Cleanup old sessions every 10 minutes
-        setInterval(() => this.cleanupExpiredSessions(), 600000)
+        // Cleanup old sessions every 5 minutes (reduced from 10 minutes)
+        setInterval(() => this.cleanupExpiredSessions(), 300000)
+        
+        // Additional aggressive cleanup every minute for sessions with too many attempts
+        setInterval(() => this.cleanupFailedSessions(), 60000)
     }
 
     public static getInstance(): HydrationManager {
@@ -203,6 +206,25 @@ export class HydrationManager {
         }
     }
 
+    /**
+     * Clean up sessions with failed recovery attempts
+     * @private
+     */
+    private cleanupFailedSessions(): void {
+        let cleanedCount = 0
+        
+        for (const [componentId, session] of this.sessions.entries()) {
+            if (session.recoveryAttempts >= this.maxRecoveryAttempts) {
+                this.sessions.delete(componentId)
+                cleanedCount++
+            }
+        }
+        
+        if (cleanedCount > 0) {
+            console.log(`🧹 Cleaned up ${cleanedCount} failed hydration sessions (max attempts exceeded)`)
+        }
+    }
+    
     /**
      * Clean up expired sessions
      * @private

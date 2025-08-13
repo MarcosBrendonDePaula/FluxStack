@@ -1,5 +1,5 @@
 // User application entry point
-import { FluxStackFramework, loggerPlugin, vitePlugin, swaggerPlugin } from "@/core/server"
+import { FluxStackFramework, loggerPlugin, vitePlugin, swaggerPlugin, corsPlugin } from "@/core/server"
 import { livePlugin } from "@/core/server/plugins/live"
 import { apiRoutes } from "./routes"
 
@@ -14,11 +14,12 @@ const app = new FluxStackFramework({
 })
 
 
-// Usar plugins básicos primeiro
+// Usar plugins básicos primeiro (CORS primeiro!)
 app
+  .use(corsPlugin)      // CORS deve ser o primeiro para funcionar corretamente
   .use(swaggerPlugin)
   .use(loggerPlugin)
-  .use(livePlugin)  // Live Components WebSocket
+  .use(livePlugin)      // Live Components WebSocket
   .use(vitePlugin)
   
 

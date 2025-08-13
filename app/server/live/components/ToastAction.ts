@@ -69,6 +69,10 @@ export class ToastAction extends LiveAction {
             toast: toast
         })
         
+        setTimeout(()=>{
+            this.dismissToast(toast.id);
+        }, toast.duration)
+
         return { success: true, toastId: toast.id, totalToasts: this.toasts.length }
     }
     

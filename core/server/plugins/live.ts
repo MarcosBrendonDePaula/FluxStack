@@ -17,6 +17,9 @@ export const livePlugin: Plugin = {
             },
             close: (ws: any) => {
                 console.log(`❌ Live client disconnected: ${ws.id}`)
+                
+                // Clean up all components owned by this client
+                LiveAction.cleanupClient(ws.id)
             }
         })
         
@@ -79,14 +82,27 @@ async function handleLiveMessage(ws: any, message: any) {
                         break
                         
                     case 'getInitialState':
-                        const { componentName: requestedComponent, props: requestedProps } = update
+                        const { 
+                            componentName: requestedComponent, 
+                            props: requestedProps, 
+                            userProvidedId 
+                        } = update
                         console.log(`📊 Getting initial state for: ${requestedComponent}`)
                         
-                        const initialState = LiveAction.getClientInitialState(requestedComponent, requestedProps)
+                        // Generate secure ID and get initial state
+                        const { state: initialState, $ID } = LiveAction.getClientInitialStateWithId(
+                            requestedComponent, 
+                            requestedProps, 
+                            userProvidedId
+                        )
+                        
+                        console.log(`🆔 Generated secure ID for ${requestedComponent}: ${$ID}`)
+                        
                         result.updates.push({
                             type: 'initial_state',
                             componentName: requestedComponent,
-                            state: initialState
+                            state: initialState,
+                            $ID: $ID
                         })
                         break
                         

@@ -333,16 +333,43 @@ export const QuickGenerators = {
             .withAction('increment', {
                 description: 'Increment counter',
                 emits: ['count-changed'],
-                updatesProperties: ['count']
+                updatesProperties: ['count'],
+                body: `        console.log(\`🎯 \${this.constructor.name}.increment() called\`)
+        
+        // Update state
+        this.count = this.count + this.step
+        
+        // Emit events
+        this.emit('count-changed', { componentId: this.$ID, timestamp: Date.now() })
+        
+        return { success: true, message: "increment completed successfully" }`
             })
             .withAction('decrement', {
                 description: 'Decrement counter',
                 emits: ['count-changed'],
-                updatesProperties: ['count']
+                updatesProperties: ['count'],
+                body: `        console.log(\`🎯 \${this.constructor.name}.decrement() called\`)
+        
+        // Update state
+        this.count = this.count - this.step
+        
+        // Emit events
+        this.emit('count-changed', { componentId: this.$ID, timestamp: Date.now() })
+        
+        return { success: true, message: "decrement completed successfully" }`
             })
             .withAction('reset', {
                 description: 'Reset counter',
-                emits: ['count-reset']
+                emits: ['count-reset'],
+                body: `        console.log(\`🎯 \${this.constructor.name}.reset() called\`)
+        
+        // Update state
+        this.count = 0
+        
+        // Emit events
+        this.emit('count-reset', { componentId: this.$ID, timestamp: Date.now() })
+        
+        return { success: true, message: "reset completed successfully" }`
             })
             .withLifecycle('mount'),
 

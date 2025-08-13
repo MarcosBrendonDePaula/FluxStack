@@ -17,6 +17,7 @@ export abstract class LiveAction {
     private static registry = new Map<string, typeof LiveAction>()
     private static clientStateRegistry = new Map<string, (props: any) => Record<string, any>>()
     private static instanceRegistry = new Map<string, LiveAction>()
+    private static clientComponentMap = new Map<string, Set<string>>() // clientId -> componentIds
     
     public $ID!: string
     public ws!: ElysiaWS
@@ -30,13 +31,15 @@ export abstract class LiveAction {
         const componentName = actionClass.name.toLowerCase()
         this.registry.set(componentName, actionClass)
         
-        // Registrar função de estado inicial do cliente
-        // Cria uma instância temporária para obter o estado inicial
+        // Registrar função de estado inicial do cliente SEM criar instância temporária
+        // Usar uma factory function que cria e descarta a instância imediatamente
         try {
-            // @ts-expect-error - Constructor instantiation
-            const tempInstance: LiveAction = new actionClass()
             const getClientInitialState = (props: any) => {
-                return tempInstance.getInitialState(props || {})
+                // @ts-expect-error - Constructor instantiation
+                const tempInstance: LiveAction = new actionClass()
+                const state = tempInstance.getInitialState(props || {})
+                // A instância será coletada pelo garbage collector após retornar
+                return state
             }
             this.clientStateRegistry.set(componentName, getClientInitialState)
             console.log(`🔌 Live component registered: ${componentName} (with client state)`)
@@ -51,6 +54,23 @@ export abstract class LiveAction {
         return this.registry.get(name.toLowerCase())
     }
     
+    // Generate secure unique component ID
+    public static generateComponentId(componentName: string, userProvidedId?: string): string {
+        const timestamp = Date.now().toString(36)
+        const randomPart = Math.random().toString(36).substring(2, 8)
+        const normalizedName = componentName.toLowerCase().replace('action', '')
+        
+        // If user provided an ID, use it as a prefix for consistency but add uniqueness
+        if (userProvidedId) {
+            // Sanitize user input
+            const sanitizedId = userProvidedId.replace(/[^a-zA-Z0-9-_]/g, '').slice(0, 32)
+            return `${sanitizedId}-${timestamp}-${randomPart}`
+        }
+        
+        // Generate fully automatic ID
+        return `${normalizedName}-${timestamp}-${randomPart}`
+    }
+
     // Obter estado inicial para o cliente (frontend)
     public static getClientInitialState(componentName: string, props: any): Record<string, any> {
         const normalizedName = componentName.toLowerCase().replace('action', '')
@@ -68,6 +88,43 @@ export abstract class LiveAction {
         
         console.warn(`⚠️  No client state registered for component: ${componentName}`)
         return {}
+    }
+    
+    // Enhanced method to get initial state with generated ID
+    public static getClientInitialStateWithId(
+        componentName: string, 
+        props: any = {}, 
+        userProvidedId?: string
+    ): { state: Record<string, any>; $ID: string } {
+        const state = this.getClientInitialState(componentName, props)
+        const $ID = this.generateComponentId(componentName, userProvidedId)
+        
+        return {
+            state: { ...state, $ID },
+            $ID
+        }
+    }
+    
+    // Register component ownership by client
+    public static registerClientComponent(clientId: string, componentId: string) {
+        if (!this.clientComponentMap.has(clientId)) {
+            this.clientComponentMap.set(clientId, new Set())
+        }
+        this.clientComponentMap.get(clientId)!.add(componentId)
+    }
+    
+    // Clean up all components for a disconnected client
+    public static cleanupClient(clientId: string) {
+        const componentIds = this.clientComponentMap.get(clientId)
+        if (componentIds) {
+            let cleanedCount = 0
+            for (const componentId of componentIds) {
+                this.destroyInstance(componentId)
+                cleanedCount++
+            }
+            this.clientComponentMap.delete(clientId)
+            console.log(`🧹 Cleaned up ${cleanedCount} components for disconnected client ${clientId}`)
+        }
     }
     
     // Clean up persistent instance (when component unmounts)
@@ -200,6 +257,13 @@ export abstract class LiveAction {
                     // Store persistent instance
                     this.instanceRegistry.set(opts.componentId, instance)
                     isNewInstance = true
+                    
+                    // Register component ownership by client (extract client ID from WebSocket)
+                    const clientId = this.extractClientId(opts.ws)
+                    if (clientId) {
+                        this.registerClientComponent(clientId, opts.componentId)
+                    }
+                    
                     console.log(`🏗️  Created persistent instance for ${opts.componentId}`)
                 }
             } else {
@@ -344,6 +408,41 @@ export abstract class LiveAction {
                 }]
             }))
             return null
+        }
+    }
+    
+    // Extract client ID from WebSocket for cleanup tracking
+    private static extractClientId(ws: ElysiaWS): string | null {
+        try {
+            // Try to get client ID from WebSocket properties
+            return (ws.data as any)?.clientId || (ws as any)?.id || (ws.raw as any)?.id || null
+        } catch (error) {
+            console.warn('⚠️  Could not extract client ID from WebSocket')
+            return null
+        }
+    }
+    
+    // Get memory usage statistics
+    public static getMemoryStats(): {
+        registrySize: number
+        instanceCount: number
+        clientStateRegistrySize: number
+        clientComponentMapSize: number
+        activeClients: string[]
+        componentsPerClient: Record<string, number>
+    } {
+        const stats: Record<string, number> = {}
+        for (const [clientId, componentIds] of this.clientComponentMap.entries()) {
+            stats[clientId] = componentIds.size
+        }
+        
+        return {
+            registrySize: this.registry.size,
+            instanceCount: this.instanceRegistry.size,
+            clientStateRegistrySize: this.clientStateRegistry.size,
+            clientComponentMapSize: this.clientComponentMap.size,
+            activeClients: Array.from(this.clientComponentMap.keys()),
+            componentsPerClient: stats
         }
     }
     
