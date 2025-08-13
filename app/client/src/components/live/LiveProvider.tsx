@@ -173,7 +173,7 @@ export function LiveProvider({
     return <>{children}</>
 }
 
-// Modern Debug Panel - Beautiful and Professional
+// Laravel-style DebugBar - Fixed bottom bar that expands upward
 export function LiveDebugPanel() {
     const components = useLiveStore(s => s.components)
     const connections = useLiveStore(s => s.connections)
@@ -181,206 +181,216 @@ export function LiveDebugPanel() {
     const ws = useLiveStore(s => s.ws)
     
     // State management
-    const [position, setPosition] = React.useState({ x: 20, y: 20 })
-    const [isDragging, setIsDragging] = React.useState(false)
-    const [dragStart, setDragStart] = React.useState({ x: 0, y: 0 })
-    const [isMinimized, setIsMinimized] = React.useState(false)
-    const [activeTab, setActiveTab] = React.useState<'overview' | 'components' | 'events' | 'ws'>('overview')
-    
-    // Dragging logic
-    const handleMouseDown = (e: React.MouseEvent) => {
-        const target = e.target as HTMLElement
-        if (target.closest('.debug-content') || target.closest('.debug-tabs') || target.closest('.debug-actions')) {
-            return // Don't drag when interacting with content
-        }
-        
-        setIsDragging(true)
-        setDragStart({
-            x: e.clientX - position.x,
-            y: e.clientY - position.y
-        })
-        e.preventDefault()
-    }
-    
-    const handleMouseMove = (e: MouseEvent) => {
-        if (!isDragging) return
-        
-        const newX = Math.max(0, Math.min(window.innerWidth - 400, e.clientX - dragStart.x))
-        const newY = Math.max(0, Math.min(window.innerHeight - 200, e.clientY - dragStart.y))
-        
-        setPosition({ x: newX, y: newY })
-    }
-    
-    const handleMouseUp = () => {
-        setIsDragging(false)
-    }
-    
-    React.useEffect(() => {
-        if (isDragging) {
-            document.addEventListener('mousemove', handleMouseMove)
-            document.addEventListener('mouseup', handleMouseUp)
-            document.body.style.userSelect = 'none'
-            
-            return () => {
-                document.removeEventListener('mousemove', handleMouseMove)
-                document.removeEventListener('mouseup', handleMouseUp)
-                document.body.style.userSelect = ''
-            }
-        }
-    }, [isDragging, dragStart])
+    const [isExpanded, setIsExpanded] = React.useState(false)
+    const [activeTab, setActiveTab] = React.useState<'overview' | 'components' | 'events' | 'ws' | 'performance'>('overview')
     
     // Stats
     const connectedComponents = Object.values(connections).filter(c => c.connected).length
     const recentEvents = globalEvents.slice(-10).reverse()
+    const memoryUsage = (performance.memory?.usedJSHeapSize / 1024 / 1024) || 0
+    
+    // Performance stats
+    const [performanceStats, setPerformanceStats] = React.useState({
+        requests: 0,
+        avgResponseTime: 0,
+        errors: 0,
+        uptime: 0
+    })
+    
+    React.useEffect(() => {
+        const interval = setInterval(() => {
+            setPerformanceStats(prev => ({
+                ...prev,
+                uptime: Math.floor(performance.now() / 1000)
+            }))
+        }, 1000)
+        
+        return () => clearInterval(interval)
+    }, [])
+    
+    // Bar items for the main bar
+    const barItems = [
+        {
+            id: 'status',
+            icon: ws ? '🟢' : '🔴',
+            label: ws ? 'Connected' : 'Disconnected',
+            value: ws ? 'WS' : 'DC',
+            color: ws ? '#10b981' : '#ef4444'
+        },
+        {
+            id: 'components',
+            icon: '🧩',
+            label: 'Components',
+            value: Object.keys(components).length.toString(),
+            color: '#3b82f6'
+        },
+        {
+            id: 'active',
+            icon: '⚡',
+            label: 'Active',
+            value: connectedComponents.toString(),
+            color: '#8b5cf6'
+        },
+        {
+            id: 'events',
+            icon: '📡',
+            label: 'Events',
+            value: globalEvents.length.toString(),
+            color: '#f59e0b'
+        },
+        {
+            id: 'memory',
+            icon: '💾',
+            label: 'Memory',
+            value: `${memoryUsage.toFixed(1)}MB`,
+            color: memoryUsage > 50 ? '#ef4444' : '#10b981'
+        },
+        {
+            id: 'time',
+            icon: '⏱️',
+            label: 'Uptime',
+            value: `${Math.floor(performanceStats.uptime / 60)}:${(performanceStats.uptime % 60).toString().padStart(2, '0')}`,
+            color: '#64748b'
+        }
+    ]
     
     return (
-        <div 
-            style={{ 
-                position: 'fixed', 
-                left: position.x,
-                top: position.y,
-                background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', 
-                border: '1px solid #334155',
-                borderRadius: '12px',
-                fontSize: '13px',
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                zIndex: 9999,
-                width: isMinimized ? '280px' : '400px',
-                maxHeight: isMinimized ? 'auto' : '500px',
-                cursor: isDragging ? 'grabbing' : 'grab',
-                userSelect: 'none',
-                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05)',
-                backdropFilter: 'blur(8px)',
-                overflow: 'hidden'
-            }}
-            onMouseDown={handleMouseDown}
-        >
-            {/* Header */}
-            <div style={{ 
-                padding: '12px 16px',
-                background: 'linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%)',
-                color: 'white',
-                display: 'flex', 
-                justifyContent: 'space-between', 
+        <>
+            {/* Main Debug Bar - Fixed at bottom */}
+            <div style={{
+                position: 'fixed',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: '40px',
+                background: 'linear-gradient(90deg, #1e293b 0%, #0f172a 100%)',
+                borderTop: '1px solid #334155',
+                display: 'flex',
                 alignItems: 'center',
-                cursor: 'grab',
-                borderRadius: '12px 12px 0 0'
+                padding: '0 16px',
+                zIndex: 9999,
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                fontSize: '12px',
+                color: '#e2e8f0',
+                boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.3)'
             }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}>
-                    <span style={{ fontSize: '16px' }}>🔌</span>
-                    <span>FluxStack Live Debug</span>
-                    <div style={{
-                        width: '8px',
-                        height: '8px',
-                        borderRadius: '50%',
-                        backgroundColor: ws ? '#10b981' : '#ef4444',
-                        boxShadow: ws ? '0 0 8px #10b981' : '0 0 8px #ef4444'
-                    }} />
+                {/* FluxStack Logo */}
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    marginRight: '20px',
+                    paddingRight: '20px',
+                    borderRight: '1px solid #334155'
+                }}>
+                    <span style={{ fontSize: '16px' }}>🔥</span>
+                    <span style={{ fontWeight: '600', color: '#6366f1' }}>FluxStack</span>
                 </div>
                 
-                <div className="debug-actions" style={{ display: 'flex', gap: '8px' }}>
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            setIsMinimized(!isMinimized)
-                        }}
-                        style={{
-                            background: 'rgba(255, 255, 255, 0.1)',
-                            border: 'none',
-                            color: 'white',
-                            cursor: 'pointer',
-                            padding: '4px 8px',
-                            fontSize: '12px',
-                            borderRadius: '6px',
-                            transition: 'all 0.2s',
-                            fontWeight: '500'
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'
-                        }}
-                        title={isMinimized ? 'Expand Panel' : 'Minimize Panel'}
-                    >
-                        {isMinimized ? '⬆️' : '⬇️'}
-                    </button>
+                {/* Bar Items */}
+                <div style={{ display: 'flex', gap: '16px', flex: 1 }}>
+                    {barItems.map(item => (
+                        <div 
+                            key={item.id}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                padding: '4px 8px',
+                                borderRadius: '6px',
+                                background: 'rgba(255, 255, 255, 0.05)',
+                                border: `1px solid ${item.color}40`,
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                minWidth: '70px'
+                            }}
+                            onClick={() => {
+                                setIsExpanded(true)
+                                if (item.id === 'components') setActiveTab('components')
+                                else if (item.id === 'events') setActiveTab('events')
+                                else if (item.id === 'status') setActiveTab('ws')
+                                else if (item.id === 'memory') setActiveTab('performance')
+                                else setActiveTab('overview')
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.background = `${item.color}20`
+                                e.currentTarget.style.borderColor = `${item.color}80`
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'
+                                e.currentTarget.style.borderColor = `${item.color}40`
+                            }}
+                        >
+                            <span style={{ fontSize: '14px' }}>{item.icon}</span>
+                            <span style={{ color: item.color, fontWeight: '600' }}>{item.value}</span>
+                            <span style={{ color: '#94a3b8', fontSize: '10px' }}>{item.label}</span>
+                        </div>
+                    ))}
                 </div>
+                
+                {/* Toggle Button */}
+                <button
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    style={{
+                        background: isExpanded ? '#6366f1' : 'rgba(99, 102, 241, 0.2)',
+                        border: '1px solid #6366f1',
+                        color: isExpanded ? 'white' : '#6366f1',
+                        padding: '6px 12px',
+                        borderRadius: '6px',
+                        fontSize: '11px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                    }}
+                    onMouseEnter={(e) => {
+                        if (!isExpanded) {
+                            e.currentTarget.style.background = 'rgba(99, 102, 241, 0.3)'
+                        }
+                    }}
+                    onMouseLeave={(e) => {
+                        if (!isExpanded) {
+                            e.currentTarget.style.background = 'rgba(99, 102, 241, 0.2)'
+                        }
+                    }}
+                >
+                    <span>{isExpanded ? '⬇️' : '⬆️'}</span>
+                    <span>{isExpanded ? 'Hide' : 'Debug'}</span>
+                </button>
             </div>
             
-            {!isMinimized && (
-                <>
-                    {/* Stats Cards */}
-                    <div style={{ 
-                        padding: '16px',
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(4, 1fr)',
-                        gap: '8px'
-                    }}>
-                        <div style={{
-                            background: 'rgba(34, 197, 94, 0.1)',
-                            border: '1px solid rgba(34, 197, 94, 0.2)',
-                            borderRadius: '8px',
-                            padding: '8px',
-                            textAlign: 'center'
-                        }}>
-                            <div style={{ color: '#22c55e', fontSize: '16px', fontWeight: '700' }}>
-                                {ws ? '✅' : '❌'}
-                            </div>
-                            <div style={{ color: '#94a3b8', fontSize: '10px' }}>WebSocket</div>
-                        </div>
-                        
-                        <div style={{
-                            background: 'rgba(59, 130, 246, 0.1)',
-                            border: '1px solid rgba(59, 130, 246, 0.2)',
-                            borderRadius: '8px',
-                            padding: '8px',
-                            textAlign: 'center'
-                        }}>
-                            <div style={{ color: '#3b82f6', fontSize: '16px', fontWeight: '700' }}>
-                                {Object.keys(components).length}
-                            </div>
-                            <div style={{ color: '#94a3b8', fontSize: '10px' }}>Components</div>
-                        </div>
-                        
-                        <div style={{
-                            background: 'rgba(168, 85, 247, 0.1)',
-                            border: '1px solid rgba(168, 85, 247, 0.2)',
-                            borderRadius: '8px',
-                            padding: '8px',
-                            textAlign: 'center'
-                        }}>
-                            <div style={{ color: '#a855f7', fontSize: '16px', fontWeight: '700' }}>
-                                {connectedComponents}
-                            </div>
-                            <div style={{ color: '#94a3b8', fontSize: '10px' }}>Connected</div>
-                        </div>
-                        
-                        <div style={{
-                            background: 'rgba(245, 101, 101, 0.1)',
-                            border: '1px solid rgba(245, 101, 101, 0.2)',
-                            borderRadius: '8px',
-                            padding: '8px',
-                            textAlign: 'center'
-                        }}>
-                            <div style={{ color: '#f56565', fontSize: '16px', fontWeight: '700' }}>
-                                {globalEvents.length}
-                            </div>
-                            <div style={{ color: '#94a3b8', fontSize: '10px' }}>Events</div>
-                        </div>
-                    </div>
-                    
+            {/* Expanded Panel */}
+            {isExpanded && (
+                <div style={{
+                    position: 'fixed',
+                    bottom: '40px',
+                    left: 0,
+                    right: 0,
+                    height: '400px',
+                    background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+                    borderTop: '1px solid #334155',
+                    zIndex: 9998,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                    boxShadow: '0 -8px 32px rgba(0, 0, 0, 0.4)',
+                    animation: 'slideUp 0.3s ease-out'
+                }}>
                     {/* Tabs */}
-                    <div className="debug-tabs" style={{ 
+                    <div style={{
                         display: 'flex',
                         borderBottom: '1px solid #334155',
-                        background: 'rgba(15, 23, 42, 0.5)'
+                        background: 'rgba(15, 23, 42, 0.8)',
+                        padding: '0 16px'
                     }}>
                         {[
-                            { id: 'overview', label: '📊 Overview', icon: '📊' },
-                            { id: 'components', label: '🧩 Components', icon: '🧩' },
-                            { id: 'events', label: '⚡ Events', icon: '⚡' },
-                            { id: 'ws', label: '🔌 WebSocket', icon: '🔌' }
+                            { id: 'overview', label: 'Overview', icon: '📊' },
+                            { id: 'components', label: 'Components', icon: '🧩' },
+                            { id: 'events', label: 'Events', icon: '⚡' },
+                            { id: 'ws', label: 'WebSocket', icon: '🔌' },
+                            { id: 'performance', label: 'Performance', icon: '🚀' }
                         ].map(tab => (
                             <button
                                 key={tab.id}
@@ -389,13 +399,15 @@ export function LiveDebugPanel() {
                                     background: activeTab === tab.id ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
                                     border: 'none',
                                     color: activeTab === tab.id ? '#6366f1' : '#94a3b8',
-                                    padding: '8px 12px',
-                                    fontSize: '11px',
+                                    padding: '12px 16px',
+                                    fontSize: '12px',
                                     fontWeight: '500',
                                     cursor: 'pointer',
-                                    borderBottom: activeTab === tab.id ? '2px solid #6366f1' : '2px solid transparent',
+                                    borderBottom: activeTab === tab.id ? '3px solid #6366f1' : '3px solid transparent',
                                     transition: 'all 0.2s',
-                                    flex: 1
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px'
                                 }}
                                 onMouseEnter={(e) => {
                                     if (activeTab !== tab.id) {
@@ -410,57 +422,104 @@ export function LiveDebugPanel() {
                                     }
                                 }}
                             >
-                                {tab.icon}
+                                <span>{tab.icon}</span>
+                                <span>{tab.label}</span>
                             </button>
                         ))}
+                        
+                        {/* Close button */}
+                        <button
+                            onClick={() => setIsExpanded(false)}
+                            style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: '#94a3b8',
+                                padding: '12px 16px',
+                                fontSize: '12px',
+                                cursor: 'pointer',
+                                marginLeft: 'auto',
+                                transition: 'color 0.2s'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.color = '#ef4444'
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.color = '#94a3b8'
+                            }}
+                        >
+                            ✕ Close
+                        </button>
                     </div>
                     
                     {/* Content */}
-                    <div className="debug-content" style={{ 
-                        padding: '16px',
-                        maxHeight: '300px',
+                    <div style={{
+                        flex: 1,
                         overflow: 'auto',
+                        padding: '20px',
                         color: '#e2e8f0'
                     }}>
                         {activeTab === 'overview' && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                                {/* System Status */}
                                 <div style={{
                                     background: 'rgba(15, 23, 42, 0.5)',
-                                    borderRadius: '8px',
-                                    padding: '12px',
+                                    borderRadius: '12px',
+                                    padding: '16px',
                                     border: '1px solid #334155'
                                 }}>
-                                    <h4 style={{ margin: '0 0 8px 0', color: '#f1f5f9', fontSize: '12px' }}>System Status</h4>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
-                                        <span>Position:</span>
-                                        <span style={{ color: '#94a3b8' }}>{Math.round(position.x)}, {Math.round(position.y)}</span>
-                                    </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
-                                        <span>Memory:</span>
-                                        <span style={{ color: '#94a3b8' }}>{(performance.memory?.usedJSHeapSize / 1024 / 1024).toFixed(1) || 'N/A'} MB</span>
-                                    </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
-                                        <span>Uptime:</span>
-                                        <span style={{ color: '#94a3b8' }}>{Math.floor(performance.now() / 1000)}s</span>
+                                    <h3 style={{ margin: '0 0 12px 0', color: '#f1f5f9', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span>🖥️</span>
+                                        System Status
+                                    </h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <span>WebSocket:</span>
+                                            <span style={{ color: ws ? '#22c55e' : '#ef4444', fontWeight: '600' }}>
+                                                {ws ? '🟢 Connected' : '🔴 Disconnected'}
+                                            </span>
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <span>Memory Usage:</span>
+                                            <span style={{ color: memoryUsage > 50 ? '#ef4444' : '#22c55e' }}>
+                                                {memoryUsage.toFixed(1)} MB
+                                            </span>
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <span>Uptime:</span>
+                                            <span style={{ color: '#94a3b8' }}>
+                                                {Math.floor(performanceStats.uptime / 3600)}h {Math.floor((performanceStats.uptime % 3600) / 60)}m {performanceStats.uptime % 60}s
+                                            </span>
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <span>URL:</span>
+                                            <span style={{ color: '#94a3b8', fontSize: '10px' }}>
+                                                {window.location.href}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                                 
+                                {/* Quick Actions */}
                                 <div style={{
                                     background: 'rgba(15, 23, 42, 0.5)',
-                                    borderRadius: '8px',
-                                    padding: '12px',
+                                    borderRadius: '12px',
+                                    padding: '16px',
                                     border: '1px solid #334155'
                                 }}>
-                                    <h4 style={{ margin: '0 0 8px 0', color: '#f1f5f9', fontSize: '12px' }}>Quick Actions</h4>
-                                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                    <h3 style={{ margin: '0 0 12px 0', color: '#f1f5f9', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span>⚡</span>
+                                        Quick Actions
+                                    </h3>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
                                         <button style={{
                                             background: 'rgba(34, 197, 94, 0.2)',
                                             border: '1px solid rgba(34, 197, 94, 0.3)',
                                             color: '#22c55e',
-                                            padding: '4px 8px',
-                                            borderRadius: '4px',
-                                            fontSize: '10px',
-                                            cursor: 'pointer'
+                                            padding: '8px 12px',
+                                            borderRadius: '6px',
+                                            fontSize: '11px',
+                                            cursor: 'pointer',
+                                            fontWeight: '500'
                                         }} onClick={() => console.clear()}>
                                             🗑️ Clear Console
                                         </button>
@@ -468,12 +527,37 @@ export function LiveDebugPanel() {
                                             background: 'rgba(59, 130, 246, 0.2)',
                                             border: '1px solid rgba(59, 130, 246, 0.3)',
                                             color: '#3b82f6',
-                                            padding: '4px 8px',
-                                            borderRadius: '4px',
-                                            fontSize: '10px',
-                                            cursor: 'pointer'
+                                            padding: '8px 12px',
+                                            borderRadius: '6px',
+                                            fontSize: '11px',
+                                            cursor: 'pointer',
+                                            fontWeight: '500'
                                         }} onClick={() => location.reload()}>
-                                            🔄 Reload
+                                            🔄 Reload Page
+                                        </button>
+                                        <button style={{
+                                            background: 'rgba(168, 85, 247, 0.2)',
+                                            border: '1px solid rgba(168, 85, 247, 0.3)',
+                                            color: '#a855f7',
+                                            padding: '8px 12px',
+                                            borderRadius: '6px',
+                                            fontSize: '11px',
+                                            cursor: 'pointer',
+                                            fontWeight: '500'
+                                        }} onClick={() => window.open('/swagger', '_blank')}>
+                                            📚 API Docs
+                                        </button>
+                                        <button style={{
+                                            background: 'rgba(245, 101, 101, 0.2)',
+                                            border: '1px solid rgba(245, 101, 101, 0.3)',
+                                            color: '#f56565',
+                                            padding: '8px 12px',
+                                            borderRadius: '6px',
+                                            fontSize: '11px',
+                                            cursor: 'pointer',
+                                            fontWeight: '500'
+                                        }} onClick={() => window.open('/api/memory/stats', '_blank')}>
+                                            📊 Memory Stats
                                         </button>
                                     </div>
                                 </div>
@@ -481,144 +565,241 @@ export function LiveDebugPanel() {
                         )}
                         
                         {activeTab === 'components' && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                {Object.entries(components).length === 0 ? (
-                                    <div style={{ textAlign: 'center', color: '#64748b', padding: '20px' }}>
-                                        No components registered
-                                    </div>
-                                ) : (
-                                    Object.entries(components).map(([id, state]) => (
-                                        <div key={id} style={{
-                                            background: 'rgba(15, 23, 42, 0.5)',
-                                            borderRadius: '8px',
-                                            padding: '10px',
-                                            border: '1px solid #334155'
-                                        }}>
-                                            <div style={{ 
-                                                display: 'flex', 
-                                                justifyContent: 'space-between',
-                                                alignItems: 'center',
-                                                marginBottom: '6px'
-                                            }}>
-                                                <span style={{ color: '#fbbf24', fontWeight: '600', fontSize: '11px' }}>
-                                                    {id}
-                                                </span>
-                                                <span style={{
-                                                    background: connections[id]?.connected ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                                                    color: connections[id]?.connected ? '#22c55e' : '#ef4444',
-                                                    padding: '2px 6px',
-                                                    borderRadius: '10px',
-                                                    fontSize: '9px',
-                                                    fontWeight: '500'
-                                                }}>
-                                                    {connections[id]?.connected ? 'Connected' : 'Disconnected'}
-                                                </span>
-                                            </div>
-                                            <div style={{ 
-                                                color: '#94a3b8', 
-                                                fontSize: '10px',
-                                                fontFamily: 'ui-monospace, "Fira Code", monospace',
-                                                background: 'rgba(0, 0, 0, 0.3)',
-                                                padding: '6px',
-                                                borderRadius: '4px',
-                                                maxHeight: '60px',
-                                                overflow: 'hidden',
-                                                wordBreak: 'break-all'
-                                            }}>
-                                                {JSON.stringify(state, null, 1).slice(0, 120)}...
-                                            </div>
+                            <div>
+                                <h3 style={{ margin: '0 0 16px 0', color: '#f1f5f9', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span>🧩</span>
+                                    Live Components ({Object.keys(components).length})
+                                </h3>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '16px' }}>
+                                    {Object.entries(components).length === 0 ? (
+                                        <div style={{ textAlign: 'center', color: '#64748b', padding: '40px', gridColumn: '1 / -1' }}>
+                                            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🧩</div>
+                                            <h4>No components registered</h4>
+                                            <p>Components will appear here when they connect to the WebSocket</p>
                                         </div>
-                                    ))
-                                )}
+                                    ) : (
+                                        Object.entries(components).map(([id, state]) => (
+                                            <div key={id} style={{
+                                                background: 'rgba(15, 23, 42, 0.5)',
+                                                borderRadius: '12px',
+                                                padding: '16px',
+                                                border: '1px solid #334155'
+                                            }}>
+                                                <div style={{ 
+                                                    display: 'flex', 
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    marginBottom: '12px'
+                                                }}>
+                                                    <h4 style={{ margin: 0, color: '#fbbf24', fontSize: '14px', fontWeight: '600' }}>
+                                                        {id}
+                                                    </h4>
+                                                    <span style={{
+                                                        background: connections[id]?.connected ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                                                        color: connections[id]?.connected ? '#22c55e' : '#ef4444',
+                                                        padding: '4px 8px',
+                                                        borderRadius: '12px',
+                                                        fontSize: '10px',
+                                                        fontWeight: '600'
+                                                    }}>
+                                                        {connections[id]?.connected ? '🟢 Connected' : '🔴 Disconnected'}
+                                                    </span>
+                                                </div>
+                                                <div style={{ 
+                                                    color: '#94a3b8', 
+                                                    fontSize: '11px',
+                                                    fontFamily: 'ui-monospace, "Fira Code", monospace',
+                                                    background: 'rgba(0, 0, 0, 0.3)',
+                                                    padding: '12px',
+                                                    borderRadius: '8px',
+                                                    maxHeight: '120px',
+                                                    overflow: 'auto',
+                                                    whiteSpace: 'pre-wrap'
+                                                }}>
+                                                    {JSON.stringify(state, null, 2)}
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
                             </div>
                         )}
                         
                         {activeTab === 'events' && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                {recentEvents.length === 0 ? (
-                                    <div style={{ textAlign: 'center', color: '#64748b', padding: '20px' }}>
-                                        No recent events
-                                    </div>
-                                ) : (
-                                    recentEvents.map(event => (
-                                        <div key={event.id} style={{
-                                            background: 'rgba(15, 23, 42, 0.5)',
-                                            borderRadius: '8px',
-                                            padding: '10px',
-                                            border: '1px solid #334155'
-                                        }}>
-                                            <div style={{ 
-                                                display: 'flex', 
-                                                justifyContent: 'space-between',
-                                                alignItems: 'center',
-                                                marginBottom: '6px'
-                                            }}>
-                                                <span style={{ color: '#c084fc', fontWeight: '600', fontSize: '11px' }}>
-                                                    {event.type}
-                                                </span>
-                                                <span style={{ color: '#64748b', fontSize: '9px' }}>
-                                                    {new Date(event.timestamp).toLocaleTimeString()}
-                                                </span>
-                                            </div>
-                                            <div style={{ 
-                                                color: '#94a3b8', 
-                                                fontSize: '10px',
-                                                fontFamily: 'ui-monospace, "Fira Code", monospace',
-                                                background: 'rgba(0, 0, 0, 0.3)',
-                                                padding: '6px',
-                                                borderRadius: '4px',
-                                                maxHeight: '40px',
-                                                overflow: 'hidden',
-                                                wordBreak: 'break-all'
-                                            }}>
-                                                {JSON.stringify(event.data).slice(0, 100)}...
-                                            </div>
+                            <div>
+                                <h3 style={{ margin: '0 0 16px 0', color: '#f1f5f9', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span>⚡</span>
+                                    Recent Events ({globalEvents.length})
+                                </h3>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                    {recentEvents.length === 0 ? (
+                                        <div style={{ textAlign: 'center', color: '#64748b', padding: '40px' }}>
+                                            <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚡</div>
+                                            <h4>No events yet</h4>
+                                            <p>Events will appear here as components emit them</p>
                                         </div>
-                                    ))
-                                )}
+                                    ) : (
+                                        recentEvents.map(event => (
+                                            <div key={event.id} style={{
+                                                background: 'rgba(15, 23, 42, 0.5)',
+                                                borderRadius: '12px',
+                                                padding: '16px',
+                                                border: '1px solid #334155'
+                                            }}>
+                                                <div style={{ 
+                                                    display: 'flex', 
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    marginBottom: '8px'
+                                                }}>
+                                                    <span style={{ color: '#c084fc', fontWeight: '600', fontSize: '13px' }}>
+                                                        {event.type}
+                                                    </span>
+                                                    <span style={{ color: '#64748b', fontSize: '11px' }}>
+                                                        {new Date(event.timestamp).toLocaleString()}
+                                                    </span>
+                                                </div>
+                                                <div style={{ 
+                                                    color: '#94a3b8', 
+                                                    fontSize: '11px',
+                                                    fontFamily: 'ui-monospace, "Fira Code", monospace',
+                                                    background: 'rgba(0, 0, 0, 0.3)',
+                                                    padding: '12px',
+                                                    borderRadius: '8px',
+                                                    whiteSpace: 'pre-wrap'
+                                                }}>
+                                                    {JSON.stringify(event.data, null, 2)}
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
                             </div>
                         )}
                         
                         {activeTab === 'ws' && (
-                            <div style={{
-                                background: 'rgba(15, 23, 42, 0.5)',
-                                borderRadius: '8px',
-                                padding: '12px',
-                                border: '1px solid #334155'
-                            }}>
-                                <h4 style={{ margin: '0 0 12px 0', color: '#f1f5f9', fontSize: '12px' }}>WebSocket Info</h4>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '11px' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                        <span>Status:</span>
-                                        <span style={{ 
-                                            color: ws ? '#22c55e' : '#ef4444',
-                                            fontWeight: '600'
-                                        }}>
-                                            {ws ? '🟢 Connected' : '🔴 Disconnected'}
-                                        </span>
+                            <div>
+                                <h3 style={{ margin: '0 0 16px 0', color: '#f1f5f9', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span>🔌</span>
+                                    WebSocket Connection
+                                </h3>
+                                <div style={{
+                                    background: 'rgba(15, 23, 42, 0.5)',
+                                    borderRadius: '12px',
+                                    padding: '20px',
+                                    border: '1px solid #334155',
+                                    maxWidth: '600px'
+                                }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '13px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <span>Status:</span>
+                                            <span style={{ 
+                                                color: ws ? '#22c55e' : '#ef4444',
+                                                fontWeight: '600'
+                                            }}>
+                                                {ws ? '🟢 Connected' : '🔴 Disconnected'}
+                                            </span>
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <span>URL:</span>
+                                            <span style={{ color: '#94a3b8', fontFamily: 'monospace' }}>
+                                                ws://localhost:3000/live
+                                            </span>
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <span>Ready State:</span>
+                                            <span style={{ color: '#94a3b8' }}>
+                                                {ws ? ws.readyState : 'N/A'} {ws && ws.readyState === 1 ? '(OPEN)' : ''}
+                                            </span>
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <span>Protocol:</span>
+                                            <span style={{ color: '#94a3b8' }}>
+                                                {ws?.protocol || 'N/A'}
+                                            </span>
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <span>Buffer Amount:</span>
+                                            <span style={{ color: '#94a3b8' }}>
+                                                {ws?.bufferedAmount || 0} bytes
+                                            </span>
+                                        </div>
                                     </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                        <span>URL:</span>
-                                        <span style={{ color: '#94a3b8', fontSize: '10px' }}>ws://localhost:3000/live</span>
+                                </div>
+                            </div>
+                        )}
+                        
+                        {activeTab === 'performance' && (
+                            <div>
+                                <h3 style={{ margin: '0 0 16px 0', color: '#f1f5f9', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span>🚀</span>
+                                    Performance Metrics
+                                </h3>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
+                                    <div style={{
+                                        background: 'rgba(15, 23, 42, 0.5)',
+                                        borderRadius: '12px',
+                                        padding: '16px',
+                                        border: '1px solid #334155'
+                                    }}>
+                                        <h4 style={{ margin: '0 0 12px 0', color: '#f1f5f9', fontSize: '14px' }}>Memory Usage</h4>
+                                        <div style={{ fontSize: '24px', fontWeight: '700', color: memoryUsage > 50 ? '#ef4444' : '#22c55e', marginBottom: '8px' }}>
+                                            {memoryUsage.toFixed(1)} MB
+                                        </div>
+                                        <div style={{ fontSize: '11px', color: '#64748b' }}>
+                                            Heap: {((performance.memory?.totalJSHeapSize || 0) / 1024 / 1024).toFixed(1)} MB total
+                                        </div>
                                     </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                        <span>Ready State:</span>
-                                        <span style={{ color: '#94a3b8' }}>
-                                            {ws ? ws.readyState : 'N/A'}
-                                        </span>
+                                    
+                                    <div style={{
+                                        background: 'rgba(15, 23, 42, 0.5)',
+                                        borderRadius: '12px',
+                                        padding: '16px',
+                                        border: '1px solid #334155'
+                                    }}>
+                                        <h4 style={{ margin: '0 0 12px 0', color: '#f1f5f9', fontSize: '14px' }}>Session Time</h4>
+                                        <div style={{ fontSize: '24px', fontWeight: '700', color: '#3b82f6', marginBottom: '8px' }}>
+                                            {Math.floor(performanceStats.uptime / 60)}:{(performanceStats.uptime % 60).toString().padStart(2, '0')}
+                                        </div>
+                                        <div style={{ fontSize: '11px', color: '#64748b' }}>
+                                            Started: {new Date(Date.now() - performanceStats.uptime * 1000).toLocaleTimeString()}
+                                        </div>
                                     </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                        <span>Protocol:</span>
-                                        <span style={{ color: '#94a3b8' }}>
-                                            {ws?.protocol || 'N/A'}
-                                        </span>
+                                    
+                                    <div style={{
+                                        background: 'rgba(15, 23, 42, 0.5)',
+                                        borderRadius: '12px',
+                                        padding: '16px',
+                                        border: '1px solid #334155'
+                                    }}>
+                                        <h4 style={{ margin: '0 0 12px 0', color: '#f1f5f9', fontSize: '14px' }}>Event Count</h4>
+                                        <div style={{ fontSize: '24px', fontWeight: '700', color: '#a855f7', marginBottom: '8px' }}>
+                                            {globalEvents.length}
+                                        </div>
+                                        <div style={{ fontSize: '11px', color: '#64748b' }}>
+                                            Recent: {recentEvents.length} events
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         )}
                     </div>
-                </>
+                </div>
             )}
-        </div>
+            
+            {/* CSS Animation */}
+            <style>{`
+                @keyframes slideUp {
+                    from {
+                        transform: translateY(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateY(0);
+                        opacity: 1;
+                    }
+                }
+            `}</style>
+        </>
     )
 }
