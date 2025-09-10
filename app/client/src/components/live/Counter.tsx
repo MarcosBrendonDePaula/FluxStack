@@ -88,24 +88,14 @@ export function Counter({
         }
     })
     
-    // Optimistic increment
-    const handleOptimisticIncrement = () => {
-        if (state.count + state.step <= state.maxCount) {
-            optimisticUpdate({ count: state.count + state.step })
-            callMethod('increment')
-        } else {
-            callMethod('increment') // Will trigger limit-reached event
-        }
+    // Fixed increment (without double counting)
+    const handleIncrement = () => {
+        callMethod('increment')
     }
     
-    // Optimistic decrement
-    const handleOptimisticDecrement = () => {
-        if (state.count - state.step >= state.minCount) {
-            optimisticUpdate({ count: state.count - state.step })
-            callMethod('decrement')
-        } else {
-            callMethod('decrement') // Will trigger limit-reached event
-        }
+    // Fixed decrement (without double counting) 
+    const handleDecrement = () => {
+        callMethod('decrement')
     }
 
     return (
@@ -196,7 +186,7 @@ export function Counter({
                 marginBottom: '1rem'
             }}>
                 <button 
-                    onClick={handleOptimisticDecrement}
+                    onClick={handleDecrement}
                     disabled={loading || state.isAtMin}
                     style={{
                         padding: '0.75rem',
@@ -213,7 +203,7 @@ export function Counter({
                 </button>
                 
                 <button 
-                    onClick={handleOptimisticIncrement}
+                    onClick={handleIncrement}
                     disabled={loading || state.isAtMax}
                     style={{
                         padding: '0.75rem',

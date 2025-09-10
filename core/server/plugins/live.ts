@@ -96,9 +96,10 @@ async function handleLiveMessage(ws: any, message: any) {
                         const { 
                             componentName: requestedComponent, 
                             props: requestedProps, 
-                            userProvidedId 
+                            userProvidedId,
+                            tempUUID
                         } = update
-                        console.log(`📊 Getting initial state for: ${requestedComponent}`)
+                        console.log(`📊 [BACKEND] Getting initial state for: ${requestedComponent} | User ID: ${userProvidedId || 'auto'} | Temp UUID: ${tempUUID || 'none'}`)
                         
                         // Generate secure ID and get initial state
                         const { state: initialState, $ID } = LiveAction.getClientInitialStateWithId(
@@ -107,13 +108,14 @@ async function handleLiveMessage(ws: any, message: any) {
                             userProvidedId
                         )
                         
-                        console.log(`🆔 Generated secure ID for ${requestedComponent}: ${$ID}`)
+                        console.log(`🆔 [BACKEND] Generated secure ID for ${requestedComponent}: ${$ID} | For temp UUID: ${tempUUID || 'none'}`)
                         
                         result.updates.push({
                             type: 'initial_state',
                             componentName: requestedComponent,
                             state: initialState,
-                            $ID: $ID
+                            $ID: $ID,
+                            tempUUID: tempUUID // Include tempUUID for frontend mapping
                         })
                         break
                         

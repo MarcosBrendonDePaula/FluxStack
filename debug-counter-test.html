@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Counter Test</title>
+</head>
+<body>
+    <h1>Debug Counter Components</h1>
+    
+    <div id="counter1">
+        <h3>Counter 1 (ID: main-counter)</h3>
+        <button onclick="testCounter1()">Increment Counter 1</button>
+        <div id="counter1-state">State: Loading...</div>
+    </div>
+    
+    <div id="counter2">
+        <h3>Counter 2 (ID: main-counter1)</h3>
+        <button onclick="testCounter2()">Increment Counter 2</button>
+        <div id="counter2-state">State: Loading...</div>
+    </div>
+    
+    <div id="counter3">
+        <h3>Counter 3 (ID: main-counter2)</h3>
+        <button onclick="testCounter3()">Increment Counter 3</button>
+        <div id="counter3-state">State: Loading...</div>
+    </div>
+    
+    <div id="logs">
+        <h3>WebSocket Logs:</h3>
+        <div id="log-output" style="border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: auto; font-family: monospace; background: #f5f5f5;"></div>
+    </div>
+
+    <script>
+        // Create WebSocket connection
+        const ws = new WebSocket('ws://localhost:3000/live');
+        let counter1Id = null;
+        let counter2Id = null;
+        let counter3Id = null;
+        
+        function log(message) {
+            const logOutput = document.getElementById('log-output');
+            const timestamp = new Date().toLocaleTimeString();
+            logOutput.innerHTML += `[${timestamp}] ${message}\n`;
+            logOutput.scrollTop = logOutput.scrollHeight;
+            console.log(message);
+        }
+        
+        ws.onopen = () => {
+            log('🔌 WebSocket connected');
+            initializeCounters();
+        };
+        
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            log(`📨 Received: ${JSON.stringify(data, null, 2)}`);
+            
+            if (data.updates) {
+                data.updates.forEach(update => {
+                    if (update.type === 'initial_state') {
+                        if (update.componentName === 'CounterAction') {
+                            if (update.$ID.includes('main-counter2')) {
+                                counter3Id = update.$ID;
+                                document.getElementById('counter3-state').textContent = `State: ${JSON.stringify(update.state)}`;
+                            } else if (update.$ID.includes('main-counter1')) {
+                                counter2Id = update.$ID;
+                                document.getElementById('counter2-state').textContent = `State: ${JSON.stringify(update.state)}`;
+                            } else if (update.$ID.includes('main-counter')) {
+                                counter1Id = update.$ID;
+                                document.getElementById('counter1-state').textContent = `State: ${JSON.stringify(update.state)}`;
+                            }
+                        }
+                    } else if (update.type === 'state_update') {
+                        // Update the corresponding counter display
+                        if (update.id === counter1Id) {
+                            document.getElementById('counter1-state').textContent = `State: ${JSON.stringify(update.state)}`;
+                        } else if (update.id === counter2Id) {
+                            document.getElementById('counter2-state').textContent = `State: ${JSON.stringify(update.state)}`;
+                        } else if (update.id === counter3Id) {
+                            document.getElementById('counter3-state').textContent = `State: ${JSON.stringify(update.state)}`;
+                        }
+                    }
+                });
+            }
+        };
+        
+        ws.onerror = (error) => {
+            log(`❌ WebSocket error: ${error}`);
+        };
+        
+        ws.onclose = () => {
+            log('❌ WebSocket disconnected');
+        };
+        
+        function initializeCounters() {
+            // Initialize Counter 1
+            ws.send(JSON.stringify({
+                updates: [{
+                    type: 'getInitialState',
+                    componentName: 'CounterAction',
+                    props: { initialCount: 0 },
+                    userProvidedId: 'main-counter'
+                }]
+            }));
+            
+            // Initialize Counter 2
+            ws.send(JSON.stringify({
+                updates: [{
+                    type: 'getInitialState',
+                    componentName: 'CounterAction',
+                    props: { initialCount: 0 },
+                    userProvidedId: 'main-counter1'
+                }]
+            }));
+            
+            // Initialize Counter 3
+            ws.send(JSON.stringify({
+                updates: [{
+                    type: 'getInitialState',
+                    componentName: 'CounterAction',
+                    props: { initialCount: 0 },
+                    userProvidedId: 'main-counter2'
+                }]
+            }));
+        }
+        
+        function testCounter1() {
+            if (!counter1Id) {
+                log('❌ Counter 1 not initialized yet');
+                return;
+            }
+            
+            log(`🎯 Calling increment on Counter 1 (${counter1Id})`);
+            ws.send(JSON.stringify({
+                updates: [{
+                    type: 'callMethod',
+                    payload: {
+                        name: 'CounterAction',
+                        id: counter1Id,
+                        methodName: 'increment',
+                        params: [],
+                        state: { count: 0, $props: { initialCount: 0 }, $ID: counter1Id },
+                        requestId: 'test-1-' + Date.now()
+                    }
+                }]
+            }));
+        }
+        
+        function testCounter2() {
+            if (!counter2Id) {
+                log('❌ Counter 2 not initialized yet');
+                return;
+            }
+            
+            log(`🎯 Calling increment on Counter 2 (${counter2Id})`);
+            ws.send(JSON.stringify({
+                updates: [{
+                    type: 'callMethod',
+                    payload: {
+                        name: 'CounterAction',
+                        id: counter2Id,
+                        methodName: 'increment',
+                        params: [],
+                        state: { count: 0, $props: { initialCount: 0 }, $ID: counter2Id },
+                        requestId: 'test-2-' + Date.now()
+                    }
+                }]
+            }));
+        }
+        
+        function testCounter3() {
+            if (!counter3Id) {
+                log('❌ Counter 3 not initialized yet');
+                return;
+            }
+            
+            log(`🎯 Calling increment on Counter 3 (${counter3Id})`);
+            ws.send(JSON.stringify({
+                updates: [{
+                    type: 'callMethod',
+                    payload: {
+                        name: 'CounterAction',
+                        id: counter3Id,
+                        methodName: 'increment',
+                        params: [],
+                        state: { count: 0, $props: { initialCount: 0 }, $ID: counter3Id },
+                        requestId: 'test-3-' + Date.now()
+                    }
+                }]
+            }));
+        }
+    </script>
+</body>
+</html>

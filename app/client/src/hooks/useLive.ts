@@ -60,7 +60,8 @@ async function getInitialClientStateWithId(
     componentName: string, 
     props: any, 
     ws: WebSocket | null,
-    userProvidedId?: string
+    userProvidedId?: string,
+    tempUUID?: string
 ): Promise<{ state: Record<string, any>; $ID: string }> {
     if (!ws || ws.readyState !== WebSocket.OPEN) {
         console.warn(`⚠️  WebSocket not available for getting initial state of ${componentName}, using fallback`)
@@ -78,8 +79,9 @@ async function getInitialClientStateWithId(
                 const data = JSON.parse(event.data)
                 if (data.updates && Array.isArray(data.updates)) {
                     for (const update of data.updates) {
-                        if (update.type === 'initial_state' && update.componentName === componentName) {
+                        if (update.type === 'initial_state' && update.componentName === componentName && update.tempUUID === tempUUID) {
                             ws.removeEventListener('message', handleMessage)
+                            console.log(`📨 [FRONTEND] Matched initial state response: ${update.$ID} for temp: ${tempUUID}`)
                             resolve({ 
                                 state: update.state, 
                                 $ID: update.$ID 
@@ -108,7 +110,8 @@ async function getInitialClientStateWithId(
                 type: 'getInitialState',
                 componentName,
                 props,
-                userProvidedId
+                userProvidedId,
+                tempUUID // Include temp UUID for mapping
             }]
         }))
 
@@ -159,6 +162,10 @@ export function useLive({ name, props = {}, componentId, eventHandlers = {} }: U
     // O ID será obtido do backend ou usado o fornecido pelo usuário
     const finalIdRef = useRef<string | null>(null)
     const isInitializedRef = useRef(false)
+    const propsRef = useRef(props)
+    
+    // Update props ref when props change
+    propsRef.current = props
     
     // Rate limiting state
     const lastCallTimestampRef = useRef<number>(0)
@@ -186,23 +193,32 @@ export function useLive({ name, props = {}, componentId, eventHandlers = {} }: U
 
         const initializeState = async () => {
             try {
-                console.log(`🔌 Setting up live component: ${name} (user ID: ${componentId || 'auto'})`)
+                // Generate temporary UUID for this component instance
+                const tempUUID = uuidv4()
+                console.log(`🔌 [FRONTEND] Setting up live component: ${name} (user ID: ${componentId || 'auto'}) | Temp UUID: ${tempUUID}`)
+                
+                // Set temporary ID first
+                finalIdRef.current = tempUUID
+                addConnection(tempUUID)
                 
                 // Obter estado inicial e ID seguro do backend
                 const { state: dynamicInitialState, $ID } = await getInitialClientStateWithId(
                     name, 
                     props, 
                     ws, 
-                    componentId
+                    componentId,
+                    tempUUID // Pass temp UUID for mapping
                 )
                 
-                // Salvar o ID final gerado pelo backend
-                finalIdRef.current = $ID
+                // Replace temporary ID with final backend-generated ID
+                console.log(`🆔 [FRONTEND] Backend generated ID: ${$ID} | For user ID: ${componentId || 'auto'} | Component: ${name} | Replacing temp: ${tempUUID}`)
                 
-                console.log(`🆔 Using secure backend-generated ID: ${$ID}`)
-                
-                // Adicionar conexão com o ID final
+                // Remove temporary connection and add final one
+                removeConnection(tempUUID)
                 addConnection($ID)
+                
+                // Update final ID reference
+                finalIdRef.current = $ID
                 
                 const initialState = {
                     $props: props,
@@ -325,7 +341,7 @@ export function useLive({ name, props = {}, componentId, eventHandlers = {} }: U
             throw new Error(error)
         }
 
-        console.log(`🎯 Calling ${name}.${methodName}(${JSON.stringify(params)}) on ${currentComponentId}`)
+        console.log(`🎯 [FRONTEND] Calling ${name}.${methodName}(${JSON.stringify(params)}) on ${currentComponentId} | User provided: ${componentId || 'auto'}`)
         
         setComponentLoading(currentComponentId, true)
         setComponentError(currentComponentId, null)
@@ -360,7 +376,8 @@ export function useLive({ name, props = {}, componentId, eventHandlers = {} }: U
 
             // Get hydration state for resilience
             const hydrationData = loadHydrationState(currentComponentId)
-            const currentState = state || { $props: props, $ID: currentComponentId }
+            const storeState = useLiveStore.getState().components[currentComponentId]
+            const currentState = storeState || { $props: propsRef.current, $ID: currentComponentId }
             
             const message = JSON.stringify({
                 updates: [{
@@ -390,19 +407,22 @@ export function useLive({ name, props = {}, componentId, eventHandlers = {} }: U
                 reject(error)
             }
         })
-    }, [ws, name, state, props])
+    }, [ws, name]) // Removed 'state' and 'props' to prevent closure issues
 
     // Optimistic updates (immediate UI feedback)
     const optimisticUpdate = useCallback((updates: Partial<any>) => {
         const currentComponentId = finalIdRef.current
-        if (state && currentComponentId) {
-            updateComponent(currentComponentId, { ...state, ...updates })
-            console.log(`⚡ Optimistic update for ${currentComponentId}:`, updates)
+        if (currentComponentId) {
+            const currentState = useLiveStore.getState().components[currentComponentId]
+            if (currentState) {
+                updateComponent(currentComponentId, { ...currentState, ...updates })
+                console.log(`⚡ Optimistic update for ${currentComponentId}:`, updates)
+            }
         }
-    }, [state, updateComponent])
+    }, [updateComponent])
 
     const currentComponentId = finalIdRef.current || 'initializing'
-    const currentState = state || { $props: props, $ID: currentComponentId }
+    const currentState = state || { $props: propsRef.current, $ID: currentComponentId }
 
     return {
         state: currentState,
