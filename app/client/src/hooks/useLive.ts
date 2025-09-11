@@ -163,9 +163,14 @@ export function useLive({ name, props = {}, componentId, eventHandlers = {} }: U
     const finalIdRef = useRef<string | null>(null)
     const isInitializedRef = useRef(false)
     const propsRef = useRef(props)
+    const eventHandlersRef = useRef(eventHandlers)
+    const handlersRegisteredRef = useRef(false)
     
     // Update props ref when props change
     propsRef.current = props
+    
+    // Update event handlers ref when they change
+    eventHandlersRef.current = eventHandlers
     
     // Rate limiting state
     const lastCallTimestampRef = useRef<number>(0)
@@ -268,22 +273,28 @@ export function useLive({ name, props = {}, componentId, eventHandlers = {} }: U
         }
     }, [ws, finalIdRef.current])
 
-    // Auto-register event handlers (Livewire-style)
+    // Auto-register event handlers (Livewire-style) - Only once per component
     useEffect(() => {
-        if (!finalIdRef.current) return
+        if (!finalIdRef.current || handlersRegisteredRef.current) return
         
         const eventListeners: Array<() => void> = []
+        const hasHandlers = Object.keys(eventHandlersRef.current).length > 0
         
-        Object.entries(eventHandlers).forEach(([eventName, handler]) => {
+        // Only register if we have handlers and haven't registered yet
+        if (!hasHandlers) return
+        
+        Object.entries(eventHandlersRef.current).forEach(([eventName, handler]) => {
             const fullEventName = `live:${eventName.replace(/^on/, '').toLowerCase().replace(/([a-z])([A-Z])/g, '$1-$2')}`
             
             const eventListener = (e: CustomEvent) => {
                 if (e.detail.componentId === finalIdRef.current) {
                     console.log(`🎯 Auto-calling handler for ${eventName}:`, e.detail.data)
-                    if (typeof handler === 'function') {
-                        handler(e.detail.data)
+                    // Always use the latest handler from ref
+                    const currentHandler = eventHandlersRef.current[eventName]
+                    if (typeof currentHandler === 'function') {
+                        currentHandler(e.detail.data)
                     } else {
-                        console.warn(`⚠️ Handler for ${eventName} is not a function:`, typeof handler)
+                        console.warn(`⚠️ Handler for ${eventName} is not a function:`, typeof currentHandler)
                     }
                 }
             }
@@ -296,10 +307,14 @@ export function useLive({ name, props = {}, componentId, eventHandlers = {} }: U
             console.log(`🎯 Auto-registered ${eventName} -> ${fullEventName} for ${finalIdRef.current}`)
         })
 
+        // Mark as registered to prevent re-registration
+        handlersRegisteredRef.current = true
+
         return () => {
             eventListeners.forEach(cleanup => cleanup())
+            handlersRegisteredRef.current = false
         }
-    }, [eventHandlers, finalIdRef.current])
+    }, [finalIdRef.current]) // Only depend on component ID, not handlers
 
     // Call backend method with return value support and rate limiting
     const callMethod = useCallback(async (methodName: string, ...params: any[]): Promise<any> => {

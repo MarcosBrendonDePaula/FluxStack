@@ -6,6 +6,7 @@ import './components/ToastAction'
 import './components/UserProfileAction'
 import './components/ExampleEnhancedAction'
 import './components/UserListAction'
+import './components/MenuAction'
 
 // Generated components for testing (keep these)
 import './components/TestCounterFixedAction'
