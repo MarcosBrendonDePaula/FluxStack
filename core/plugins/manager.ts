@@ -515,7 +515,13 @@ export function createRequestContext(request: Request, additionalData: any = {})
     request,
     path: url.pathname,
     method: request.method,
-    headers: Object.fromEntries(Array.from(request.headers)),
+    headers: (() => {
+      const headers: Record<string, string> = {}
+      request.headers.forEach((value, key) => {
+        headers[key] = value
+      })
+      return headers
+    })(),
     query: Object.fromEntries(url.searchParams.entries()),
     params: {},
     startTime: Date.now(),

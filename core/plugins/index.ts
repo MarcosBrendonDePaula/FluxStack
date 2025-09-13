@@ -85,7 +85,7 @@ export const PluginUtils = {
   }): Plugin => {
     return {
       name: config.name,
-      version: config.version,
+      version: config.version || '1.0.0',
       description: config.description,
       dependencies: config.dependencies,
       priority: config.priority,

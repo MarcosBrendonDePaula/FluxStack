@@ -111,7 +111,11 @@ export const loggerPlugin: Plugin = {
     }
 
     if (config.includeHeaders) {
-      logData.responseHeaders = Object.fromEntries(Array.from(context.response.headers))
+      const headers: Record<string, string> = {}
+      context.response.headers.forEach((value, key) => {
+        headers[key] = value
+      })
+      logData.responseHeaders = headers
     }
 
     // Determine log level based on status code and duration

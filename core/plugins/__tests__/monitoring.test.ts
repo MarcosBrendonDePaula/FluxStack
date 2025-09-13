@@ -324,10 +324,10 @@ describe('Monitoring Plugin', () => {
       expect(registry.gauges.size).toBeGreaterThan(0)
       
       // Check for specific system metrics
-      const gaugeKeys = Array.from(registry.gauges.keys())
-      expect(gaugeKeys.some((key: string) => key.includes('process_memory'))).toBe(true)
-      expect(gaugeKeys.some((key: string) => key.includes('process_cpu'))).toBe(true)
-      expect(gaugeKeys.some((key: string) => key.includes('process_uptime'))).toBe(true)
+      const gaugeKeys = Array.from(registry.gauges.keys()) as string[]
+      expect(gaugeKeys.some(key => key.includes('process_memory'))).toBe(true)
+      expect(gaugeKeys.some(key => key.includes('process_cpu'))).toBe(true)
+      expect(gaugeKeys.some(key => key.includes('process_uptime'))).toBe(true)
     })
   })
 

@@ -62,7 +62,7 @@ export class FluxStackFramework {
     // Create plugin context
     this.pluginContext = {
       config: fullConfig,
-      logger: logger,
+      logger: logger.child({ component: 'server' }),
       app: this.app,
       utils: pluginUtils
     }
