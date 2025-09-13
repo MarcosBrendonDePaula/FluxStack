@@ -2,7 +2,7 @@
 
 import { FluxStackBuilder } from "../build"
 import { ProjectCreator } from "../templates/create-project"
-import { config } from "@/config/fluxstack.config"
+import { getConfigSync } from "../config"
 
 const command = process.argv[2]
 
@@ -80,17 +80,20 @@ switch (command) {
     break
 
   case "build":
+    const config = getConfigSync()
     const builder = new FluxStackBuilder(config)
     await builder.build()
     break
 
   case "build:frontend":
-    const frontendBuilder = new FluxStackBuilder(config)
+    const frontendConfig = getConfigSync()
+    const frontendBuilder = new FluxStackBuilder(frontendConfig)
     await frontendBuilder.buildClient()
     break
 
   case "build:backend":
-    const backendBuilder = new FluxStackBuilder(config)
+    const backendConfig = getConfigSync()
+    const backendBuilder = new FluxStackBuilder(backendConfig)
     await backendBuilder.buildServer()
     break
 

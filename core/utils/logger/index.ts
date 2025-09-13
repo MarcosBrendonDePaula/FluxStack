@@ -3,21 +3,44 @@
  * Environment-aware logging system
  */
 
+// Environment info is handled via process.env directly
+
 type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 
-class Logger {
-  private static instance: Logger | null = null
-  private logLevel: LogLevel
+export interface Logger {
+  debug(message: string, meta?: any): void
+  info(message: string, meta?: any): void
+  warn(message: string, meta?: any): void
+  error(message: string, meta?: any): void
+  
+  // Contextual logging
+  child(context: any): Logger
+  
+  // Performance logging
+  time(label: string): void
+  timeEnd(label: string): void
+  
+  // Request logging
+  request(method: string, path: string, status?: number, duration?: number): void
+}
 
-  private constructor() {
+class FluxStackLogger implements Logger {
+  private static instance: FluxStackLogger | null = null
+  private logLevel: LogLevel
+  private context: any = {}
+  private timers: Map<string, number> = new Map()
+
+  private constructor(context?: any) {
+    // Default to 'info' level, can be overridden by config
     this.logLevel = (process.env.LOG_LEVEL as LogLevel) || 'info'
+    this.context = context || {}
   }
 
-  static getInstance(): Logger {
-    if (Logger.instance === null) {
-      Logger.instance = new Logger()
+  static getInstance(): FluxStackLogger {
+    if (FluxStackLogger.instance === null) {
+      FluxStackLogger.instance = new FluxStackLogger()
     }
-    return Logger.instance
+    return FluxStackLogger.instance
   }
 
   private shouldLog(level: LogLevel): boolean {
@@ -35,7 +58,17 @@ class Logger {
     const timestamp = new Date().toISOString()
     const levelStr = level.toUpperCase().padEnd(5)
     
-    let formatted = `[${timestamp}] ${levelStr} ${message}`
+    let formatted = `[${timestamp}] ${levelStr}`
+    
+    // Add context if available
+    if (Object.keys(this.context).length > 0) {
+      const contextStr = Object.entries(this.context)
+        .map(([key, value]) => `${key}=${value}`)
+        .join(' ')
+      formatted += ` [${contextStr}]`
+    }
+    
+    formatted += ` ${message}`
     
     if (meta && typeof meta === 'object') {
       formatted += ` ${JSON.stringify(meta)}`
@@ -70,6 +103,25 @@ class Logger {
     }
   }
 
+  // Contextual logging
+  child(context: any): FluxStackLogger {
+    return new FluxStackLogger({ ...this.context, ...context })
+  }
+
+  // Performance logging
+  time(label: string): void {
+    this.timers.set(label, Date.now())
+  }
+
+  timeEnd(label: string): void {
+    const startTime = this.timers.get(label)
+    if (startTime) {
+      const duration = Date.now() - startTime
+      this.info(`Timer ${label}: ${duration}ms`)
+      this.timers.delete(label)
+    }
+  }
+
   // HTTP request logging
   request(method: string, path: string, status?: number, duration?: number): void {
     const statusStr = status ? ` ${status}` : ''
@@ -89,7 +141,7 @@ class Logger {
 }
 
 // Export singleton instance
-export const logger = Logger.getInstance()
+export const logger = FluxStackLogger.getInstance()
 
 // Export convenience functions
 export const log = {
@@ -102,5 +154,8 @@ export const log = {
   plugin: (pluginName: string, message: string, meta?: any) => 
     logger.plugin(pluginName, message, meta),
   framework: (message: string, meta?: any) => 
-    logger.framework(message, meta)
+    logger.framework(message, meta),
+  child: (context: any) => logger.child(context),
+  time: (label: string) => logger.time(label),
+  timeEnd: (label: string) => logger.timeEnd(label)
 }
