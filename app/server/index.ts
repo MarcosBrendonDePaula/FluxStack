@@ -27,7 +27,10 @@ const framework = app.getApp()
 const context = app.getContext()
 
 if (context.isDevelopment) {
-  // Proxy para Vite em desenvolvimento
+  // Import the proxy function from the Vite plugin
+  const { proxyToVite } = await import("@/core/plugins/built-in/vite")
+  
+  // Proxy para Vite em desenvolvimento com detecção automática de porta
   framework.get("*", async ({ request }) => {
     const url = new URL(request.url)
     
@@ -35,13 +38,9 @@ if (context.isDevelopment) {
       return new Response("Not Found", { status: 404 })
     }
     
-    try {
-      const viteUrl = `http://localhost:${context.config.vitePort}${url.pathname}${url.search}`
-      const response = await fetch(viteUrl)
-      return response
-    } catch (error) {
-      return new Response("Vite server not ready", { status: 503 })
-    }
+    // Use the intelligent proxy function that auto-detects the port
+    const vitePort = context.config.client?.port || 5173
+    return await proxyToVite(request, "localhost", vitePort, 5000)
   })
 } else {
   // Servir arquivos estáticos em produção
