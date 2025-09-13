@@ -213,7 +213,7 @@ describe('Configuration Loader', () => {
       
       expect(getConfigValue(config, 'app.name', '')).toBe(config.app.name)
       expect(getConfigValue(config, 'server.port', 0)).toBe(config.server.port)
-      expect(getConfigValue(config, 'server.cors.origins', [])).toEqual(config.server.cors.origins)
+      expect(getConfigValue(config, 'server.cors.origins', [] as string[])).toEqual(config.server.cors.origins)
     })
 
     it('should return default value for missing paths', () => {
