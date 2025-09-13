@@ -21,13 +21,17 @@ describe('Configuration System Integration', () => {
   const testConfigPath = join(process.cwd(), 'integration.test.config.ts')
   const originalEnv = { ...process.env }
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Clean environment
     Object.keys(process.env).forEach(key => {
       if (key.startsWith('FLUXSTACK_') || key.startsWith('TEST_')) {
         delete process.env[key]
       }
     })
+    
+    // Clear configuration cache to ensure fresh config for each test
+    const { reloadConfig } = await import('../index')
+    await reloadConfig()
   })
 
   afterEach(() => {
@@ -91,7 +95,7 @@ describe('Configuration System Integration', () => {
       
       writeFileSync(testConfigPath, configContent)
 
-      const config = await getConfig({ configPath: testConfigPath })
+      const config = await reloadConfig({ configPath: testConfigPath })
 
       // Verify precedence: env vars override file config
       expect(config.server.port).toBe(4000) // From env
@@ -118,7 +122,7 @@ describe('Configuration System Integration', () => {
       process.env.MONITORING_ENABLED = 'true'
       process.env.LOG_LEVEL = 'warn'
 
-      const config = await getConfig()
+      const config = await reloadConfig()
 
       expect(config.logging.level).toBe('warn')
       expect(config.logging.format).toBe('json')
@@ -129,7 +133,7 @@ describe('Configuration System Integration', () => {
     it('should handle test environment correctly', async () => {
       process.env.NODE_ENV = 'test'
 
-      const config = await getConfig()
+      const config = await reloadConfig()
 
       expect(config.logging.level).toBe('error')
       expect(config.server.port).toBe(0) // Random port for tests
@@ -142,7 +146,7 @@ describe('Configuration System Integration', () => {
     it('should cache configuration on first load', async () => {
       process.env.FLUXSTACK_APP_NAME = 'cached-test'
 
-      const config1 = await getConfig()
+      const config1 = await reloadConfig()
       const config2 = await getConfig()
 
       expect(config1).toBe(config2) // Same object reference
@@ -152,7 +156,7 @@ describe('Configuration System Integration', () => {
     it('should reload configuration when requested', async () => {
       process.env.FLUXSTACK_APP_NAME = 'initial-name'
       
-      const config1 = await getConfig()
+      const config1 = await reloadConfig()
       expect(config1.app.name).toBe('initial-name')
 
       // Change environment
@@ -243,7 +247,7 @@ describe('Configuration System Integration', () => {
       process.env.DATABASE_URL = 'postgresql://user:pass@localhost:5432/testdb'
       process.env.DATABASE_SSL = 'true'
 
-      const config = await getConfig()
+      const config = await reloadConfig()
       const dbConfig = getDatabaseConfig(config)
 
       expect(dbConfig).not.toBeNull()
@@ -256,7 +260,7 @@ describe('Configuration System Integration', () => {
       process.env.JWT_EXPIRES_IN = '7d'
       process.env.JWT_ALGORITHM = 'HS512'
 
-      const config = await getConfig()
+      const config = await reloadConfig()
       const authConfig = getAuthConfig(config)
 
       expect(authConfig).not.toBeNull()
