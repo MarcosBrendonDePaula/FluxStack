@@ -122,32 +122,58 @@ function getPluginConfig(context: PluginContext) {
   return { ...vitePlugin.defaultConfig, ...pluginConfig }
 }
 
-// Monitor Vite server status
+// Monitor Vite server status with automatic port detection
 async function monitorVite(
   context: PluginContext, 
   host: string, 
-  port: number, 
+  initialPort: number, 
   config: any
 ) {
   let retries = 0
   let isConnected = false
+  let actualPort = initialPort
+  let portDetected = false
   
   const checkVite = async () => {
     try {
-      const isRunning = await checkViteRunning(host, port, config.timeout)
+      // If we haven't found the correct port yet, try to detect it
+      if (!portDetected) {
+        const detectedPort = await detectVitePort(host, initialPort)
+        if (detectedPort !== null) {
+          actualPort = detectedPort
+          portDetected = true
+          // Update the context with the detected port
+          if ((context as any).viteConfig) {
+            ;(context as any).viteConfig.port = actualPort
+          }
+        }
+      }
+      
+      const isRunning = await checkViteRunning(host, actualPort, config.timeout)
       
       if (isRunning && !isConnected) {
         isConnected = true
         retries = 0
-        context.logger.info(`✓ Vite server detected on ${host}:${port}`)
+        if (actualPort !== initialPort) {
+          context.logger.info(`✓ Vite server detected on ${host}:${actualPort} (auto-detected from port ${initialPort})`)
+        } else {
+          context.logger.info(`✓ Vite server detected on ${host}:${actualPort}`)
+        }
         context.logger.info("Hot reload coordination active")
       } else if (!isRunning && isConnected) {
         isConnected = false
-        context.logger.warn(`✗ Vite server disconnected from ${host}:${port}`)
+        context.logger.warn(`✗ Vite server disconnected from ${host}:${actualPort}`)
+        // Reset port detection when disconnected
+        portDetected = false
+        actualPort = initialPort
       } else if (!isRunning) {
         retries++
         if (retries <= config.maxRetries) {
-          context.logger.debug(`Waiting for Vite server... (${retries}/${config.maxRetries})`)
+          if (portDetected) {
+            context.logger.debug(`Waiting for Vite server on ${host}:${actualPort}... (${retries}/${config.maxRetries})`)
+          } else {
+            context.logger.debug(`Detecting Vite server port... (${retries}/${config.maxRetries})`)
+          }
         } else if (retries === config.maxRetries + 1) {
           context.logger.warn(`Vite server not found after ${config.maxRetries} attempts. Development features may be limited.`)
         }
@@ -164,6 +190,35 @@ async function monitorVite(
   
   // Start monitoring after a brief delay
   setTimeout(checkVite, 1000)
+}
+
+// Auto-detect Vite port by trying common ports
+async function detectVitePort(host: string, startPort: number): Promise<number | null> {
+  // Try the initial port first, then common alternatives
+  const portsToTry = [
+    startPort,
+    startPort + 1,
+    startPort + 2,
+    startPort + 3,
+    5174, // Common Vite alternative
+    5175,
+    5176,
+    3000, // Sometimes Vite might use this
+    4173  // Another common alternative
+  ]
+  
+  for (const port of portsToTry) {
+    try {
+      const isRunning = await checkViteRunning(host, port, 1000)
+      if (isRunning) {
+        return port
+      }
+    } catch (error) {
+      // Continue trying other ports
+    }
+  }
+  
+  return null
 }
 
 // Check if Vite is running
@@ -184,7 +239,7 @@ async function checkViteRunning(host: string, port: number, timeout: number = 10
   }
 }
 
-// Proxy request to Vite server
+// Proxy request to Vite server with automatic port detection
 export const proxyToVite = async (
   request: Request, 
   viteHost: string = "localhost",
@@ -199,10 +254,21 @@ export const proxyToVite = async (
   }
   
   try {
+    let actualPort = vitePort
+    
+    // Try to detect the correct Vite port if the default doesn't work
+    const isRunning = await checkViteRunning(viteHost, vitePort, 1000)
+    if (!isRunning) {
+      const detectedPort = await detectVitePort(viteHost, vitePort)
+      if (detectedPort !== null) {
+        actualPort = detectedPort
+      }
+    }
+    
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), timeout)
     
-    const viteUrl = `http://${viteHost}:${vitePort}${url.pathname}${url.search}`
+    const viteUrl = `http://${viteHost}:${actualPort}${url.pathname}${url.search}`
     
     const response = await fetch(viteUrl, {
       method: request.method,
@@ -217,7 +283,7 @@ export const proxyToVite = async (
     if (error instanceof Error && error.name === 'AbortError') {
       return new Response("Vite server timeout", { status: 504 })
     }
-    return new Response("Vite server not available", { status: 503 })
+    return new Response(`Vite server not ready - trying port ${vitePort}`, { status: 503 })
   }
 }
 
