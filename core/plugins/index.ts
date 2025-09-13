@@ -7,7 +7,6 @@
 export type {
   Plugin,
   PluginContext,
-  PluginUtils,
   PluginHook,
   PluginPriority,
   PluginManifest,
@@ -81,7 +80,7 @@ export const PluginUtils = {
     onRequest?: (context: RequestContext) => void | Promise<void>
     onResponse?: (context: ResponseContext) => void | Promise<void>
     onError?: (context: ErrorContext) => void | Promise<void>
-    configSchema?: PluginConfigSchema
+    configSchema?: any
     defaultConfig?: any
   }): Plugin => {
     return {
@@ -118,11 +117,11 @@ export const PluginUtils = {
     fluxstack: {
       version: string
       hooks: PluginHook[]
-      config?: PluginConfigSchema
+      config?: any
       category?: string
       tags?: string[]
     }
-  }): PluginManifest => {
+  }): any => {
     return {
       name: config.name,
       version: config.version,
@@ -154,7 +153,7 @@ export const PluginUtils = {
    * Check if plugin implements hook
    */
   implementsHook: (plugin: Plugin, hook: PluginHook): boolean => {
-    const hookFunction = plugin[hook]
+    const hookFunction = (plugin as any)[hook]
     return hookFunction && typeof hookFunction === 'function'
   },
 

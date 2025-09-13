@@ -5,7 +5,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { monitoringPlugin } from '../built-in/monitoring'
 import type { PluginContext, RequestContext, ResponseContext, ErrorContext } from '../types'
-import type { Logger } from '../../utils/logger'
+import type { Logger } from '../../utils/logger/index'
 import type { FluxStackConfig } from '../../config/schema'
 
 // Mock logger
@@ -325,9 +325,9 @@ describe('Monitoring Plugin', () => {
       
       // Check for specific system metrics
       const gaugeKeys = Array.from(registry.gauges.keys())
-      expect(gaugeKeys.some(key => key.includes('process_memory'))).toBe(true)
-      expect(gaugeKeys.some(key => key.includes('process_cpu'))).toBe(true)
-      expect(gaugeKeys.some(key => key.includes('process_uptime'))).toBe(true)
+      expect(gaugeKeys.some((key: string) => key.includes('process_memory'))).toBe(true)
+      expect(gaugeKeys.some((key: string) => key.includes('process_cpu'))).toBe(true)
+      expect(gaugeKeys.some((key: string) => key.includes('process_uptime'))).toBe(true)
     })
   })
 

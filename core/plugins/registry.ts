@@ -1,6 +1,6 @@
-import type { Plugin, PluginManifest, PluginLoadResult, PluginDiscoveryOptions } from "../types"
+import type { Plugin, PluginManifest, PluginLoadResult, PluginDiscoveryOptions } from "./types"
 import type { FluxStackConfig } from "../config/schema"
-import type { Logger } from "../utils/logger"
+import type { Logger } from "../utils/logger/index"
 import { FluxStackError } from "../utils/errors"
 import { readdir, stat, readFile } from "fs/promises"
 import { join, resolve } from "path"
@@ -381,7 +381,9 @@ export class PluginRegistry {
       const pluginA = this.plugins.get(a)
       const pluginB = this.plugins.get(b)
       if (!pluginA || !pluginB) return 0
-      return (pluginB.priority || 0) - (pluginA.priority || 0)
+      const priorityA = typeof pluginA.priority === 'number' ? pluginA.priority : 0
+      const priorityB = typeof pluginB.priority === 'number' ? pluginB.priority : 0
+      return priorityB - priorityA
     })
   }
 

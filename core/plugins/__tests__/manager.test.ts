@@ -5,7 +5,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { PluginManager } from '../manager'
 import type { Plugin, PluginContext, RequestContext } from '../types'
-import type { Logger } from '../../utils/logger'
+import type { Logger } from '../../utils/logger/index'
 import type { FluxStackConfig } from '../../config/schema'
 
 // Mock logger
@@ -192,13 +192,13 @@ describe('PluginManager', () => {
 
       const pluginA: Plugin = {
         name: 'plugin-a',
-        setup: () => executionOrder.push('plugin-a')
+        setup: () => { executionOrder.push('plugin-a') }
       }
 
       const pluginB: Plugin = {
         name: 'plugin-b',
         dependencies: ['plugin-a'],
-        setup: () => executionOrder.push('plugin-b')
+        setup: () => { executionOrder.push('plugin-b') }
       }
 
       await manager.registerPlugin(pluginA)
@@ -215,13 +215,13 @@ describe('PluginManager', () => {
       const lowPriorityPlugin: Plugin = {
         name: 'low-priority',
         priority: 1,
-        setup: () => executionOrder.push('low-priority')
+        setup: () => { executionOrder.push('low-priority') }
       }
 
       const highPriorityPlugin: Plugin = {
         name: 'high-priority',
         priority: 10,
-        setup: () => executionOrder.push('high-priority')
+        setup: () => { executionOrder.push('high-priority') }
       }
 
       await manager.registerPlugin(lowPriorityPlugin)

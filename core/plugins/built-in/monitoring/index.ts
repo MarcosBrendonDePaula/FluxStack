@@ -311,8 +311,8 @@ export const monitoringPlugin: Plugin = {
 
     // Record in collector as well
     const counter = metricsCollector.getAllMetrics().get('http_requests_total')
-    if (counter && 'inc' in counter) {
-      counter.inc(1, { method: requestContext.method, path: requestContext.path })
+    if (counter && typeof (counter as any).inc === 'function') {
+      (counter as any).inc(1, { method: requestContext.method, path: requestContext.path })
     }
   },
 
@@ -396,8 +396,8 @@ export const monitoringPlugin: Plugin = {
 
     // Increment error counter in collector
     const errorCounter = metricsCollector.getAllMetrics().get('http_errors_total')
-    if (errorCounter && 'inc' in errorCounter) {
-      errorCounter.inc(1, { 
+    if (errorCounter && typeof (errorCounter as any).inc === 'function') {
+      (errorCounter as any).inc(1, { 
         method: errorContext.method, 
         path: errorContext.path,
         error_type: errorContext.error.name

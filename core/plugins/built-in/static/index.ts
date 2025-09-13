@@ -106,7 +106,7 @@ export const staticPlugin: Plugin = {
     })
     
     // Setup static file handling in Elysia
-    context.app.get("/*", async ({ request, set }) => {
+    context.app.get("/*", async ({ request, set }: { request: Request, set: any }) => {
       const url = new URL(request.url)
       
       // Skip API routes
@@ -115,7 +115,7 @@ export const staticPlugin: Plugin = {
       }
       
       // Skip excluded paths
-      if (config.excludePaths.some(path => url.pathname.startsWith(path))) {
+      if (config.excludePaths.some((path: string) => url.pathname.startsWith(path))) {
         return
       }
       

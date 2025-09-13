@@ -17,7 +17,7 @@ import type {
   BuildContext
 } from "./types"
 import type { FluxStackConfig } from "../config/schema"
-import type { Logger } from "../utils/logger"
+import type { Logger } from "../utils/logger/index"
 import { PluginRegistry } from "./registry"
 import { createPluginUtils } from "./config"
 import { FluxStackError } from "../utils/errors"
@@ -282,7 +282,7 @@ export class PluginManager extends EventEmitter {
           case 'onRequest':
           case 'onResponse':
           case 'onError':
-            hookPromise = Promise.resolve(hookFunction(context))
+            hookPromise = Promise.resolve(hookFunction(context as any))
             break
           case 'onBuild':
           case 'onBuildComplete':
@@ -515,7 +515,7 @@ export function createRequestContext(request: Request, additionalData: any = {})
     request,
     path: url.pathname,
     method: request.method,
-    headers: Object.fromEntries(request.headers.entries()),
+    headers: Object.fromEntries(Array.from(request.headers)),
     query: Object.fromEntries(url.searchParams.entries()),
     params: {},
     startTime: Date.now(),

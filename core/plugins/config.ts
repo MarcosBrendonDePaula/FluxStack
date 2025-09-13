@@ -5,7 +5,7 @@
 
 import type { Plugin, PluginConfigSchema, PluginValidationResult } from "./types"
 import type { FluxStackConfig } from "../config/schema"
-import type { Logger } from "../utils/logger"
+import type { Logger } from "../utils/logger/index"
 import { FluxStackError } from "../utils/errors"
 
 export interface PluginConfigManager {

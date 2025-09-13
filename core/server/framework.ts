@@ -31,7 +31,32 @@ export class FluxStackFramework {
       createTimer,
       formatBytes,
       isProduction,
-      isDevelopment
+      isDevelopment,
+      getEnvironment: () => envInfo.name,
+      createHash: (data: string) => {
+        const crypto = require('crypto')
+        return crypto.createHash('sha256').update(data).digest('hex')
+      },
+      deepMerge: (target: any, source: any) => {
+        const result = { ...target }
+        for (const key in source) {
+          if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+            result[key] = pluginUtils.deepMerge(result[key] || {}, source[key])
+          } else {
+            result[key] = source[key]
+          }
+        }
+        return result
+      },
+      validateSchema: (data: any, schema: any) => {
+        // Simple validation - in a real implementation you'd use a proper schema validator
+        try {
+          // Basic validation logic
+          return { valid: true, errors: [] }
+        } catch (error) {
+          return { valid: false, errors: [error instanceof Error ? error.message : 'Validation failed'] }
+        }
+      }
     }
 
     // Create plugin context

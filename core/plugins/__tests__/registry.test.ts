@@ -5,7 +5,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { PluginRegistry } from '../registry'
 import type { Plugin, PluginManifest } from '../types'
-import type { Logger } from '../../utils/logger'
+import type { Logger } from '../../utils/logger/index'
 
 // Mock logger
 const mockLogger: Logger = {

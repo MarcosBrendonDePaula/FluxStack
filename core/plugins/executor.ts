@@ -10,7 +10,7 @@ import type {
   PluginPriority,
   HookExecutionOptions
 } from "./types"
-import type { Logger } from "../utils/logger"
+import type { Logger } from "../utils/logger/index"
 import { FluxStackError } from "../utils/errors"
 
 export interface PluginExecutionPlan {
