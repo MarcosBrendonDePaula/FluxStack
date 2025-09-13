@@ -129,7 +129,14 @@ export const swaggerPlugin: Plugin = {
           servers,
           security: config.security
         },
-        exclude: config.excludePaths
+        exclude: config.excludePaths,
+        swaggerOptions: {
+          persistAuthorization: true,
+          displayRequestDuration: true,
+          filter: true,
+          showExtensions: true,
+          tryItOutEnabled: true
+        }
       }
 
       context.app.use(swagger(swaggerConfig))

@@ -10,15 +10,17 @@ const app = new FluxStackFramework({
 })
 
 
-// Usar plugins básicos primeiro
+// Usar plugins de infraestrutura primeiro (mas NÃO o Swagger ainda)
 app
-  .use(swaggerPlugin)
   .use(loggerPlugin)
   .use(vitePlugin)
   
 
-// Registrar rotas da aplicação ANTES do Swagger
+// Registrar rotas da aplicação PRIMEIRO
 app.routes(apiRoutes)
+
+// Swagger por último para descobrir todas as rotas
+app.use(swaggerPlugin)
 
 
 
