@@ -125,12 +125,13 @@ export class FluxStackFramework {
 
   use(plugin: Plugin) {
     try {
-      // Use synchronous registration for immediate plugin setup
+      // Use the registry's public register method, but don't await it since we need sync operation
       if (this.pluginRegistry.has(plugin.name)) {
         throw new Error(`Plugin '${plugin.name}' is already registered`)
       }
       
       // Store plugin without calling setup - setup will be called in start()
+      // We need to manually set the plugin since register() is async but we need sync
       (this.pluginRegistry as any).plugins.set(plugin.name, plugin)
       
       // Update dependencies tracking
@@ -138,11 +139,11 @@ export class FluxStackFramework {
         (this.pluginRegistry as any).dependencies.set(plugin.name, plugin.dependencies)
       }
       
-      // Update load order by calling private method indirectly
+      // Update load order by calling the private method
       try {
         (this.pluginRegistry as any).updateLoadOrder()
       } catch (error) {
-        // If updateLoadOrder doesn't exist, manually update
+        // Fallback: create basic load order
         const plugins = (this.pluginRegistry as any).plugins as Map<string, Plugin>
         const loadOrder = Array.from(plugins.keys())
         ;(this.pluginRegistry as any).loadOrder = loadOrder
@@ -171,6 +172,18 @@ export class FluxStackFramework {
     }
 
     try {
+      // Validate plugin dependencies before starting
+      const plugins = (this.pluginRegistry as any).plugins as Map<string, Plugin>
+      for (const [pluginName, plugin] of plugins) {
+        if (plugin.dependencies) {
+          for (const depName of plugin.dependencies) {
+            if (!plugins.has(depName)) {
+              throw new Error(`Plugin '${pluginName}' depends on '${depName}' which is not registered`)
+            }
+          }
+        }
+      }
+
       // Get load order
       const loadOrder = this.pluginRegistry.getLoadOrder()
 

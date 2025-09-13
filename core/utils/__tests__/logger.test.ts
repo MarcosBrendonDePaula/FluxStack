@@ -4,17 +4,10 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 
-// Mock environment config
-vi.mock('../../config/env', () => ({
-  getEnvironmentInfo: vi.fn(() => ({
-    isDevelopment: true,
-    isProduction: false,
-    isTest: true,
-    name: 'test'
-  }))
-}))
+// Set test environment
+process.env.NODE_ENV = 'test'
 
-// Import the real logger after mocking dependencies
+// Import the logger
 import { logger as realLogger, log as realLog } from '../logger'
 
 describe('Logger', () => {

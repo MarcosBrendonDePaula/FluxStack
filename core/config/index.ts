@@ -50,6 +50,8 @@ import {
   createConfigSubset
 } from './loader'
 
+import { environmentDefaults } from './schema'
+
 export {
   _loadConfig as loadConfig,
   _loadConfigSync as loadConfigSync,
@@ -169,9 +171,44 @@ async function loadConfiguration(options?: ConfigLoadOptions): Promise<FluxStack
   } catch (error) {
     console.error('Failed to load FluxStack configuration:', error)
     
-    // Fall back to default configuration with environment variables
+    // Fall back to default configuration with environment variables and environment defaults
     const fallbackResult = _loadConfigSync(options)
     console.warn('Using fallback configuration with environment variables only')
+    
+    // Apply environment defaults to fallback configuration
+    const environment = process.env.NODE_ENV || 'development'
+    const envDefaults = environmentDefaults[environment as keyof typeof environmentDefaults]
+    
+    if (envDefaults) {
+      // Simple merge for fallback - don't use complex deepMerge from loader
+      const configWithDefaults = {
+        ...fallbackResult.config,
+        logging: {
+          ...fallbackResult.config.logging,
+          ...envDefaults.logging
+        },
+        server: envDefaults.server ? {
+          ...fallbackResult.config.server,
+          ...envDefaults.server
+        } : fallbackResult.config.server,
+        client: envDefaults.client ? {
+          ...fallbackResult.config.client,
+          ...envDefaults.client
+        } : fallbackResult.config.client,
+        build: envDefaults.build ? {
+          ...fallbackResult.config.build,
+          optimization: {
+            ...fallbackResult.config.build.optimization,
+            ...envDefaults.build.optimization
+          }
+        } : fallbackResult.config.build,
+        monitoring: envDefaults.monitoring ? {
+          ...fallbackResult.config.monitoring,
+          ...envDefaults.monitoring
+        } : fallbackResult.config.monitoring
+      }
+      return configWithDefaults
+    }
     
     return fallbackResult.config
   }
