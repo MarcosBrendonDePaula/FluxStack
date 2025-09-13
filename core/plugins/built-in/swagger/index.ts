@@ -127,7 +127,7 @@ export const swaggerPlugin: Plugin = {
           },
           tags: config.tags,
           servers,
-          security: config.security
+          // security: config.security
         },
         exclude: config.excludePaths,
         swaggerOptions: {
