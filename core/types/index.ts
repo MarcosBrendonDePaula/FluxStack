@@ -13,14 +13,57 @@ export type {
   PluginConfig
 } from "../config/schema"
 
-// Re-export all plugin types
-export * from "./plugin"
+// Re-export plugin types (explicitly handling conflicts)
+export type {
+  Plugin,
+  PluginContext,
+  PluginUtils,
+  PluginManifest,
+  PluginLoadResult,
+  PluginDiscoveryOptions,
+  PluginHooks,
+  PluginConfig as PluginConfigOptions,
+  PluginHook,
+  PluginPriority,
+  RequestContext,
+  ResponseContext,
+  ErrorContext
+} from "./plugin"
 
-// Re-export all API types
-export * from "./api"
+// Re-export additional plugin types from core plugins
+export type {
+  Plugin as CorePlugin,
+  PluginContext as CorePluginContext,
+  PluginUtils as CorePluginUtils,
+  RequestContext as CoreRequestContext,
+  ResponseContext as CoreResponseContext,
+  ErrorContext as CoreErrorContext
+} from "../plugins/types"
 
-// Re-export all build types
-export * from "./build"
+// Re-export API types
+export type {
+  HttpMethod,
+  ApiEndpoint,
+  ApiSchema,
+  ApiResponse,
+  ApiError,
+  ApiMeta,
+  PaginationMeta,
+  TimingMeta
+} from "./api"
+
+// Re-export build types (explicitly handle BuildTarget conflict)
+export type {
+  BuildTarget,
+  BuildMode,
+  BundleFormat,
+  BuildOptions,
+  BuildResult,
+  BuildOutputFile,
+  BuildWarning,
+  BuildError,
+  BuildStats
+} from "./build"
 
 // Re-export framework types
 export type {
@@ -36,7 +79,7 @@ export type {
 // Re-export utility types
 export type {
   Logger
-} from "../utils/logger"
+} from "../utils/logger/index"
 
 export type {
   FluxStackError,
