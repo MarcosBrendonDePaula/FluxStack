@@ -124,7 +124,7 @@ export const PluginUtils = {
   }): any => {
     return {
       name: config.name,
-      version: config.version,
+      version: config.version || '1.0.0',
       description: config.description,
       author: config.author,
       license: config.license,

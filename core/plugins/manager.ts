@@ -286,7 +286,7 @@ export class PluginManager extends EventEmitter {
             break
           case 'onBuild':
           case 'onBuildComplete':
-            hookPromise = Promise.resolve(hookFunction(context))
+            hookPromise = Promise.resolve(hookFunction(context as any))
             break
           default:
             hookPromise = Promise.resolve(hookFunction(context || pluginContext))

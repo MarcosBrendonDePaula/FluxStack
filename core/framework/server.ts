@@ -65,7 +65,7 @@ export class FluxStackFramework {
 
     this.pluginContext = {
       config: fullConfig,
-      logger: logger.child({ component: 'framework' }), // Use the main logger with child context
+      logger: logger, // Use the main logger
       app: this.app,
       utils: pluginUtils
     }
