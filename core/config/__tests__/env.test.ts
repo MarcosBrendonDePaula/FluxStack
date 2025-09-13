@@ -2,7 +2,7 @@
  * Tests for Environment Configuration System
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'bun:test'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import {
   getEnvironmentInfo,
   EnvConverter,

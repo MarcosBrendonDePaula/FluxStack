@@ -2,7 +2,7 @@
  * Tests for Configuration Loader
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'bun:test'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { 
   loadConfig, 
   loadConfigSync,

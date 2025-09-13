@@ -125,7 +125,17 @@ export class FluxStackFramework {
 
   use(plugin: Plugin) {
     try {
-      this.pluginRegistry.register(plugin)
+      // Use synchronous registration for immediate plugin setup
+      if (this.pluginRegistry.has(plugin.name)) {
+        throw new Error(`Plugin '${plugin.name}' is already registered`)
+      }
+      
+      // Store plugin and setup immediately for synchronous behavior
+      (this.pluginRegistry as any).plugins.set(plugin.name, plugin)
+      if (plugin.setup) {
+        plugin.setup(this.pluginContext)
+      }
+      
       logger.framework(`Plugin '${plugin.name}' registered`, {
         version: plugin.version,
         dependencies: plugin.dependencies

@@ -2,7 +2,7 @@
  * Tests for FluxStack Configuration Schema
  */
 
-import { describe, it, expect } from 'bun:test'
+import { describe, it, expect } from 'vitest'
 import {
     defaultFluxStackConfig,
     environmentDefaults,

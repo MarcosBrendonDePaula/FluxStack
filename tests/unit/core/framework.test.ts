@@ -1,14 +1,26 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { FluxStackFramework } from '@/core/server/framework'
-import type { FluxStackConfig, Plugin } from '@/core/types'
+import type { Plugin } from '@/core/types'
+import type { FluxStackConfig } from '@/core/config/schema'
 
 describe('FluxStackFramework', () => {
   let framework: FluxStackFramework
 
   beforeEach(() => {
     framework = new FluxStackFramework({
-      port: 3001,
-      apiPrefix: '/api'
+      server: {
+        port: 3001,
+        host: 'localhost',
+        apiPrefix: '/api',
+        cors: {
+          origins: ['*'],
+          methods: ['GET', 'POST'],
+          headers: ['Content-Type'],
+          credentials: false,
+          maxAge: 86400
+        },
+        middleware: []
+      }
     })
   })
 
@@ -18,24 +30,48 @@ describe('FluxStackFramework', () => {
       const context = defaultFramework.getContext()
       
       // Environment variables now control default values
-      expect(context.config.port).toBeDefined()
-      expect(context.config.apiPrefix).toBe('/api')
-      expect(context.config.vitePort).toBeDefined()
+      expect(context.config.server.port).toBeDefined()
+      expect(context.config.server.apiPrefix).toBe('/api')
+      expect(context.config.client.port).toBeDefined()
     })
 
     it('should create framework with custom config', () => {
-      const config: FluxStackConfig = {
-        port: 4000,
-        vitePort: 5174,
-        apiPrefix: '/custom-api'
+      const config: Partial<FluxStackConfig> = {
+        server: {
+          port: 4000,
+          host: 'localhost',
+          apiPrefix: '/custom-api',
+          cors: {
+            origins: ['*'],
+            methods: ['GET', 'POST'],
+            headers: ['Content-Type'],
+            credentials: false,
+            maxAge: 86400
+          },
+          middleware: []
+        },
+        client: {
+          port: 5174,
+          host: 'localhost',
+          proxy: {
+            target: 'http://localhost:4000',
+            changeOrigin: true,
+            secure: false
+          },
+          build: {
+            outDir: 'dist/client',
+            sourceMaps: true,
+            minify: false
+          }
+        }
       }
       
       const customFramework = new FluxStackFramework(config)
       const context = customFramework.getContext()
       
-      expect(context.config.port).toBe(4000)
-      expect(context.config.vitePort).toBe(5174)
-      expect(context.config.apiPrefix).toBe('/custom-api')
+      expect(context.config.server.port).toBe(4000)
+      expect(context.config.client.port).toBe(5174)
+      expect(context.config.server.apiPrefix).toBe('/custom-api')
     })
 
     it('should set development mode correctly', () => {

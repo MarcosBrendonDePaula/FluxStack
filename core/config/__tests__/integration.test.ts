@@ -2,7 +2,7 @@
  * Integration Tests for FluxStack Configuration System
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'bun:test'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { 
   getConfig, 
   getConfigSync, 
