@@ -6,10 +6,10 @@ import { getEnvironmentInfo } from "../config/env"
 export const startFrontendOnly = (config: any = {}) => {
   const clientPath = config.clientPath || "app/client"
   const port = config.vitePort || process.env.FRONTEND_PORT || 5173
-  const apiUrl = config.apiUrl || envConfig.API_URL
+  const apiUrl = config.apiUrl || process.env.API_URL || 'http://localhost:3000/api'
   
   console.log(`⚛️  FluxStack Frontend`)
-  console.log(`🌐 http://${envConfig.HOST}:${port}`)
+  console.log(`🌐 http://${process.env.HOST || 'localhost'}:${port}`)
   console.log(`🔗 API: ${apiUrl}`)
   console.log()
   
@@ -22,7 +22,7 @@ export const startFrontendOnly = (config: any = {}) => {
       ...process.env,
       VITE_API_URL: apiUrl,
       PORT: port.toString(),
-      HOST: envConfig.HOST
+      HOST: process.env.HOST || 'localhost'
     }
   })
 

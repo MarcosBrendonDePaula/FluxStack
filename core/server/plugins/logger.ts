@@ -5,8 +5,8 @@ export const loggerPlugin: Plugin = {
   name: "logger",
   setup: (context, app) => {
     log.plugin("logger", "Logger plugin initialized", {
-      logLevel: context.envConfig.LOG_LEVEL,
-      environment: context.envConfig.NODE_ENV
+      logLevel: process.env.LOG_LEVEL || context.config.logging?.level || 'info',
+      environment: process.env.NODE_ENV || 'development'
     })
     
     // Plugin será aplicado ao Elysia pelo framework

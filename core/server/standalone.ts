@@ -6,8 +6,19 @@ export const createStandaloneServer = (userConfig: any = {}) => {
   const envInfo = getEnvironmentInfo()
   
   const app = new FluxStackFramework({
-    port: userConfig.port || envConfig.BACKEND_PORT,
-    apiPrefix: userConfig.apiPrefix || "/api",
+    server: {
+      port: userConfig.port || process.env.BACKEND_PORT || 3000,
+      host: 'localhost',
+      apiPrefix: userConfig.apiPrefix || "/api",
+      cors: {
+        origins: ['*'],
+        methods: ['GET', 'POST', 'PUT', 'DELETE'],
+        headers: ['Content-Type', 'Authorization'],
+        credentials: false,
+        maxAge: 86400
+      },
+      middleware: []
+    },
     ...userConfig
   })
 
@@ -29,10 +40,11 @@ export const createStandaloneServer = (userConfig: any = {}) => {
 
 export const startBackendOnly = async (userRoutes?: any, config: any = {}) => {
   const port = config.port || process.env.BACKEND_PORT || 3000
+  const host = process.env.HOST || 'localhost'
   
   console.log(`🦊 FluxStack Backend`)
-  console.log(`🚀 http://${envConfig.HOST}:${port}`)
-  console.log(`📋 Health: http://${envConfig.HOST}:${port}/health`)
+  console.log(`🚀 http://${host}:${port}`)
+  console.log(`📋 Health: http://${host}:${port}/health`)
   console.log()
 
   const app = createStandaloneServer(config)
