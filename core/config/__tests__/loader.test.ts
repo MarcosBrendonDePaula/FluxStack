@@ -211,9 +211,9 @@ describe('Configuration Loader', () => {
     it('should get nested configuration values', () => {
       const config = defaultFluxStackConfig
       
-      expect(getConfigValue(config, 'app.name')).toBe(config.app.name)
-      expect(getConfigValue(config, 'server.port')).toBe(config.server.port)
-      expect(getConfigValue(config, 'server.cors.origins')).toEqual(config.server.cors.origins)
+      expect(getConfigValue(config, 'app.name', '')).toBe(config.app.name)
+      expect(getConfigValue(config, 'server.port', 0)).toBe(config.server.port)
+      expect(getConfigValue(config, 'server.cors.origins', [])).toEqual(config.server.cors.origins)
     })
 
     it('should return default value for missing paths', () => {
@@ -226,8 +226,8 @@ describe('Configuration Loader', () => {
     it('should handle deep nested paths', () => {
       const config = defaultFluxStackConfig
       
-      expect(getConfigValue(config, 'build.optimization.minify')).toBe(config.build.optimization.minify)
-      expect(getConfigValue(config, 'monitoring.metrics.enabled')).toBe(config.monitoring.metrics.enabled)
+      expect(getConfigValue(config, 'build.optimization.minify', false)).toBe(config.build.optimization.minify)
+      expect(getConfigValue(config, 'monitoring.metrics.enabled', false)).toBe(config.monitoring.metrics.enabled)
     })
   })
 

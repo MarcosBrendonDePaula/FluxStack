@@ -187,6 +187,7 @@ describe('Helper Utilities', () => {
 
         const source = {
           b: {
+            c: 2, // Keep existing property
             d: 4,
             e: 5
           },

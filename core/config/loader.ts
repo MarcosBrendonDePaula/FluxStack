@@ -497,9 +497,11 @@ export function loadConfigSync(options: ConfigLoadOptions = {}): ConfigLoadResul
 /**
  * Get configuration value using dot notation
  */
-export function getConfigValue<T = any>(config: FluxStackConfig, path: string, defaultValue?: T): T {
+export function getConfigValue<T = any>(config: FluxStackConfig, path: string): T | undefined
+export function getConfigValue<T = any>(config: FluxStackConfig, path: string, defaultValue: T): T
+export function getConfigValue<T = any>(config: FluxStackConfig, path: string, defaultValue?: T): T | undefined {
     const value = getNestedProperty(config, path)
-    return value !== undefined ? value : defaultValue!
+    return value !== undefined ? value : defaultValue
 }
 
 /**
