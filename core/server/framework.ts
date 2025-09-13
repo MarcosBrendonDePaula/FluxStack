@@ -1,50 +1,61 @@
 import { Elysia } from "elysia"
 import type { FluxStackConfig, FluxStackContext, Plugin } from "../types"
-import { getEnvironmentConfig, isDevelopment, isProduction } from "../config/env"
+import type { PluginContext, PluginUtils } from "../plugins/types"
+import { getConfigSync, getEnvironmentInfo } from "../config"
+import { logger } from "../utils/logger"
+import { createTimer, formatBytes, isProduction, isDevelopment } from "../utils/helpers"
 
 export class FluxStackFramework {
   private app: Elysia
   private context: FluxStackContext
+  private pluginContext: PluginContext
   private plugins: Plugin[] = []
 
-  constructor(config: FluxStackConfig = {}) {
-    const envConfig = getEnvironmentConfig()
-    
+  constructor(config?: Partial<FluxStackConfig>) {
+    // Load the full configuration
+    const fullConfig = config ? { ...getConfigSync(), ...config } : getConfigSync()
+    const envInfo = getEnvironmentInfo()
+
     this.context = {
-      config: {
-        port: envConfig.PORT,
-        vitePort: envConfig.FRONTEND_PORT,
-        clientPath: "app/client",
-        apiPrefix: "/api",
-        cors: {
-          origins: envConfig.CORS_ORIGINS,
-          methods: envConfig.CORS_METHODS,
-          headers: envConfig.CORS_HEADERS
-        },
-        build: {
-          outDir: envConfig.BUILD_OUTDIR,
-          target: envConfig.BUILD_TARGET
-        },
-        // Allow user config to override environment config
-        ...config
-      },
-      isDevelopment: isDevelopment(),
-      isProduction: isProduction(),
-      envConfig
+      config: fullConfig,
+      isDevelopment: envInfo.isDevelopment,
+      isProduction: envInfo.isProduction,
+      isTest: envInfo.isTest,
+      environment: envInfo.name
     }
 
     this.app = new Elysia()
+
+    // Create plugin utilities
+    const pluginUtils: PluginUtils = {
+      createTimer,
+      formatBytes,
+      isProduction,
+      isDevelopment
+    }
+
+    // Create plugin context
+    this.pluginContext = {
+      config: fullConfig,
+      logger: logger,
+      app: this.app,
+      utils: pluginUtils
+    }
+
     this.setupCors()
   }
 
   private setupCors() {
-    const { cors } = this.context.config
-    
+    const { cors } = this.context.config.server
+
     this.app
       .onRequest(({ set }) => {
-        set.headers["Access-Control-Allow-Origin"] = cors?.origins?.join(", ") || "*"
-        set.headers["Access-Control-Allow-Methods"] = cors?.methods?.join(", ") || "*"
-        set.headers["Access-Control-Allow-Headers"] = cors?.headers?.join(", ") || "*"
+        set.headers["Access-Control-Allow-Origin"] = cors.origins.join(", ") || "*"
+        set.headers["Access-Control-Allow-Methods"] = cors.methods.join(", ") || "*"
+        set.headers["Access-Control-Allow-Headers"] = cors.headers.join(", ") || "*"
+        if (cors.credentials) {
+          set.headers["Access-Control-Allow-Credentials"] = "true"
+        }
       })
       .options("*", ({ set }) => {
         set.status = 200
@@ -54,7 +65,9 @@ export class FluxStackFramework {
 
   use(plugin: Plugin) {
     this.plugins.push(plugin)
-    plugin.setup(this.context, this.app)
+    if (plugin.setup) {
+      plugin.setup(this.pluginContext)
+    }
     return this
   }
 
@@ -72,9 +85,12 @@ export class FluxStackFramework {
   }
 
   listen(callback?: () => void) {
-    this.app.listen(this.context.config.port!, () => {
-      console.log(`🚀 API ready at http://localhost:${this.context.config.port}/api`)
-      console.log(`📋 Health check: http://localhost:${this.context.config.port}/api/health`)
+    const port = this.context.config.server.port
+    const apiPrefix = this.context.config.server.apiPrefix
+
+    this.app.listen(port, () => {
+      console.log(`🚀 API ready at http://localhost:${port}${apiPrefix}`)
+      console.log(`📋 Health check: http://localhost:${port}${apiPrefix}/health`)
       console.log()
       callback?.()
     })

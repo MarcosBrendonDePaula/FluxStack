@@ -33,6 +33,9 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest --watch",
+    "test:config": "bun run core/config/__tests__/run-tests.ts",
+    "test:config:coverage": "bun run core/config/__tests__/run-tests.ts coverage",
+    "test:config:manual": "bun run core/config/__tests__/manual-test.ts",
     "legacy:dev": "bun --watch app/server/index.ts"
   },
   "devDependencies": {

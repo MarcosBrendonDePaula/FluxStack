@@ -1,10 +1,11 @@
 import { spawn } from "bun"
 import { join } from "path"
+import type { FluxStackConfig } from "../config"
 
 export class FluxStackBuilder {
-  private config: any
+  private config: FluxStackConfig
 
-  constructor(config: any) {
+  constructor(config: FluxStackConfig) {
     this.config = config
   }
 
@@ -15,7 +16,13 @@ export class FluxStackBuilder {
       cmd: ["bunx", "vite", "build", "--config", "vite.config.ts"],
       cwd: process.cwd(),
       stdout: "pipe",
-      stderr: "pipe"
+      stderr: "pipe",
+      env: {
+        ...process.env,
+        VITE_BUILD_OUTDIR: this.config.client.build.outDir,
+        VITE_BUILD_MINIFY: this.config.client.build.minify.toString(),
+        VITE_BUILD_SOURCEMAPS: this.config.client.build.sourceMaps.toString()
+      }
     })
 
     const exitCode = await buildProcess.exited

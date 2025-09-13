@@ -661,7 +661,7 @@ export function ProductList() {
 ### Backend (Server) - v1.4.0
 ```typescript
 import { FluxStackFramework } from '@/core/server'
-import { config } from '@/config/fluxstack.config'
+import config from '@/fluxstack.config'
 import { User } from '@/shared/types' // ✨ Tipos compartilhados
 import { UsersController } from '@/app/server/controllers/users.controller'
 ```
