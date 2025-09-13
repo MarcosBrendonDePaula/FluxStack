@@ -277,7 +277,7 @@ export class PluginManager extends EventEmitter {
           case 'setup':
           case 'onServerStart':
           case 'onServerStop':
-            hookPromise = Promise.resolve(hookFunction(pluginContext))
+            hookPromise = Promise.resolve(hookFunction(pluginContext as any))
             break
           case 'onRequest':
           case 'onResponse':

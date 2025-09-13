@@ -18,7 +18,7 @@ export class FluxStackFramework {
     // Load the full configuration
     const fullConfig = config ? { ...getConfigSync(), ...config } : getConfigSync()
     const envInfo = getEnvironmentInfo()
-    
+
     this.context = {
       config: fullConfig,
       isDevelopment: envInfo.isDevelopment,
@@ -29,7 +29,7 @@ export class FluxStackFramework {
 
     this.app = new Elysia()
     this.pluginRegistry = new PluginRegistry()
-    
+
     // Create plugin utilities
     const pluginUtils: PluginUtils = {
       createTimer,
@@ -63,16 +63,29 @@ export class FluxStackFramework {
       }
     }
 
+    // Create a logger wrapper that implements the full Logger interface
+    const pluginLogger = {
+      debug: (message: string, meta?: any) => logger.debug(message, meta),
+      info: (message: string, meta?: any) => logger.info(message, meta),
+      warn: (message: string, meta?: any) => logger.warn(message, meta),
+      error: (message: string, meta?: any) => logger.error(message, meta),
+      child: (context: any) => (logger as any).child(context),
+      time: (label: string) => (logger as any).time(label),
+      timeEnd: (label: string) => (logger as any).timeEnd(label),
+      request: (method: string, path: string, status?: number, duration?: number) =>
+        logger.request(method, path, status, duration)
+    }
+
     this.pluginContext = {
       config: fullConfig,
-      logger: logger, // Use the main logger
+      logger: pluginLogger,
       app: this.app,
       utils: pluginUtils
     }
 
     this.setupCors()
     this.setupErrorHandling()
-    
+
     logger.framework('FluxStack framework initialized', {
       environment: envInfo.name,
       port: fullConfig.server.port
@@ -81,7 +94,7 @@ export class FluxStackFramework {
 
   private setupCors() {
     const { cors } = this.context.config.server
-    
+
     this.app
       .onRequest(({ set }) => {
         set.headers["Access-Control-Allow-Origin"] = cors.origins.join(", ") || "*"
@@ -138,13 +151,13 @@ export class FluxStackFramework {
     try {
       // Validate plugin dependencies
       this.pluginRegistry.validateDependencies()
-      
+
       // Load plugins in correct order
       const loadOrder = this.pluginRegistry.getLoadOrder()
-      
+
       for (const pluginName of loadOrder) {
         const plugin = this.pluginRegistry.get(pluginName)!
-        
+
         // Call setup hook
         if (plugin.setup) {
           await plugin.setup(this.pluginContext)
@@ -155,7 +168,7 @@ export class FluxStackFramework {
       // Call onServerStart hooks
       for (const pluginName of loadOrder) {
         const plugin = this.pluginRegistry.get(pluginName)!
-        
+
         if (plugin.onServerStart) {
           await plugin.onServerStart(this.pluginContext)
           logger.framework(`Plugin '${pluginName}' server start hook completed`)
@@ -182,10 +195,10 @@ export class FluxStackFramework {
     try {
       // Call onServerStop hooks in reverse order
       const loadOrder = this.pluginRegistry.getLoadOrder().reverse()
-      
+
       for (const pluginName of loadOrder) {
         const plugin = this.pluginRegistry.get(pluginName)!
-        
+
         if (plugin.onServerStop) {
           await plugin.onServerStop(this.pluginContext)
           logger.framework(`Plugin '${pluginName}' server stop hook completed`)
@@ -216,17 +229,17 @@ export class FluxStackFramework {
   async listen(callback?: () => void) {
     // Start the framework (load plugins)
     await this.start()
-    
+
     const port = this.context.config.server.port
     const apiPrefix = this.context.config.server.apiPrefix
-    
+
     this.app.listen(port, () => {
       logger.framework(`Server started on port ${port}`, {
         apiPrefix,
         environment: this.context.environment,
         pluginCount: this.pluginRegistry.getAll().length
       })
-      
+
       console.log(`🚀 API ready at http://localhost:${port}${apiPrefix}`)
       console.log(`📋 Health check: http://localhost:${port}${apiPrefix}/health`)
       console.log()

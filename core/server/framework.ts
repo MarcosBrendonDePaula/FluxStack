@@ -2,7 +2,7 @@ import { Elysia } from "elysia"
 import type { FluxStackConfig, FluxStackContext, Plugin } from "../types"
 import type { PluginContext, PluginUtils } from "../plugins/types"
 import { getConfigSync, getEnvironmentInfo } from "../config"
-import { logger } from "../utils/logger"
+import { logger, type Logger } from "../utils/logger"
 import { createTimer, formatBytes, isProduction, isDevelopment } from "../utils/helpers"
 
 export class FluxStackFramework {
@@ -62,7 +62,7 @@ export class FluxStackFramework {
     // Create plugin context
     this.pluginContext = {
       config: fullConfig,
-      logger: logger,
+      logger: logger as Logger,
       app: this.app,
       utils: pluginUtils
     }
