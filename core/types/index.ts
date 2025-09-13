@@ -1,6 +1,18 @@
 // Re-export all configuration types
 export * from "./config"
 
+// Ensure critical types are explicitly exported
+export type { 
+  FluxStackConfig,
+  AppConfig,
+  ServerConfig,
+  ClientConfig,
+  BuildConfig,
+  LoggingConfig,
+  MonitoringConfig,
+  PluginConfig
+} from "../config/schema"
+
 // Re-export all plugin types
 export * from "./plugin"
 

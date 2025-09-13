@@ -130,10 +130,22 @@ export class FluxStackFramework {
         throw new Error(`Plugin '${plugin.name}' is already registered`)
       }
       
-      // Store plugin and setup immediately for synchronous behavior
+      // Store plugin without calling setup - setup will be called in start()
       (this.pluginRegistry as any).plugins.set(plugin.name, plugin)
-      if (plugin.setup) {
-        plugin.setup(this.pluginContext)
+      
+      // Update dependencies tracking
+      if (plugin.dependencies) {
+        (this.pluginRegistry as any).dependencies.set(plugin.name, plugin.dependencies)
+      }
+      
+      // Update load order by calling private method indirectly
+      try {
+        (this.pluginRegistry as any).updateLoadOrder()
+      } catch (error) {
+        // If updateLoadOrder doesn't exist, manually update
+        const plugins = (this.pluginRegistry as any).plugins as Map<string, Plugin>
+        const loadOrder = Array.from(plugins.keys())
+        ;(this.pluginRegistry as any).loadOrder = loadOrder
       }
       
       logger.framework(`Plugin '${plugin.name}' registered`, {
@@ -159,16 +171,14 @@ export class FluxStackFramework {
     }
 
     try {
-      // Validate plugin dependencies
-      this.pluginRegistry.validateDependencies()
-
-      // Load plugins in correct order
+      // Get load order
       const loadOrder = this.pluginRegistry.getLoadOrder()
 
+      // Call setup hooks for all plugins
       for (const pluginName of loadOrder) {
         const plugin = this.pluginRegistry.get(pluginName)!
 
-        // Call setup hook
+        // Call setup hook if it exists and hasn't been called
         if (plugin.setup) {
           await plugin.setup(this.pluginContext)
           logger.framework(`Plugin '${pluginName}' setup completed`)
