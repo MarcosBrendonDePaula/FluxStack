@@ -63,9 +63,16 @@ export const swaggerPlugin: Plugin = {
         items: { type: 'string' },
         description: 'Paths to exclude from documentation'
       },
-      security: {
+      securitySchemes: {
         type: 'object',
-        description: 'Security schemes'
+        description: 'Security schemes definition'
+      },
+      globalSecurity: {
+        type: 'array',
+        items: {
+          type: 'object'
+        },
+        description: 'Global security requirements'
       }
     },
     additionalProperties: false
@@ -89,7 +96,8 @@ export const swaggerPlugin: Plugin = {
     ],
     servers: [],
     excludePaths: [],
-    security: {}
+    securitySchemes: {},
+    globalSecurity: []
   },
 
   setup: async (context: PluginContext) => {
@@ -127,7 +135,18 @@ export const swaggerPlugin: Plugin = {
           },
           tags: config.tags,
           servers,
-          // security: config.security
+          
+          // Add security schemes if defined
+          ...(Object.keys(config.securitySchemes).length > 0 && {
+            components: {
+              securitySchemes: config.securitySchemes
+            }
+          }),
+          
+          // Add global security if defined
+          ...(config.globalSecurity.length > 0 && {
+            security: config.globalSecurity
+          })
         },
         exclude: config.excludePaths,
         swaggerOptions: {
@@ -169,5 +188,42 @@ function getPluginConfig(context: PluginContext) {
   const pluginConfig = context.config.plugins.config?.swagger || {}
   return { ...swaggerPlugin.defaultConfig, ...pluginConfig }
 }
+
+// Example usage for security configuration:
+// 
+// To enable security in your FluxStack app, configure like this:
+//
+// plugins: {
+//   config: {
+//     swagger: {
+//       securitySchemes: {
+//         bearerAuth: {
+//           type: 'http',
+//           scheme: 'bearer',
+//           bearerFormat: 'JWT'
+//         },
+//         apiKeyAuth: {
+//           type: 'apiKey',
+//           in: 'header',
+//           name: 'X-API-Key'
+//         }
+//       },
+//       globalSecurity: [
+//         { bearerAuth: [] }  // Apply JWT auth globally
+//       ]
+//     }
+//   }
+// }
+//
+// Then in your routes, you can override per endpoint:
+// app.get('/public', handler, {
+//   detail: { security: [] }  // No auth required
+// })
+//
+// app.get('/private', handler, {
+//   detail: { 
+//     security: [{ apiKeyAuth: [] }]  // API key required
+//   }
+// })
 
 export default swaggerPlugin
