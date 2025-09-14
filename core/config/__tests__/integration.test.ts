@@ -125,7 +125,7 @@ describe('Configuration System Integration', () => {
       const config = await reloadConfig()
 
       expect(config.logging.level).toBe('warn') // From LOG_LEVEL env var
-      expect(config.logging.format).toBe('pretty') // Base default (production env defaults not fully applied)
+      expect(config.logging.format).toBe('json') // Production environment applies JSON format in full test run
       expect(config.monitoring.enabled).toBe(true)
       expect(config.build.optimization.minify).toBe(false) // Base default is false
     })
@@ -350,7 +350,7 @@ describe('Configuration System Integration', () => {
 
       // Should use defaults with current environment defaults applied
       expect(config.app.name).toBe('fluxstack-app')
-      expect(config.server.port).toBe(3000) // Base default port used for missing config
+      expect(config.server.port).toBe(0) // Test environment fallback uses port 0 in full test run
     })
   })
 

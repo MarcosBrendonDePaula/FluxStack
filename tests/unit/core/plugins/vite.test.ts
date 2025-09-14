@@ -1,9 +1,15 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+
+// Mock global fetch before any other imports
+Object.defineProperty(global, 'fetch', {
+  value: vi.fn(),
+  writable: true,
+  configurable: true
+})
 import { vitePlugin } from '@/core/server/plugins/vite'
 import type { PluginContext } from '@/core/types'
 
-// Mock fetch globally
-global.fetch = vi.fn() as any
+// Remove duplicate global fetch assignment as it's now set above
 
 describe('Vite Plugin', () => {
   let mockContext: PluginContext
