@@ -4,7 +4,7 @@
  */
 
 import type { FluxStackConfig } from "../types"
-import type { Logger } from "../utils/logger"
+import type { Logger } from "../utils/logger/index"
 
 export interface FluxStackFrameworkOptions {
   config?: Partial<FluxStackConfig>

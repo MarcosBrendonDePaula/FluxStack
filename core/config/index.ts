@@ -180,33 +180,33 @@ async function loadConfiguration(options?: ConfigLoadOptions): Promise<FluxStack
     const envDefaults = environmentDefaults[environment as keyof typeof environmentDefaults]
     
     if (envDefaults) {
-      // Simple merge for fallback - don't use complex deepMerge from loader
+      // Simple merge for fallback with proper type casting
       const configWithDefaults = {
         ...fallbackResult.config,
         logging: {
           ...fallbackResult.config.logging,
-          ...envDefaults.logging
+          ...((envDefaults as any).logging || {})
         },
-        server: envDefaults.server ? {
+        server: (envDefaults as any).server ? {
           ...fallbackResult.config.server,
-          ...envDefaults.server
+          ...(envDefaults as any).server
         } : fallbackResult.config.server,
-        client: envDefaults.client ? {
+        client: (envDefaults as any).client ? {
           ...fallbackResult.config.client,
-          ...envDefaults.client
+          ...(envDefaults as any).client
         } : fallbackResult.config.client,
-        build: envDefaults.build ? {
+        build: (envDefaults as any).build ? {
           ...fallbackResult.config.build,
           optimization: {
             ...fallbackResult.config.build.optimization,
-            ...envDefaults.build.optimization
+            ...((envDefaults as any).build.optimization || {})
           }
         } : fallbackResult.config.build,
-        monitoring: envDefaults.monitoring ? {
+        monitoring: (envDefaults as any).monitoring ? {
           ...fallbackResult.config.monitoring,
-          ...envDefaults.monitoring
+          ...(envDefaults as any).monitoring
         } : fallbackResult.config.monitoring
-      }
+      } as FluxStackConfig
       return configWithDefaults
     }
     

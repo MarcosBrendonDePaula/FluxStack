@@ -1,12 +1,12 @@
 import { join } from "path"
-import type { Plugin } from "../../types"
+import type { Plugin, PluginContext } from "../../types"
 
 export const vitePlugin: Plugin = {
   name: "vite",
-  setup: async (context, app) => {
-    if (!context.isDevelopment) return
+  setup: async (context: PluginContext) => {
+    if (!context.utils.isDevelopment()) return
     
-    const vitePort = context.config.vitePort || 5173
+    const vitePort = context.config.client?.port || 5173
     
     // Wait for Vite to start (when using concurrently)
     setTimeout(async () => {

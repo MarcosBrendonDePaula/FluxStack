@@ -25,14 +25,14 @@ export type {
   ProxyConfig,
   ClientBuildConfig,
   OptimizationConfig,
-  LogTransport,
+  LogTransportConfig,
   MetricsConfig,
   ProfilingConfig
 } from "../config/schema"
 
 // Re-export configuration loading types
 export type {
-  EnvironmentInfo,
+  // EnvironmentInfo,
   ConfigLoadOptions,
   ConfigLoadResult,
   ValidationResult,

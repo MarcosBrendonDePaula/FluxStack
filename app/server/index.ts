@@ -4,9 +4,33 @@ import { apiRoutes } from "./routes"
 
 // Criar aplicação com framework
 const app = new FluxStackFramework({
-  port: 3000,
-  apiPrefix: "/api",
-  clientPath: "app/client"
+  server: {
+    port: 3000,
+    host: "localhost",
+    apiPrefix: "/api",
+    cors: {
+      origins: ["*"],
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      headers: ["*"]
+    },
+    middleware: []
+  },
+  app: {
+    name: "FluxStack",
+    version: "1.0.0"
+  },
+  client: {
+    port: 5173,
+    proxy: {
+      target: "http://localhost:3000"
+    },
+    build: {
+      sourceMaps: true,
+      minify: false,
+      target: "es2020",
+      outDir: "dist"
+    }
+  }
 })
 
 

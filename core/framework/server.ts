@@ -112,7 +112,7 @@ export class FluxStackFramework {
 
   private setupErrorHandling() {
     const errorHandler = createErrorHandler({
-      logger: logger, // Use the main logger for now
+      logger: this.pluginContext.logger,
       isDevelopment: this.context.isDevelopment
     })
 

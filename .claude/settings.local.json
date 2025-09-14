@@ -29,7 +29,9 @@
       "Bash(npx tsc:*)",
       "Bash(bun:*)",
       "Bash(vite build:*)",
-      "Bash(tsc --noEmit)"
+      "Bash(tsc --noEmit)",
+      "WebSearch",
+      "WebFetch(domain:elysiajs.com)"
     ],
     "deny": []
   }

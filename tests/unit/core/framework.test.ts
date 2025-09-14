@@ -52,16 +52,15 @@ describe('FluxStackFramework', () => {
         },
         client: {
           port: 5174,
-          host: 'localhost',
           proxy: {
             target: 'http://localhost:4000',
-            changeOrigin: true,
-            secure: false
+            changeOrigin: true
           },
           build: {
             outDir: 'dist/client',
             sourceMaps: true,
-            minify: false
+            minify: false,
+            target: 'es2020'
           }
         }
       }

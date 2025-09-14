@@ -53,7 +53,7 @@ export class ProjectCreator {
       console.log("Happy coding! 🚀")
       
     } catch (error) {
-      console.error("❌ Error creating project:", error.message)
+      console.error("❌ Error creating project:", error instanceof Error ? error.message : String(error))
       process.exit(1)
     }
   }

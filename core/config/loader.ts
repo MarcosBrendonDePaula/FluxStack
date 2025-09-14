@@ -30,6 +30,24 @@ export interface ConfigLoadResult {
     errors: string[]
 }
 
+export interface ValidationResult {
+    valid: boolean
+    errors: ValidationError[]
+    warnings: ValidationWarning[]
+}
+
+export interface ValidationError {
+    path: string
+    message: string
+    value?: any
+}
+
+export interface ValidationWarning {
+    path: string
+    message: string
+    value?: any
+}
+
 /**
  * Environment variable mapping for FluxStack configuration
  */

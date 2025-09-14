@@ -1,10 +1,10 @@
 import { swagger } from '@elysiajs/swagger'
-import type { Plugin, FluxStackContext } from '../../types'
+import type { Plugin, PluginContext } from '../../types'
 
 export const swaggerPlugin: Plugin = {
   name: 'swagger',
-  setup(context: FluxStackContext, app: any) {
-    app.use(swagger({
+  setup(context: PluginContext) {
+    context.app.use(swagger({
       path: '/swagger',
       documentation: {
         info: {
@@ -24,7 +24,7 @@ export const swaggerPlugin: Plugin = {
         ],
         servers: [
           {
-            url: `http://localhost:${context.config.port}`,
+            url: `http://localhost:${context.config.server?.port || 3000}`,
             description: 'Development server'
           }
         ]

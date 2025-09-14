@@ -5,7 +5,7 @@
 
 // Logger utilities
 export { logger, log } from "./logger"
-export type { Logger } from "./logger"
+export type { Logger } from "./logger/index"
 
 // Error handling
 export * from "./errors"

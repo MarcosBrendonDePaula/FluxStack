@@ -186,20 +186,33 @@ export const config: FluxStackConfig = {
         ]
       },
       client: {
+        port: 5173,
+        proxy: { target: 'http://localhost:3000' },
         build: {
           minify: false,
-          sourceMaps: true
+          sourceMaps: true,
+          target: 'es2020',
+          outDir: 'dist'
         }
       },
       build: {
+        target: 'bun',
+        outDir: 'dist',
         optimization: {
           minify: false,
-          compress: false
+          compress: false,
+          treeshake: false,
+          splitChunks: false,
+          bundleAnalyzer: false
         },
-        sourceMaps: true
+        sourceMaps: true,
+        clean: true
       },
       monitoring: {
-        enabled: false
+        enabled: false,
+        metrics: { enabled: false, collectInterval: 5000, httpMetrics: false, systemMetrics: false, customMetrics: false },
+        profiling: { enabled: false, sampleRate: 0.1, memoryProfiling: false, cpuProfiling: false },
+        exporters: []
       }
     },
 
@@ -226,47 +239,76 @@ export const config: FluxStackConfig = {
         ]
       },
       client: {
+        port: 5173,
+        proxy: { target: 'http://localhost:3000' },
         build: {
           minify: true,
-          sourceMaps: false
+          sourceMaps: false,
+          target: 'es2020',
+          outDir: 'dist'
         }
       },
       build: {
+        target: 'bun',
+        outDir: 'dist',
         optimization: {
           minify: true,
           treeshake: true,
           compress: true,
-          splitChunks: true
+          splitChunks: true,
+          bundleAnalyzer: false
         },
-        sourceMaps: false
+        sourceMaps: false,
+        clean: true
       },
       monitoring: {
         enabled: true,
         metrics: {
           enabled: true,
+          collectInterval: 10000,
           httpMetrics: true,
-          systemMetrics: true
+          systemMetrics: true,
+          customMetrics: false
         },
         profiling: {
           enabled: true,
-          sampleRate: 0.01 // Lower sample rate in production
-        }
+          sampleRate: 0.01, // Lower sample rate in production
+          memoryProfiling: true,
+          cpuProfiling: false
+        },
+        exporters: ['console', 'file']
       }
     },
 
     test: {
       logging: {
         level: 'error',
-        format: 'json'
+        format: 'json',
+        transports: [
+          {
+            type: 'console',
+            level: 'error',
+            format: 'json'
+          }
+        ]
       },
       server: {
-        port: 0 // Use random available port
+        port: 0, // Use random available port
+        host: 'localhost',
+        apiPrefix: '/api',
+        cors: { origins: [], methods: [], headers: [] },
+        middleware: []
       },
       client: {
-        port: 0 // Use random available port
+        port: 0, // Use random available port
+        proxy: { target: 'http://localhost:3000' },
+        build: { sourceMaps: true, minify: false, target: 'es2020', outDir: 'dist' }
       },
       monitoring: {
-        enabled: false
+        enabled: false,
+        metrics: { enabled: false, collectInterval: 5000, httpMetrics: false, systemMetrics: false, customMetrics: false },
+        profiling: { enabled: false, sampleRate: 0.1, memoryProfiling: false, cpuProfiling: false },
+        exporters: []
       }
     }
   },

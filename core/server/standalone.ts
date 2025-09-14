@@ -1,13 +1,11 @@
 // Standalone backend server (sem frontend integrado)
 import { FluxStackFramework, loggerPlugin } from "./index"
-import { getEnvironmentInfo } from "../config/env"
+import type { Plugin, PluginContext } from "../types"
 
 export const createStandaloneServer = (userConfig: any = {}) => {
-  const envInfo = getEnvironmentInfo()
-  
   const app = new FluxStackFramework({
     server: {
-      port: userConfig.port || process.env.BACKEND_PORT || 3000,
+      port: userConfig.port || parseInt(process.env.BACKEND_PORT || '3000'),
       host: 'localhost',
       apiPrefix: userConfig.apiPrefix || "/api",
       cors: {
@@ -19,19 +17,22 @@ export const createStandaloneServer = (userConfig: any = {}) => {
       },
       middleware: []
     },
+    app: { name: 'FluxStack Backend', version: '1.0.0' },
+    client: { port: 5173, proxy: { target: 'http://localhost:3000' }, build: { sourceMaps: true, minify: false, target: 'es2020', outDir: 'dist' } },
     ...userConfig
   })
 
   // Plugin de logging silencioso para standalone
-  const silentLogger = {
+  const silentLogger: Plugin = {
     name: "silent-logger",
-    setup: () => ({
-      onRequest: ({ request, path }) => {
+    setup: (context: PluginContext) => {
+      context.app.onRequest(({ request }: { request: Request }) => {
         // Log mais limpo para backend standalone
         const timestamp = new Date().toLocaleTimeString()
+        const path = new URL(request.url).pathname
         console.log(`[${timestamp}] ${request.method} ${path}`)
-      }
-    })
+      })
+    }
   }
 
   app.use(silentLogger)

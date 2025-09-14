@@ -1,12 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { vitePlugin } from '@/core/server/plugins/vite'
-import type { FluxStackContext } from '@/core/types'
+import type { PluginContext } from '@/core/types'
 
 // Mock fetch globally
-global.fetch = vi.fn()
+global.fetch = vi.fn() as any
 
 describe('Vite Plugin', () => {
-  let mockContext: FluxStackContext
+  let mockContext: PluginContext
   let mockApp: any
 
   beforeEach(() => {
@@ -16,24 +16,23 @@ describe('Vite Plugin', () => {
 
     mockContext = {
       config: {
-        port: 3000,
-        vitePort: 5173,
-        clientPath: 'app/client',
-        apiPrefix: '/api',
-        cors: {
-          origins: ['http://localhost:5173'],
-          methods: ['GET', 'POST'],
-          headers: ['Content-Type']
-        },
-        build: {
-          outDir: 'dist',
-          target: 'es2020'
-        }
+        server: { port: 3000, host: 'localhost', apiPrefix: '/api', cors: { origins: [], methods: [], headers: [] }, middleware: [] },
+        client: { port: 5173, proxy: { target: 'http://localhost:3000' }, build: { outDir: 'dist', target: 'es2020', sourceMaps: true, minify: false } },
+        app: { name: 'test', version: '1.0.0' }
       },
-      isDevelopment: true,
-      isProduction: false,
-      envConfig: {}
-    } as FluxStackContext
+      logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn(), child: vi.fn(), time: vi.fn(), timeEnd: vi.fn(), request: vi.fn() },
+      app: mockApp,
+      utils: {
+        isDevelopment: vi.fn(() => true),
+        isProduction: vi.fn(() => false),
+        createTimer: vi.fn(),
+        formatBytes: vi.fn(),
+        getEnvironment: vi.fn(() => 'test'),
+        createHash: vi.fn(),
+        deepMerge: vi.fn(),
+        validateSchema: vi.fn()
+      }
+    } as any
 
     mockApp = {
       get: vi.fn(),
@@ -50,7 +49,7 @@ describe('Vite Plugin', () => {
     it('should set up plugin in development mode', async () => {
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
       
-      await vitePlugin.setup(mockContext, mockApp)
+      await vitePlugin.setup!(mockContext)
       
       expect(consoleSpy).toHaveBeenCalledWith('   🔄 Aguardando Vite na porta 5173...')
       
@@ -66,7 +65,7 @@ describe('Vite Plugin', () => {
         ok: true
       } as Response)
       
-      await vitePlugin.setup(mockContext, mockApp)
+      await vitePlugin.setup!(mockContext)
       
       // Fast-forward timers to trigger the setTimeout
       vi.advanceTimersByTime(2000)
@@ -90,7 +89,7 @@ describe('Vite Plugin', () => {
       // Mock failed Vite check
       vi.mocked(fetch).mockRejectedValueOnce(new Error('Connection refused'))
       
-      await vitePlugin.setup(mockContext, mockApp)
+      await vitePlugin.setup!(mockContext)
       
       // Fast-forward timers
       vi.advanceTimersByTime(2000)
@@ -113,7 +112,7 @@ describe('Vite Plugin', () => {
         ...mockContext,
         config: {
           ...mockContext.config,
-          vitePort: 3001
+          client: { ...mockContext.config.client, port: 3001 }
         }
       }
       
@@ -122,7 +121,7 @@ describe('Vite Plugin', () => {
         ok: true
       } as Response)
       
-      await vitePlugin.setup(customContext, mockApp)
+      await vitePlugin.setup!(customContext)
       
       expect(consoleSpy).toHaveBeenCalledWith('   🔄 Aguardando Vite na porta 3001...')
       
@@ -143,11 +142,14 @@ describe('Vite Plugin', () => {
       
       const productionContext = {
         ...mockContext,
-        isDevelopment: false,
-        isProduction: true
+        utils: {
+          ...mockContext.utils,
+          isDevelopment: vi.fn(() => false),
+          isProduction: vi.fn(() => true)
+        }
       }
       
-      await vitePlugin.setup(productionContext, mockApp)
+      await vitePlugin.setup!(productionContext)
       
       expect(consoleSpy).not.toHaveBeenCalled()
       expect(fetch).not.toHaveBeenCalled()
@@ -177,7 +179,7 @@ describe('Vite Plugin', () => {
       // Since it's not exported, we'll test it indirectly through the plugin
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
       
-      await vitePlugin.setup(mockContext, mockApp)
+      await vitePlugin.setup!(mockContext)
       vi.advanceTimersByTime(2000)
       await vi.runAllTimersAsync()
 
@@ -195,7 +197,7 @@ describe('Vite Plugin', () => {
 
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
       
-      await vitePlugin.setup(mockContext, mockApp)
+      await vitePlugin.setup!(mockContext)
       vi.advanceTimersByTime(2000)
       await vi.runAllTimersAsync()
 

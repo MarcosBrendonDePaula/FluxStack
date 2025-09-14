@@ -1,13 +1,7 @@
 import { useState, useEffect } from 'react'
 import './App.css'
 import { api, apiCall, getErrorMessage } from './lib/eden-api'
-
-interface User {
-  id: number
-  name: string
-  email: string
-  createdAt?: string
-}
+import type { User } from '@/shared/types'
 
 type TabType = 'overview' | 'demo' | 'api-docs'
 
@@ -38,8 +32,8 @@ function App() {
   const loadUsers = async () => {
     try {
       setLoading(true)
-      const data = await apiCall(api.users.get()) as any
-      setUsers(data.users || [])
+      const data = await apiCall(api.users.get())
+      setUsers(data?.users || [])
     } catch (error) {
       showMessage('error', getErrorMessage(error))
     } finally {

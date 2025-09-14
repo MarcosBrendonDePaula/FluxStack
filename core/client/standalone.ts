@@ -26,22 +26,26 @@ export const startFrontendOnly = (config: any = {}) => {
     }
   })
 
-  viteProcess.stdout.readable?.pipeTo(new WritableStream({
-    write(chunk) {
-      const output = new TextDecoder().decode(chunk)
-      // Filtrar mensagens desnecessárias do Vite
-      if (!output.includes("hmr update") && !output.includes("Local:")) {
-        console.log(output)
+  if (viteProcess.stdout) {
+    viteProcess.stdout.pipeTo(new WritableStream({
+      write(chunk) {
+        const output = new TextDecoder().decode(chunk)
+        // Filtrar mensagens desnecessárias do Vite
+        if (!output.includes("hmr update") && !output.includes("Local:")) {
+          console.log(output)
+        }
       }
-    }
-  }))
+    })).catch(() => {}) // Ignore pipe errors
+  }
 
-  viteProcess.stderr.readable?.pipeTo(new WritableStream({
-    write(chunk) {
-      const error = new TextDecoder().decode(chunk)
-      console.error(error)
-    }
-  }))
+  if (viteProcess.stderr) {
+    viteProcess.stderr.pipeTo(new WritableStream({
+      write(chunk) {
+        const error = new TextDecoder().decode(chunk)
+        console.error(error)
+      }
+    })).catch(() => {}) // Ignore pipe errors
+  }
 
   // Cleanup ao sair
   process.on("SIGINT", () => {

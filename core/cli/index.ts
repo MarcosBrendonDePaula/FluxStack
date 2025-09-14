@@ -132,7 +132,7 @@ switch (command) {
       
       await creator.create()
     } catch (error) {
-      console.error("❌ Failed to create project:", error.message)
+      console.error("❌ Failed to create project:", error instanceof Error ? error.message : String(error))
       process.exit(1)
     }
     break

@@ -1,5 +1,5 @@
 import { FluxStackError } from "./index"
-import type { Logger } from "../logger"
+import type { Logger } from "../logger/index"
 
 export interface ErrorHandlerContext {
   logger: Logger
