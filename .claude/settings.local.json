@@ -31,7 +31,8 @@
       "Bash(vite build:*)",
       "Bash(tsc --noEmit)",
       "WebSearch",
-      "WebFetch(domain:elysiajs.com)"
+      "WebFetch(domain:elysiajs.com)",
+      "Bash(tree:*)"
     ],
     "deny": []
   }
