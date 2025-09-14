@@ -32,7 +32,8 @@
       "Bash(tsc --noEmit)",
       "WebSearch",
       "WebFetch(domain:elysiajs.com)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": []
   }
