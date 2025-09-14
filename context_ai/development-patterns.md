@@ -1,35 +1,56 @@
-# FluxStack v1.4.0 - Padrões de Desenvolvimento Monorepo
+# FluxStack v1.4.1 - Padrões de Desenvolvimento
 
-## Padrões para IAs Trabalhando com FluxStack v1.4.0
+## Padrões para IAs Trabalhando com FluxStack v1.4.1
 
-### 🚨 Regras Fundamentais v1.4.0
+### 🚨 Regras Fundamentais v1.4.1
 
-1. **NUNCA editar arquivos em `core/`** - São do framework (read-only)
-2. **SEMPRE trabalhar em `app/`** - Código da aplicação
-3. **✨ MONOREPO: Instalar libs no ROOT** - `bun add <library>` (funciona para frontend E backend)
-4. **⛔ NÃO criar `app/client/package.json`** - Foi removido na v1.4.0!
-5. **Usar path aliases unificados consistentemente**
-6. **Manter types em `app/shared/` para compartilhamento automático**
-7. **Aproveitar hot reload independente** - Backend e frontend separadamente
-8. **Sempre usar Eden Treaty** - Type-safety end-to-end automático
+1. **NUNCA editar arquivos em `core/`** - São do framework (read-only, 100% testado)
+2. **SEMPRE trabalhar em `app/`** - Código da aplicação (user space)
+3. **✨ MONOREPO ESTÁVEL: Instalar libs no ROOT** - `bun add <library>` (89 arquivos TS unificados)
+4. **⛔ NÃO criar `app/client/package.json`** - Removido permanentemente na v1.4.0!
+5. **Usar configuração robusta com precedência clara**
+6. **Manter types em `app/shared/` para type-safety automática**
+7. **Aproveitar hot reload independente testado** - 312 testes garantem funcionamento
+8. **Sempre usar Eden Treaty** - Type-safety end-to-end validada
+9. **✅ ZERO erros TypeScript** - Sistema 100% estável
+10. **🧪 Escrever testes** - Manter taxa de 100% de sucesso
+
+### 📊 Estado Atual (v1.4.1)
+- **89 arquivos TypeScript/TSX**
+- **312 testes (100% passando)**
+- **Zero erros TypeScript**
+- **Sistema de configuração robusto**
+- **CI/CD pipeline estável**
 
 ## Criando Novas Funcionalidades
 
 ### 1. Adicionando Nova API Endpoint
 
-#### Passo 1: Definir Types Compartilhados (Monorepo Unificado)
+#### Passo 1: Definir Types Compartilhados (Type-safe)
 ```typescript
 // app/shared/types.ts - ✨ Tipos compartilhados automaticamente!
 export interface Product {
   id: number
   name: string
   price: number
-  createdAt?: Date
+  category: string
+  inStock: boolean
+  createdAt: Date
+  updatedAt?: Date
 }
 
 export interface CreateProductRequest {
   name: string
   price: number
+  category: string
+  inStock?: boolean
+}
+
+export interface UpdateProductRequest {
+  name?: string
+  price?: number
+  category?: string
+  inStock?: boolean
 }
 
 export interface ProductResponse {
@@ -38,447 +59,413 @@ export interface ProductResponse {
   message?: string
 }
 
-// ✨ NOVO: Export para Eden Treaty type-safety
-export interface ProductsAPI {
-  '/': {
-    get: () => { products: Product[] }
-    post: (body: CreateProductRequest) => ProductResponse
-  }
-  '/:id': {
-    get: () => { product?: Product }
-    delete: () => ProductResponse
+export interface ProductListResponse {
+  success: boolean
+  products: Product[]
+  total: number
+  pagination?: {
+    page: number
+    limit: number
+    totalPages: number
   }
 }
 ```
 
-#### Passo 2: Criar Controller com Test Isolation
+#### Passo 2: Criar Controller (Testável)
 ```typescript
 // app/server/controllers/products.controller.ts
-import type { Product, CreateProductRequest, ProductResponse } from '@/shared/types' // ✨ Path alias unificado
-
-let products: Product[] = []
+import type { Product, CreateProductRequest, UpdateProductRequest } from '@/shared/types'
 
 export class ProductsController {
+  private static products: Product[] = []
+  private static nextId = 1
+
   static async getProducts() {
-    return { products }
+    return { 
+      success: true, 
+      products: this.products, 
+      total: this.products.length 
+    }
   }
 
-  static async createProduct(data: CreateProductRequest): Promise<ProductResponse> {
+  static async getProduct(id: number) {
+    const product = this.products.find(p => p.id === id)
+    if (!product) {
+      return { success: false, message: 'Product not found' }
+    }
+    
+    return { success: true, product }
+  }
+
+  static async createProduct(data: CreateProductRequest) {
     const newProduct: Product = {
-      id: Date.now(),
+      id: this.nextId++,
       name: data.name,
       price: data.price,
+      category: data.category,
+      inStock: data.inStock ?? true,
       createdAt: new Date()
     }
-
-    products.push(newProduct)
-
-    return {
-      success: true,
-      product: newProduct
-    }
-  }
-
-  static async getProductById(id: number) {
-    const product = products.find(p => p.id === id)
-    return product ? { product } : null
-  }
-
-  static async deleteProduct(id: number): Promise<ProductResponse> {
-    const index = products.findIndex(p => p.id === id)
     
+    this.products.push(newProduct)
+    return { success: true, product: newProduct }
+  }
+
+  static async updateProduct(id: number, data: UpdateProductRequest) {
+    const index = this.products.findIndex(p => p.id === id)
     if (index === -1) {
-      return {
-        success: false,
-        message: "Produto não encontrado"
-      }
+      return { success: false, message: 'Product not found' }
     }
-
-    const deletedProduct = products.splice(index, 1)[0]
     
-    return {
-      success: true,
-      product: deletedProduct,
-      message: "Produto deletado com sucesso"
+    this.products[index] = {
+      ...this.products[index],
+      ...data,
+      updatedAt: new Date()
     }
+    
+    return { success: true, product: this.products[index] }
   }
 
-  // ✨ NOVO: Método para isolar dados nos testes
-  static resetForTesting() {
-    products.splice(0, products.length)
-    products.push(
-      {
-        id: 1,
-        name: "Produto Teste",
-        price: 29.99,
-        createdAt: new Date()
-      },
-      {
-        id: 2, 
-        name: "Outro Produto",
-        price: 49.99,
-        createdAt: new Date()
-      }
-    )
+  static async deleteProduct(id: number) {
+    const index = this.products.findIndex(p => p.id === id)
+    if (index === -1) {
+      return { success: false, message: 'Product not found' }
+    }
+    
+    this.products.splice(index, 1)
+    return { success: true, message: 'Product deleted successfully' }
+  }
+
+  // Utility for tests - reset data
+  static reset() {
+    this.products = []
+    this.nextId = 1
   }
 }
 ```
 
-#### Passo 3: Criar Routes com Swagger Documentation
+#### Passo 3: Criar Routes com Swagger Completo
 ```typescript
 // app/server/routes/products.routes.ts
-import { Elysia, t } from "elysia"
-import { ProductsController } from "../controllers/products.controller"
+import { Elysia, t } from 'elysia'
+import { ProductsController } from '../controllers/products.controller'
 
 export const productsRoutes = new Elysia({ prefix: "/products" })
+  // List all products
   .get("/", () => ProductsController.getProducts(), {
-    // ✨ NOVO: Documentação Swagger automática
     detail: {
       tags: ['Products'],
       summary: 'List Products',
-      description: 'Retrieve a list of all products in the system'
+      description: 'Retrieve a paginated list of all products in the system',
+      responses: {
+        200: {
+          description: 'List of products retrieved successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean' },
+                  products: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        id: { type: 'number' },
+                        name: { type: 'string' },
+                        price: { type: 'number' },
+                        category: { type: 'string' },
+                        inStock: { type: 'boolean' },
+                        createdAt: { type: 'string', format: 'date-time' }
+                      }
+                    }
+                  },
+                  total: { type: 'number' }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   })
   
-  .get("/:id", ({ params: { id } }) => {
-    const productId = parseInt(id)
-    const result = ProductsController.getProductById(productId)
-    
-    if (!result) {
-      return { error: "Produto não encontrado" }
-    }
-    
-    return result
-  }, {
+  // Get single product
+  .get("/:id", ({ params }) => ProductsController.getProduct(parseInt(params.id)), {
     params: t.Object({
-      id: t.String()
+      id: t.String({ pattern: '^\\d+$' })
     }),
     detail: {
       tags: ['Products'],
-      summary: 'Get Product by ID',
-      description: 'Retrieve a specific product by its ID'
+      summary: 'Get Product',
+      description: 'Retrieve a single product by its ID',
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', pattern: '^\\d+$' },
+          description: 'Product ID'
+        }
+      ]
     }
   })
   
-  .post("/", async ({ body, set }) => {
-    try {
-      return await ProductsController.createProduct(body)
-    } catch (error) {
-      set.status = 400
-      return { 
-        success: false, 
-        error: "Dados inválidos", 
-        details: error instanceof Error ? error.message : 'Unknown error'
-      }
-    }
-  }, {
+  // Create new product
+  .post("/", ({ body }) => ProductsController.createProduct(body), {
     body: t.Object({
-      name: t.String({ minLength: 2 }),
-      price: t.Number({ minimum: 0 })
+      name: t.String({ minLength: 2, maxLength: 100 }),
+      price: t.Number({ minimum: 0 }),
+      category: t.String({ minLength: 2, maxLength: 50 }),
+      inStock: t.Optional(t.Boolean())
     }),
     detail: {
       tags: ['Products'],
       summary: 'Create Product',
-      description: 'Create a new product with name and price'
+      description: 'Create a new product with name, price, and category',
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              required: ['name', 'price', 'category'],
+              properties: {
+                name: { 
+                  type: 'string', 
+                  minLength: 2, 
+                  maxLength: 100,
+                  description: 'Product name'
+                },
+                price: { 
+                  type: 'number', 
+                  minimum: 0,
+                  description: 'Product price'
+                },
+                category: { 
+                  type: 'string', 
+                  minLength: 2, 
+                  maxLength: 50,
+                  description: 'Product category'
+                },
+                inStock: { 
+                  type: 'boolean',
+                  description: 'Whether the product is in stock',
+                  default: true
+                }
+              }
+            }
+          }
+        }
+      }
     }
   })
   
-  .delete("/:id", ({ params: { id } }) => {
-    const productId = parseInt(id)
-    return ProductsController.deleteProduct(productId)
-  }, {
+  // Update product
+  .put("/:id", ({ params, body }) => ProductsController.updateProduct(parseInt(params.id), body), {
     params: t.Object({
-      id: t.String()
+      id: t.String({ pattern: '^\\d+$' })
+    }),
+    body: t.Object({
+      name: t.Optional(t.String({ minLength: 2, maxLength: 100 })),
+      price: t.Optional(t.Number({ minimum: 0 })),
+      category: t.Optional(t.String({ minLength: 2, maxLength: 50 })),
+      inStock: t.Optional(t.Boolean())
+    }),
+    detail: {
+      tags: ['Products'],
+      summary: 'Update Product',
+      description: 'Update an existing product by ID'
+    }
+  })
+  
+  // Delete product
+  .delete("/:id", ({ params }) => ProductsController.deleteProduct(parseInt(params.id)), {
+    params: t.Object({
+      id: t.String({ pattern: '^\\d+$' })
     }),
     detail: {
       tags: ['Products'],
       summary: 'Delete Product',
-      description: 'Delete a product by its ID'
+      description: 'Delete a product by ID'
     }
   })
 ```
 
-#### Passo 4: Registrar Routes
+#### Passo 4: Integrar no Router Principal
 ```typescript
 // app/server/routes/index.ts
-import { Elysia } from "elysia"
-import { usersRoutes } from "./users.routes"
-import { productsRoutes } from "./products.routes" // Nova linha
+import { Elysia } from 'elysia'
+import { usersRoutes } from './users.routes'
+import { productsRoutes } from './products.routes'  // ✨ Nova rota
 
-export const apiRoutes = new Elysia({ prefix: "/api" })
-  .get("/", () => ({ message: "Hello from FluxStack API!" }))
+// Health check route
+const healthRoutes = new Elysia()
   .get("/health", () => ({ 
     status: "ok", 
     timestamp: new Date().toISOString(),
-    uptime: process.uptime()
-  }))
+    version: "1.4.1",
+    environment: process.env.NODE_ENV || "development"
+  }), {
+    detail: {
+      tags: ['Health'],
+      summary: 'Health Check',
+      description: 'Check if the API is running and healthy'
+    }
+  })
+  .get("/", () => ({ 
+    message: "FluxStack API v1.4.1", 
+    docs: "/swagger",
+    health: "/api/health"
+  }), {
+    detail: {
+      tags: ['Health'],
+      summary: 'API Info',
+      description: 'Get basic API information and available endpoints'
+    }
+  })
+
+// Combine all routes
+export const apiRoutes = new Elysia({ prefix: "/api" })
+  .use(healthRoutes)
   .use(usersRoutes)
-  .use(productsRoutes) // Nova linha
+  .use(productsRoutes)    // ✨ Adicionar nova rota
 ```
 
-#### Passo 5: ✨ NOVO - Eden Treaty Type-Safe API Client
+### 2. Frontend Integration com Type-Safety
+
+#### Passo 1: Usar Eden Treaty no Frontend (Type-safe)
 ```typescript
-// app/client/src/lib/eden-api.ts - ✨ Type-safe automático!
-import { treaty } from '@elysiajs/eden'
-import type { App } from '@/app/server/app' // ✨ Import de tipos do servidor
-
-function getBaseUrl() {
-  if (import.meta.env.DEV) {
-    return 'http://localhost:3000'
-  }
-  return window.location.origin
-}
-
-// ✨ Cliente Eden Treaty type-safe
-const client = treaty<App>(getBaseUrl())
-export const api = client.api
-
-// ✨ Wrapper para tratamento de erros
-export const apiCall = async (promise: Promise<any>) => {
-  try {
-    const response = await promise
-    if (response.error) throw new Error(response.error)
-    return response.data || response
-  } catch (error) {
-    throw error
-  }
-}
-
-// ✨ USAGE: Completamente tipado!
-/*
-const products = await apiCall(api.products.get())
-const newProduct = await apiCall(api.products.post({
-  name: "Produto Teste",     // ✅ Type-safe!
-  price: 29.99              // ✅ Validado automaticamente!
-}))
-const product = await apiCall(api.products({ id: '1' }).get())
-await apiCall(api.products({ id: '1' }).delete())
-*/
-```
-
-#### 📚 Como Atualizar o app.ts para Eden Treaty:
-```typescript
-// app/server/app.ts - Export tipo para Eden Treaty
-import { Elysia } from 'elysia'
-import { apiRoutes } from './routes'
-
-export const app = new Elysia()
-  .use(apiRoutes)
-
-export type App = typeof app // ✨ Export para Eden Treaty
-```
-
-### 2. Criando Componentes React 19 com Eden Treaty
-
-#### Hook Pattern com Type-Safety
-```typescript
-// app/client/src/hooks/useProducts.ts
+// app/client/src/components/ProductManager.tsx
 import { useState, useEffect } from 'react'
-import { api, apiCall } from '@/lib/eden-api' // ✨ Eden Treaty
-import type { Product, CreateProductRequest } from '@/shared/types' // ✨ Tipos compartilhados
+import { api, apiCall, getErrorMessage } from '@/lib/eden-api'
+import type { Product, CreateProductRequest } from '@/shared/types'
 
-export function useProducts() {
+export function ProductManager() {
   const [products, setProducts] = useState<Product[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [formData, setFormData] = useState({
+    name: '',
+    price: 0,
+    category: '',
+    inStock: true
+  })
 
-  const fetchProducts = async () => {
+  // Load products with full type safety
+  const loadProducts = async () => {
     try {
       setLoading(true)
-      // ✨ Eden Treaty: chamada type-safe
-      const data = await apiCall(api.products.get())
-      setProducts(data.products)
-      setError(null)
-    } catch (err) {
-      setError('Erro ao buscar produtos')
-      console.error('Erro ao buscar produtos:', err)
+      const response = await apiCall(api.products.get())
+      setProducts(response.products || [])
+    } catch (error) {
+      console.error('Error loading products:', getErrorMessage(error))
     } finally {
       setLoading(false)
     }
   }
 
-  const addProduct = async (productData: CreateProductRequest) => {
+  // Create product with Eden Treaty
+  const createProduct = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
     try {
-      // ✨ Eden Treaty: tipo validado automaticamente
-      const data = await apiCall(api.products.post(productData))
-      if (data?.success) {
-        await fetchProducts() // Recarregar lista
+      const productData: CreateProductRequest = {
+        name: formData.name.trim(),
+        price: Number(formData.price),
+        category: formData.category.trim(),
+        inStock: formData.inStock
       }
-      return data
-    } catch (err) {
-      setError('Erro ao adicionar produto')
-      throw err
+      
+      const response = await apiCall(api.products.post(productData))
+      
+      if (response.success && response.product) {
+        setProducts(prev => [...prev, response.product])
+        setFormData({ name: '', price: 0, category: '', inStock: true })
+      }
+    } catch (error) {
+      console.error('Error creating product:', getErrorMessage(error))
     }
   }
 
-  const deleteProduct = async (id: number) => {
+  // Delete product with confirmation
+  const deleteProduct = async (id: number, name: string) => {
+    if (!confirm(`Delete product "${name}"?`)) return
+    
     try {
-      // ✨ Nova sintaxe Eden Treaty
       await apiCall(api.products({ id: id.toString() }).delete())
-      setProducts(prev => prev.filter(product => product.id !== id))
-    } catch (err) {
-      setError('Erro ao deletar produto')
-      throw err
+      setProducts(prev => prev.filter(p => p.id !== id))
+    } catch (error) {
+      console.error('Error deleting product:', getErrorMessage(error))
     }
   }
 
   useEffect(() => {
-    fetchProducts()
+    loadProducts()
   }, [])
 
-  return {
-    products,
-    loading,
-    error,
-    fetchProducts,
-    addProduct,
-    deleteProduct // ✨ Novo método
-  }
-}
-```
-
-#### Component Pattern - React 19 + Type-Safe + Modern UI
-```typescript
-// app/client/src/components/ProductList.tsx
-import { useState } from 'react'
-import { useProducts } from '@/hooks/useProducts'
-import type { CreateProductRequest } from '@/shared/types' // ✨ Tipo compartilhado
-
-export function ProductList() {
-  const { products, loading, error, addProduct, deleteProduct } = useProducts()
-  const [formData, setFormData] = useState<CreateProductRequest>({ 
-    name: '', 
-    price: 0 
-  })
-  const [message, setMessage] = useState('')
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!formData.name || formData.price <= 0) {
-      setMessage('❌ Preencha todos os campos corretamente')
-      return
-    }
-
-    try {
-      await addProduct(formData)
-      setFormData({ name: '', price: 0 })
-      setMessage('✅ Produto adicionado com sucesso!')
-      setTimeout(() => setMessage(''), 3000)
-    } catch (error) {
-      console.error('Erro ao adicionar produto:', error)
-      setMessage('❌ Erro ao adicionar produto')
-    }
-  }
-
-  const handleDelete = async (id: number, name: string) => {
-    if (!confirm(`Deletar produto "${name}"?`)) return
-    
-    try {
-      await deleteProduct(id)
-      setMessage('✅ Produto deletado com sucesso!')
-      setTimeout(() => setMessage(''), 3000)
-    } catch (error) {
-      setMessage('❌ Erro ao deletar produto')
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className="loading">
-        <div className="spinner"></div>
-        Carregando produtos...
-      </div>
-    )
-  }
-  
-  if (error) {
-    return (
-      <div className="error">
-        ❌ Erro: {error}
-        <button onClick={() => window.location.reload()}>Tentar Novamente</button>
-      </div>
-    )
-  }
-
   return (
-    <div className="products">
-      <h2>Produtos</h2>
+    <div className="product-manager">
+      <h2>Product Management</h2>
       
-      {/* ✨ Sistema de mensagens */}
-      {message && (
-        <div className={`message ${message.includes('✅') ? 'success' : 'error'}`}>
-          {message}
-        </div>
-      )}
-      
-      {/* ✨ Form moderno */}
-      <form onSubmit={handleSubmit} className="product-form">
+      {/* Create Form */}
+      <form onSubmit={createProduct} className="create-form">
         <div className="form-group">
-          <label htmlFor="name">Nome do Produto:</label>
           <input
-            id="name"
             type="text"
-            placeholder="Nome do produto"
+            placeholder="Product Name"
             value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
             required
-            minLength={2}
           />
-        </div>
-        
-        <div className="form-group">
-          <label htmlFor="price">Preço:</label>
           <input
-            id="price"
             type="number"
-            placeholder="0.00"
-            min="0"
+            placeholder="Price"
             step="0.01"
-            value={formData.price || ''}
-            onChange={(e) => setFormData({ 
-              ...formData, 
-              price: parseFloat(e.target.value) || 0 
-            })}
+            min="0"
+            value={formData.price}
+            onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) }))}
             required
           />
+          <input
+            type="text"
+            placeholder="Category"
+            value={formData.category}
+            onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+            required
+          />
+          <label>
+            <input
+              type="checkbox"
+              checked={formData.inStock}
+              onChange={(e) => setFormData(prev => ({ ...prev, inStock: e.target.checked }))}
+            />
+            In Stock
+          </label>
+          <button type="submit">Create Product</button>
         </div>
-        
-        <button type="submit" className="btn btn-primary">
-          ➕ Adicionar Produto
-        </button>
       </form>
 
-      {/* ✨ Lista moderna com ações */}
+      {/* Products List */}
       <div className="products-list">
-        <h3>Lista de Produtos ({products.length})</h3>
-        
-        {products.length === 0 ? (
-          <div className="empty-state">
-            📝 Nenhum produto encontrado
-          </div>
+        {loading ? (
+          <div>Loading products...</div>
+        ) : products.length === 0 ? (
+          <div>No products found</div>
         ) : (
           <div className="products-grid">
             {products.map(product => (
               <div key={product.id} className="product-card">
-                <div className="product-info">
-                  <h4>{product.name}</h4>
-                  <p className="price">R$ {product.price.toFixed(2)}</p>
-                  {product.createdAt && (
-                    <small className="date">
-                      Criado em {new Date(product.createdAt).toLocaleDateString('pt-BR')}
-                    </small>
-                  )}
-                </div>
-                
-                <div className="product-actions">
-                  <button 
-                    onClick={() => handleDelete(product.id, product.name)}
-                    className="btn btn-danger btn-sm"
-                    title="Deletar produto"
-                  >
-                    🗑️
-                  </button>
-                </div>
+                <h3>{product.name}</h3>
+                <p>Price: ${product.price.toFixed(2)}</p>
+                <p>Category: {product.category}</p>
+                <p>Status: {product.inStock ? 'In Stock' : 'Out of Stock'}</p>
+                <p>Created: {new Date(product.createdAt).toLocaleDateString()}</p>
+                <button 
+                  onClick={() => deleteProduct(product.id, product.name)}
+                  className="delete-btn"
+                >
+                  Delete
+                </button>
               </div>
             ))}
           </div>
@@ -489,402 +476,664 @@ export function ProductList() {
 }
 ```
 
-#### 🎨 CSS Moderno para Componentes:
-```css
-/* app/client/src/components/ProductList.css */
-.products {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 2rem;
-}
+### 3. Criando Testes (Manter 100% de Sucesso)
 
-.message {
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-  text-align: center;
-  font-weight: 500;
-}
-
-.message.success {
-  background: #dcfce7;
-  color: #166534;
-  border: 1px solid #bbf7d0;
-}
-
-.message.error {
-  background: #fef2f2;
-  color: #991b1b;
-  border: 1px solid #fecaca;
-}
-
-.product-form {
-  background: #f8fafc;
-  padding: 1.5rem;
-  border-radius: 12px;
-  margin-bottom: 2rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.form-group {
-  margin-bottom: 1rem;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  color: #374151;
-}
-
-.form-group input {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 1rem;
-}
-
-.form-group input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.products-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1rem;
-}
-
-.product-card {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  transition: transform 0.2s, box-shadow 0.2s;
-  display: flex;
-  justify-content: space-between;
-  align-items: start;
-}
-
-.product-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-.product-info h4 {
-  margin: 0 0 0.5rem 0;
-  color: #111827;
-}
-
-.product-info .price {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #059669;
-  margin: 0;
-}
-
-.product-info .date {
-  color: #6b7280;
-  font-size: 0.875rem;
-}
-
-.btn {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 8px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  text-decoration: none;
-  display: inline-block;
-}
-
-.btn-primary {
-  background: #3b82f6;
-  color: white;
-}
-
-.btn-primary:hover {
-  background: #2563eb;
-}
-
-.btn-danger {
-  background: #dc2626;
-  color: white;
-}
-
-.btn-danger:hover {
-  background: #b91c1c;
-}
-
-.btn-sm {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.875rem;
-}
-```
-```
-
-## Padrões de Estrutura de Arquivos
-
-### Controllers
-- Um controller por entidade
-- Métodos estáticos
-- Responsabilidade única
-- Validação de dados
-- Tratamento de erros
-
-### Routes
-- Um arquivo de rotas por entidade
-- Usar prefixos para agrupamento
-- Validação com TypeBox
-- Error handling consistente
-- Documentação inline
-
-### Components
-- Componentes funcionais
-- Custom hooks para lógica
-- Props tipadas
-- Responsabilidade única
-- Composição sobre herança
-
-### Types
-- Tipos compartilhados em `shared/`
-- Interfaces claras e descritivas
-- Request/Response patterns
-- Evitar `any`
-
-## Path Aliases - Padrões de Uso
-
-### Backend (Server) - v1.4.0
+#### Passo 1: Controller Tests
 ```typescript
-import { FluxStackFramework } from '@/core/server'
-import config from '@/fluxstack.config'
-import { User } from '@/shared/types' // ✨ Tipos compartilhados
-import { UsersController } from '@/app/server/controllers/users.controller'
-```
+// tests/unit/app/controllers/products.controller.test.ts
+import { describe, it, expect, beforeEach } from 'vitest'
+import { ProductsController } from '@/app/server/controllers/products.controller'
 
-### Frontend (Client) - v1.4.0 Monorepo
-```typescript
-import { Button } from '@/components/Button'
-import { api, apiCall } from '@/lib/eden-api' // ✨ Eden Treaty type-safe
-import { useProducts } from '@/hooks/useProducts'
-import { Product } from '@/shared/types' // ✨ Tipos automaticamente compartilhados
+describe('ProductsController', () => {
+  beforeEach(() => {
+    // Reset data between tests to maintain isolation
+    ProductsController.reset()
+  })
 
-// ✨ NOVO: Acesso do frontend ao backend
-import type { UsersController } from '@/app/server/controllers/users.controller'
-```
+  describe('getProducts', () => {
+    it('should return empty list initially', async () => {
+      const result = await ProductsController.getProducts()
+      
+      expect(result.success).toBe(true)
+      expect(result.products).toEqual([])
+      expect(result.total).toBe(0)
+    })
 
-### 🔗 Type Sharing Automático:
-```typescript
-// ✨ Backend define tipos
-// app/shared/types.ts
-export interface User {
-  id: number
-  name: string
-  email: string
-}
+    it('should return all products after creation', async () => {
+      // Create test products
+      await ProductsController.createProduct({
+        name: 'Test Product 1',
+        price: 99.99,
+        category: 'Electronics'
+      })
+      
+      await ProductsController.createProduct({
+        name: 'Test Product 2',
+        price: 49.99,
+        category: 'Books'
+      })
 
-// ✨ Backend usa
-// app/server/controllers/users.controller.ts  
-import type { User } from '@/shared/types'
+      const result = await ProductsController.getProducts()
+      
+      expect(result.success).toBe(true)
+      expect(result.products).toHaveLength(2)
+      expect(result.total).toBe(2)
+    })
+  })
 
-// ✨ Frontend usa AUTOMATICAMENTE
-// app/client/src/components/UserList.tsx
-import type { User } from '@/shared/types' // ✅ Funciona!
-```
+  describe('createProduct', () => {
+    it('should create product with valid data', async () => {
+      const productData = {
+        name: 'New Product',
+        price: 29.99,
+        category: 'Home'
+      }
 
-## Validação e Error Handling
+      const result = await ProductsController.createProduct(productData)
+      
+      expect(result.success).toBe(true)
+      expect(result.product).toBeDefined()
+      expect(result.product?.name).toBe(productData.name)
+      expect(result.product?.price).toBe(productData.price)
+      expect(result.product?.category).toBe(productData.category)
+      expect(result.product?.inStock).toBe(true) // Default value
+      expect(result.product?.id).toBe(1)
+      expect(result.product?.createdAt).toBeInstanceOf(Date)
+    })
 
-### Backend Validation
-```typescript
-body: t.Object({
-  name: t.String({ minLength: 2, maxLength: 100 }),
-  email: t.String({ format: "email" }),
-  age: t.Number({ minimum: 0, maximum: 120 })
+    it('should create product with explicit inStock value', async () => {
+      const productData = {
+        name: 'Out of Stock Product',
+        price: 19.99,
+        category: 'Limited',
+        inStock: false
+      }
+
+      const result = await ProductsController.createProduct(productData)
+      
+      expect(result.success).toBe(true)
+      expect(result.product?.inStock).toBe(false)
+    })
+  })
+
+  describe('getProduct', () => {
+    it('should return product if exists', async () => {
+      // Create a product first
+      const createResult = await ProductsController.createProduct({
+        name: 'Find Me',
+        price: 15.99,
+        category: 'Test'
+      })
+
+      const result = await ProductsController.getProduct(createResult.product!.id)
+      
+      expect(result.success).toBe(true)
+      expect(result.product).toBeDefined()
+      expect(result.product?.name).toBe('Find Me')
+    })
+
+    it('should return error if product not found', async () => {
+      const result = await ProductsController.getProduct(999)
+      
+      expect(result.success).toBe(false)
+      expect(result.message).toBe('Product not found')
+      expect(result.product).toBeUndefined()
+    })
+  })
+
+  describe('deleteProduct', () => {
+    it('should delete existing product', async () => {
+      // Create a product first
+      const createResult = await ProductsController.createProduct({
+        name: 'Delete Me',
+        price: 5.99,
+        category: 'Temporary'
+      })
+
+      const deleteResult = await ProductsController.deleteProduct(createResult.product!.id)
+      
+      expect(deleteResult.success).toBe(true)
+      expect(deleteResult.message).toBe('Product deleted successfully')
+
+      // Verify it's actually deleted
+      const getResult = await ProductsController.getProduct(createResult.product!.id)
+      expect(getResult.success).toBe(false)
+    })
+
+    it('should return error when deleting non-existent product', async () => {
+      const result = await ProductsController.deleteProduct(999)
+      
+      expect(result.success).toBe(false)
+      expect(result.message).toBe('Product not found')
+    })
+  })
 })
 ```
 
-### Frontend Validation
+#### Passo 2: API Integration Tests
 ```typescript
-const validateForm = (data: FormData) => {
-  const errors: string[] = []
-  
-  if (!data.name || data.name.length < 2) {
-    errors.push('Nome deve ter pelo menos 2 caracteres')
+// tests/integration/api/products.routes.test.ts
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
+import { FluxStackFramework } from '@/core/server/framework'
+import { productsRoutes } from '@/app/server/routes/products.routes'
+import { ProductsController } from '@/app/server/controllers/products.controller'
+
+describe('Products API Routes', () => {
+  let app: FluxStackFramework
+  let server: any
+
+  beforeAll(async () => {
+    app = new FluxStackFramework({
+      server: { port: 0, host: 'localhost', apiPrefix: '/api' },
+      app: { name: 'test-app', version: '1.0.0' }
+    })
+    
+    app.routes(productsRoutes)
+    server = app.getApp()
+  })
+
+  beforeEach(() => {
+    // Reset controller data between tests
+    ProductsController.reset()
+  })
+
+  describe('GET /api/products', () => {
+    it('should return empty products list', async () => {
+      const response = await server
+        .handle(new Request('http://localhost/api/products'))
+        
+      expect(response.status).toBe(200)
+      
+      const data = await response.json()
+      expect(data.success).toBe(true)
+      expect(data.products).toEqual([])
+      expect(data.total).toBe(0)
+    })
+
+    it('should return products after creation', async () => {
+      // Create a product first
+      await ProductsController.createProduct({
+        name: 'API Test Product',
+        price: 99.99,
+        category: 'API Testing'
+      })
+
+      const response = await server
+        .handle(new Request('http://localhost/api/products'))
+        
+      expect(response.status).toBe(200)
+      
+      const data = await response.json()
+      expect(data.success).toBe(true)
+      expect(data.products).toHaveLength(1)
+      expect(data.products[0].name).toBe('API Test Product')
+    })
+  })
+
+  describe('POST /api/products', () => {
+    it('should create product with valid data', async () => {
+      const productData = {
+        name: 'New API Product',
+        price: 49.99,
+        category: 'API Created'
+      }
+
+      const response = await server
+        .handle(new Request('http://localhost/api/products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(productData)
+        }))
+        
+      expect(response.status).toBe(200)
+      
+      const data = await response.json()
+      expect(data.success).toBe(true)
+      expect(data.product.name).toBe(productData.name)
+      expect(data.product.price).toBe(productData.price)
+      expect(data.product.id).toBe(1)
+    })
+
+    it('should reject invalid product data', async () => {
+      const invalidData = {
+        name: 'A', // Too short
+        price: -10, // Negative price
+        category: ''  // Empty category
+      }
+
+      const response = await server
+        .handle(new Request('http://localhost/api/products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(invalidData)
+        }))
+        
+      expect(response.status).toBe(422) // Validation error
+    })
+  })
+})
+```
+
+### 4. Padrões de Plugin Development
+
+#### Criando Plugin Customizado
+```typescript
+// app/server/plugins/analytics.plugin.ts
+import type { Plugin, PluginContext } from '@/core/types'
+
+interface AnalyticsConfig {
+  enabled: boolean
+  trackRequests: boolean
+  trackErrors: boolean
+  reportInterval: number
+}
+
+interface RequestMetrics {
+  path: string
+  method: string
+  timestamp: Date
+  responseTime: number
+  statusCode: number
+}
+
+class AnalyticsCollector {
+  private metrics: RequestMetrics[] = []
+  private config: AnalyticsConfig
+
+  constructor(config: AnalyticsConfig) {
+    this.config = config
+    
+    if (config.enabled && config.reportInterval > 0) {
+      setInterval(() => this.generateReport(), config.reportInterval)
+    }
   }
-  
-  if (!data.email || !/\S+@\S+\.\S+/.test(data.email)) {
-    errors.push('Email inválido')
+
+  recordRequest(metric: RequestMetrics) {
+    if (!this.config.trackRequests) return
+    this.metrics.push(metric)
   }
-  
-  return errors
+
+  generateReport() {
+    const report = {
+      totalRequests: this.metrics.length,
+      averageResponseTime: this.getAverageResponseTime(),
+      statusCodes: this.getStatusCodeDistribution(),
+      topPaths: this.getTopPaths(),
+      timestamp: new Date()
+    }
+    
+    console.log('📊 Analytics Report:', report)
+    return report
+  }
+
+  private getAverageResponseTime(): number {
+    if (this.metrics.length === 0) return 0
+    return this.metrics.reduce((sum, m) => sum + m.responseTime, 0) / this.metrics.length
+  }
+
+  private getStatusCodeDistribution(): Record<number, number> {
+    return this.metrics.reduce((acc, m) => {
+      acc[m.statusCode] = (acc[m.statusCode] || 0) + 1
+      return acc
+    }, {} as Record<number, number>)
+  }
+
+  private getTopPaths(): Array<{ path: string; count: number }> {
+    const pathCounts = this.metrics.reduce((acc, m) => {
+      acc[m.path] = (acc[m.path] || 0) + 1
+      return acc
+    }, {} as Record<string, number>)
+
+    return Object.entries(pathCounts)
+      .map(([path, count]) => ({ path, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10)
+  }
+
+  getMetrics() {
+    return {
+      totalRequests: this.metrics.length,
+      metrics: this.metrics.slice(-100) // Last 100 requests
+    }
+  }
+
+  reset() {
+    this.metrics = []
+  }
+}
+
+export const analyticsPlugin: Plugin = {
+  name: 'analytics',
+  setup(context: PluginContext) {
+    const config: AnalyticsConfig = {
+      enabled: context.config.custom?.analytics?.enabled ?? true,
+      trackRequests: context.config.custom?.analytics?.trackRequests ?? true,
+      trackErrors: context.config.custom?.analytics?.trackErrors ?? true,
+      reportInterval: context.config.custom?.analytics?.reportInterval ?? 60000 // 1 minute
+    }
+
+    if (!config.enabled) {
+      context.logger.info('Analytics plugin disabled')
+      return
+    }
+
+    const collector = new AnalyticsCollector(config)
+    context.logger.info('Analytics plugin enabled', { config })
+
+    // Track requests
+    context.app.onRequest(({ request }) => {
+      const startTime = Date.now()
+      
+      // Store start time for response measurement
+      ;(request as any).startTime = startTime
+    })
+
+    // Track responses
+    context.app.onResponse(({ request, set }) => {
+      const startTime = (request as any).startTime
+      const responseTime = Date.now() - startTime
+      
+      const url = new URL(request.url)
+      collector.recordRequest({
+        path: url.pathname,
+        method: request.method,
+        timestamp: new Date(),
+        responseTime,
+        statusCode: set.status || 200
+      })
+    })
+
+    // Add analytics endpoint
+    context.app.get('/analytics', () => collector.generateReport(), {
+      detail: {
+        tags: ['Analytics'],
+        summary: 'Get Analytics Report',
+        description: 'Get current analytics and metrics report'
+      }
+    })
+
+    // Add metrics endpoint
+    context.app.get('/metrics', () => collector.getMetrics(), {
+      detail: {
+        tags: ['Analytics'],
+        summary: 'Get Raw Metrics',
+        description: 'Get raw metrics data'
+      }
+    })
+
+    // Add reset endpoint (useful for testing)
+    context.app.delete('/analytics/reset', () => {
+      collector.reset()
+      return { success: true, message: 'Analytics data reset' }
+    }, {
+      detail: {
+        tags: ['Analytics'],
+        summary: 'Reset Analytics',
+        description: 'Reset all analytics data (useful for testing)'
+      }
+    })
+  }
 }
 ```
 
-## Comandos de Desenvolvimento v1.4.0
+#### Usando o Plugin no App
+```typescript
+// app/server/index.ts
+import { FluxStackFramework, loggerPlugin, vitePlugin, swaggerPlugin } from "@/core/server"
+import { analyticsPlugin } from './plugins/analytics.plugin'  // ✨ Plugin customizado
+import { apiRoutes } from "./routes"
 
-### 📦 Instalação Unificada (Monorepo)
-```bash
-# ✨ UMA única instalação para TUDO!
-bun install              # Instala backend + frontend de uma vez
+const app = new FluxStackFramework({
+  server: { port: 3000, host: "localhost", apiPrefix: "/api" },
+  app: { name: "FluxStack", version: "1.0.0" },
+  client: { port: 5173, proxy: { target: "http://localhost:3000" } }
+})
 
-# ✨ Instalar nova library (funciona para ambos!)
-bun add <library>        # Adiciona para frontend E backend
-bun add -d <dev-dep>     # Dev dependency unificada
+// Infrastructure plugins first
+app
+  .use(loggerPlugin)
+  .use(vitePlugin)
+  .use(analyticsPlugin)  // ✨ Plugin customizado
 
-# Exemplos:
-bun add zod              # ✅ Disponível no frontend E backend
-bun add react-router-dom # ✅ Frontend (tipos no backend)
-bun add prisma           # ✅ Backend (tipos no frontend)
+// Application routes
+app.routes(apiRoutes)
+
+// Swagger last to discover all routes
+app.use(swaggerPlugin)
+
+// Start the application
+app.listen()
 ```
 
-### ⚡ Desenvolvimento com Hot Reload Independente
-```bash
-# Full-stack com hot reload independente
-bun run dev              # Backend:3000 + Frontend integrado:5173
-                        # Hot reload: Backend e frontend separadamente!
+### 5. Padrões de Configuração Avançada
 
-# Desenvolvimento separado
-bun run dev:frontend     # Vite dev server puro (porta 5173)
-bun run dev:backend      # API standalone (porta 3001) 
+#### Custom Configuration
+```typescript
+// fluxstack.config.ts - Configuração personalizada
+import type { FluxStackConfig } from './core/config/schema'
+import { getEnvironmentInfo } from './core/config/env'
 
-# Modo legacy (direto)
-bun run legacy:dev       # Bun --watch direto
+const env = getEnvironmentInfo()
+
+export const config: FluxStackConfig = {
+  app: {
+    name: 'My Advanced App',
+    version: '2.0.0',
+    description: 'Advanced FluxStack application with custom features'
+  },
+
+  server: {
+    port: parseInt(process.env.PORT || '3000', 10),
+    host: process.env.HOST || 'localhost',
+    apiPrefix: '/api/v2',  // Custom API prefix
+    cors: {
+      origins: env.isProduction 
+        ? ['https://myapp.com', 'https://admin.myapp.com']
+        : ['http://localhost:3000', 'http://localhost:5173'],
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+      headers: ['Content-Type', 'Authorization', 'X-API-Key'],
+      credentials: true,
+      maxAge: 86400
+    }
+  },
+
+  plugins: {
+    enabled: ['logger', 'swagger', 'vite', 'analytics'],
+    config: {
+      swagger: {
+        title: 'My Advanced API',
+        version: '2.0.0',
+        description: 'Advanced API with comprehensive endpoints'
+      },
+      analytics: {
+        enabled: env.isProduction,
+        trackRequests: true,
+        trackErrors: true,
+        reportInterval: env.isProduction ? 300000 : 60000  // 5min prod, 1min dev
+      }
+    }
+  },
+
+  logging: {
+    level: env.isProduction ? 'warn' : 'debug',
+    format: env.isProduction ? 'json' : 'pretty',
+    transports: env.isProduction ? [
+      { type: 'console', level: 'warn', format: 'json' },
+      { 
+        type: 'file', 
+        level: 'error', 
+        format: 'json',
+        options: { filename: 'logs/error.log', maxSize: '10m', maxFiles: 5 }
+      }
+    ] : [
+      { type: 'console', level: 'debug', format: 'pretty' }
+    ]
+  },
+
+  monitoring: {
+    enabled: env.isProduction,
+    metrics: {
+      enabled: env.isProduction,
+      collectInterval: 10000,
+      httpMetrics: true,
+      systemMetrics: true
+    }
+  },
+
+  // Custom configuration for your application
+  custom: {
+    // Analytics plugin config
+    analytics: {
+      enabled: env.isProduction,
+      trackRequests: true,
+      trackErrors: true,
+      reportInterval: env.isProduction ? 300000 : 60000
+    },
+    
+    // Feature flags
+    features: {
+      advancedSearch: true,
+      realTimeUpdates: env.isProduction,
+      experimentalUI: env.isDevelopment
+    },
+    
+    // Rate limiting
+    rateLimit: {
+      enabled: env.isProduction,
+      windowMs: 15 * 60 * 1000, // 15 minutes
+      maxRequests: env.isProduction ? 100 : 1000
+    }
+  }
+}
+
+export default config
 ```
 
-### 📦 Build System Unificado
-```bash
-# Build completo otimizado
-bun run build               # Frontend + backend (dist/)
-bun run build:frontend     # Apenas frontend (dist/client/)
-bun run build:backend      # Apenas backend (dist/index.js)
+## Padrões Anti-Patterns (❌ NÃO FAZER)
 
-# Produção
-bun run start              # Servidor de produção unificado
-bun run start:frontend     # Frontend estático apenas
-bun run start:backend      # Backend standalone
+### 1. ❌ Editar Core Framework
+```typescript
+// ❌ NUNCA FAZER - Editar core/
+// core/server/framework.ts
+export class FluxStackFramework {
+  // NÃO editar este arquivo!
+}
 ```
 
-### 🧪 Testes (30 testes inclusos)
-```bash
-bun run test              # Modo watch (desenvolvimento)
-bun run test:run         # Executar uma vez (CI/CD)
-bun run test:ui          # Interface visual do Vitest
-bun run test:coverage    # Relatório de cobertura
+### 2. ❌ Criar package.json Separado
+```json
+// ❌ NUNCA FAZER - app/client/package.json
+{
+  "name": "frontend",  // Este arquivo não deve existir!
+  "dependencies": {
+    "react": "^19.0.0"
+  }
+}
 ```
 
-### 🔍 Verificação (se configurado)
-```bash
-bun run lint             # ESLint unificado
-bun run typecheck        # TypeScript check
-bun run format           # Prettier (se configurado)
+### 3. ❌ Ignorar Type Safety
+```typescript
+// ❌ EVITAR
+const data: any = await api.users.get()  // Perde type safety
+
+// ✅ CORRETO
+const data = await apiCall(api.users.get())  // Mantém types
 ```
 
-### Testando APIs (quando disponível)
-```bash
-# Health check
-curl http://localhost:3000/api/health
+### 4. ❌ Hardcoded Configuration
+```typescript
+// ❌ EVITAR
+const app = new FluxStackFramework({
+  server: { port: 3000 }  // Hardcoded
+})
 
-# Testar endpoints
-curl http://localhost:3000/api/users
-curl -X POST http://localhost:3000/api/users \
-  -H "Content-Type: application/json" \
-  -d '{"name": "João", "email": "joao@example.com"}'
+// ✅ CORRETO
+const app = new FluxStackFramework({
+  server: { 
+    port: parseInt(process.env.PORT || '3000', 10)  // Configurável
+  }
+})
 ```
 
-## Debugging e Troubleshooting v1.4.0
+### 5. ❌ Pular Testes
+```typescript
+// ❌ EVITAR - Não implementar sem testes
+export function criticalFeature() {
+  // Código sem testes
+}
 
-### 🔍 Hot Reload Intelligence
-```bash
-# Logs esperados no desenvolvimento:
-⚡ FluxStack Full-Stack Development
-🚀 API ready at http://localhost:3000/api
-✅ Vite já está rodando na porta 5173  
-🔄 Backend hot reload independente do frontend
+// ✅ CORRETO - Sempre com testes
+export function criticalFeature() {
+  // Código testado em tests/
+}
 ```
 
-**Como funciona:**
-1. **Backend change** → Bun reinicia (~500ms), Vite continua
-2. **Frontend change** → Vite HMR (~100ms), backend não afetado
-3. **Vite já rodando** → CLI detecta e não reinicia
+## Workflow Recomendado para IAs
 
-### 🌍 URLs de Desenvolvimento
-- **Frontend integrado**: `http://localhost:3000`
-- **Frontend Vite**: `http://localhost:5173`  
-- **API**: `http://localhost:3000/api/*`
-- **Swagger UI**: `http://localhost:3000/swagger`
-- **Health Check**: `http://localhost:3000/api/health`
-- **Backend standalone**: `http://localhost:3001`
+### 📝 Checklist para Novas Features
 
-### 🚫 Common Issues v1.4.0
+#### Antes de Começar:
+- [ ] ✅ **Verificar se lib existe**: `grep "<library>" package.json`
+- [ ] 🔍 **Analisar arquitetura atual**: Entender como features similares foram implementadas
+- [ ] 📊 **Planejar testes**: Como a feature será testada?
 
-#### "Package.json not found in app/client"
-✅ **Solução**: Normal na v1.4.0! Não há mais package.json no client.
+#### Durante o Desenvolvimento:
+- [ ] 🎯 **Definir types em `app/shared/`**: Type-safety primeiro
+- [ ] 🏗️ **Criar controller testável**: Lógica de negócio isolada
+- [ ] 🛣️ **Implementar routes com Swagger**: Documentação completa
+- [ ] 🎨 **Integrar no frontend**: Eden Treaty para type-safety
+- [ ] 🧪 **Escrever testes abrangentes**: Unit + Integration tests
+- [ ] ⚙️ **Configurar adequadamente**: Usar sistema de config robusto
 
-#### "Library not found" no frontend
-✅ **Solução**: `bun add <library>` no root (instala para ambos)
+#### Depois de Implementar:
+- [ ] 🧪 **Rodar todos os testes**: `bun run test:run` (manter 100%)
+- [ ] 🔍 **Verificar TypeScript**: Zero erros obrigatório
+- [ ] 📚 **Testar Swagger docs**: Documentação funcionando?
+- [ ] 🔄 **Testar hot reload**: Both frontend e backend
+- [ ] 🏗️ **Build de produção**: `bun run build` funcionando?
 
-#### "Types not found" entre frontend/backend
-✅ **Solução**: Colocar tipos em `app/shared/types.ts`
+### 🚨 Comandos Essenciais para IAs
 
-#### "Vite not starting" ou "Port already in use"
-✅ **Solução**: CLI detecta automaticamente e não reinicia
-
-#### "Eden Treaty types not working"
-✅ **Solução**: Verificar export `App` em `app/server/app.ts`
-
-#### "Hot reload not working"
-✅ **Solução**: Usar `bun run dev` (não `bun run legacy:dev`)
-
-### 🧠 Build Issues
 ```bash
-# Limpar builds anteriores
-rm -rf dist/
-rm -rf node_modules/.vite/
+# Verificar se lib já existe
+grep "<library>" package.json
 
-# Reinstalar dependências
-rm -rf node_modules/ bun.lockb
-bun install
+# Instalar nova library (root do projeto)
+bun add <library>
 
-# Build limpo
-bun run build
+# Desenvolvimento
+bun run dev              # Full-stack
+bun run dev:backend      # Backend apenas
+bun run dev:frontend     # Frontend apenas
+
+# Testes (manter 100% de sucesso)
+bun run test:run         # Todos os testes
+bun run test:ui          # Interface visual
+
+# Verificação de qualidade
+bun run build            # Build production
+tsc --noEmit            # Check TypeScript errors
+
+# Git workflow
+git add .
+git commit -m "feat: add new feature with tests"
 ```
 
-### 📊 Performance Monitoring
-```bash
-# Verificar performance da instalação
-time bun install        # ~3-15s (vs ~30-60s dual package.json)
+### 🎯 Melhores Práticas Resumidas
 
-# Verificar hot reload
-# Backend: ~500ms reload
-# Frontend: ~100ms HMR
+1. **🔒 Type-Safety First**: Definir types antes de implementar
+2. **🧪 Test-Driven**: Escrever testes durante desenvolvimento
+3. **📚 Document Everything**: Swagger completo para todas as APIs
+4. **⚙️ Configure Properly**: Usar sistema de configuração robusto
+5. **🔄 Leverage Hot Reload**: Aproveitar recarregamento independente
+6. **📦 Monorepo Benefits**: Uma instalação, configuração unificada
+7. **🎨 Eden Treaty**: Type-safety automática client/server
+8. **🏗️ Plugin Architecture**: Extensibilidade via plugins
+9. **📊 Monitor Quality**: 312 testes, zero erros TS
+10. **🚀 Production Ready**: Build e deploy otimizados
 
-# Verificar build size
-ls -la dist/client/assets/  # Frontend bundles
-ls -la dist/index.js        # Backend bundle
-```
+### Conclusão
 
-### 📝 Para IAs: Checklist v1.4.0
+FluxStack v1.4.1 oferece padrões de desenvolvimento maduros e testados. Com 89 arquivos TypeScript, 312 testes passando e zero erros de compilação, representa uma base sólida para desenvolvimento full-stack moderno com excelente developer experience.
 
-#### ✅ FAZER:
-1. Instalar libs no root: `bun add <library>`
-2. Tipos compartilhados em `app/shared/`
-3. Usar Eden Treaty para APIs: `await apiCall(api.users.get())`
-4. Documentar rotas com Swagger: `detail: { tags: [...], summary: '...' }`
-5. Usar path aliases: `@/shared/types`, `@/lib/eden-api`
-6. Criar testes para novos recursos
-7. Aproveitar hot reload independente
-
-#### ⛔ NÃO FAZER:
-1. NãO editar `core/` (read-only)
-2. NãO criar `app/client/package.json` (removido!)
-3. NãO instalar deps separadamente (`cd app/client`)
-4. NãO quebrar type-safety (usar `any`)
-5. NãO ignorar Swagger documentation
-6. Não usar fetch manual (usar Eden Treaty)
-7. NãO duplicar configurações
-
-Seguindo estes padrões v1.4.0, você terá código type-safe, performático e de fácil manutenção no FluxStack! ⚡
+**Status**: ✅ **Production Ready** - Padrões consolidados e completamente testados.

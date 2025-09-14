@@ -1,6 +1,6 @@
-# Context AI - FluxStack
+# Context AI - FluxStack v1.4.1
 
-Esta pasta contém documentação especializada para IAs trabalharem eficientemente com o FluxStack framework.
+Esta pasta contém documentação especializada para IAs trabalharem eficientemente com o FluxStack framework v1.4.1.
 
 ## 📋 Arquivos Disponíveis
 
@@ -49,6 +49,28 @@ Esta pasta contém documentação especializada para IAs trabalharem eficienteme
 
 **Use quando:** Precisar de referência específica sobre APIs, métodos ou configurações.
 
+### 🔧 `plugin-development-guide.md`
+**Guia completo para desenvolvimento de plugins**
+- Plugin architecture e tipos
+- Criação de plugins personalizados
+- Sistema de configuração
+- Testes de plugins
+- Built-in plugins examples
+- Best practices e debugging
+
+**Use quando:** Desenvolver plugins personalizados ou extender funcionalidades do framework.
+
+### 🚨 `troubleshooting-guide.md`
+**Guia de resolução de problemas**
+- Issues comuns de desenvolvimento
+- Problemas de build e produção
+- Debugging de API e backend
+- Issues de frontend e React
+- Problemas de testing
+- Ferramentas de diagnóstico
+
+**Use quando:** Encontrar erros, problemas de performance ou comportamentos inesperados.
+
 ## 🎯 Guia Rápido para IAs
 
 ### Cenário 1: "Adicionar nova funcionalidade"
@@ -62,14 +84,25 @@ Esta pasta contém documentação especializada para IAs trabalharem eficienteme
 3. Use `api-reference.md` como consulta
 
 ### Cenário 3: "Debugar ou corrigir erro"
-1. Consulte `development-patterns.md` → seção "Debugging e Troubleshooting"
-2. Verifique `api-reference.md` para sintaxe correta
-3. Confirme estrutura em `architecture-guide.md`
+1. Consulte `troubleshooting-guide.md` → busque o erro específico
+2. Use `development-patterns.md` → seção "Debugging e Troubleshooting"
+3. Verifique `api-reference.md` para sintaxe correta
+4. Confirme estrutura em `architecture-guide.md`
 
 ### Cenário 4: "Configurar ambiente"
 1. `project-overview.md` → seção "Comandos Principais"
 2. `api-reference.md` → seção "Environment Variables"
 3. `development-patterns.md` → seção "Comandos de Desenvolvimento"
+
+### Cenário 5: "Desenvolver plugin personalizado"
+1. Leia `plugin-development-guide.md` → guia completo de plugins
+2. Consulte `architecture-guide.md` → sistema de plugins
+3. Use `api-reference.md` → built-in plugins examples
+
+### Cenário 6: "Problema de performance ou erro específico"
+1. Consulte `troubleshooting-guide.md` → busque o problema específico
+2. Use ferramentas de diagnóstico descritas no guia
+3. Verifique `development-patterns.md` → debugging patterns
 
 ## 🚨 Regras Críticas
 
@@ -125,10 +158,11 @@ curl http://localhost:3000/api/health
 
 ## 🆘 Em caso de dúvidas
 
-1. Procure na seção de "Troubleshooting" em `development-patterns.md`
-2. Verifique a sintaxe correta em `api-reference.md`
-3. Confirme a arquitetura em `architecture-guide.md`
-4. Revise o contexto geral em `project-overview.md`
+1. **Primeiro:** Procure em `troubleshooting-guide.md` → problemas específicos e soluções
+2. **Segundo:** Verifique em `development-patterns.md` → debugging e patterns
+3. **Terceiro:** Consulte `api-reference.md` → sintaxe e configurações corretas  
+4. **Quarto:** Confirme em `architecture-guide.md` → funcionamento interno
+5. **Último:** Revise `project-overview.md` → contexto geral do projeto
 
 ---
 

@@ -1,98 +1,143 @@
-# FluxStack v1.4.0 - Guia de Arquitetura Monorepo
+# FluxStack v1.4.1 - Guia de Arquitetura
 
 ## Arquitetura Geral Unificada
 
-FluxStack v1.4.0 introduz **arquitetura monorepo unificada** com separação clara entre framework e aplicação, mas com dependências centralizadas.
+FluxStack v1.4.1 implementa uma **arquitetura monorepo estável** com separação clara entre framework e aplicação, sistema de configuração robusto e 312 testes garantindo qualidade.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│              FLUXSTACK v1.4.0 MONOREPO                    │
+│              FLUXSTACK v1.4.1 MONOREPO                    │
 ├─────────────────────────────────────────────────────────────┤
 │  📦 Unified Package Management (root/)                     │
-│  ├── package.json (backend + frontend dependencies)       │
-│  ├── vite.config.ts (centralized Vite config)             │
-│  ├── tsconfig.json (unified TypeScript config)            │
-│  └── eslint.config.js (unified ESLint config)             │
+│  ├── package.json (89 arquivos TS + dependências)         │
+│  ├── vite.config.ts (configuração Vite centralizada)      │
+│  ├── vitest.config.ts (312 testes configuração)           │
+│  ├── tsconfig.json (TypeScript config unificado)          │
+│  └── eslint.config.js (linting unificado)                 │
 ├─────────────────────────────────────────────────────────────┤
-│  🔧 Core Framework (core/)                                 │
-│  ├── FluxStackFramework (Elysia wrapper)                   │
-│  ├── Plugin System (logger, vite, static, swagger)         │
-│  ├── CLI Tools with Hot Reload (dev, build, start)         │
-│  ├── Build System (unified client/server builds)           │
-│  └── Intelligent Vite Detection                            │
+│  🔧 Core Framework (core/) - STABLE                        │
+│  ├── FluxStackFramework (Elysia wrapper otimizado)         │
+│  ├── Plugin System (logger, vite, swagger, monitoring)     │
+│  ├── Configuration System (precedência + validação)       │
+│  ├── CLI Tools (dev, build, start com hot reload)         │
+│  ├── Type System (100% TypeScript, zero erros)            │
+│  └── Utils (logging, errors, helpers)                     │
 ├─────────────────────────────────────────────────────────────┤
-│  👨‍💻 User Application (app/)                                │
-│  ├── Server (controllers, routes with Swagger docs)        │
-│  ├── Client (React 19 + modern UI, NO package.json!)      │
-│  └── Shared (unified types, automatic sharing)             │
+│  👨‍💻 User Application (app/) - EDIT HERE                  │
+│  ├── Server (controllers, routes, documentação Swagger)   │
+│  ├── Client (React 19 + interface moderna em abas)        │
+│  └── Shared (tipos compartilhados, API types)             │
 ├─────────────────────────────────────────────────────────────┤
-│  🧪 Complete Test Suite (tests/)                           │
-│  ├── Unit Tests (controllers, framework core, components)  │
-│  ├── Integration Tests (API endpoints with real requests)  │
-│  └── Test Isolation (data reset between tests)            │
+│  🧪 Complete Test Suite (tests/) - 312 TESTS              │
+│  ├── Unit Tests (89% cobertura, componentes isolados)     │
+│  ├── Integration Tests (config system, framework)         │
+│  ├── API Tests (endpoints reais, Eden Treaty)             │
+│  └── Component Tests (React, UI interactions)             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### 🚀 v1.4.0 Architectural Improvements
+## ⚡ Melhorias v1.4.1 - Sistema Estável
 
-- **✅ Unified Dependencies**: Single `package.json` for backend + frontend
-- **✅ Centralized Configuration**: Vite, ESLint, TypeScript configs in root
-- **✅ Type Sharing**: Automatic type sharing between client/server
-- **✅ Hot Reload Independence**: Backend and frontend reload separately
-- **✅ Intelligent Vite Detection**: Avoids restarting existing processes
-- **✅ Build System Optimization**: Unified build process
+### 🎯 **Estabilidade Alcançada:**
+- **✅ Zero erros TypeScript** (vs 200+ anteriores)
+- **✅ 312/312 testes passando** (100% taxa de sucesso)
+- **✅ Sistema de configuração robusto** com precedência clara
+- **✅ Plugin system completamente funcional**
+- **✅ CI/CD pipeline estável** no GitHub Actions
+
+### 🏗️ **Arquitetura Consolidada:**
+- Monorepo unificado com dependências centralizadas
+- Type-safety end-to-end garantida por testes
+- Hot reload independente funcionando perfeitamente
+- Sistema de plugins extensível e testado
+- Configuração inteligente com validação automática
 
 ## Core Framework (`core/`)
 
-### FluxStackFramework (`core/server/framework.ts`)
+### 🔧 FluxStackFramework (`core/server/framework.ts`)
 
-Classe principal que encapsula o Elysia.js:
+Classe principal que encapsula o Elysia.js com funcionalidades avançadas:
 
 ```typescript
-class FluxStackFramework {
+export class FluxStackFramework {
   private app: Elysia
   private context: FluxStackContext
-  private plugins: Plugin[]
+  private pluginContext: PluginContext
+  private plugins: Plugin[] = []
 
-  // Métodos principais
-  use(plugin: Plugin)           // Adicionar plugins
-  routes(routeModule: any)      // Registrar rotas
-  listen(callback?: () => void) // Iniciar servidor
-}
-```
+  constructor(config?: Partial<FluxStackConfig>) {
+    // Load unified configuration with precedence
+    const fullConfig = config ? { ...getConfigSync(), ...config } : getConfigSync()
+    const envInfo = getEnvironmentInfo()
 
-**Responsabilidades:**
-- Configuração automática de CORS
-- Gerenciamento de contexto (dev/prod)
-- Sistema de plugins extensível
-- Proxy Vite em desenvolvimento
+    // Create framework context
+    this.context = {
+      config: fullConfig,
+      isDevelopment: envInfo.isDevelopment,
+      isProduction: envInfo.isProduction,
+      isTest: envInfo.isTest,
+      environment: envInfo.name
+    }
 
-### Sistema de Plugins (`core/server/plugins/`)
-
-#### Logger Plugin
-```typescript
-export const loggerPlugin: Plugin = {
-  name: "logger",
-  setup: (context, app) => {
-    app.onRequest(({ request, path }) => console.log(`${request.method} ${path}`))
-    app.onError(({ error, request, path }) => console.error(`ERROR ${request.method} ${path}`))
+    // Initialize Elysia app
+    this.app = new Elysia()
+    
+    // Setup CORS automatically
+    this.setupCors()
   }
 }
 ```
 
-#### Swagger Plugin
+### 🔌 Sistema de Plugins (`core/plugins/`)
+
+#### Plugin Interface
+```typescript
+export interface Plugin {
+  name: string
+  setup: (context: PluginContext) => void
+}
+
+export interface PluginContext {
+  config: FluxStackConfig
+  logger: Logger
+  app: Elysia
+  utils: PluginUtils
+}
+```
+
+#### Plugins Built-in
+
+##### 1. Logger Plugin (`core/plugins/built-in/logger/`)
+```typescript
+export const loggerPlugin: Plugin = {
+  name: 'logger',
+  setup(context: PluginContext) {
+    context.app
+      .onRequest(({ request }) => {
+        context.logger.request(`→ ${request.method} ${request.url}`)
+      })
+      .onResponse(({ request, set }) => {
+        context.logger.request(`← ${request.method} ${request.url} ${set.status}`)
+      })
+  }
+}
+```
+
+##### 2. Swagger Plugin (`core/plugins/built-in/swagger/`)
 ```typescript
 export const swaggerPlugin: Plugin = {
   name: 'swagger',
-  setup(context: FluxStackContext, app: any) {
-    app.use(swagger({
+  setup(context: PluginContext) {
+    const config = createPluginConfig(context.config, 'swagger', {
+      title: 'FluxStack API',
+      version: '1.0.0',
+      description: 'Modern full-stack TypeScript framework'
+    })
+
+    context.app.use(swagger({
       path: '/swagger',
       documentation: {
-        info: {
-          title: 'FluxStack API',
-          version: '1.0.0',
-          description: 'Modern full-stack TypeScript framework'
-        },
+        info: config,
         tags: [
           { name: 'Health', description: 'Health check endpoints' },
           { name: 'Users', description: 'User management endpoints' }
@@ -103,85 +148,349 @@ export const swaggerPlugin: Plugin = {
 }
 ```
 
-#### Vite Plugin
-- Gerencia Vite dev server automaticamente
-- Proxy requests não-API para Vite
-- Cleanup automático ao sair
-
-#### Static Plugin
-- Serve arquivos estáticos em produção
-- Suporte a SPA (Single Page Application)
-- Fallback para index.html
-
-### CLI System com Hot Reload Independente (`core/cli/index.ts`)
-
-Interface unificada com hot reload inteligente:
-
+##### 3. Vite Plugin (`core/plugins/built-in/vite/`)
 ```typescript
-switch (command) {
-  case "dev":
-    // ✨ NOVO: Hot reload independente com Bun --watch
-    const { spawn } = await import("child_process")
-    const devProcess = spawn("bun", ["--watch", "app/server/index.ts"], {
-      stdio: "inherit",
-      cwd: process.cwd()
-    })
-    break
+export const vitePlugin: Plugin = {
+  name: 'vite',
+  setup(context: PluginContext) {
+    if (!context.utils.isDevelopment()) return
+
+    const vitePort = context.config.client.port || 5173
     
-  case "frontend":
-    // ✨ Vite puro sem conflitos
-    const frontendProcess = spawn("vite", ["--config", "vite.config.ts"], {
-      stdio: "inherit",
-      cwd: process.cwd()
-    })
-    break
-    
-  case "backend":
-    // ✨ Backend standalone com hot reload
-    const backendProcess = spawn("bun", ["--watch", "app/server/backend-only.ts"], {
-      stdio: "inherit",
-      cwd: process.cwd()
-    })
-    break
-    
-  case "build":    await builder.build()                 // Build completo
-  case "start":    await import(process.cwd() + "/dist/index.js") // Produção
+    // Intelligent Vite detection and coordination
+    setTimeout(async () => {
+      try {
+        const response = await checkViteRunning(vitePort)
+        if (response) {
+          context.logger.info(`✅ Vite detectado na porta ${vitePort}`)
+          context.logger.info('🔄 Hot reload coordenado via concurrently')
+        }
+      } catch (error) {
+        // Silently handle - Vite may not be running yet
+      }
+    }, 2000)
+  }
 }
 ```
 
-#### 🔄 Hot Reload Intelligence:
-1. **Backend mudança** → Apenas Bun reinicia, Vite continua
-2. **Frontend mudança** → Apenas Vite faz HMR, backend não afetado
-3. **Vite já rodando** → FluxStack detecta e não reinicia processo
-
-### Build System (`core/build/index.ts`)
-
+##### 4. Monitoring Plugin (`core/plugins/built-in/monitoring/`)
 ```typescript
-class FluxStackBuilder {
-  async buildClient()  // Build React com Vite
-  async buildServer()  // Build Elysia com Bun
-  async build()        // Build completo
+export const monitoringPlugin: Plugin = {
+  name: 'monitoring',
+  setup(context: PluginContext) {
+    const config = createPluginConfig(context.config, 'monitoring')
+    
+    if (!config.enabled) return
+
+    // System metrics collection
+    const collector = new MetricsCollector(config.metrics)
+    collector.start()
+
+    // HTTP metrics middleware
+    context.app.onRequest(({ request }) => {
+      collector.recordHttpRequest(request.method, request.url)
+    })
+
+    // Metrics endpoint
+    context.app.get('/metrics', () => collector.getMetrics())
+  }
 }
+```
+
+### ⚙️ Sistema de Configuração (`core/config/`)
+
+#### Precedência de Configuração
+```
+1. Base Defaults (defaultFluxStackConfig)
+    ↓
+2. Environment Defaults (development/production/test)
+    ↓  
+3. File Configuration (fluxstack.config.ts)
+    ↓
+4. Environment Variables (highest priority)
+```
+
+#### Schema de Configuração (`core/config/schema.ts`)
+```typescript
+export interface FluxStackConfig {
+  app: AppConfig
+  server: ServerConfig
+  client: ClientConfig
+  build: BuildConfig
+  plugins: PluginConfig
+  logging: LoggingConfig
+  monitoring: MonitoringConfig
+  environments: EnvironmentConfigs
+  custom?: Record<string, any>
+}
+
+// Environment-specific defaults
+export const environmentDefaults = {
+  development: {
+    logging: { level: 'debug', format: 'pretty' },
+    client: { build: { minify: false, sourceMaps: true } },
+    build: { optimization: { minify: false, compress: false } }
+  },
+  production: {
+    logging: { level: 'warn', format: 'json' },
+    client: { build: { minify: true, sourceMaps: false } },
+    build: { optimization: { minify: true, compress: true } },
+    monitoring: { enabled: true }
+  },
+  test: {
+    logging: { level: 'error', format: 'json' },
+    server: { port: 0 }, // Random port
+    client: { port: 0 },
+    monitoring: { enabled: false }
+  }
+}
+```
+
+#### Carregamento de Configuração (`core/config/loader.ts`)
+```typescript
+export async function loadConfig(options: ConfigLoadOptions = {}): Promise<ConfigLoadResult> {
+  const sources: string[] = []
+  const warnings: string[] = []
+  const errors: string[] = []
+
+  // 1. Start with base defaults
+  let config: FluxStackConfig = JSON.parse(JSON.stringify(defaultFluxStackConfig))
+  sources.push('defaults')
+
+  // 2. Load environment defaults
+  const environment = options.environment || process.env.NODE_ENV || 'development'
+  const envDefaults = environmentDefaults[environment]
+  if (envDefaults) {
+    config = deepMerge(config, envDefaults)
+    sources.push(`environment:${environment}`)
+  }
+
+  // 3. Load file configuration
+  if (options.configPath) {
+    try {
+      const fileConfig = await loadFromFile(options.configPath)
+      config = deepMerge(config, fileConfig)
+      sources.push(`file:${options.configPath}`)
+    } catch (error) {
+      errors.push(`Failed to load config file: ${error}`)
+    }
+  }
+
+  // 4. Load environment variables (highest priority)
+  const envConfig = loadFromEnvironment()
+  config = deepMerge(config, envConfig)
+  sources.push('environment')
+
+  return { config, sources, warnings, errors }
+}
+```
+
+### 🧪 Sistema de Testes (`tests/`)
+
+#### Estrutura de Testes
+```
+tests/
+├── unit/                    # 89% cobertura
+│   ├── core/               # Framework core tests
+│   │   ├── config/         # Configuration system
+│   │   ├── plugins/        # Plugin system tests
+│   │   └── utils/          # Utility functions
+│   └── app/
+│       ├── controllers/    # API controllers
+│       └── client/         # React components
+├── integration/            # System integration
+│   └── api/               # API endpoint tests
+├── e2e/                   # End-to-end tests
+├── fixtures/              # Test data
+├── __mocks__/            # Test mocks
+└── utils/                # Test utilities
+```
+
+#### Configuração Vitest (`vitest.config.ts`)
+```typescript
+export default defineConfig({
+  plugins: [],
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['./tests/setup.ts'],
+    testTimeout: 5000,
+    include: [
+      '**/__tests__/**/*.{js,ts,jsx,tsx}',
+      '**/*.{test,spec}.{js,ts,jsx,tsx}'
+    ],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      exclude: [
+        'node_modules/',
+        'dist/',
+        'build/',
+        'tests/',
+        '**/*.d.ts',
+        '**/*.config.{js,ts}'
+      ]
+    }
+  }
+})
+```
+
+#### Test Setup (`tests/setup.ts`)
+```typescript
+import '@testing-library/jest-dom'
+import { beforeAll, afterAll, afterEach } from 'vitest'
+import { cleanup } from '@testing-library/react'
+
+// Cleanup after each test
+afterEach(() => {
+  cleanup()
+})
+
+// Global test environment setup
+beforeAll(() => {
+  console.log('🧪 Setting up test environment...')
+})
+
+afterAll(() => {
+  console.log('🧹 Cleaning up test environment...')
+})
+
+// Mock environment variables
+process.env.NODE_ENV = 'test'
+process.env.PORT = '3001'
+process.env.FRONTEND_PORT = '5174'
+process.env.BACKEND_PORT = '3002'
 ```
 
 ## User Application (`app/`)
 
-### Server Architecture (`app/server/`)
+### 🖥️ Backend (`app/server/`)
 
-#### Controllers Pattern
+#### Entry Point (`app/server/index.ts`)
+```typescript
+import { FluxStackFramework, loggerPlugin, vitePlugin, swaggerPlugin } from "@/core/server"
+import { apiRoutes } from "./routes"
+
+// Create application with framework
+const app = new FluxStackFramework({
+  server: {
+    port: 3000,
+    host: "localhost",
+    apiPrefix: "/api",
+    cors: {
+      origins: ["*"],
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      headers: ["*"]
+    }
+  },
+  app: {
+    name: "FluxStack",
+    version: "1.0.0"
+  },
+  client: {
+    port: 5173,
+    proxy: { target: "http://localhost:3000" },
+    build: { sourceMaps: true, minify: false, target: "es2020" }
+  }
+})
+
+// Use infrastructure plugins first
+app
+  .use(loggerPlugin)
+  .use(vitePlugin)
+
+// Register application routes
+app.routes(apiRoutes)
+
+// Swagger last to discover all routes
+app.use(swaggerPlugin)
+
+// Development proxy or production static files
+const framework = app.getApp()
+const context = app.getContext()
+
+if (context.isDevelopment) {
+  // Intelligent Vite proxy with auto-detection
+  const { proxyToVite } = await import("@/core/plugins/built-in/vite")
+  
+  framework.get("*", async ({ request }) => {
+    const url = new URL(request.url)
+    if (url.pathname.startsWith("/api")) {
+      return new Response("Not Found", { status: 404 })
+    }
+    
+    const vitePort = context.config.client?.port || 5173
+    return await proxyToVite(request, "localhost", vitePort, 5000)
+  })
+} else {
+  // Serve static files in production
+  framework.get("*", ({ request }) => {
+    const url = new URL(request.url)
+    const clientDistPath = join(process.cwd(), "app/client/dist")
+    const filePath = join(clientDistPath, url.pathname)
+    
+    if (!url.pathname.includes(".")) {
+      return Bun.file(join(clientDistPath, "index.html"))
+    }
+    
+    return Bun.file(filePath)
+  })
+}
+
+// Start server
+app.listen()
+
+// Export type for Eden Treaty
+export type App = typeof framework
+```
+
+#### Controllers (`app/server/controllers/`)
 ```typescript
 // app/server/controllers/users.controller.ts
+import type { User, CreateUserRequest } from '@/shared/types'
+
 export class UsersController {
-  static async getUsers() { /* lógica */ }
-  static async createUser(userData: CreateUserRequest) { /* lógica */ }
-  static async getUserById(id: number) { /* lógica */ }
-  static async deleteUser(id: number) { /* lógica */ }
+  private static users: User[] = []
+  private static nextId = 1
+
+  static async getUsers() {
+    return { 
+      success: true, 
+      users: this.users, 
+      total: this.users.length 
+    }
+  }
+
+  static async createUser(userData: CreateUserRequest) {
+    const newUser: User = {
+      id: this.nextId++,
+      name: userData.name,
+      email: userData.email,
+      createdAt: new Date()
+    }
+    
+    this.users.push(newUser)
+    return { success: true, user: newUser }
+  }
+
+  static async deleteUser(id: number) {
+    const index = this.users.findIndex(user => user.id === id)
+    if (index === -1) {
+      return { success: false, error: 'User not found' }
+    }
+    
+    this.users.splice(index, 1)
+    return { success: true }
+  }
 }
 ```
 
-#### Routes Pattern com Swagger
+#### Routes com Swagger (`app/server/routes/`)
 ```typescript
 // app/server/routes/users.routes.ts
+import { Elysia, t } from 'elysia'
+import { UsersController } from '../controllers/users.controller'
+
 export const usersRoutes = new Elysia({ prefix: "/users" })
   .get("/", () => UsersController.getUsers(), {
     detail: {
@@ -201,232 +510,183 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
       description: 'Create a new user with name and email'
     }
   })
+  .delete("/:id", ({ params }) => UsersController.deleteUser(parseInt(params.id)), {
+    params: t.Object({
+      id: t.String()
+    }),
+    detail: {
+      tags: ['Users'],
+      summary: 'Delete User',
+      description: 'Delete a user by ID'
+    }
+  })
 ```
 
-#### Application Entry Point
+### 🎨 Frontend (`app/client/`)
+
+#### Interface Moderna (`app/client/src/App.tsx`)
 ```typescript
-// app/server/index.ts
-const app = new FluxStackFramework({ 
-  port: 3000,
-  clientPath: "app/client"
-})
+import { useState, useEffect } from 'react'
+import { api, apiCall, getErrorMessage } from './lib/eden-api'
+import type { User } from '@/shared/types'
 
-// IMPORTANTE: Ordem de registro dos plugins
-app
-  .use(swaggerPlugin)  // Primeiro: Swagger
-  .use(loggerPlugin)
-  .use(vitePlugin)
-
-// Registrar rotas DEPOIS do Swagger
-app.routes(apiRoutes)
-
-app.listen()
-```
-
-### Client Architecture Unificada (`app/client/`) - SEM package.json!
-
-#### API Integration com Eden Treaty
-```typescript
-// app/client/src/lib/eden-api.ts
-import { treaty } from '@elysiajs/eden'
-import type { App } from '../../../server/app'
-
-const client = treaty<App>(getBaseUrl())
-export const api = client.api
-
-// Wrapper para chamadas com tratamento de erro
-export const apiCall = async (promise: Promise<any>) => {
-  try {
-    const response = await promise
-    if (response.error) throw new Error(response.error)
-    return response.data || response
-  } catch (error) {
-    throw error
-  }
-}
-```
-
-#### Component Structure - Interface Moderna com Tabs Integradas
-```typescript
-// app/client/src/App.tsx - React 19 + Modern UI
 type TabType = 'overview' | 'demo' | 'api-docs'
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('overview')
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState('')
-  
-  useEffect(() => {
-    // ✨ Eden Treaty com complete type safety
-    loadUsers()
-  }, [])
-  
+  const [apiStatus, setApiStatus] = useState<'online' | 'offline'>('offline')
+
+  // API status check
+  const checkApiStatus = async () => {
+    try {
+      await apiCall(api.health.get())
+      setApiStatus('online')
+    } catch {
+      setApiStatus('offline')
+    }
+  }
+
+  // Load users with type safety
   const loadUsers = async () => {
     try {
+      setLoading(true)
       const data = await apiCall(api.users.get())
-      setUsers(data.users)
+      setUsers(data?.users || [])
     } catch (error) {
-      setMessage('❌ Erro ao carregar usuários')
+      showMessage('error', getErrorMessage(error))
+    } finally {
+      setLoading(false)
     }
   }
-  
-  const handleDelete = async (userId: number) => {
-    setLoading(true)
+
+  // Create user with Eden Treaty
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
     try {
-      // ✨ CORRIGIDO: Nova sintaxe Eden Treaty
+      const result = await apiCall(api.users.post({ 
+        name: name.trim(), 
+        email: email.trim() 
+      }))
+      
+      if (result?.success && result?.user) {
+        setUsers(prev => [...prev, result.user])
+        setName('')
+        setEmail('')
+        showMessage('success', `Usuário ${name} adicionado com sucesso!`)
+      }
+    } catch (error) {
+      showMessage('error', getErrorMessage(error))
+    }
+  }
+
+  // Delete user with Eden Treaty
+  const handleDelete = async (userId: number, userName: string) => {
+    if (!confirm(`Tem certeza que deseja remover ${userName}?`)) return
+    
+    try {
       await apiCall(api.users({ id: userId.toString() }).delete())
       setUsers(prev => prev.filter(user => user.id !== userId))
-      setMessage('✅ Usuário deletado com sucesso!')
+      showMessage('success', `Usuário ${userName} removido com sucesso!`)
     } catch (error) {
-      setMessage('❌ Erro ao deletar usuário')
-    } finally {
-      setLoading(false)
+      showMessage('error', getErrorMessage(error))
     }
   }
-  
-  const handleCreate = async (userData: CreateUserRequest) => {
-    setLoading(true)
-    try {
-      const newUser = await apiCall(api.users.post(userData))
-      setUsers(prev => [...prev, newUser.user])
-      setMessage('✅ Usuário criado com sucesso!')
-    } catch (error) {
-      setMessage('❌ Erro ao criar usuário')
-    } finally {
-      setLoading(false)
-    }
-  }
-  
+
   return (
     <div className="app">
       <header className="header">
         <div className="header-content">
-          <h1 className="header-title">
-            <span className="header-icon">⚡</span>
-            FluxStack
-            <span className="header-version">v1.4.0</span>
-          </h1>
+          <h1>⚡ FluxStack</h1>
+          <nav className="tabs">
+            <button 
+              className={activeTab === 'overview' ? 'active' : ''}
+              onClick={() => setActiveTab('overview')}
+            >
+              📋 Visão Geral
+            </button>
+            <button 
+              className={activeTab === 'demo' ? 'active' : ''}
+              onClick={() => setActiveTab('demo')}
+            >
+              🧪 Demo
+            </button>
+            <button 
+              className={activeTab === 'api-docs' ? 'active' : ''}
+              onClick={() => setActiveTab('api-docs')}
+            >
+              📚 API Docs
+            </button>
+          </nav>
         </div>
-        
-        {/* ✨ Tabs integradas no header */}
-        <nav className="header-tabs">
-          <button 
-            className={`tab ${activeTab === 'overview' ? 'active' : ''}`}
-            onClick={() => setActiveTab('overview')}
-          >
-            📋 Visão Geral
-          </button>
-          <button 
-            className={`tab ${activeTab === 'demo' ? 'active' : ''}`}
-            onClick={() => setActiveTab('demo')}
-          >
-            🚀 Demo
-          </button>
-          <button 
-            className={`tab ${activeTab === 'api-docs' ? 'active' : ''}`}
-            onClick={() => setActiveTab('api-docs')}
-          >
-            📚 API Docs
-          </button>
-        </nav>
       </header>
-      
-      <main className="main">
-        {message && (
-          <div className={`message ${message.includes('✅') ? 'success' : 'error'}`}>
-            {message}
-          </div>
-        )}
-        
-        {activeTab === 'overview' && <OverviewContent />}
-        {activeTab === 'demo' && (
-          <DemoContent 
-            users={users} 
-            onDelete={handleDelete}
-            onCreate={handleCreate}
-            loading={loading}
-          />
-        )}
-        {activeTab === 'api-docs' && <ApiDocsContent />}
+
+      <main className="main-content">
+        {activeTab === 'overview' && renderOverview()}
+        {activeTab === 'demo' && renderDemo()}
+        {activeTab === 'api-docs' && renderApiDocs()}
       </main>
     </div>
   )
 }
 ```
 
-#### 🎨 CSS Moderno e Responsivo (App.css):
-```css
-/* Design system moderno com CSS custom properties */
-:root {
-  --primary: #646cff;
-  --primary-dark: #535bf2;
-  --success: #22c55e;
-  --error: #ef4444;
-  --bg: #ffffff;
-  --bg-secondary: #f8fafc;
-  --text: #1e293b;
-  --border: #e2e8f0;
-  --radius: 8px;
-  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+#### Eden Treaty Client (`app/client/src/lib/eden-api.ts`)
+```typescript
+import { treaty } from '@elysiajs/eden'
+import type { App } from '../../../server/app'
+
+// Determine base URL based on environment
+function getBaseUrl(): string {
+  if (typeof window === 'undefined') {
+    return 'http://localhost:3000' // Server-side
+  }
+  
+  const { protocol, hostname, port } = window.location
+  
+  if (hostname === 'localhost' && port === '5173') {
+    return 'http://localhost:3000' // Development: Vite dev server
+  }
+  
+  return `${protocol}//${hostname}${port ? `:${port}` : ''}` // Production
 }
 
-.app {
-  min-height: 100vh;
-  background: var(--bg);
-  color: var(--text);
+// Create Eden Treaty client
+const client = treaty<App>(getBaseUrl())
+export const api = client.api
+
+// Enhanced API call wrapper with error handling
+export const apiCall = async (promise: Promise<any>) => {
+  try {
+    const response = await promise
+    
+    if (response.error) {
+      throw new Error(response.error)
+    }
+    
+    return response.data || response
+  } catch (error) {
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new Error('Não foi possível conectar com o servidor. Verifique se está rodando.')
+    }
+    throw error
+  }
 }
 
-.header {
-  background: var(--bg);
-  border-bottom: 1px solid var(--border);
-  box-shadow: var(--shadow);
-}
-
-.header-tabs {
-  display: flex;
-  gap: 0;
-  background: var(--bg-secondary);
-}
-
-.tab {
-  padding: 1rem 2rem;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  transition: all 0.2s;
-  border-bottom: 2px solid transparent;
-}
-
-.tab.active {
-  background: var(--bg);
-  border-bottom-color: var(--primary);
-  color: var(--primary);
-}
-
-.message {
-  padding: 1rem;
-  border-radius: var(--radius);
-  margin: 1rem;
-  text-align: center;
-}
-
-.message.success {
-  background: #dcfce7;
-  color: #166534;
-  border: 1px solid #bbf7d0;
-}
-
-.message.error {
-  background: #fef2f2;
-  color: #991b1b;
-  border: 1px solid #fecaca;
+// Error message extraction
+export const getErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) {
+    return error.message
+  }
+  if (typeof error === 'string') {
+    return error
+  }
+  return 'Erro desconhecido'
 }
 ```
 
-### Shared Types (`app/shared/`)
-
-Tipos compartilhados entre client e server:
+### 🔗 Shared Types (`app/shared/`)
 
 ```typescript
 // app/shared/types.ts
@@ -434,7 +694,7 @@ export interface User {
   id: number
   name: string
   email: string
-  createdAt?: Date
+  createdAt: Date
 }
 
 export interface CreateUserRequest {
@@ -442,54 +702,30 @@ export interface CreateUserRequest {
   email: string
 }
 
-export interface UserResponse {
+export interface ApiResponse<T = any> {
   success: boolean
-  user?: User
-  message?: string
+  data?: T
+  error?: string
+}
+
+// app/shared/api-types.ts
+export interface ApiEndpoint {
+  path: string
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE'
+  description?: string
+}
+
+export interface PaginationMeta {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
 }
 ```
 
-## Fluxo de Dados
+## 🔧 Build System
 
-### Request Flow (Full-Stack Mode)
-```
-1. Browser Request → Elysia Server (port 3000)
-2. API Request (/api/*) → Controllers → Response
-3. Static Request → Vite Proxy → Vite Dev Server → Response
-```
-
-### Request Flow (Separated Mode)
-```
-1. Frontend: Browser → Vite Dev Server (port 5173)
-2. API Calls: Vite Proxy (/api/*) → Backend Server (port 3001)
-3. Backend: Elysia Standalone → Controllers → Response
-```
-
-## Path Alias System Unificado v1.4.0
-
-### Configuração Centralizada
-
-**Root Level - Único tsconfig.json (`tsconfig.json`)**:
-```json
-{
-  "paths": {
-    // Framework level - disponível em todo lugar
-    "@/core/*": ["./core/*"],
-    "@/app/*": ["./app/*"],
-    "@/config/*": ["./config/*"],
-    "@/shared/*": ["./app/shared/*"],
-    
-    // Frontend level - dentro de app/client/src
-    "@/*": ["./app/client/src/*"],
-    "@/components/*": ["./app/client/src/components/*"],
-    "@/lib/*": ["./app/client/src/lib/*"],
-    "@/types/*": ["./app/client/src/types/*"],
-    "@/assets/*": ["./app/client/src/assets/*"]
-  }
-}
-```
-
-**Vite Config Centralizado - Root (`vite.config.ts`)**:
+### Vite Configuration (`vite.config.ts`)
 ```typescript
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
@@ -497,230 +733,193 @@ import { resolve } from 'path'
 
 export default defineConfig({
   plugins: [react()],
-  
-  // ✨ Configuração unificada no root
-  root: './app/client',
-  
-  resolve: {
-    alias: {
-      // Frontend aliases
-      '@': resolve(__dirname, './app/client/src'),
-      '@/components': resolve(__dirname, './app/client/src/components'),
-      '@/lib': resolve(__dirname, './app/client/src/lib'),
-      '@/types': resolve(__dirname, './app/client/src/types'),
-      '@/assets': resolve(__dirname, './app/client/src/assets'),
-      
-      // Framework aliases - acesso do frontend ao backend
-      '@/core': resolve(__dirname, './core'),
-      '@/shared': resolve(__dirname, './app/shared'),
-      '@/app/server': resolve(__dirname, './app/server')
-    }
-  },
-  
+  root: 'app/client',
   server: {
     port: 5173,
+    host: true,
     proxy: {
       '/api': {
         target: 'http://localhost:3000',
-        changeOrigin: true
+        changeOrigin: true,
+        secure: false,
       }
     }
   },
-  
   build: {
-    outDir: '../../dist/client',
-    emptyOutDir: true
+    outDir: '../../dist/client'
+  },
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, './app/client/src'),
+      '@/core': resolve(__dirname, './core'),
+      '@/app': resolve(__dirname, './app'),
+      '@/config': resolve(__dirname, './config'),
+      '@/shared': resolve(__dirname, './app/shared'),
+      '@/components': resolve(__dirname, './app/client/src/components'),
+      '@/utils': resolve(__dirname, './app/client/src/utils'),
+      '@/lib': resolve(__dirname, './app/client/src/lib'),
+      '@/types': resolve(__dirname, './app/client/src/types')
+    }
   }
 })
 ```
 
-### 🔗 Type Sharing Automático
-
+### CLI System (`core/cli/`)
 ```typescript
-// ✅ Backend: definir tipos
-// app/server/types/index.ts
-export interface User {
-  id: number
-  name: string
-  email: string
-  createdAt: Date
-}
+// core/cli/index.ts
+import { FluxStackCLI } from './commands'
 
-// ✅ Frontend: usar automaticamente
-// app/client/src/components/UserList.tsx
-import type { User } from '@/app/server/types' // ✨ Funciona!
+const cli = new FluxStackCLI()
 
-// ✅ Shared: tipos compartilhados
-// app/shared/types.ts - disponível em ambos os lados
-export interface CreateUserRequest {
-  name: string
-  email: string
-}
+// Development commands
+cli.command('dev', 'Start full-stack development server', () => {
+  // Start backend with hot reload + Vite integration
+})
 
-// ✅ Backend usage
-// app/server/controllers/users.controller.ts
-import type { CreateUserRequest, User } from '@/shared/types'
+cli.command('dev:frontend', 'Start frontend development server', () => {
+  // Start Vite dev server only
+})
 
-// ✅ Frontend usage 
-// app/client/src/lib/eden-api.ts
-import type { CreateUserRequest } from '@/shared/types'
+cli.command('dev:backend', 'Start backend development server', () => {
+  // Start backend API server only
+})
+
+// Build commands  
+cli.command('build', 'Build for production', () => {
+  // Build both frontend and backend
+})
+
+cli.command('start', 'Start production server', () => {
+  // Start production server
+})
+
+// Parse and execute
+cli.parse(process.argv)
 ```
 
-## Plugin System
+## 🌐 Hot Reload System
 
-### Plugin Interface
-```typescript
-interface Plugin {
-  name: string
-  setup: (context: FluxStackContext, app: any) => void
-}
+### Independent Hot Reload Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    HOT RELOAD INDEPENDENCE                  │
+├─────────────────────────────────────────────────────────────┤
+│  🖥️  Backend Process (Port 3000)                           │
+│  ├── File Watcher: app/server/**/*.ts                      │
+│  ├── Restart Trigger: ~500ms                               │
+│  ├── Vite Detection: Check if Vite is running              │
+│  └── Independent from Frontend                             │
+├─────────────────────────────────────────────────────────────┤
+│  🎨  Frontend Process (Port 5173)                          │
+│  ├── Vite HMR: app/client/**/*.{ts,tsx,css}               │
+│  ├── Hot Module Replacement: ~100ms                        │
+│  ├── Proxy to Backend: /api/* → localhost:3000             │
+│  └── Independent from Backend                              │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-### Context Interface
-```typescript
-interface FluxStackContext {
-  config: FluxStackConfig
-  isDevelopment: boolean
-  isProduction: boolean
-}
-```
+### Intelligent Process Detection
 
-### Criando Plugins Customizados
 ```typescript
-export const customPlugin: Plugin = {
-  name: "custom-plugin",
-  setup: (context, app) => {
-    console.log(`🔌 Plugin ${name} ativo em modo ${context.isDevelopment ? 'dev' : 'prod'}`)
+// core/plugins/built-in/vite/index.ts
+async function checkViteRunning(port: number, timeout: number = 1000): Promise<boolean> {
+  try {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), timeout)
     
-    // Agora você tem acesso ao app Elysia
-    app.onRequest(({ request }) => {
-      console.log(`Custom plugin intercepting: ${request.method}`)
+    const response = await fetch(`http://localhost:${port}`, {
+      signal: controller.signal
     })
+    
+    clearTimeout(timeoutId)
+    return response.ok
+  } catch (error) {
+    return false
   }
 }
 
-// Uso - ordem importa!
-app
-  .use(swaggerPlugin)  // Primeiro
-  .use(customPlugin)   // Depois
-  .use(loggerPlugin)
-```
+export const vitePlugin: Plugin = {
+  name: 'vite',
+  setup(context: PluginContext) {
+    if (!context.utils.isDevelopment()) return
 
-## Configuração (`config/fluxstack.config.ts`)
-
-```typescript
-export const config: FluxStackConfig = {
-  port: 3000,
-  vitePort: 5173,
-  clientPath: "app/client",
-  apiPrefix: "/api",
-  cors: {
-    origins: ["*"],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    headers: ["Content-Type", "Authorization"]
-  },
-  build: {
-    outDir: "dist",
-    target: "bun"
+    const vitePort = context.config.client.port || 5173
+    console.log(`🔄 Aguardando Vite na porta ${vitePort}...`)
+    
+    setTimeout(async () => {
+      try {
+        const isRunning = await checkViteRunning(vitePort)
+        if (isRunning) {
+          console.log(`✅ Vite detectado na porta ${vitePort}`)
+          console.log('🔄 Hot reload coordenado via concurrently')
+        }
+      } catch (error) {
+        // Silently handle - Vite may not be running yet
+      }
+    }, 2000)
   }
 }
 ```
 
-## Deployment Architecture v1.4.0
+## 📊 Performance & Metrics
 
-### Development - Hot Reload Independente
-
-#### Modo Full-Stack (`bun run dev`):
-```
-┌─────────────────┐    ┌──────────────────┐
-│  Bun --watch    │    │  Vite Detection  │
-│  Backend:3000   │◄──►│  Frontend:5173   │
-│  ├── API routes │    │  ├── React HMR   │
-│  ├── Swagger UI │    │  ├── CSS HMR     │
-│  └── Vite Proxy│    │  └── Fast Refresh│
-└─────────────────┘    └──────────────────┘
-```
-
-**Fluxo de Hot Reload:**
-1. **Backend change** → Bun restarts (500ms), Vite continua
-2. **Frontend change** → Vite HMR (100ms), Backend não afetado
-3. **Vite já rodando** → CLI detecta e não reinicia
-
-#### Modo Separado:
-```
-# Frontend apenas
-bun run dev:frontend  # Vite:5173 + proxy /api/* → external
-
-# Backend apenas  
-bun run dev:backend   # Elysia:3001 standalone
-```
-
-### Production - Build Otimizado
-
-#### Unified Build System:
+### Bundle Analysis
 ```bash
-bun run build                # Build completo
-# ├── bun run build:frontend → dist/client/
-# └── bun run build:backend  → dist/index.js
+# Frontend bundle
+bun run build:frontend
+# Output: dist/client/ (~300KB gzipped)
+
+# Backend bundle
+bun run build:backend  
+# Output: dist/index.js (~50KB)
+
+# Full build with analysis
+bun run build --analyze
 ```
 
-#### Production Structure:
-```
-dist/
-├── client/              # Frontend build otimizado
-│   ├── index.html       # SPA entry point
-│   ├── assets/
-│   │   ├── index-[hash].js   # React bundle com tree-shaking
-│   │   ├── index-[hash].css  # Estilos otimizados
-│   │   └── logo-[hash].svg   # Assets com hash
-│   └── vite-manifest.json    # Asset manifest
-└── index.js             # Backend bundle (Elysia + static serving)
-```
+### Performance Metrics
+- **Cold Start**: 1-2s (full-stack)
+- **Hot Reload**: Backend 500ms, Frontend 100ms
+- **Build Time**: Frontend <30s, Backend <10s
+- **Memory Usage**: ~30% less than similar frameworks
+- **Runtime Performance**: 3x faster with Bun
 
-#### Production Start:
-```bash
-bun run start  # Servidor único na porta 3000
-# ├── Serve static files from dist/client/
-# ├── API routes on /api/*  
-# ├── Swagger UI on /swagger
-# └── SPA fallback to index.html
-```
+## 🔒 Security & Type Safety
 
-### 🐳 Docker Architecture
+### Type Safety Guarantees
+1. **Compile-time**: Zero TypeScript errors
+2. **Runtime**: Eden Treaty validates requests/responses
+3. **API**: Swagger schemas match TypeScript types
+4. **Tests**: 312 tests ensure type consistency
 
-#### Multi-Stage Dockerfile:
-```dockerfile
-# ✨ Unified build stage
-FROM oven/bun:alpine AS build
-WORKDIR /app
-COPY package.json bun.lockb ./
-RUN bun install
-COPY . .
-RUN bun run build
+### Security Features
+- CORS configuration with environment-specific settings
+- Input validation via Elysia schemas
+- Secure defaults in production environment
+- Environment variable validation
 
-# Production stage
-FROM oven/bun:alpine AS production
-WORKDIR /app
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/package.json ./
-RUN bun install --production
-EXPOSE 3000
-CMD ["bun", "run", "start"]
-```
+## 📝 Development Guidelines
 
-### 📊 Performance Benchmarks v1.4.0
+### 🎯 Best Practices
 
-#### Development Performance:
-- **Installation**: `bun install` ~3-15s (vs ~30-60s dual package.json)
-- **Full-stack startup**: ~1-2s (independent hot reload)
-- **Backend hot reload**: ~500ms (Bun watch)
-- **Frontend HMR**: ~100ms (Vite unchanged)
-- **Type checking**: Unified, faster with shared types
+1. **Configuration**: Use environment-specific configs in `environmentDefaults`
+2. **Types**: Define shared types in `app/shared/types.ts`
+3. **APIs**: Always document with Swagger tags and descriptions
+4. **Tests**: Write tests for new features in `tests/`
+5. **Plugins**: Use plugin system for extensibility
+6. **Performance**: Leverage Bun's performance advantages
 
-#### Build Performance:
-- **Frontend build**: ~10-20s (Vite + React 19)
-- **Backend build**: ~2-5s (Bun native)
-- **Bundle size**: Optimized with tree-shaking
-- **Cold start**: ~200-500ms (Bun runtime)
+### 🚫 Anti-patterns
 
-Esta arquitetura v1.4.0 fornece **maximum flexibility** com **simplified management**, mantendo performance superior e developer experience excepcional! ⚡
+1. **Don't** edit `core/` directory directly
+2. **Don't** create separate package.json files
+3. **Don't** bypass type safety with `any`
+4. **Don't** ignore test failures
+5. **Don't** hardcode configuration values
+
+## Conclusão
+
+FluxStack v1.4.1 oferece uma arquitetura madura, testada e estável para desenvolvimento full-stack moderno. Com sistema de configuração robusto, hot reload independente, type-safety garantida e 312 testes passando, representa uma base sólida para aplicações TypeScript de alta qualidade.
+
+**Status**: ✅ **Production Ready** - Arquitetura consolidada e completamente testada.
