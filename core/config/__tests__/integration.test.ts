@@ -136,7 +136,7 @@ describe('Configuration System Integration', () => {
       const config = await reloadConfig()
 
       expect(config.logging.level).toBe('info') // Base default (env defaults not applied)
-      expect(config.server.port).toBe(3000) // Base default port used
+      expect(config.server.port).toBe(3001) // Port from test setup (tests/setup.ts sets PORT=3001)
       expect(config.client.port).toBe(5173) // Actual client port used
       expect(config.monitoring.enabled).toBe(false)
     })
@@ -342,7 +342,7 @@ describe('Configuration System Integration', () => {
 
       // Should use file config when available (not fall back completely to defaults)  
       expect(config.app.name).toBe('file-app') // From config file
-      expect(config.server.port).toBe(3000) // Base default port used
+      expect(config.server.port).toBe(3001) // Port from test setup (tests/setup.ts sets PORT=3001)
     })
 
     it('should handle missing configuration file gracefully', async () => {
