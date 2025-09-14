@@ -92,6 +92,24 @@ export type {
   ServiceUnavailableError
 } from "../utils/errors"
 
+// Re-export FluxLive system types
+export type {
+  ComponentIdentity,
+  ComponentLifecycle,
+  ComponentDependency,
+  ComponentState,
+  ComponentMetrics,
+  ComponentDebugInfo,
+  EventScope,
+  LiveEvent,
+  EventHandler,
+  LiveMessage,
+  LiveUpdate,
+  MemoryStats,
+  UseLiveOptions,
+  UseLiveResult
+} from "../live/types"
+
 export type {
   Metric,
   Counter,
