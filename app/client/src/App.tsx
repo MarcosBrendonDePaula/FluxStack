@@ -3,6 +3,8 @@ import './App.css'
 import { api, apiCall, getErrorMessage } from './lib/eden-api'
 import type { User } from '@/shared/types'
 import SimpleLiveCounter from './components/SimpleLiveCounter'
+import RealLiveCounter from './components/RealLiveCounter'
+import OptimizedLiveCounter from './components/OptimizedLiveCounter'
 import './components/LiveCounter.css'
 
 type TabType = 'overview' | 'demo' | 'live-components' | 'api-docs'
@@ -403,20 +405,38 @@ const health = await api.health.get()`}</pre>
 
       <div className="live-components-grid">
         <div className="live-component-demo">
-          <h3>Counter Básico</h3>
-          <SimpleLiveCounter 
+          <h3>⚡ Optimized Counter #1</h3>
+          <OptimizedLiveCounter 
             initialCount={0}
-            userId="user-1"
+            componentId="optimized-counter-1"
             showDebug={false}
           />
         </div>
 
         <div className="live-component-demo">
-          <h3>Counter com Debug</h3>
-          <SimpleLiveCounter 
+          <h3>⚡ Optimized Counter #2</h3>
+          <OptimizedLiveCounter 
+            initialCount={5}
+            componentId="optimized-counter-2"
+            showDebug={false}
+          />
+        </div>
+
+        <div className="live-component-demo">
+          <h3>🔧 Optimized + Debug</h3>
+          <OptimizedLiveCounter 
             initialCount={10}
-            userId="user-2"
+            componentId="optimized-counter-debug"
             showDebug={true}
+          />
+        </div>
+
+        <div className="live-component-demo">
+          <h3>🌟 Individual WebSocket (Old)</h3>
+          <RealLiveCounter 
+            initialCount={0}
+            componentId="individual-counter"
+            showDebug={false}
           />
         </div>
       </div>
@@ -464,6 +484,32 @@ const health = await api.health.get()`}</pre>
             <div>
               <h4>Retry Logic</h4>
               <p>Sistema inteligente de retry com exponential backoff</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="optimization-comparison">
+          <h4>📊 Comparação de Otimização</h4>
+          <div className="comparison-grid">
+            <div className="comparison-item old">
+              <h5>❌ Abordagem Antiga</h5>
+              <ul>
+                <li>Uma conexão WebSocket por componente</li>
+                <li>4 componentes = 4 conexões</li>
+                <li>Alto uso de recursos</li>
+                <li>Limite do navegador (6-10 conexões)</li>
+                <li>Overhead de rede multiplicado</li>
+              </ul>
+            </div>
+            <div className="comparison-item new">
+              <h5>✅ Abordagem Otimizada</h5>
+              <ul>
+                <li>Uma única conexão WebSocket compartilhada</li>
+                <li>N componentes = 1 conexão</li>
+                <li>Message multiplexing inteligente</li>
+                <li>Auto-cleanup quando não há componentes</li>
+                <li>Redução de 75-90% no uso de recursos</li>
+              </ul>
             </div>
           </div>
         </div>

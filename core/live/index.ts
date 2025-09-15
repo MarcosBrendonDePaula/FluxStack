@@ -78,11 +78,11 @@ export {
   withComponentCleanup, 
   useErrorBoundaryCleanup, 
   useBatchCleanup 
-} from './hooks/useComponentCleanup'
+} from './hooks/useComponentCleanup.tsx'
 export type { 
   UseComponentCleanupOptions, 
   UseComponentCleanupResult 
-} from './hooks/useComponentCleanup'
+} from './hooks/useComponentCleanup.tsx'
 
 // React hooks for live components
 export { 
@@ -91,21 +91,21 @@ export {
   useLiveComponents,
   LiveComponentProvider,
   useLiveComponentContext
-} from './hooks/useLiveComponent'
+} from './hooks/useLiveComponent.tsx'
 export type { 
   UseLiveComponentOptions, 
   UseLiveComponentResult 
-} from './hooks/useLiveComponent'
+} from './hooks/useLiveComponent.tsx'
 
 // Improved React hooks with Task 2 features
 export {
   useImprovedLive,
   withImprovedLive
-} from './hooks/useImprovedLive'
+} from './hooks/useImprovedLive.tsx'
 export type {
   UseImprovedLiveOptions,
   UseImprovedLiveResult
-} from './hooks/useImprovedLive'
+} from './hooks/useImprovedLive.tsx'
 
 // Utility functions
 export * from './utils'
@@ -208,13 +208,13 @@ export {
   withEnhancedLive,
   useGlobalLiveStore,
   useGlobalLiveState
-} from './hooks/useEnhancedLive'
+} from './hooks/useEnhancedLive.tsx'
 export type {
   UseEnhancedLiveOptions,
   UseEnhancedLiveResult,
   GlobalStateSelector,
   GlobalStateUpdater
-} from './hooks/useEnhancedLive'
+} from './hooks/useEnhancedLive.tsx'
 
 // Task 5: Component Nesting & Hierarchical Management
 export { ComponentTreeManager } from './ComponentTreeManager'

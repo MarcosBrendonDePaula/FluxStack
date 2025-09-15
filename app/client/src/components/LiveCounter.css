@@ -2,6 +2,98 @@
  * LiveCounter Component Styles
  */
 
+/* Real Live Counter specific styles */
+.real-live-counter {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Optimized Live Counter specific styles */
+.optimized-live-counter {
+  background: linear-gradient(135deg, #059669 0%, #0d9488 100%);
+  border: 2px solid rgba(16, 185, 129, 0.3);
+  box-shadow: 0 8px 32px rgba(5, 150, 105, 0.15);
+}
+
+.optimized-live-counter .counter-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.optimized-live-counter .status.connected {
+  color: #34d399;
+}
+
+.optimized-live-counter::before {
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.real-live-counter .counter-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: 12px;
+}
+
+.status.connected { color: #10b981; }
+.status.connecting { color: #f59e0b; }
+.status.reconnecting { color: #f97316; }
+.status.error { color: #ef4444; }
+.status.disconnected { color: #6b7280; }
+
+.client-id {
+  font-family: monospace;
+  font-size: 0.8rem;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.message-log {
+  max-height: 200px;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  padding: 8px;
+}
+
+.message {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.8rem;
+}
+
+.message:last-child {
+  border-bottom: none;
+}
+
+.message-type {
+  flex-shrink: 0;
+  width: 20px;
+}
+
+.message-content {
+  font-family: monospace;
+  word-break: break-all;
+}
+
+.message.sent { opacity: 0.8; }
+.message.received { opacity: 1; }
+
 .live-counter {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 12px;
