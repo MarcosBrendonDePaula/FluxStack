@@ -7,7 +7,7 @@
  * This is the improved version of useLiveComponent with all Task 2 features.
  */
 
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { RequestTracker } from '../RequestTracker'
 import { OptimisticUpdateManager } from '../OptimisticUpdateManager'
 import { RetryManager } from '../RetryManager'

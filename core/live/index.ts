@@ -166,5 +166,55 @@ export type {
   BrowserLifecycleEvent
 } from './AutomaticCleanupSystem'
 
+// Task 4: Zustand Integration
+export { createLiveComponentsSlice } from './zustand/LiveComponentsSlice'
+export type {
+  ComponentStateEntry,
+  GlobalEvent,
+  GlobalPerformanceMetrics,
+  ConflictResolutionStrategy,
+  PersistenceConfig,
+  LiveComponentsSliceState,
+  LiveComponentsSliceActions,
+  LiveComponentsSlice
+} from './zustand/LiveComponentsSlice'
+
+export { StateConflictResolver } from './StateConflictResolver'
+export type {
+  ConflictStrategy,
+  ConflictSeverity,
+  ConflictDetectionConfig,
+  StateConflict,
+  ResolutionPolicy,
+  CustomResolverFunction,
+  ResolverContext,
+  ConflictResolverConfig,
+  ConflictMetrics
+} from './StateConflictResolver'
+
+export { GlobalStateDebugger } from './GlobalStateDebugger'
+export type {
+  DebugLogEntry,
+  StateChangeEntry,
+  StateSnapshot,
+  DebugConfig,
+  ComponentInspectionData,
+  DetectedIssue
+} from './GlobalStateDebugger'
+
+// Enhanced hooks with Zustand integration
+export {
+  useEnhancedLive,
+  withEnhancedLive,
+  useGlobalLiveStore,
+  useGlobalLiveState
+} from './hooks/useEnhancedLive'
+export type {
+  UseEnhancedLiveOptions,
+  UseEnhancedLiveResult,
+  GlobalStateSelector,
+  GlobalStateUpdater
+} from './hooks/useEnhancedLive'
+
 // Version information
-export const FLUXLIVE_VERSION = '2.2.0'
+export const FLUXLIVE_VERSION = '2.3.0'

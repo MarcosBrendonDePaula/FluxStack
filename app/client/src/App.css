@@ -881,3 +881,153 @@ body {
     font-size: 0.75rem;
   }
 }
+
+/* Live Components Styles */
+.live-components-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.live-components-content h2 {
+  text-align: center;
+  margin-bottom: 1rem;
+  font-size: 2.5rem;
+  color: #1e293b;
+}
+
+.live-components-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 2rem;
+  margin: 2rem 0;
+}
+
+.live-component-demo {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+}
+
+.live-component-demo h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.25rem;
+  color: #374151;
+  text-align: center;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 0.5rem;
+}
+
+.live-components-info {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  margin-top: 2rem;
+}
+
+.live-components-info h3 {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.5rem;
+  color: #1e293b;
+  text-align: center;
+}
+
+.live-components-info .features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.live-components-info .feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.live-components-info .feature-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.live-components-info .feature h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  color: #374151;
+}
+
+.live-components-info .feature p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.code-example {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 1.5rem;
+  border: 1px solid #e2e8f0;
+}
+
+.code-example h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1.125rem;
+  color: #374151;
+}
+
+.code-example .code-block {
+  margin: 0;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* Responsive adjustments for Live Components */
+@media (max-width: 768px) {
+  .live-components-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .live-component-demo {
+    padding: 1rem;
+  }
+  
+  .live-components-info {
+    padding: 1.5rem;
+  }
+  
+  .live-components-info .features-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .live-components-content {
+    padding: 1rem 0.5rem;
+  }
+  
+  .live-components-content h2 {
+    font-size: 2rem;
+  }
+  
+  .live-component-demo {
+    padding: 0.75rem;
+  }
+  
+  .live-components-info {
+    padding: 1rem;
+  }
+  
+  .code-example {
+    padding: 1rem;
+  }
+}

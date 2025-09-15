@@ -6,7 +6,7 @@
  * and manual cleanup triggers.
  */
 
-import { useEffect, useRef, useCallback } from 'react'
+import React, { useEffect, useRef, useCallback } from 'react'
 import { ComponentCleanupManager, CleanupHook, CleanupEvent } from '../ComponentCleanupManager'
 import type { ComponentIdentity } from '../types'
 

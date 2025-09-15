@@ -5,7 +5,7 @@
  * server communication, state synchronization, and event handling.
  */
 
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { WebSocketManager } from '../WebSocketManager'
 import { LiveComponentStateBridge } from '../LiveComponentStateBridge'
 import { LiveComponentEventSystem } from '../LiveComponentEventSystem'

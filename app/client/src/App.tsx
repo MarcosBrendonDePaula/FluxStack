@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react'
 import './App.css'
 import { api, apiCall, getErrorMessage } from './lib/eden-api'
 import type { User } from '@/shared/types'
+import SimpleLiveCounter from './components/SimpleLiveCounter'
+import './components/LiveCounter.css'
 
-type TabType = 'overview' | 'demo' | 'api-docs'
+type TabType = 'overview' | 'demo' | 'live-components' | 'api-docs'
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('overview')
@@ -394,6 +396,125 @@ const health = await api.health.get()`}</pre>
     </div>
   )
 
+  const renderLiveComponents = () => (
+    <div className="live-components-content">
+      <h2>🔄 Live Components</h2>
+      <p className="demo-subtitle">Demonstração de componentes com sincronização em tempo real</p>
+
+      <div className="live-components-grid">
+        <div className="live-component-demo">
+          <h3>Counter Básico</h3>
+          <SimpleLiveCounter 
+            initialCount={0}
+            userId="user-1"
+            showDebug={false}
+          />
+        </div>
+
+        <div className="live-component-demo">
+          <h3>Counter com Debug</h3>
+          <SimpleLiveCounter 
+            initialCount={10}
+            userId="user-2"
+            showDebug={true}
+          />
+        </div>
+      </div>
+
+      <div className="live-components-info">
+        <h3>🚀 Funcionalidades</h3>
+        <div className="features-grid">
+          <div className="feature">
+            <span className="feature-icon">⚡</span>
+            <div>
+              <h4>Tempo Real</h4>
+              <p>Sincronização automática entre frontend e backend</p>
+            </div>
+          </div>
+          <div className="feature">
+            <span className="feature-icon">🔄</span>
+            <div>
+              <h4>Optimistic Updates</h4>
+              <p>Interface responsiva com rollback automático</p>
+            </div>
+          </div>
+          <div className="feature">
+            <span className="feature-icon">🔐</span>
+            <div>
+              <h4>Conflict Resolution</h4>
+              <p>Resolução inteligente de conflitos de estado</p>
+            </div>
+          </div>
+          <div className="feature">
+            <span className="feature-icon">🐛</span>
+            <div>
+              <h4>Debug Tools</h4>
+              <p>Ferramentas avançadas de debugging integradas</p>
+            </div>
+          </div>
+          <div className="feature">
+            <span className="feature-icon">📊</span>
+            <div>
+              <h4>Performance Monitor</h4>
+              <p>Monitoramento de performance e memory leaks</p>
+            </div>
+          </div>
+          <div className="feature">
+            <span className="feature-icon">🔄</span>
+            <div>
+              <h4>Retry Logic</h4>
+              <p>Sistema inteligente de retry com exponential backoff</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="code-example">
+          <h4>Exemplo Simplificado (Demonstração):</h4>
+          <pre className="code-block">{`import React, { useState } from 'react'
+
+function SimpleLiveCounter({ initialCount = 0 }) {
+  const [state, setState] = useState({
+    count: initialCount,
+    lastUpdate: Date.now()
+  })
+  const [loading, setLoading] = useState(false)
+
+  const handleIncrement = async () => {
+    // Optimistic update
+    setState(prev => ({ 
+      ...prev, 
+      count: prev.count + 1,
+      lastUpdate: Date.now()
+    }))
+    
+    // Simulate server call
+    setLoading(true)
+    await new Promise(resolve => setTimeout(resolve, 100))
+    setLoading(false)
+  }
+
+  return (
+    <div className="live-counter">
+      <h3>Count: {state.count}</h3>
+      <button onClick={handleIncrement} disabled={loading}>
+        +1
+      </button>
+      <span>🟢 Demo Mode</span>
+    </div>
+  )
+}
+
+// Full implementation coming soon with:
+// - useEnhancedLive hook from Task 4
+// - Real-time server communication
+// - Global state synchronization
+// - Conflict resolution
+// - Performance monitoring`}</pre>
+        </div>
+      </div>
+    </div>
+  )
+
   return (
     <div className="app">
       {/* Header */}
@@ -417,6 +538,12 @@ const health = await api.health.get()`}</pre>
                 🚀 Demo
               </button>
               <button 
+                className={`tab ${activeTab === 'live-components' ? 'active' : ''}`}
+                onClick={() => setActiveTab('live-components')}
+              >
+                🔄 Live Components
+              </button>
+              <button 
                 className={`tab ${activeTab === 'api-docs' ? 'active' : ''}`}
                 onClick={() => setActiveTab('api-docs')}
               >
@@ -435,6 +562,7 @@ const health = await api.health.get()`}</pre>
       <main className="main">
         {activeTab === 'overview' && renderOverview()}
         {activeTab === 'demo' && renderDemo()}
+        {activeTab === 'live-components' && renderLiveComponents()}
         {activeTab === 'api-docs' && renderApiDocs()}
       </main>
 
