@@ -216,5 +216,47 @@ export type {
   GlobalStateUpdater
 } from './hooks/useEnhancedLive'
 
+// Task 5: Component Nesting & Hierarchical Management
+export { ComponentTreeManager } from './ComponentTreeManager'
+export type {
+  ComponentNode,
+  ComponentHierarchy,
+  ComponentTreeConfig
+} from './ComponentTreeManager'
+
+export { ParentChildStateManager } from './ParentChildStateManager'
+export type {
+  StateInheritanceRule,
+  StateInheritanceContext,
+  StateConflict,
+  StateChangeNotification,
+  StateChangeListener,
+  ParentChildStateConfig
+} from './ParentChildStateManager'
+
+export { ComponentLifecycleManager } from './ComponentLifecycleManager'
+export type {
+  ComponentDependency,
+  DependencyContext,
+  LifecycleHook,
+  LifecycleContext,
+  InitializationResult,
+  CleanupResult,
+  LifecycleConfig
+} from './ComponentLifecycleManager'
+
+// Nested Live hooks with hierarchical features
+export {
+  useNestedLive,
+  withNestedLive,
+  componentTreeManager,
+  parentChildStateManager,
+  componentLifecycleManager
+} from './hooks/useNestedLive'
+export type {
+  UseNestedLiveOptions,
+  UseNestedLiveResult
+} from './hooks/useNestedLive'
+
 // Version information
-export const FLUXLIVE_VERSION = '2.3.0'
+export const FLUXLIVE_VERSION = '2.4.0'
