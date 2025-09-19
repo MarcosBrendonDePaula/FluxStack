@@ -116,7 +116,47 @@ export class FluxStackFramework {
       isDevelopment: this.context.isDevelopment
     })
 
-    this.app.onError(({ error, request, path }) => {
+    this.app.onError(async ({ error, request, path, set }) => {
+      // Check if it's a NOT_FOUND error and we're in development with Vite plugin
+      if (error.constructor.name === 'NotFoundError' && this.context.isDevelopment) {
+        const url = new URL(request.url)
+        
+        // Skip API routes and swagger - these should remain 404
+        if (!url.pathname.startsWith("/api") && !url.pathname.startsWith("/swagger")) {
+          // Try to proxy to Vite
+          const vitePort = this.context.config.client?.port || 5173
+          
+          try {
+            const viteUrl = `http://localhost:${vitePort}${url.pathname}${url.search}`
+            
+            // Create headers object from request
+            const headers: Record<string, string> = {}
+            request.headers.forEach((value: string, key: string) => {
+              headers[key] = value
+            })
+            
+            // Forward request to Vite
+            const response = await fetch(viteUrl, {
+              method: request.method,
+              headers
+            })
+            
+            // Return a proper Response object with all headers and status
+            const body = await response.arrayBuffer()
+            
+            return new Response(body, {
+              status: response.status,
+              statusText: response.statusText,
+              headers: response.headers
+            })
+            
+          } catch (viteError) {
+            // If Vite fails, fall back to normal error handling
+            console.warn(`Vite proxy error: ${viteError}`)
+          }
+        }
+      }
+      
       // Convert Elysia error to standard Error if needed
       const standardError = error instanceof Error ? error : new Error(String(error))
       return errorHandler(standardError, request, path)

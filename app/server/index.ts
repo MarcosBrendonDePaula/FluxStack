@@ -38,13 +38,12 @@ const app = new FluxStackFramework({
 // Usar plugins de infraestrutura primeiro (mas NÃO o Swagger ainda)
 app.use(loggerPlugin)
 
-// Usar plugin Vite apenas em desenvolvimento
+// Usar plugins condicionalmente baseado no ambiente
 if (isDevelopment()) {
   app.use(vitePlugin)
+} else {
+  app.use(staticPlugin)
 }
-
-// Plugin static sempre (ele já tem lógica interna para dev/prod)
-app.use(staticPlugin)
   
 
 // Registrar rotas da aplicação PRIMEIRO

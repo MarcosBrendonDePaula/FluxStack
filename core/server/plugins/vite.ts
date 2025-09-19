@@ -2,7 +2,7 @@ import type { Plugin, PluginContext } from "../../types"
 
 export const vitePlugin: Plugin = {
   name: "vite",
-  setup: async (context: PluginContext) => {
+  setup: (context: PluginContext) => {
     if (!context.utils.isDevelopment()) return
     
     const vitePort = context.config.client?.port || 5173
@@ -12,15 +12,15 @@ export const vitePlugin: Plugin = {
       const isViteRunning = await checkViteRunning(vitePort)
       
       if (isViteRunning) {
-        console.log(`   ✅ Vite detectado na porta ${vitePort}`)
-        console.log("   🔄 Hot reload coordenado via concurrently")
+        context.logger.info(`✓ Vite server detected on localhost:${vitePort}`)
+        context.logger.info('Hot reload coordination active')
       }
     }, 2000)
     
-    // Don't block server startup
-    console.log(`   🔄 Aguardando Vite na porta ${vitePort}...`)
+    context.logger.info(`Setting up Vite integration on localhost:${vitePort}`)
   }
 }
+
 
 async function checkViteRunning(port: number): Promise<boolean> {
   try {

@@ -32,7 +32,13 @@
       "Bash(tsc --noEmit)",
       "WebSearch",
       "WebFetch(domain:elysiajs.com)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(git checkout:*)",
+      "Bash(npx tailwindcss init:*)",
+      "Bash(pkill:*)",
+      "Bash(taskkill:*)",
+      "Bash(npx eslint:*)",
+      "Bash(export NODE_ENV=production)"
     ],
     "deny": []
   }
