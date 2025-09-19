@@ -1,4 +1,4 @@
-import type { Plugin, PluginContext } from "../../types"
+import type { Plugin, PluginContext, RequestContext } from "../../types"
 
 export const vitePlugin: Plugin = {
   name: "vite",
@@ -18,6 +18,44 @@ export const vitePlugin: Plugin = {
     }, 2000)
     
     context.logger.info(`Setting up Vite integration on localhost:${vitePort}`)
+  },
+
+  onBeforeRoute: async (context: RequestContext) => {
+    // Skip API routes and swagger - let them be handled by backend
+    if (context.path.startsWith("/api") || context.path.startsWith("/swagger")) {
+      return
+    }
+    
+    // For all other routes, try to proxy to Vite
+    const vitePort = 5173 // TODO: Get from config context
+    
+    try {
+      const url = new URL(context.request.url)
+      const viteUrl = `http://localhost:${vitePort}${context.path}${url.search}`
+      
+      // Forward request to Vite
+      const response = await fetch(viteUrl, {
+        method: context.method,
+        headers: context.headers
+      })
+      
+      // If Vite responds successfully, handle the request
+      if (response.ok || response.status < 500) {
+        // Return a proper Response object with all headers and status
+        const body = await response.arrayBuffer()
+        
+        context.handled = true
+        context.response = new Response(body, {
+          status: response.status,
+          statusText: response.statusText,
+          headers: response.headers
+        })
+      }
+      
+    } catch (viteError) {
+      // If Vite fails, let the request continue to normal routing (will become 404)
+      console.warn(`Vite proxy error: ${viteError}`)
+    }
   }
 }
 

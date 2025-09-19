@@ -6,6 +6,7 @@ export type PluginHook =
   | 'onServerStart'
   | 'onServerStop'
   | 'onRequest'
+  | 'onBeforeRoute'
   | 'onResponse'
   | 'onError'
   | 'onBuild'
@@ -43,6 +44,8 @@ export interface RequestContext {
   body?: any
   user?: any
   startTime: number
+  handled?: boolean
+  response?: Response
 }
 
 export interface ResponseContext extends RequestContext {
@@ -85,6 +88,7 @@ export interface Plugin {
   onServerStart?: (context: PluginContext) => void | Promise<void>
   onServerStop?: (context: PluginContext) => void | Promise<void>
   onRequest?: (context: RequestContext) => void | Promise<void>
+  onBeforeRoute?: (context: RequestContext) => void | Promise<void>
   onResponse?: (context: ResponseContext) => void | Promise<void>
   onError?: (context: ErrorContext) => void | Promise<void>
   onBuild?: (context: BuildContext) => void | Promise<void>
