@@ -52,7 +52,7 @@ export class FluxStackFramework {
         }
         return result
       },
-      validateSchema: (data: any, schema: any) => {
+      validateSchema: (_data: any, _schema: any) => {
         // Simple validation - in a real implementation you'd use a proper schema validator
         try {
           // Basic validation logic

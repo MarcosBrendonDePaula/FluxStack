@@ -5,9 +5,8 @@
 
 import type { Plugin, PluginManifest, PluginLoadResult, PluginDiscoveryOptions } from "./types"
 import type { Logger } from "../utils/logger/index"
-import { FluxStackError } from "../utils/errors"
-import { readdir, stat, readFile } from "fs/promises"
-import { join, resolve, extname } from "path"
+import { readdir, readFile } from "fs/promises"
+import { join, resolve } from "path"
 import { existsSync } from "fs"
 
 export interface PluginDiscoveryConfig {

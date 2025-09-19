@@ -6,10 +6,7 @@
 import { existsSync } from 'fs'
 import { join } from 'path'
 import type {
-    FluxStackConfig,
-    LogLevel,
-    BuildTarget,
-    LogFormat
+    FluxStackConfig
 } from './schema'
 import {
     defaultFluxStackConfig,
@@ -319,7 +316,7 @@ function findConfigFile(startDir = process.cwd()): string | null {
 /**
  * Apply environment-specific configuration
  */
-function applyEnvironmentConfig(
+export function applyEnvironmentConfig(
     config: FluxStackConfig,
     environment: string
 ): FluxStackConfig {

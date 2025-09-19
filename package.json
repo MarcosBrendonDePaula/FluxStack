@@ -21,6 +21,7 @@
     "dev:frontend": "bun run core/cli/index.ts frontend",
     "dev:backend": "bun run core/cli/index.ts backend",
     "dev:coordinated": "concurrently --prefix {name} --names BACKEND,VITE --prefix-colors blue,green --kill-others-on-fail \"bun --watch app/server/index.ts\" \"vite --config vite.config.ts\"",
+    "dev:clean": "bun run run-clean.ts",
     "build": "bun run core/cli/index.ts build",
     "build:frontend": "bun run core/cli/index.ts build:frontend",
     "build:backend": "bun run core/cli/index.ts build:backend",
@@ -63,7 +64,7 @@
     "@elysiajs/swagger": "^1.3.1",
     "@vitejs/plugin-react": "^4.6.0",
     "chokidar": "^4.0.3",
-    "elysia": "^1.3.7",
+    "elysia": "^1.4.6",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "vite": "^7.0.4"

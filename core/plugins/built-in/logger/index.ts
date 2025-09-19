@@ -166,7 +166,7 @@ export const loggerPlugin: Plugin = {
 }
 
 // Helper function to get plugin config from context
-function getPluginConfig(context: any) {
+function getPluginConfig(_context: any) {
   // In a real implementation, this would get the config from the plugin context
   // For now, return default config
   return loggerPlugin.defaultConfig || {}

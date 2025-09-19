@@ -66,7 +66,7 @@ export class MetricsCollector {
       help,
       labels,
       value: 0,
-      inc: (value = 1, labels) => {
+      inc: (value = 1, _labels) => {
         counter.value = (counter.value || 0) + value
       }
     }
@@ -82,13 +82,13 @@ export class MetricsCollector {
       help,
       labels,
       value: 0,
-      set: (value, labels) => {
+      set: (value, _labels) => {
         gauge.value = value
       },
-      inc: (value = 1, labels) => {
+      inc: (value = 1, _labels) => {
         gauge.value = (gauge.value || 0) + value
       },
-      dec: (value = 1, labels) => {
+      dec: (value = 1, _labels) => {
         gauge.value = (gauge.value || 0) - value
       }
     }
@@ -104,7 +104,7 @@ export class MetricsCollector {
       help,
       buckets,
       values: [],
-      observe: (value, labels) => {
+      observe: (value, _labels) => {
         histogram.values = histogram.values || []
         histogram.values.push(value)
       }
@@ -115,7 +115,7 @@ export class MetricsCollector {
   }
 
   // HTTP metrics
-  recordHttpRequest(method: string, path: string, statusCode: number, duration: number, requestSize?: number, responseSize?: number): void {
+  recordHttpRequest(_method: string, _path: string, statusCode: number, duration: number, requestSize?: number, responseSize?: number): void {
     this.httpMetrics.requestsTotal++
     this.httpMetrics.requestDuration.push(duration)
     

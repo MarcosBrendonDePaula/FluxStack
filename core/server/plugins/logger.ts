@@ -1,4 +1,4 @@
-import type { Plugin, PluginContext, RequestContext, ResponseContext, ErrorContext } from "../../types"
+import type { Plugin, PluginContext } from "../../types"
 import { log } from "../../utils/logger"
 
 export const loggerPlugin: Plugin = {

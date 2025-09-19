@@ -172,6 +172,7 @@ bun install          # Uma única instalação para todo o projeto! 🎉
 ### Comandos Principais
 ```bash
 bun run dev          # ✅ Full-stack: Backend (3000) + Vite integrado (5173)
+bun run dev:clean    # ✅ Servidor com output limpo (filtra erros HEAD do Elysia)
 bun run dev:backend  # ✅ Backend apenas com hot reload (porta 3001)
 bun run dev:frontend # ✅ Frontend apenas com Vite (porta 5173)
 bun run build        # Build para produção
@@ -227,6 +228,7 @@ bun run legacy:dev   # Comando direto com Bun watch (alternativo)
 - ✅ **Estrutura de instalação complexa** -> unificado em monorepo
 - ✅ **Duplicação de dependências** -> centralizadas no root
 - ✅ **Build em 2 etapas** -> processo unificado e otimizado
+- ✅ **Spam de erros HEAD do Elysia** -> comando `dev:clean` filtra erros desnecessários
 
 ## Próximos Passos Sugeridos
 
@@ -252,6 +254,7 @@ bun install
 
 # Desenvolvimento
 bun run dev                    # Full-stack development server
+bun run dev:clean             # Servidor com output limpo (sem erros HEAD)
 bun run dev:frontend          # Frontend apenas (porta 5173)
 bun run dev:backend           # Backend apenas (porta 3001)
 

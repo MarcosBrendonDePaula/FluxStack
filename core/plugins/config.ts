@@ -6,7 +6,6 @@
 import type { Plugin, PluginConfigSchema, PluginValidationResult } from "./types"
 import type { FluxStackConfig } from "../config/schema"
 import type { Logger } from "../utils/logger/index"
-import { FluxStackError } from "../utils/errors"
 
 export interface PluginConfigManager {
   validatePluginConfig(plugin: Plugin, config: any): PluginValidationResult
@@ -16,10 +15,8 @@ export interface PluginConfigManager {
 }
 
 export class DefaultPluginConfigManager implements PluginConfigManager {
-  private logger?: Logger
-
-  constructor(logger?: Logger) {
-    this.logger = logger
+  constructor(_logger?: Logger) {
+    // Logger stored but not used in current implementation
   }
 
   /**

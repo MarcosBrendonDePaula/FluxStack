@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { PluginManager } from '../manager'
-import type { Plugin, PluginContext, RequestContext } from '../types'
+import type { Plugin, PluginContext } from '../types'
 import type { Logger } from '../../utils/logger/index'
 import type { FluxStackConfig } from '../../config/schema'
 
@@ -327,12 +327,10 @@ describe('PluginManager', () => {
     })
 
     it('should provide plugin-specific logger', async () => {
-      let pluginLogger: any
-
       const plugin: Plugin = {
         name: 'logger-plugin',
-        setup: (context) => {
-          pluginLogger = context.logger
+        setup: (_context) => {
+          // Logger context is available but not used in this test
         }
       }
 

@@ -191,6 +191,5 @@ import type {
     PluginPriority,
     RequestContext,
     ResponseContext,
-    ErrorContext,
-    BuildContext
+    ErrorContext
 } from './types'

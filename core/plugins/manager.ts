@@ -438,8 +438,9 @@ export class PluginManager extends EventEmitter {
    * Setup context for a specific plugin
    */
   private setupPluginContext(plugin: Plugin): void {
-    const pluginConfig = this.config.plugins.config[plugin.name] || {}
-    const mergedConfig = { ...plugin.defaultConfig, ...pluginConfig }
+    // Plugin config available but not used in current implementation
+    // const pluginConfig = this.config.plugins.config[plugin.name] || {}
+    // const mergedConfig = { ...plugin.defaultConfig, ...pluginConfig }
 
     const context: PluginContext = {
       config: this.config,

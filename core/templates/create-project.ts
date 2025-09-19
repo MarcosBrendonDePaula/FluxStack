@@ -11,12 +11,12 @@ export interface CreateProjectOptions {
 export class ProjectCreator {
   private projectName: string
   private targetDir: string
-  private template: string
 
   constructor(options: CreateProjectOptions) {
     this.projectName = options.name
     this.targetDir = options.targetDir || resolve(process.cwd(), options.name)
-    this.template = options.template || 'basic'
+    // Template option available but basic template is used for now
+    // const template = options.template || 'basic'
   }
 
   async create() {

@@ -2,7 +2,7 @@ import type { Plugin, PluginManifest, PluginLoadResult, PluginDiscoveryOptions }
 import type { FluxStackConfig } from "../config/schema"
 import type { Logger } from "../utils/logger/index"
 import { FluxStackError } from "../utils/errors"
-import { readdir, stat, readFile } from "fs/promises"
+import { readdir, readFile } from "fs/promises"
 import { join, resolve } from "path"
 import { existsSync } from "fs"
 
@@ -209,9 +209,9 @@ export class PluginRegistry {
     const results: PluginLoadResult[] = []
     const {
       directories = ['core/plugins/built-in', 'plugins', 'node_modules'],
-      patterns = ['**/plugin.{js,ts}', '**/index.{js,ts}'],
-      includeBuiltIn = true,
-      includeExternal = true
+      patterns: _patterns = ['**/plugin.{js,ts}', '**/index.{js,ts}'],
+      includeBuiltIn: _includeBuiltIn = true,
+      includeExternal: _includeExternal = true
     } = options
 
     for (const directory of directories) {
@@ -220,7 +220,7 @@ export class PluginRegistry {
       }
 
       try {
-        const pluginResults = await this.discoverPluginsInDirectory(directory, patterns)
+        const pluginResults = await this.discoverPluginsInDirectory(directory, _patterns)
         results.push(...pluginResults)
       } catch (error) {
         this.logger?.warn(`Failed to discover plugins in directory '${directory}'`, { error })
@@ -392,7 +392,7 @@ export class PluginRegistry {
    */
   private async discoverPluginsInDirectory(
     directory: string,
-    patterns: string[]
+    _patterns: string[]
   ): Promise<PluginLoadResult[]> {
     const results: PluginLoadResult[] = []
     

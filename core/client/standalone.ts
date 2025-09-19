@@ -1,7 +1,6 @@
 // Standalone frontend development
 import { spawn } from "bun"
 import { join } from "path"
-import { getEnvironmentInfo } from "../config/env"
 
 export const startFrontendOnly = (config: any = {}) => {
   const clientPath = config.clientPath || "app/client"

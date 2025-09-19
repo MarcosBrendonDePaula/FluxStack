@@ -1,5 +1,5 @@
 // Standalone backend server (sem frontend integrado)
-import { FluxStackFramework, loggerPlugin } from "./index"
+import { FluxStackFramework } from "./index"
 import type { Plugin, PluginContext } from "../types"
 
 export const createStandaloneServer = (userConfig: any = {}) => {

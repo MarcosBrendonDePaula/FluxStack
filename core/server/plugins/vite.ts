@@ -1,4 +1,3 @@
-import { join } from "path"
 import type { Plugin, PluginContext } from "../../types"
 
 export const vitePlugin: Plugin = {

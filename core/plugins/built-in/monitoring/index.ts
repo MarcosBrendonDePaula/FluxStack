@@ -44,7 +44,7 @@ interface MetricsRegistry {
 
 // SystemMetrics and HttpMetrics are now imported from MetricsCollector
 
-interface MetricsExporter {
+export interface MetricsExporter {
   type: 'prometheus' | 'json' | 'console' | 'file'
   endpoint?: string
   interval?: number
@@ -53,7 +53,7 @@ interface MetricsExporter {
   filePath?: string
 }
 
-interface AlertThreshold {
+export interface AlertThreshold {
   metric: string
   operator: '>' | '<' | '>=' | '<=' | '==' | '!='
   value: number
@@ -523,7 +523,7 @@ function startSystemMetricsCollection(context: PluginContext, config: any, colle
   ;(context as any).monitoringIntervals = intervals
 }
 
-function setupMetricsEndpoint(context: PluginContext, config: any, registry: MetricsRegistry, collector: MetricsCollector) {
+function setupMetricsEndpoint(context: PluginContext, config: any, _registry: MetricsRegistry, collector: MetricsCollector) {
   // Find Prometheus exporter configuration
   const prometheusExporter = config.exporters.find((e: any) => e.type === 'prometheus' && e.enabled)
   if (!prometheusExporter) return
@@ -818,7 +818,7 @@ function exportToConsole(registry: MetricsRegistry, collector: MetricsCollector,
   })
 }
 
-function exportToPrometheus(registry: MetricsRegistry, collector: MetricsCollector, config: any, logger: any) {
+function exportToPrometheus(_registry: MetricsRegistry, collector: MetricsCollector, config: any, logger: any) {
   const prometheusData = collector.exportPrometheus()
   
   if (config.endpoint && config.endpoint !== '/metrics') {
@@ -897,7 +897,7 @@ function exportToFile(registry: MetricsRegistry, collector: MetricsCollector, co
   }
 }
 
-function formatPrometheusLabels(labels?: Record<string, string>): string {
+export function formatPrometheusLabels(labels?: Record<string, string>): string {
   if (!labels || Object.keys(labels).length === 0) {
     return ''
   }
