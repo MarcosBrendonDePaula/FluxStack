@@ -16,7 +16,7 @@ export const staticPlugin: Plugin = {
       } else {
         // Servir arquivos estáticos em produção
         const url = new URL(request.url)
-        const clientDistPath = join(process.cwd(), context.config.client?.build?.outDir || "app/client/dist")
+        const clientDistPath = join(process.cwd(), context.config.client?.build?.outDir || "dist/client")
         const filePath = join(clientDistPath, url.pathname)
         
         // Servir index.html para rotas SPA
