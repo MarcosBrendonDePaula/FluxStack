@@ -121,7 +121,13 @@ export class FluxStackFramework {
         request,
         path: url.pathname,
         method: request.method,
-        headers: Object.fromEntries(request.headers.entries()),
+        headers: (() => {
+          const headers: Record<string, string> = {}
+          request.headers.forEach((value: string, key: string) => {
+            headers[key] = value
+          })
+          return headers
+        })(),
         query: Object.fromEntries(url.searchParams.entries()),
         params: {},
         startTime,
@@ -150,11 +156,17 @@ export class FluxStackFramework {
         request,
         path: url.pathname,
         method: request.method,
-        headers: Object.fromEntries(request.headers.entries()),
+        headers: (() => {
+          const headers: Record<string, string> = {}
+          request.headers.forEach((value: string, key: string) => {
+            headers[key] = value
+          })
+          return headers
+        })(),
         query: Object.fromEntries(url.searchParams.entries()),
         params: {},
         response,
-        statusCode: response?.status || set.status,
+        statusCode: (response as any)?.status || set.status || 200,
         duration: Date.now() - startTime,
         startTime
       }
@@ -178,7 +190,13 @@ export class FluxStackFramework {
         request,
         path: url.pathname,
         method: request.method,
-        headers: Object.fromEntries(request.headers.entries()),
+        headers: (() => {
+          const headers: Record<string, string> = {}
+          request.headers.forEach((value: string, key: string) => {
+            headers[key] = value
+          })
+          return headers
+        })(),
         query: Object.fromEntries(url.searchParams.entries()),
         params: {},
         error: error instanceof Error ? error : new Error(String(error)),

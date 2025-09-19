@@ -58,4 +58,4 @@ app.use(swaggerPlugin)
 app.listen()
 
 // Exportar tipo da aplicação para Eden Treaty (método correto)
-export type App = typeof framework
+export type App = typeof app
