@@ -94,6 +94,9 @@ export interface Plugin {
   onBuild?: (context: BuildContext) => void | Promise<void>
   onBuildComplete?: (context: BuildContext) => void | Promise<void>
   
+  // CLI commands
+  commands?: CliCommand[]
+  
   // Configuration
   configSchema?: PluginConfigSchema
   defaultConfig?: any
@@ -205,3 +208,47 @@ export type PluginLifecycleEvent =
   | 'hook:before'
   | 'hook:after'
   | 'hook:error'
+
+// CLI Command interfaces
+export interface CliArgument {
+  name: string
+  description: string
+  required?: boolean
+  type?: 'string' | 'number' | 'boolean'
+  default?: any
+  choices?: string[]
+}
+
+export interface CliOption {
+  name: string
+  short?: string
+  description: string
+  type?: 'string' | 'number' | 'boolean' | 'array'
+  default?: any
+  required?: boolean
+  choices?: string[]
+}
+
+export interface CliCommand {
+  name: string
+  description: string
+  usage?: string
+  examples?: string[]
+  arguments?: CliArgument[]
+  options?: CliOption[]
+  aliases?: string[]
+  category?: string
+  hidden?: boolean
+  handler: (args: any[], options: any, context: CliContext) => Promise<void> | void
+}
+
+export interface CliContext {
+  config: FluxStackConfig
+  logger: Logger
+  utils: PluginUtils
+  workingDir: string
+  packageInfo: {
+    name: string
+    version: string
+  }
+}

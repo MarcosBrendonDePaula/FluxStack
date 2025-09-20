@@ -52,8 +52,9 @@ vi.mock('../../utils/errors/handlers', () => ({
 vi.mock('elysia', () => ({
   Elysia: vi.fn(() => ({
     onRequest: vi.fn().mockReturnThis(),
-    options: vi.fn().mockReturnThis(),
+    onAfterHandle: vi.fn().mockReturnThis(),
     onError: vi.fn().mockReturnThis(),
+    options: vi.fn().mockReturnThis(),
     use: vi.fn().mockReturnThis(),
     listen: vi.fn((_port, callback) => {
       if (callback) callback()

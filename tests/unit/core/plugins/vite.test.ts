@@ -53,18 +53,12 @@ describe('Vite Plugin', () => {
 
   describe('Development Mode', () => {
     it('should set up plugin in development mode', async () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-      
       await vitePlugin.setup!(mockContext)
       
-      expect(consoleSpy).toHaveBeenCalledWith('   🔄 Aguardando Vite na porta 5173...')
-      
-      consoleSpy.mockRestore()
+      expect(mockContext.logger.info).toHaveBeenCalledWith('Setting up Vite integration on localhost:5173')
     })
 
     it('should check for Vite after timeout', async () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-      
       // Mock successful Vite check
       vi.mocked(fetch).mockResolvedValueOnce({
         status: 200,
@@ -83,15 +77,11 @@ describe('Vite Plugin', () => {
         signal: expect.any(AbortSignal)
       })
       
-      expect(consoleSpy).toHaveBeenCalledWith('   ✅ Vite detectado na porta 5173')
-      expect(consoleSpy).toHaveBeenCalledWith('   🔄 Hot reload coordenado via concurrently')
-      
-      consoleSpy.mockRestore()
+      expect(mockContext.logger.info).toHaveBeenCalledWith('✓ Vite server detected on localhost:5173')
+      expect(mockContext.logger.info).toHaveBeenCalledWith('Hot reload coordination active')
     })
 
     it('should handle Vite check failure silently', async () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-      
       // Mock failed Vite check
       vi.mocked(fetch).mockRejectedValueOnce(new Error('Connection refused'))
       
@@ -106,14 +96,10 @@ describe('Vite Plugin', () => {
       })
       
       // Should not log success messages when Vite is not running
-      expect(consoleSpy).not.toHaveBeenCalledWith('   ✅ Vite detectado na porta 5173')
-      
-      consoleSpy.mockRestore()
+      expect(mockContext.logger.info).not.toHaveBeenCalledWith('✓ Vite server detected on localhost:5173')
     })
 
     it('should use custom vite port from context', async () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-      
       const customContext = {
         ...mockContext,
         config: {
@@ -129,7 +115,7 @@ describe('Vite Plugin', () => {
       
       await vitePlugin.setup!(customContext)
       
-      expect(consoleSpy).toHaveBeenCalledWith('   🔄 Aguardando Vite na porta 3001...')
+      expect(customContext.logger.info).toHaveBeenCalledWith('Setting up Vite integration on localhost:3001')
       
       vi.advanceTimersByTime(2000)
       await vi.runAllTimersAsync()
@@ -137,15 +123,11 @@ describe('Vite Plugin', () => {
       expect(fetch).toHaveBeenCalledWith('http://localhost:3001', {
         signal: expect.any(AbortSignal)
       })
-      
-      consoleSpy.mockRestore()
     })
   })
 
   describe('Production Mode', () => {
     it('should skip plugin setup in production mode', async () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-      
       const productionContext = {
         ...mockContext,
         utils: {
@@ -157,10 +139,8 @@ describe('Vite Plugin', () => {
       
       await vitePlugin.setup!(productionContext)
       
-      expect(consoleSpy).not.toHaveBeenCalled()
+      expect(productionContext.logger.info).not.toHaveBeenCalled()
       expect(fetch).not.toHaveBeenCalled()
-      
-      consoleSpy.mockRestore()
     })
   })
 
@@ -183,15 +163,11 @@ describe('Vite Plugin', () => {
 
       // We need to access the checkViteRunning function
       // Since it's not exported, we'll test it indirectly through the plugin
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-      
       await vitePlugin.setup!(mockContext)
       vi.advanceTimersByTime(2000)
       await vi.runAllTimersAsync()
 
-      expect(consoleSpy).toHaveBeenCalledWith('   ✅ Vite detectado na porta 5173')
-      
-      consoleSpy.mockRestore()
+      expect(mockContext.logger.info).toHaveBeenCalledWith('✓ Vite server detected on localhost:5173')
     })
 
     it('should return false for connection timeout', async () => {
@@ -200,17 +176,13 @@ describe('Vite Plugin', () => {
           setTimeout(() => reject(new Error('timeout')), 1500)
         })
       )
-
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
       
       await vitePlugin.setup!(mockContext)
       vi.advanceTimersByTime(2000)
       await vi.runAllTimersAsync()
 
       // Should not show success message when timeout occurs
-      expect(consoleSpy).not.toHaveBeenCalledWith('   ✅ Vite detectado na porta 5173')
-      
-      consoleSpy.mockRestore()
+      expect(mockContext.logger.info).not.toHaveBeenCalledWith('✓ Vite server detected on localhost:5173')
     })
   })
 })
