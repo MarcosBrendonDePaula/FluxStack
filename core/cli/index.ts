@@ -68,31 +68,37 @@ async function registerBuiltInCommands() {
       console.log("⚡ FluxStack Full-Stack Development")
       console.log(`🌐 Frontend: http://localhost:${options['frontend-port']}`)  
       console.log(`🚀 Backend: http://localhost:${options.port}`)
-      console.log("🔄 Hot Reload Coordenado: Backend + Vite automático")
-      console.log("📦 Starting services...")
+      console.log("🔄 Backend inicia Vite programaticamente - Zero órfãos!")
+      console.log("📦 Starting backend server...")
       console.log()
       
       const { spawn } = await import("child_process")
-      const devProcess = spawn("concurrently", [
-        "--prefix", "{name}",
-        "--names", "BACKEND,VITE", 
-        "--prefix-colors", "blue,green",
-        "--kill-others-on-fail",
-        "\"bun --watch app/server/index.ts\"",
-        "\"vite --config vite.config.ts\""
-      ], {
+      const devProcess = spawn("bun", ["--watch", "app/server/index.ts"], {
         stdio: "inherit",
         cwd: process.cwd(),
-        shell: true
+        env: {
+          ...process.env,
+          FRONTEND_PORT: options['frontend-port'].toString(),
+          BACKEND_PORT: options.port.toString()
+        }
       })
       
       process.on('SIGINT', () => {
-        devProcess.kill('SIGINT')
-        process.exit(0)
+        console.log('\n🛑 Shutting down gracefully...')
+        devProcess.kill('SIGTERM')
+        setTimeout(() => {
+          devProcess.kill('SIGKILL')
+          process.exit(0)
+        }, 5000)
       })
       
       devProcess.on('close', (code) => {
         process.exit(code || 0)
+      })
+      
+      // Keep the CLI running until the child process exits
+      return new Promise((resolve) => {
+        devProcess.on('exit', resolve)
       })
     }
   })
@@ -221,33 +227,34 @@ async function handleLegacyCommands() {
     console.log("⚡ FluxStack Full-Stack Development")
     console.log("🌐 Frontend: http://localhost:5173")  
     console.log("🚀 Backend: http://localhost:3000")
-    console.log("🔄 Hot Reload Coordenado: Backend + Vite automático")
-    console.log("📦 Starting services...")
+    console.log("🔄 Backend inicia Vite programaticamente - Zero órfãos!")
+    console.log("📦 Starting backend server...")
     console.log()
     
-    // Use concurrently for coordinated hot reload
+    // Start only backend - it will start Vite programmatically
     const { spawn } = await import("child_process")
-    const devProcess = spawn("concurrently", [
-      "--prefix", "{name}",
-      "--names", "BACKEND,VITE", 
-      "--prefix-colors", "blue,green",
-      "--kill-others-on-fail",
-      "\"bun --watch app/server/index.ts\"",
-      "\"vite --config vite.config.ts\""
-    ], {
+    const devProcess = spawn("bun", ["--watch", "app/server/index.ts"], {
       stdio: "inherit",
-      cwd: process.cwd(),
-      shell: true
+      cwd: process.cwd()
     })
     
     // Handle process cleanup
     process.on('SIGINT', () => {
-      devProcess.kill('SIGINT')
-      process.exit(0)
+      console.log('\n🛑 Shutting down gracefully...')
+      devProcess.kill('SIGTERM')
+      setTimeout(() => {
+        devProcess.kill('SIGKILL')
+        process.exit(0)
+      }, 5000)
     })
     
     devProcess.on('close', (code) => {
       process.exit(code || 0)
+    })
+    
+    // Keep the CLI running until the child process exits
+    await new Promise((resolve) => {
+      devProcess.on('exit', resolve)
     })
     break
 

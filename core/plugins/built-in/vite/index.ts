@@ -1,4 +1,7 @@
 import type { Plugin, PluginContext, RequestContext } from "../../types"
+import { createServer, type ViteDevServer } from 'vite'
+
+let viteServer: ViteDevServer | null = null
 
 export const vitePlugin: Plugin = {
   name: "vite",
@@ -78,17 +81,58 @@ export const vitePlugin: Plugin = {
     const vitePort = config.port || context.config.client.port || 5173
     const viteHost = config.host || "localhost"
     
-    context.logger.info(`Setting up Vite integration on ${viteHost}:${vitePort}`)
+    context.logger.info(`🎨 Starting Vite dev server programmatically on ${viteHost}:${vitePort}`)
     
-    // Store Vite config in context for later use
-    ;(context as any).viteConfig = {
-      port: vitePort,
-      host: viteHost,
-      ...config
+    try {
+      // Start Vite dev server programmatically
+      viteServer = await createServer({
+        configFile: './vite.config.ts',
+        // Don't override root - let vite.config.ts handle it
+        server: {
+          port: vitePort,
+          host: viteHost
+        }
+      })
+      
+      await viteServer.listen()
+      viteServer.printUrls()
+      
+      context.logger.info(`✅ Vite server started successfully on ${viteHost}:${vitePort}`)
+      context.logger.info('🔄 Hot reload coordination active - Zero órfãos!')
+      
+      // Store Vite config in context for later use
+      ;(context as any).viteConfig = {
+        port: vitePort,
+        host: viteHost,
+        ...config,
+        server: viteServer
+      }
+      
+      // Setup cleanup on process exit
+      const cleanup = async () => {
+        if (viteServer) {
+          context.logger.info('🛑 Stopping Vite server...')
+          await viteServer.close()
+          viteServer = null
+        }
+      }
+      
+      process.on('SIGINT', cleanup)
+      process.on('SIGTERM', cleanup)
+      process.on('exit', cleanup)
+      
+    } catch (error) {
+      context.logger.error('❌ Failed to start Vite server programmatically:', error)
+      context.logger.info('⚠️ Falling back to monitoring mode...')
+      
+      // Fallback to monitoring if programmatic start fails
+      ;(context as any).viteConfig = {
+        port: vitePort,
+        host: viteHost,
+        ...config
+      }
+      monitorVite(context, viteHost, vitePort, config)
     }
-    
-    // Start monitoring Vite in the background
-    monitorVite(context, viteHost, vitePort, config)
   },
 
   onServerStart: async (context: PluginContext) => {
