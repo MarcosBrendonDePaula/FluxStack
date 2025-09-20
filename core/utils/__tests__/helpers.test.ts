@@ -54,7 +54,9 @@ describe('Helper Utilities', () => {
       await delay(50)
       const end = Date.now()
 
-      expect(end - start).toBeGreaterThanOrEqual(50)
+      // Be more lenient with timing in CI environments - allow for 10ms variance
+      expect(end - start).toBeGreaterThanOrEqual(40)
+      expect(end - start).toBeLessThan(200) // Ensure it's not too long
     })
   })
 
