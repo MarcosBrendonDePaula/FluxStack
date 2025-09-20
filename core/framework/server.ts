@@ -84,6 +84,7 @@ export class FluxStackFramework {
     }
 
     this.setupCors()
+    this.setupHooks()
     this.setupErrorHandling()
 
     logger.framework('FluxStack framework initialized', {
@@ -110,17 +111,261 @@ export class FluxStackFramework {
       })
   }
 
+  private setupHooks() {
+    // Setup onRequest hook and onBeforeRoute hook
+    this.app.onRequest(async ({ request, set }) => {
+      const startTime = Date.now()
+      const url = new URL(request.url)
+      
+      const requestContext = {
+        request,
+        path: url.pathname,
+        method: request.method,
+        headers: (() => {
+          const headers: Record<string, string> = {}
+          request.headers.forEach((value: string, key: string) => {
+            headers[key] = value
+          })
+          return headers
+        })(),
+        query: Object.fromEntries(url.searchParams.entries()),
+        params: {},
+        startTime,
+        handled: false,
+        response: undefined
+      }
+      
+      // Execute onRequest hooks for all plugins first (logging, auth, etc.)
+      await this.executePluginHooks('onRequest', requestContext)
+      
+      // Execute onBeforeRoute hooks - allow plugins to handle requests before routing
+      const handledResponse = await this.executePluginBeforeRouteHooks(requestContext)
+      
+      // If a plugin handled the request, return the response
+      if (handledResponse) {
+        return handledResponse
+      }
+    })
+
+    // Setup onResponse hook  
+    this.app.onAfterHandle(async ({ request, response, set }) => {
+      const startTime = Date.now()
+      const url = new URL(request.url)
+      
+      const responseContext = {
+        request,
+        path: url.pathname,
+        method: request.method,
+        headers: (() => {
+          const headers: Record<string, string> = {}
+          request.headers.forEach((value: string, key: string) => {
+            headers[key] = value
+          })
+          return headers
+        })(),
+        query: Object.fromEntries(url.searchParams.entries()),
+        params: {},
+        response,
+        statusCode: (response as any)?.status || set.status || 200,
+        duration: Date.now() - startTime,
+        startTime
+      }
+      
+      // Execute onResponse hooks for all plugins
+      await this.executePluginHooks('onResponse', responseContext)
+    })
+  }
+
   private setupErrorHandling() {
     const errorHandler = createErrorHandler({
       logger: this.pluginContext.logger,
       isDevelopment: this.context.isDevelopment
     })
 
-    this.app.onError(({ error, request, path }) => {
+    this.app.onError(async ({ error, request, path, set }) => {
+      const startTime = Date.now()
+      const url = new URL(request.url)
+      
+      const errorContext = {
+        request,
+        path: url.pathname,
+        method: request.method,
+        headers: (() => {
+          const headers: Record<string, string> = {}
+          request.headers.forEach((value: string, key: string) => {
+            headers[key] = value
+          })
+          return headers
+        })(),
+        query: Object.fromEntries(url.searchParams.entries()),
+        params: {},
+        error: error instanceof Error ? error : new Error(String(error)),
+        duration: Date.now() - startTime,
+        handled: false,
+        startTime
+      }
+      
+      // Execute onError hooks for all plugins - allow them to handle the error
+      const handledResponse = await this.executePluginErrorHooks(errorContext)
+      
+      // If a plugin handled the error, return the response
+      if (handledResponse) {
+        return handledResponse
+      }
+      
+      // Check if it's a NOT_FOUND error and we're in development with Vite plugin
+      if (error.constructor.name === 'NotFoundError' && this.context.isDevelopment) {
+        // Skip API routes and swagger - these should remain 404
+        if (!url.pathname.startsWith("/api") && !url.pathname.startsWith("/swagger")) {
+          // Try to proxy to Vite
+          const vitePort = this.context.config.client?.port || 5173
+          
+          try {
+            const viteUrl = `http://localhost:${vitePort}${url.pathname}${url.search}`
+            
+            // Create headers object from request
+            const headers: Record<string, string> = {}
+            request.headers.forEach((value: string, key: string) => {
+              headers[key] = value
+            })
+            
+            // Forward request to Vite
+            const response = await fetch(viteUrl, {
+              method: request.method,
+              headers
+            })
+            
+            // Return a proper Response object with all headers and status
+            const body = await response.arrayBuffer()
+            
+            return new Response(body, {
+              status: response.status,
+              statusText: response.statusText,
+              headers: response.headers
+            })
+            
+          } catch (viteError) {
+            // If Vite fails, fall back to normal error handling
+            console.warn(`Vite proxy error: ${viteError}`)
+          }
+        }
+      }
+      
       // Convert Elysia error to standard Error if needed
       const standardError = error instanceof Error ? error : new Error(String(error))
       return errorHandler(standardError, request, path)
     })
+  }
+
+  private async executePluginHooks(hookName: string, context: any): Promise<void> {
+    const loadOrder = this.pluginRegistry.getLoadOrder()
+    
+    for (const pluginName of loadOrder) {
+      const plugin = this.pluginRegistry.get(pluginName)
+      if (!plugin) continue
+      
+      const hookFn = (plugin as any)[hookName]
+      if (typeof hookFn === 'function') {
+        try {
+          await hookFn(context)
+        } catch (error) {
+          logger.error(`Plugin '${pluginName}' ${hookName} hook failed`, { 
+            error: (error as Error).message 
+          })
+        }
+      }
+    }
+  }
+
+  private async executePluginBeforeRouteHooks(requestContext: any): Promise<Response | null> {
+    const loadOrder = this.pluginRegistry.getLoadOrder()
+    
+    for (const pluginName of loadOrder) {
+      const plugin = this.pluginRegistry.get(pluginName)
+      if (!plugin) continue
+      
+      const onBeforeRouteFn = (plugin as any).onBeforeRoute
+      if (typeof onBeforeRouteFn === 'function') {
+        try {
+          await onBeforeRouteFn(requestContext)
+          
+          // If this plugin handled the request, return the response
+          if (requestContext.handled && requestContext.response) {
+            return requestContext.response
+          }
+        } catch (error) {
+          logger.error(`Plugin '${pluginName}' onBeforeRoute hook failed`, { 
+            error: (error as Error).message 
+          })
+        }
+      }
+    }
+    
+    return null
+  }
+
+  private async executePluginErrorHooks(errorContext: any): Promise<Response | null> {
+    const loadOrder = this.pluginRegistry.getLoadOrder()
+    
+    for (const pluginName of loadOrder) {
+      const plugin = this.pluginRegistry.get(pluginName)
+      if (!plugin) continue
+      
+      const onErrorFn = (plugin as any).onError
+      if (typeof onErrorFn === 'function') {
+        try {
+          await onErrorFn(errorContext)
+          
+          // If this plugin handled the error, check if it provides a response
+          if (errorContext.handled) {
+            // For Vite plugin, we'll handle the proxy here
+            if (pluginName === 'vite' && errorContext.error.constructor.name === 'NotFoundError') {
+              return await this.handleViteProxy(errorContext)
+            }
+            
+            // For other plugins, return a basic success response
+            return new Response('OK', { status: 200 })
+          }
+        } catch (error) {
+          logger.error(`Plugin '${pluginName}' onError hook failed`, { 
+            error: (error as Error).message 
+          })
+        }
+      }
+    }
+    
+    return null
+  }
+
+  private async handleViteProxy(errorContext: any): Promise<Response> {
+    const vitePort = this.context.config.client?.port || 5173
+    const url = new URL(errorContext.request.url)
+    
+    try {
+      const viteUrl = `http://localhost:${vitePort}${url.pathname}${url.search}`
+      
+      // Forward request to Vite
+      const response = await fetch(viteUrl, {
+        method: errorContext.method,
+        headers: errorContext.headers
+      })
+      
+      // Return a proper Response object with all headers and status
+      const body = await response.arrayBuffer()
+      
+      return new Response(body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers
+      })
+      
+    } catch (viteError) {
+      // If Vite fails, return error response
+      return new Response(`Vite server not ready on port ${vitePort}. Error: ${viteError}`, {
+        status: 503,
+        headers: { 'Content-Type': 'text/plain' }
+      })
+    }
   }
 
   use(plugin: Plugin) {

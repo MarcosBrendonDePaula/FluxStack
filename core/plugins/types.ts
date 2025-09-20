@@ -6,6 +6,7 @@ export type PluginHook =
   | 'onServerStart'
   | 'onServerStop'
   | 'onRequest'
+  | 'onBeforeRoute'
   | 'onResponse'
   | 'onError'
   | 'onBuild'
@@ -43,6 +44,8 @@ export interface RequestContext {
   body?: any
   user?: any
   startTime: number
+  handled?: boolean
+  response?: Response
 }
 
 export interface ResponseContext extends RequestContext {
@@ -85,10 +88,14 @@ export interface Plugin {
   onServerStart?: (context: PluginContext) => void | Promise<void>
   onServerStop?: (context: PluginContext) => void | Promise<void>
   onRequest?: (context: RequestContext) => void | Promise<void>
+  onBeforeRoute?: (context: RequestContext) => void | Promise<void>
   onResponse?: (context: ResponseContext) => void | Promise<void>
   onError?: (context: ErrorContext) => void | Promise<void>
   onBuild?: (context: BuildContext) => void | Promise<void>
   onBuildComplete?: (context: BuildContext) => void | Promise<void>
+  
+  // CLI commands
+  commands?: CliCommand[]
   
   // Configuration
   configSchema?: PluginConfigSchema
@@ -201,3 +208,47 @@ export type PluginLifecycleEvent =
   | 'hook:before'
   | 'hook:after'
   | 'hook:error'
+
+// CLI Command interfaces
+export interface CliArgument {
+  name: string
+  description: string
+  required?: boolean
+  type?: 'string' | 'number' | 'boolean'
+  default?: any
+  choices?: string[]
+}
+
+export interface CliOption {
+  name: string
+  short?: string
+  description: string
+  type?: 'string' | 'number' | 'boolean' | 'array'
+  default?: any
+  required?: boolean
+  choices?: string[]
+}
+
+export interface CliCommand {
+  name: string
+  description: string
+  usage?: string
+  examples?: string[]
+  arguments?: CliArgument[]
+  options?: CliOption[]
+  aliases?: string[]
+  category?: string
+  hidden?: boolean
+  handler: (args: any[], options: any, context: CliContext) => Promise<void> | void
+}
+
+export interface CliContext {
+  config: FluxStackConfig
+  logger: Logger
+  utils: PluginUtils
+  workingDir: string
+  packageInfo: {
+    name: string
+    version: string
+  }
+}
