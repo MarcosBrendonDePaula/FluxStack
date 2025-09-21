@@ -38,7 +38,12 @@
       "Bash(pkill:*)",
       "Bash(taskkill:*)",
       "Bash(npx eslint:*)",
-      "Bash(export NODE_ENV=production)"
+      "Bash(export NODE_ENV=production)",
+      "WebFetch(domain:vite.dev)",
+      "Bash(git restore:*)",
+      "Bash(NODE_ENV=production bun run app/server/index.ts)",
+      "Bash(NODE_ENV=production bun dist/index.js)",
+      "Bash(NODE_ENV=production bun run build)"
     ],
     "deny": []
   }

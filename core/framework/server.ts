@@ -213,43 +213,7 @@ export class FluxStackFramework {
         return handledResponse
       }
       
-      // Check if it's a NOT_FOUND error and we're in development with Vite plugin
-      if (error.constructor.name === 'NotFoundError' && this.context.isDevelopment) {
-        // Skip API routes and swagger - these should remain 404
-        if (!url.pathname.startsWith("/api") && !url.pathname.startsWith("/swagger")) {
-          // Try to proxy to Vite
-          const vitePort = this.context.config.client?.port || 5173
-          
-          try {
-            const viteUrl = `http://localhost:${vitePort}${url.pathname}${url.search}`
-            
-            // Create headers object from request
-            const headers: Record<string, string> = {}
-            request.headers.forEach((value: string, key: string) => {
-              headers[key] = value
-            })
-            
-            // Forward request to Vite
-            const response = await fetch(viteUrl, {
-              method: request.method,
-              headers
-            })
-            
-            // Return a proper Response object with all headers and status
-            const body = await response.arrayBuffer()
-            
-            return new Response(body, {
-              status: response.status,
-              statusText: response.statusText,
-              headers: response.headers
-            })
-            
-          } catch (viteError) {
-            // If Vite fails, fall back to normal error handling
-            console.warn(`Vite proxy error: ${viteError}`)
-          }
-        }
-      }
+      // Vite proxy logic is now handled by the Vite plugin via onBeforeRoute hook
       
       // Convert Elysia error to standard Error if needed
       const standardError = error instanceof Error ? error : new Error(String(error))
@@ -439,7 +403,6 @@ export class FluxStackFramework {
         // Call setup hook if it exists and hasn't been called
         if (plugin.setup) {
           await plugin.setup(this.pluginContext)
-          logger.framework(`Plugin '${pluginName}' setup completed`)
         }
       }
 
@@ -449,14 +412,12 @@ export class FluxStackFramework {
 
         if (plugin.onServerStart) {
           await plugin.onServerStart(this.pluginContext)
-          logger.framework(`Plugin '${pluginName}' server start hook completed`)
         }
       }
 
       this.isStarted = true
       logger.framework('All plugins loaded successfully', {
-        pluginCount: loadOrder.length,
-        loadOrder
+        pluginCount: loadOrder.length
       })
 
     } catch (error) {

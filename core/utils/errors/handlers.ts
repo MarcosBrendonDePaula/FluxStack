@@ -34,13 +34,17 @@ export const errorHandler = (error: Error, context: ErrorHandlerContext) => {
     }
   }
   
-  // Handle unknown errors
-  logger.error('Unhandled error', { 
-    error: error.message, 
-    stack: error.stack,
-    path,
-    method: request?.method
-  })
+  // Handle unknown errors - skip logging for NOT_FOUND unless explicitly enabled
+  if (error.message === 'NOT_FOUND' && !process.env.ENABLE_NOT_FOUND_LOGS) {
+    // Skip logging NOT_FOUND errors to reduce noise
+  } else {
+    logger.error('Unhandled error', { 
+      error: error.message, 
+      stack: error.stack,
+      path,
+      method: request?.method
+    })
+  }
   
   return {
     error: {

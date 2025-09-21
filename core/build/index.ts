@@ -42,7 +42,12 @@ export class FluxStackBuilder {
         "bun", "build", 
         "app/server/index.ts", 
         "--outdir", this.config.build.outDir,
-        "--target", this.config.build.target
+        "--target", this.config.build.target,
+        "--external", "@tailwindcss/vite",
+        "--external", "tailwindcss", 
+        "--external", "lightningcss",
+        "--external", "vite",
+        "--external", "@vitejs/plugin-react"
       ],
       stdout: "pipe",
       stderr: "pipe"

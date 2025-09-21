@@ -6,7 +6,7 @@ Object.defineProperty(global, 'fetch', {
   writable: true,
   configurable: true
 })
-import { vitePlugin } from '@/core/server/plugins/vite'
+import { vitePlugin } from '@/core/plugins/built-in/vite'
 import type { PluginContext } from '@/core/types'
 
 // Remove duplicate global fetch assignment as it's now set above

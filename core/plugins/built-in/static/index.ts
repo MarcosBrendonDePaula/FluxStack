@@ -1,7 +1,6 @@
 import { join, extname } from "path"
 import { existsSync, statSync } from "fs"
 import type { Plugin, PluginContext } from "../../types"
-import { proxyToVite } from "../vite"
 
 export const staticPlugin: Plugin = {
   name: "static",
@@ -120,21 +119,8 @@ export const staticPlugin: Plugin = {
       }
       
       try {
-        // In development, proxy to Vite if available
-        if (context.utils.isDevelopment() && context.config.client) {
-          const viteHost = "localhost"
-          const vitePort = context.config.client.port || 5173
-          
-          const response = await proxyToVite(request, viteHost, vitePort)
-          
-          // If Vite is available, return its response
-          if (response.status !== 503 && response.status !== 504) {
-            return response
-          }
-          
-          // If Vite is not available, fall back to static serving
-          context.logger.debug("Vite not available, falling back to static serving")
-        }
+        // Note: Vite proxy is now handled by the Vite plugin via onBeforeRoute hook
+        // This plugin only handles static files serving in production or fallback
         
         // Serve static files
         return await serveStaticFile(url.pathname, config, context, set)

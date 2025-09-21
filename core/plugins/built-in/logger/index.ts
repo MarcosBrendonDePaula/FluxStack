@@ -42,8 +42,8 @@ export const loggerPlugin: Plugin = {
   },
   
   defaultConfig: {
-    logRequests: true,
-    logResponses: true,
+    logRequests: process.env.ENABLE_REQUEST_LOGS === 'true',
+    logResponses: process.env.ENABLE_REQUEST_LOGS === 'true',
     logErrors: true,
     includeHeaders: false,
     includeBody: false,
@@ -142,6 +142,11 @@ export const loggerPlugin: Plugin = {
     const config = getPluginConfig(context)
     
     if (!config.logErrors) return
+
+    // Skip logging for NOT_FOUND errors unless explicitly enabled
+    if (context.error.message === 'NOT_FOUND' && !process.env.ENABLE_NOT_FOUND_LOGS) {
+      return
+    }
 
     const logData: any = {
       method: context.method,

@@ -144,18 +144,47 @@ export const vitePlugin: Plugin = {
     }
   },
 
-  onRequest: async (requestContext: RequestContext) => {
-    // This would be called by the static plugin or routing system
-    // to determine if a request should be proxied to Vite
-    const url = new URL(requestContext.request.url)
-    
-    // Skip API routes
-    if (url.pathname.startsWith('/api')) {
+  onBeforeRoute: async (requestContext: RequestContext) => {
+    // Skip API routes and swagger - let them be handled by backend
+    if (requestContext.path.startsWith("/api") || requestContext.path.startsWith("/swagger")) {
       return
     }
     
-    // This is where we'd implement the proxying logic
-    // In practice, this would be handled by the static plugin
+    // Use fixed configuration for simplicity - Vite should be running on port 5173
+    const viteHost = "localhost"
+    const vitePort = 5173
+    
+    try {
+      const url = new URL(requestContext.request.url)
+      const viteUrl = `http://${viteHost}:${vitePort}${requestContext.path}${url.search}`
+      
+      // Forward request to Vite
+      const response = await fetch(viteUrl, {
+        method: requestContext.method,
+        headers: requestContext.headers,
+        body: requestContext.method !== 'GET' && requestContext.method !== 'HEAD' ? requestContext.request.body : undefined
+      })
+      
+      // If Vite responds successfully, handle the request
+      if (response.ok || response.status < 500) {
+        // Return a proper Response object with all headers and status
+        const body = await response.arrayBuffer()
+        
+        requestContext.handled = true
+        requestContext.response = new Response(body, {
+          status: response.status,
+          statusText: response.statusText,
+          headers: response.headers
+        })
+      }
+      
+    } catch (viteError) {
+      // If Vite fails, let the request continue to normal routing (will become 404)
+      // Only log if explicitly enabled for debugging
+      if (process.env.ENABLE_VITE_PROXY_LOGS === 'true') {
+        console.warn(`Vite proxy error: ${viteError}`)
+      }
+    }
   }
 }
 
@@ -282,52 +311,6 @@ async function checkViteRunning(host: string, port: number, timeout: number = 10
   }
 }
 
-// Proxy request to Vite server with automatic port detection
-export const proxyToVite = async (
-  request: Request, 
-  viteHost: string = "localhost",
-  vitePort: number = 5173,
-  timeout: number = 5000
-): Promise<Response> => {
-  const url = new URL(request.url)
-  
-  // Don't proxy API routes
-  if (url.pathname.startsWith("/api")) {
-    return new Response("Not Found", { status: 404 })
-  }
-  
-  try {
-    let actualPort = vitePort
-    
-    // Try to detect the correct Vite port if the default doesn't work
-    const isRunning = await checkViteRunning(viteHost, vitePort, 1000)
-    if (!isRunning) {
-      const detectedPort = await detectVitePort(viteHost, vitePort)
-      if (detectedPort !== null) {
-        actualPort = detectedPort
-      }
-    }
-    
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), timeout)
-    
-    const viteUrl = `http://${viteHost}:${actualPort}${url.pathname}${url.search}`
-    
-    const response = await fetch(viteUrl, {
-      method: request.method,
-      headers: request.headers,
-      body: request.method !== 'GET' && request.method !== 'HEAD' ? request.body : undefined,
-      signal: controller.signal
-    })
-    
-    clearTimeout(timeoutId)
-    return response
-  } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
-      return new Response("Vite server timeout", { status: 504 })
-    }
-    return new Response(`Vite server not ready - trying port ${vitePort}`, { status: 503 })
-  }
-}
+// Note: Proxy logic is now handled directly in the onBeforeRoute hook above
 
 export default vitePlugin
