@@ -28,6 +28,10 @@
     "start": "bun run core/cli/index.ts start",
     "start:frontend": "bun run app/client/frontend-only.ts",
     "start:backend": "bun run app/server/backend-only.ts",
+    "docker:build": "cd dist && docker build -t fluxstack-app .",
+    "docker:run": "cd dist && docker run -p 3000:3000 fluxstack-app",
+    "docker:compose": "cd dist && docker-compose up -d",
+    "docker:stop": "cd dist && docker-compose down",
     "create": "bun run core/cli/index.ts create",
     "test": "vitest",
     "test:ui": "vitest --ui",
@@ -70,6 +74,7 @@
     "elysia": "^1.4.6",
     "http-proxy-middleware": "^3.0.5",
     "lightningcss": "^1.30.1",
+    "lucide-react": "^0.544.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "vite": "^7.0.4"

@@ -166,20 +166,22 @@ async function serveStaticFile(
 ): Promise<any> {
   const isDev = context.utils.isDevelopment()
   
-  // Determine base directory with production path fix
+  // Determine base directory using path discovery (no hardcoded detection)
   let baseDir: string
   
   if (isDev && existsSync(config.publicDir)) {
+    // Development: use public directory
     baseDir = config.publicDir
   } else {
-    // In production, check if we're running from dist/ directory
-    const isRunningFromDist = process.cwd().endsWith('dist') || process.cwd().includes('dist')
-    
-    if (isRunningFromDist) {
-      // Running from dist/ - use relative paths
-      baseDir = existsSync('client') ? 'client' : config.distDir
+    // Production: try paths in order of preference
+    if (existsSync('client')) {
+      // Found client/ in current directory (running from dist/)
+      baseDir = 'client'
+    } else if (existsSync('dist/client')) {
+      // Found dist/client/ (running from project root)
+      baseDir = 'dist/client'
     } else {
-      // Running from project root - use configured path
+      // Fallback to configured path
       baseDir = config.distDir
     }
   }
