@@ -166,10 +166,23 @@ async function serveStaticFile(
 ): Promise<any> {
   const isDev = context.utils.isDevelopment()
   
-  // Determine base directory
-  const baseDir = isDev && existsSync(config.publicDir) 
-    ? config.publicDir 
-    : config.distDir
+  // Determine base directory with production path fix
+  let baseDir: string
+  
+  if (isDev && existsSync(config.publicDir)) {
+    baseDir = config.publicDir
+  } else {
+    // In production, check if we're running from dist/ directory
+    const isRunningFromDist = process.cwd().endsWith('dist') || process.cwd().includes('dist')
+    
+    if (isRunningFromDist) {
+      // Running from dist/ - use relative paths
+      baseDir = existsSync('client') ? 'client' : config.distDir
+    } else {
+      // Running from project root - use configured path
+      baseDir = config.distDir
+    }
+  }
   
   if (!existsSync(baseDir)) {
     context.logger.warn(`Static directory not found: ${baseDir}`)
