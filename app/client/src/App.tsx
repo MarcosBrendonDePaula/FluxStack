@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { api, apiCall, getErrorMessage } from './lib/eden-api'
 import type { User } from '@/shared/types'
+import TestPage from './components/TestPage'
 
-type TabType = 'overview' | 'demo' | 'api-docs'
+type TabType = 'overview' | 'demo' | 'api-docs' | 'tests'
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('overview')
@@ -540,7 +541,8 @@ const health = await api.health.get()`}
                 {[
                   { id: 'overview', label: '📋 Visão Geral', icon: '📋' },
                   { id: 'demo', label: '🚀 Demo', icon: '🚀' },
-                  { id: 'api-docs', label: '📚 API Docs', icon: '📚' }
+                  { id: 'api-docs', label: '📚 API Docs', icon: '📚' },
+                  { id: 'tests', label: '🧪 Testes', icon: '🧪' }
                 ].map(tab => (
                   <button
                     key={tab.id}
@@ -576,7 +578,8 @@ const health = await api.health.get()`}
               {[
                 { id: 'overview', label: '📋 Visão Geral' },
                 { id: 'demo', label: '🚀 Demo' },
-                { id: 'api-docs', label: '📚 Docs' }
+                { id: 'api-docs', label: '📚 Docs' },
+                { id: 'tests', label: '🧪 Testes' }
               ].map(tab => (
                 <button
                   key={tab.id}
@@ -600,6 +603,7 @@ const health = await api.health.get()`}
         {activeTab === 'overview' && renderOverview()}
         {activeTab === 'demo' && renderDemo()}
         {activeTab === 'api-docs' && renderApiDocs()}
+        {activeTab === 'tests' && <TestPage />}
       </main>
 
       {/* Toast Notification */}
