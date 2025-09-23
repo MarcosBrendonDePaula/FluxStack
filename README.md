@@ -36,14 +36,14 @@ Quantas vezes você já perdeu horas configurando:
 
 ```typescript
 // ✨ Type safety AUTOMÁTICA client ↔ server
-const { data: user, error } = await api.users.post({
+const { data, error } = await api.users.post({
   name: "João",           // ✅ Autocomplete
   email: "joao@teste.com" // ✅ Validação em tempo real
 })
 
 if (!error) {
-  console.log(user.user.id)   // ✅ Types inferidos automaticamente
-  console.log(user.success)   // ✅ Zero configuração manual
+  console.log(data.user.id)   // ✅ Types inferidos automaticamente
+  console.log(data.success)   // ✅ Zero configuração manual
 }
 ```
 
@@ -100,11 +100,11 @@ export function useUsers() {
   const [users, setUsers] = useState<User[]>([])
 
   const createUser = async (userData) => {
-    // ✨ Autocomplete + Type safety automáticos
+    // ✨ Eden Treaty nativo - Type safety automático
     const { data, error } = await api.users.post(userData)
     
-    if (!error && data.success) {
-      setUsers(prev => [...prev, data.user]) // ✨ Types corretos!
+    if (!error) {
+      setUsers(prev => [...prev, data.user]) // ✨ Types inferidos automaticamente!
     }
   }
 
