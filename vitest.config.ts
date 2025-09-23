@@ -9,27 +9,19 @@ export default defineConfig({
   plugins: [],
   test: {
     globals: true,
-    environment: 'jsdom', // Use jsdom for React components
     setupFiles: ['./tests/setup.ts'],
     testTimeout: 5000,
-    include: [
-      '**/__tests__/**/*.{js,ts,jsx,tsx}',
-      '**/*.{test,spec}.{js,ts,jsx,tsx}'
-    ],
-    exclude: [
-      '**/node_modules/**',
-      '**/dist/**',
-      '**/build/**',
-      '**/.{idea,git,cache,output,temp}/**'
-    ],
-    environmentMatchGlobs: [
-      // Use node environment for backend/server tests  
-      ['**/core/**/*.test.{js,ts}', 'node'],
-      ['**/app/server/**/*.test.{js,ts}', 'node'],
-      ['**/controllers/**/*.test.{js,ts}', 'node'],
-      // Use jsdom for frontend/React tests
-      ['**/app/client/**/*.test.{js,ts,jsx,tsx}', 'jsdom'],
-      ['**/client/**/*.test.{js,ts,jsx,tsx}', 'jsdom']
+    projects: [
+      {
+        name: 'frontend',
+        testMatch: ['**/app/client/**/*.{test,spec}.{js,ts,jsx,tsx}', '**/tests/unit/app/client/**/*.{test,spec}.{js,ts,jsx,tsx}'],
+        environment: 'jsdom'
+      },
+      {
+        name: 'backend',
+        testMatch: ['**/core/**/*.{test,spec}.{js,ts}', '**/app/server/**/*.{test,spec}.{js,ts}', '**/tests/unit/app/controllers/**/*.{test,spec}.{js,ts}', '**/tests/integration/**/*.{test,spec}.{js,ts}'],
+        environment: 'node'
+      }
     ],
     coverage: {
       provider: 'v8',

@@ -1,6 +1,10 @@
 import '@testing-library/jest-dom'
 import { beforeAll, afterAll, afterEach } from 'vitest'
 import { cleanup } from '@testing-library/react'
+import { act } from 'react'
+
+// Fix React.act for React 19
+global.React = { act }
 
 // Cleanup after each test case (e.g. clearing jsdom)
 afterEach(() => {

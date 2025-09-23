@@ -88,6 +88,8 @@ describe('Configuration Loader', () => {
       process.env.FLUXSTACK_API_PREFIX = '/v2'
       process.env.FLUXSTACK_LOG_LEVEL = 'error'
 
+      // Force reload config to pick up new env vars
+      reloadConfig()
       const config = getConfigSync()
 
       expect(config.server?.port).toBe(5000)
@@ -167,6 +169,7 @@ describe('Configuration Loader', () => {
       process.env.BUILD_MINIFY = 'true'
       process.env.BUILD_SOURCEMAPS = 'false'
 
+      reloadConfig()
       const config = getConfigSync()
 
       expect(config.build?.target).toBe('docker')
@@ -179,6 +182,7 @@ describe('Configuration Loader', () => {
       process.env.FLUXSTACK_PLUGINS_ENABLED = 'plugin1,plugin2,plugin3'
       process.env.FLUXSTACK_PLUGINS_DISABLED = 'plugin4'
 
+      reloadConfig()
       const config = getConfigSync()
 
       expect(config.plugins?.enabled).toEqual(['plugin1', 'plugin2', 'plugin3'])
