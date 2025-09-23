@@ -2,17 +2,21 @@
 import { treaty } from '@elysiajs/eden'
 import type { App } from '../../../server/app'
 
-// Get base URL dynamically
+// Get base URL dynamically (runtime detection)
 const getBaseUrl = () => {
-  if (typeof window === 'undefined') return 'http://localhost:3000'
-  
-  // In production, use current origin
-  if (window.location.hostname !== 'localhost') {
-    return window.location.origin
+  if (typeof window === 'undefined') {
+    return 'http://localhost:3000'
   }
-  
-  // In development, use backend server (port 3000 for integrated mode)
-  return 'http://localhost:3000'
+
+  const currentHost = window.location.hostname
+  const currentPort = window.location.port
+  const currentProtocol = window.location.protocol
+
+  if (currentPort.trim().length > 0) {
+    return `${currentProtocol}//${currentHost}:${currentPort}`
+  }
+
+  return `${currentProtocol}//${currentHost}`
 }
 
 // Create Eden Treaty client with proper typing
@@ -49,7 +53,7 @@ export async function apiCall<T>(
 ): Promise<T> {
   try {
     const result = await apiPromise
-    
+
     if (result.error) {
       throw new APIException({
         message: result.error.message || 'API Error',
@@ -58,13 +62,13 @@ export async function apiCall<T>(
         details: result.error
       })
     }
-    
+
     return result.data
   } catch (error) {
     if (error instanceof APIException) {
       throw error
     }
-    
+
     // Network or other errors
     throw new APIException({
       message: error instanceof Error ? error.message : 'Unknown error',
@@ -94,10 +98,10 @@ export function getErrorMessage(error: unknown): string {
         return error.message || 'Erro desconhecido'
     }
   }
-  
+
   if (error instanceof Error) {
     return error.message
   }
-  
+
   return 'Erro desconhecido'
 }
