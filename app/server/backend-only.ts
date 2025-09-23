@@ -1,7 +1,7 @@
 // Backend standalone entry point
 import { startBackendOnly } from "@/core/server/standalone"
 import { apiRoutes } from "./routes"
-import { env } from "@/core/utils/env-runtime-v2"
+import { env } from "@/core/utils/env-runtime"
 
 // Configuração para backend standalone com env dinâmico
 const backendConfig = {

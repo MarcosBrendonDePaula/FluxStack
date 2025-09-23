@@ -54,13 +54,31 @@ export const startBackendOnly = async (userRoutes?: any, config: any = {}) => {
     app.routes(userRoutes)
   }
 
-  // Adicionar rota de health check
+  // Adicionar rotas básicas para backend standalone
   const framework = app.getApp()
+  
+  // Health check
   framework.get("/health", () => ({ 
     status: "ok", 
     mode: "backend-only",
     timestamp: new Date().toISOString(),
     port
+  }))
+  
+  // Rota raiz informativa para backend standalone
+  framework.get("/", () => ({
+    message: "🦊 FluxStack Backend Server",
+    mode: "backend-only",
+    endpoints: {
+      health: "/health",
+      api: "/api/*",
+      docs: "/swagger"
+    },
+    frontend: {
+      note: "Frontend não está rodando neste servidor",
+      recommendation: "Use 'bun run dev' para modo integrado ou 'bun run dev:frontend' para frontend standalone"
+    },
+    timestamp: new Date().toISOString()
   }))
 
   // Override do listen para não mostrar mensagens do framework
