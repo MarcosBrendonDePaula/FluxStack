@@ -61,7 +61,12 @@ bun install
 bun run dev
 ```
 
-**🎉 Pronto!** Abra http://localhost:5173 e veja a mágica acontecer.
+**🎉 Pronto!** Abra http://localhost:3000 e veja a mágica acontecer.
+
+> 💡 **FluxStack Integrado**: Frontend e backend rodam no mesmo servidor (porta 3000)!  
+> 📁 Frontend: `http://localhost:3000/`  
+> 🔌 API: `http://localhost:3000/api/`  
+> 📚 Docs: `http://localhost:3000/swagger`
 
 ## ⚡ **Stack Tecnológica**
 
@@ -171,7 +176,7 @@ function UserList() {
 bun run dev              # 🚀 Full-stack (Backend + Frontend)
 bun run dev:clean        # 🧹 Output limpo (sem logs HEAD)
 bun run dev:backend      # 🎯 Backend apenas (porta 3001)
-bun run dev:frontend     # ⚛️ Frontend apenas (porta 5173)
+bun run dev:frontend     # ⚛️ Frontend Vite standalone (porta 5173)
 
 # Build & Deploy
 bun run build           # 📦 Build otimizado para produção
