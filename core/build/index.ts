@@ -1,5 +1,5 @@
 import { spawn } from "bun"
-import { writeFileSync } from "fs"
+import { copyFile, copyFileSync, writeFileSync } from "fs"
 import { join } from "path"
 import type { FluxStackConfig } from "../config"
 
@@ -165,26 +165,12 @@ coverage
 *.swo
 `
 
-    // package.json simplificado para produção
-    const packageJson = {
-      name: "fluxstack-app",
-      version: "1.0.0",
-      type: "module",
-      scripts: {
-        start: "bun run index.js"
-      },
-      dependencies: {
-        "elysia": "^1.4.6",
-        "@elysiajs/swagger": "^1.3.1",
-        "vite": "^7.0.4"
-      }
-    }
-
     // Escrever arquivos no dist
     writeFileSync(join(distDir, "Dockerfile"), dockerfile)
     writeFileSync(join(distDir, "docker-compose.yml"), dockerCompose)
     writeFileSync(join(distDir, ".dockerignore"), dockerignore)
-    writeFileSync(join(distDir, "package.json"), JSON.stringify(packageJson, null, 2))
+    copyFileSync(join(process.cwd(),'.env'), join(distDir, ".env"))
+    //writeFileSync(join(distDir, "package.json"), JSON.stringify(packageJson, null, 2))
     
     console.log("✅ Docker files created in dist/")
   }
