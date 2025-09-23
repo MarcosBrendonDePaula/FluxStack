@@ -1,9 +1,9 @@
-// Types compartilhados entre cliente e servidor
+// Shared types between server and client
 export interface User {
   id: number
   name: string
   email: string
-  createdAt?: Date
+  createdAt: Date
 }
 
 export interface CreateUserRequest {
@@ -15,12 +15,4 @@ export interface UserResponse {
   success: boolean
   user?: User
   message?: string
-}
-
-export interface ApiResponse {
-  message: string
-}
-
-export interface UsersResponse {
-  users: User[]
 }

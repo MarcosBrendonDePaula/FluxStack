@@ -1,9 +1,15 @@
 import { useState, useEffect } from 'react'
-import { api, apiCall, getErrorMessage } from './lib/eden-api'
-import type { User } from '@/shared/types'
+import { api, getErrorMessage } from './lib/eden-api'
 import TestPage from './components/TestPage'
 
 type TabType = 'overview' | 'demo' | 'api-docs' | 'tests'
+
+interface User {
+  id: number
+  name: string
+  email: string
+  createdAt: string
+}
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('overview')
@@ -22,8 +28,12 @@ function App() {
 
   const checkApiStatus = async () => {
     try {
-      await apiCall(api.health.get())
-      setApiStatus('online')
+      const { data, error } = await api.health.get()
+      if (error) {
+        setApiStatus('offline')
+      } else {
+        setApiStatus('online')
+      }
     } catch {
       setApiStatus('offline')
     }
@@ -32,8 +42,15 @@ function App() {
   const loadUsers = async () => {
     try {
       setLoading(true)
-      const data = await apiCall(api.users.get())
-      setUsers(data?.users || [])
+      const { data, error } = await api.users.get()
+      
+      if (error) {
+        showMessage('error', `Erro ao carregar usuários: ${error.status}`)
+        return
+      }
+      
+      // ✨ Eden Treaty infere automaticamente que data.users é User[]
+      setUsers(data.users || [])
     } catch (error) {
       showMessage('error', getErrorMessage(error))
     } finally {
@@ -47,13 +64,24 @@ function App() {
 
     try {
       setSubmitting(true)
-      const result = await apiCall(api.users.post({ name: name.trim(), email: email.trim() })) as { success: boolean; user: User }
+      const { data: result, error } = await api.users.post({ 
+        name: name.trim(), 
+        email: email.trim() 
+      })
       
-      if (result?.success && result?.user) {
+      if (error) {
+        showMessage('error', `Erro ao criar usuário: ${error.status}`)
+        return
+      }
+      
+      // ✨ Eden Treaty infere que result é UserResponse
+      if (result.success && result.user) {
         setUsers(prev => [...prev, result.user])
         setName('')
         setEmail('')
         showMessage('success', `Usuário ${name} adicionado com sucesso!`)
+      } else {
+        showMessage('error', result.message || 'Erro ao criar usuário')
       }
     } catch (error) {
       showMessage('error', getErrorMessage(error))
@@ -66,12 +94,22 @@ function App() {
     if (!confirm(`Tem certeza que deseja remover ${userName}?`)) return
     
     try {
-      // Chamar API de delete via Eden Treaty
-      await apiCall(api.users({ id: userId.toString() }).delete())
+      // ✨ Chamar API de delete via Eden Treaty nativo
+      const { data: result, error } = await api.users({ id: userId }).delete()
       
-      // Remover da lista local após sucesso da API
-      setUsers(prev => prev.filter(user => user.id !== userId))
-      showMessage('success', `Usuário ${userName} removido com sucesso!`)
+      if (error) {
+        showMessage('error', `Erro ao deletar usuário: ${error.status}`)
+        return
+      }
+      
+      // ✨ Eden Treaty infere que result é UserResponse  
+      if (result.success) {
+        // Remover da lista local após sucesso da API
+        setUsers(prev => prev.filter(user => user.id !== userId))
+        showMessage('success', `Usuário ${userName} removido com sucesso!`)
+      } else {
+        showMessage('error', result.message || 'Erro ao deletar usuário')
+      }
     } catch (error) {
       showMessage('error', getErrorMessage(error))
     }

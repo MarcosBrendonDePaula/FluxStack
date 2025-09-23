@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { api, apiCall, getErrorMessage } from '../lib/eden-api'
+import { api, getErrorMessage } from '../lib/eden-api'
 
 interface TestResult {
   name: string
@@ -113,12 +113,17 @@ const TestPage: React.FC = () => {
     })
 
     try {
-      const response = await apiCall(api.health.get())
+      const { data: response, error } = await api.health.get()
+      
+      if (error) {
+        throw new Error(`API Error: ${error.status}`)
+      }
+
       const duration = Date.now() - startTime
 
       updateTestResult('API Health Check', {
         status: 'success',
-        message: `API is healthy: ${response.message}`,
+        message: `API is healthy: ${response.status}`,
         details: response,
         duration
       })
@@ -142,20 +147,46 @@ const TestPage: React.FC = () => {
     })
 
     try {
-      // Test getting users
-      const users = await apiCall(api.users.get())
+      // ✨ Test getting users - Eden Treaty nativo
+      const { data: usersResponse, error: getUsersError } = await api.users.get()
       
-      // Test creating a user
-      const newUser = await apiCall(api.users.post({
+      if (getUsersError) {
+        throw new Error(`Get users failed: ${getUsersError.status}`)
+      }
+      
+      // ✨ Test creating a user - Eden Treaty com inferência perfeita
+      const { data: newUser, error: createError } = await api.users.post({
         name: "Test User",
         email: "test@example.com"
-      }))
+      })
 
-      // Test getting the created user
-      const createdUser = await apiCall(api.users[newUser.id].get())
+      if (createError) {
+        throw new Error(`Create user failed: ${createError.status}`)
+      }
 
-      // Test deleting the user
-      await apiCall(api.users[newUser.id].delete())
+      // ✨ Eden Treaty agora infere automaticamente: newUser é UserResponse
+      if (!newUser.success || !newUser.user) {
+        throw new Error('User creation failed')
+      }
+
+      // ✨ Test getting the created user - inferência automática de tipos  
+      const { data: createdUser, error: getError } = await api.users({ id: newUser.user.id }).get()
+
+      if (getError) {
+        throw new Error(`Get user failed: ${getError.status}`)
+      }
+
+      // ✨ Eden Treaty infere: createdUser é { user: User }
+      if (!createdUser || !createdUser.user) {
+        throw new Error('User not found')
+      }
+
+      // ✨ Test deleting the user - inferência automática
+      const { data: deleteResult, error: deleteError } = await api.users({ id: newUser.user.id }).delete()
+
+      if (deleteError) {
+        throw new Error(`Delete user failed: ${deleteError.status}`)
+      }
 
       const duration = Date.now() - startTime
 
@@ -163,8 +194,10 @@ const TestPage: React.FC = () => {
         status: 'success',
         message: `Users API working correctly (CRUD operations completed)`,
         details: {
-          initialUsers: users.length,
+          initialUsers: usersResponse.users.length,
           createdUser: createdUser,
+          newUser: newUser,
+          deleteResult: deleteResult,
           operations: ['GET', 'POST', 'GET by ID', 'DELETE']
         },
         duration

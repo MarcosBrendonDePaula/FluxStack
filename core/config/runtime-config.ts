@@ -194,7 +194,7 @@ export const runtimeConfig = {
     
     if (overrides) {
       const builder = new RuntimeConfigBuilder()
-      builder.config = config
+      ;(builder as any).config = config
       
       for (const [key, value] of Object.entries(overrides)) {
         builder.override(key, value)

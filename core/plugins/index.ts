@@ -83,7 +83,7 @@ export const PluginUtils = {
         configSchema?: any
         defaultConfig?: any
     }): Plugin => {
-        const plugin: Plugin = {
+        const plugin = {
             name: config.name,
             ...(config.version && { version: config.version }),
             ...(config.description && { description: config.description }),
@@ -97,7 +97,7 @@ export const PluginUtils = {
             ...(config.onError && { onError: config.onError }),
             ...(config.configSchema && { configSchema: config.configSchema }),
             ...(config.defaultConfig && { defaultConfig: config.defaultConfig })
-        }
+        } as Plugin
         return plugin
     },
 

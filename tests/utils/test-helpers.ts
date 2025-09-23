@@ -50,12 +50,12 @@ export const mockApiError = (message: string, status = 400) => ({
 // Environment helpers
 export const setTestEnv = (vars: Record<string, string>) => {
   Object.entries(vars).forEach(([key, value]) => {
-    process.env[key] = value
+    Bun.env[key] = value
   })
 }
 
 export const resetTestEnv = (keys: string[]) => {
   keys.forEach(key => {
-    delete process.env[key]
+    delete Bun.env[key]
   })
 }

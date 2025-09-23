@@ -1,22 +1,18 @@
-// Eden Treaty API Client
+// Eden Treaty API Client - Full Type Inference
 import { treaty } from '@elysiajs/eden'
 import type { App } from '../../../server/app'
 
-// Get base URL dynamically (runtime detection)
+// Get base URL dynamically
 const getBaseUrl = () => {
-  if (typeof window === 'undefined') {
-    return 'http://localhost:3000'
+  if (typeof window === 'undefined') return 'http://localhost:3000'
+  
+  // In production, use current origin
+  if (window.location.hostname !== 'localhost') {
+    return window.location.origin
   }
-
-  const currentHost = window.location.hostname
-  const currentPort = window.location.port
-  const currentProtocol = window.location.protocol
-
-  if (currentPort.trim().length > 0) {
-    return `${currentProtocol}//${currentHost}:${currentPort}`
-  }
-
-  return `${currentProtocol}//${currentHost}`
+  
+  // In development, use backend server (port 3000 for integrated mode)
+  return 'http://localhost:3000'
 }
 
 // Create Eden Treaty client with proper typing
@@ -47,35 +43,20 @@ export class APIException extends Error {
   }
 }
 
-// Wrapper for API calls with error handling (Eden Treaty compatible)
-export async function apiCall<T>(
-  apiPromise: Promise<{ data: T; error: any; status: number; response: Response }>
-): Promise<T> {
-  try {
-    const result = await apiPromise
-
-    if (result.error) {
-      throw new APIException({
-        message: result.error.message || 'API Error',
-        status: result.status,
-        code: result.error.code,
-        details: result.error
-      })
-    }
-
-    return result.data
-  } catch (error) {
-    if (error instanceof APIException) {
-      throw error
-    }
-
-    // Network or other errors
+// Minimal wrapper that preserves Eden's automatic type inference
+export async function apiCall(apiPromise: Promise<any>) {
+  const { data, error } = await apiPromise
+  
+  if (error) {
     throw new APIException({
-      message: error instanceof Error ? error.message : 'Unknown error',
-      status: 500,
-      code: 'NETWORK_ERROR'
+      message: error.value?.message || 'API Error',
+      status: error.status,
+      code: error.value?.code,
+      details: error.value
     })
   }
+  
+  return data // ✨ Preserva a inferência automática do Eden
 }
 
 // User-friendly error messages
@@ -98,10 +79,10 @@ export function getErrorMessage(error: unknown): string {
         return error.message || 'Erro desconhecido'
     }
   }
-
+  
   if (error instanceof Error) {
     return error.message
   }
-
+  
   return 'Erro desconhecido'
 }

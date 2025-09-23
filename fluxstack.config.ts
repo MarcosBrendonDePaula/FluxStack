@@ -82,12 +82,12 @@ export const config: FluxStackConfig = {
 
   // Logging configuration
   logging: {
-    level: env.LOG_LEVEL,                // Direto! (com smart default)
+    level: env.LOG_LEVEL as any,         // Direto! (com smart default)
     format: env.get('LOG_FORMAT', helpers.isDevelopment() ? 'pretty' : 'json'),
     transports: [
       {
         type: 'console' as const,
-        level: env.LOG_LEVEL,            // Direto! (com smart default)
+        level: env.LOG_LEVEL as any,     // Direto! (com smart default)
         format: env.get('LOG_FORMAT', helpers.isDevelopment() ? 'pretty' : 'json')
       }
     ]

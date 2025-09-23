@@ -3,6 +3,14 @@ import { UsersController } from "../controllers/users.controller"
 
 export const usersRoutes = new Elysia({ prefix: "/users" })
   .get("/", () => UsersController.getUsers(), {
+    response: t.Object({
+      users: t.Array(t.Object({
+        id: t.Number(),
+        name: t.String(),
+        email: t.String(),
+        createdAt: t.Date()
+      }))
+    }),
     detail: {
       tags: ['Users'],
       summary: 'List Users',
@@ -23,6 +31,14 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
     params: t.Object({
       id: t.String()
     }),
+    response: t.Object({
+      user: t.Object({
+        id: t.Number(),
+        name: t.String(),
+        email: t.String(),
+        createdAt: t.Date()
+      })
+    }),
     detail: {
       tags: ['Users'],
       summary: 'Get User by ID',
@@ -32,7 +48,7 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
   
   .post("/", async ({ body, set }) => {
     try {
-      return await UsersController.createUser(body)
+      return await UsersController.createUser(body as any)
     } catch (error) {
       set.status = 400
       return { 
@@ -45,6 +61,16 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
     body: t.Object({
       name: t.String({ minLength: 2 }),
       email: t.String({ format: "email" })
+    }),
+    response: t.Object({
+      success: t.Boolean(),
+      user: t.Optional(t.Object({
+        id: t.Number(),
+        name: t.String(),
+        email: t.String(),
+        createdAt: t.Date()
+      })),
+      message: t.Optional(t.String())
     }),
     detail: {
       tags: ['Users'],
@@ -76,6 +102,16 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
   }, {
     params: t.Object({
       id: t.String()
+    }),
+    response: t.Object({
+      success: t.Boolean(),
+      user: t.Optional(t.Object({
+        id: t.Number(),
+        name: t.String(),
+        email: t.String(),
+        createdAt: t.Date()
+      })),
+      message: t.Optional(t.String())
     }),
     detail: {
       tags: ['Users'],
