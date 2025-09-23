@@ -1,173 +1,161 @@
 /**
  * FluxStack Configuration
  * Enhanced configuration with comprehensive settings and environment support
+ * Updated to use dynamic environment variables
  */
 
 import type { FluxStackConfig } from './core/config/schema'
-import { getEnvironmentInfo } from './core/config/env'
+import { env, helpers } from './core/utils/env-runtime-v2'
 
-// Get current environment information
-const env = getEnvironmentInfo()
+console.log(`🔧 Loading FluxStack config for ${env.NODE_ENV} environment`)
 
-// Main FluxStack configuration
+// Main FluxStack configuration with dynamic env vars
 export const config: FluxStackConfig = {
   // Application metadata
   app: {
-    name: process.env.FLUXSTACK_APP_NAME || 'fluxstack-app',
-    version: process.env.FLUXSTACK_APP_VERSION || '1.0.0',
-    description: process.env.FLUXSTACK_APP_DESCRIPTION || 'A FluxStack application'
+    name: env.FLUXSTACK_APP_NAME,        // Direto! (string)
+    version: env.FLUXSTACK_APP_VERSION,  // Direto! (string)
+    description: env.get('FLUXSTACK_APP_DESCRIPTION', 'A FluxStack application')
   },
 
   // Server configuration
   server: {
-    port: parseInt(process.env.PORT || '3000', 10),
-    host: process.env.HOST || 'localhost',
-    apiPrefix: process.env.FLUXSTACK_API_PREFIX || '/api',
+    port: env.PORT,                      // Direto! (number)
+    host: env.HOST,                      // Direto! (string)
+    apiPrefix: env.API_PREFIX,           // Direto! (string)
     cors: {
-      origins: process.env.CORS_ORIGINS?.split(',') || [
-        'http://localhost:3000',
-        'http://localhost:5173'
-      ],
-      methods: process.env.CORS_METHODS?.split(',') || [
-        'GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'
-      ],
-      headers: process.env.CORS_HEADERS?.split(',') || [
-        'Content-Type', 'Authorization'
-      ],
-      credentials: process.env.CORS_CREDENTIALS === 'true',
-      maxAge: parseInt(process.env.CORS_MAX_AGE || '86400', 10)
+      origins: env.CORS_ORIGINS,           // Direto! (string[])
+      methods: env.get('CORS_METHODS', ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']),
+      headers: env.get('CORS_HEADERS', ['Content-Type', 'Authorization']),
+      credentials: env.get('CORS_CREDENTIALS', false),  // boolean casting
+      maxAge: env.get('CORS_MAX_AGE', 86400)           // number casting
     },
     middleware: []
   },
 
   // Client configuration
   client: {
-    port: parseInt(process.env.VITE_PORT || process.env.CLIENT_PORT || '5173', 10),
+    port: env.VITE_PORT,                 // Direto! (number)
     proxy: {
-      target: process.env.VITE_API_URL || process.env.API_URL || 'http://localhost:3000',
-      changeOrigin: true
+      target: helpers.getServerUrl(),    // Helper inteligente
+      changeOrigin: env.get('PROXY_CHANGE_ORIGIN', true)
     },
     build: {
-      sourceMaps: env.isDevelopment,
-      minify: env.isProduction,
-      target: 'esnext',
-      outDir: 'dist/client'
+      sourceMaps: env.get('CLIENT_SOURCEMAPS', helpers.isDevelopment()),
+      minify: env.get('CLIENT_MINIFY', helpers.isProduction()),
+      target: env.get('CLIENT_TARGET', 'esnext'),
+      outDir: env.get('CLIENT_OUTDIR', 'dist/client')
     }
   },
 
   // Build configuration
   build: {
-    target: (process.env.BUILD_TARGET as any) || 'bun',
-    outDir: process.env.BUILD_OUTDIR || 'dist',
+    target: env.get('BUILD_TARGET', 'bun'),   // string casting
+    outDir: env.get('BUILD_OUTDIR', 'dist'),  // string
     optimization: {
-      minify: env.isProduction,
-      treeshake: env.isProduction,
-      compress: env.isProduction,
-      splitChunks: true,
-      bundleAnalyzer: env.isDevelopment && process.env.ANALYZE === 'true'
+      minify: env.get('BUILD_MINIFY', helpers.isProduction()),
+      treeshake: env.get('BUILD_TREESHAKE', helpers.isProduction()),
+      compress: env.get('BUILD_COMPRESS', helpers.isProduction()),
+      splitChunks: env.get('BUILD_SPLIT_CHUNKS', true),
+      bundleAnalyzer: env.get('BUILD_ANALYZER', helpers.isDevelopment())
     },
-    sourceMaps: !env.isProduction,
-    clean: true
+    sourceMaps: env.get('BUILD_SOURCEMAPS', !helpers.isProduction()),
+    clean: env.get('BUILD_CLEAN', true)
   },
 
   // Plugin configuration
   plugins: {
-    enabled: process.env.FLUXSTACK_PLUGINS_ENABLED?.split(',') || [
-      'logger',
-      'swagger',
-      'vite',
-      'cors'
-    ],
-    disabled: process.env.FLUXSTACK_PLUGINS_DISABLED?.split(',') || [],
+    enabled: env.get('FLUXSTACK_PLUGINS_ENABLED', ['logger', 'swagger', 'vite', 'cors']),
+    disabled: env.get('FLUXSTACK_PLUGINS_DISABLED', []),
     config: {
       // Plugin-specific configurations can be added here
       logger: {
         // Logger plugin config will be handled by logging section
       },
       swagger: {
-        title: process.env.SWAGGER_TITLE || 'FluxStack API',
-        version: process.env.SWAGGER_VERSION || '1.0.0',
-        description: process.env.SWAGGER_DESCRIPTION || 'API documentation for FluxStack application'
+        title: env.get('SWAGGER_TITLE', 'FluxStack API'),
+        version: env.get('SWAGGER_VERSION', '1.0.0'),
+        description: env.get('SWAGGER_DESCRIPTION', 'API documentation for FluxStack application')
       }
     }
   },
 
   // Logging configuration
   logging: {
-    level: (process.env.LOG_LEVEL as any) || (env.isDevelopment ? 'debug' : 'info'),
-    format: (process.env.LOG_FORMAT as any) || (env.isDevelopment ? 'pretty' : 'json'),
+    level: env.LOG_LEVEL,                // Direto! (com smart default)
+    format: env.get('LOG_FORMAT', helpers.isDevelopment() ? 'pretty' : 'json'),
     transports: [
       {
-        type: 'console',
-        level: (process.env.LOG_LEVEL as any) || (env.isDevelopment ? 'debug' : 'info'),
-        format: (process.env.LOG_FORMAT as any) || (env.isDevelopment ? 'pretty' : 'json')
+        type: 'console' as const,
+        level: env.LOG_LEVEL,            // Direto! (com smart default)
+        format: env.get('LOG_FORMAT', helpers.isDevelopment() ? 'pretty' : 'json')
       }
     ]
   },
 
   // Monitoring configuration
   monitoring: {
-    enabled: process.env.MONITORING_ENABLED === 'true' || env.isProduction,
+    enabled: env.ENABLE_MONITORING,      // Direto! (boolean)
     metrics: {
-      enabled: process.env.METRICS_ENABLED === 'true' || env.isProduction,
-      collectInterval: parseInt(process.env.METRICS_INTERVAL || '5000', 10),
-      httpMetrics: true,
-      systemMetrics: true,
-      customMetrics: false
+      enabled: env.ENABLE_METRICS,       // Direto! (boolean)
+      collectInterval: env.get('METRICS_INTERVAL', 5000),  // number casting
+      httpMetrics: env.get('HTTP_METRICS', true),
+      systemMetrics: env.get('SYSTEM_METRICS', true),
+      customMetrics: env.get('CUSTOM_METRICS', false)
     },
     profiling: {
-      enabled: process.env.PROFILING_ENABLED === 'true',
-      sampleRate: parseFloat(process.env.PROFILING_SAMPLE_RATE || '0.1'),
-      memoryProfiling: false,
-      cpuProfiling: false
+      enabled: env.get('PROFILING_ENABLED', false),
+      sampleRate: env.get('PROFILING_SAMPLE_RATE', 0.1),   // number casting
+      memoryProfiling: env.get('MEMORY_PROFILING', false),
+      cpuProfiling: env.get('CPU_PROFILING', false)
     },
-    exporters: process.env.MONITORING_EXPORTERS?.split(',') || []
+    exporters: env.get('MONITORING_EXPORTERS', [])         // array casting
   },
 
   // Optional database configuration
-  ...(process.env.DATABASE_URL || process.env.DATABASE_HOST ? {
+  ...(env.has('DATABASE_URL') || env.has('DATABASE_HOST') ? {
     database: {
-      url: process.env.DATABASE_URL,
-      host: process.env.DATABASE_HOST,
-      port: process.env.DATABASE_PORT ? parseInt(process.env.DATABASE_PORT, 10) : undefined,
-      database: process.env.DATABASE_NAME,
-      user: process.env.DATABASE_USER,
-      password: process.env.DATABASE_PASSWORD,
-      ssl: process.env.DATABASE_SSL === 'true',
-      poolSize: process.env.DATABASE_POOL_SIZE ? parseInt(process.env.DATABASE_POOL_SIZE, 10) : undefined
+      url: env.DATABASE_URL,               // Direto! (string)
+      host: env.DB_HOST,                   // Direto! (string)
+      port: env.DB_PORT,                   // Direto! (number)
+      database: env.DB_NAME,               // Direto! (string)
+      user: env.DB_USER,                   // Direto! (string)
+      password: env.DB_PASSWORD,           // Direto! (string)
+      ssl: env.DB_SSL,                     // Direto! (boolean)
+      poolSize: env.get('DB_POOL_SIZE', 10)  // number casting
     }
   } : {}),
 
   // Optional authentication configuration
-  ...(process.env.JWT_SECRET ? {
+  ...(env.has('JWT_SECRET') ? {
     auth: {
-      secret: process.env.JWT_SECRET,
-      expiresIn: process.env.JWT_EXPIRES_IN || '24h',
-      algorithm: process.env.JWT_ALGORITHM || 'HS256',
-      issuer: process.env.JWT_ISSUER
+      secret: env.JWT_SECRET,              // Direto! (string)
+      expiresIn: env.get('JWT_EXPIRES_IN', '24h'),
+      algorithm: env.get('JWT_ALGORITHM', 'HS256'),
+      issuer: env.get('JWT_ISSUER')
     }
   } : {}),
 
   // Optional email configuration
-  ...(process.env.SMTP_HOST ? {
+  ...(env.has('SMTP_HOST') ? {
     email: {
-      host: process.env.SMTP_HOST,
-      port: process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 587,
-      user: process.env.SMTP_USER,
-      password: process.env.SMTP_PASSWORD,
-      secure: process.env.SMTP_SECURE === 'true',
-      from: process.env.SMTP_FROM
+      host: env.SMTP_HOST,                 // Direto! (string)
+      port: env.SMTP_PORT,                 // Direto! (number)
+      user: env.SMTP_USER,                 // Direto! (string)
+      password: env.SMTP_PASSWORD,         // Direto! (string)
+      secure: env.SMTP_SECURE,             // Direto! (boolean)
+      from: env.get('SMTP_FROM')
     }
   } : {}),
 
   // Optional storage configuration
-  ...(process.env.UPLOAD_PATH || process.env.STORAGE_PROVIDER ? {
+  ...(env.has('UPLOAD_PATH') || env.has('STORAGE_PROVIDER') ? {
     storage: {
-      uploadPath: process.env.UPLOAD_PATH,
-      maxFileSize: process.env.MAX_FILE_SIZE ? parseInt(process.env.MAX_FILE_SIZE, 10) : undefined,
-      allowedTypes: process.env.ALLOWED_FILE_TYPES?.split(','),
-      provider: (process.env.STORAGE_PROVIDER as any) || 'local',
-      config: process.env.STORAGE_CONFIG ? JSON.parse(process.env.STORAGE_CONFIG) : {}
+      uploadPath: env.get('UPLOAD_PATH'),
+      maxFileSize: env.get('MAX_FILE_SIZE', 10485760),  // 10MB default
+      allowedTypes: env.get('ALLOWED_FILE_TYPES', []),  // array casting
+      provider: env.get('STORAGE_PROVIDER', 'local'),
+      config: env.get('STORAGE_CONFIG', {})             // object casting
     }
   } : {}),
 
