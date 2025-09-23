@@ -80,7 +80,9 @@ bun run dev
 
 ## 🎬 **Demonstração ao Vivo**
 
-### **Backend API (3 linhas)**
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+### **🔧 Backend API (Elysia.js)**
 ```typescript
 // app/server/routes/users.routes.ts
 export const usersRoutes = new Elysia({ prefix: "/users" })
@@ -89,11 +91,20 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
     body: t.Object({
       name: t.String(),
       email: t.String({ format: "email" })
+    }),
+    response: t.Object({
+      success: t.Boolean(),
+      user: t.Optional(t.Object({
+        id: t.Number(),
+        name: t.String(),
+        email: t.String(),
+        createdAt: t.Date()
+      }))
     })
   })
 ```
 
-### **Frontend com Type Safety (Zero config)**
+### **⚛️ Frontend com Type Safety (Zero config)**
 ```typescript
 // app/client/src/hooks/useUsers.ts
 export function useUsers() {
@@ -112,12 +123,21 @@ export function useUsers() {
 }
 ```
 
-## 💡 **Exemplos**
+</div>
 
-### **CRUD Completo** 
+## 💡 **Exemplos Práticos**
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+### **🌐 Testando a API (cURL)**
 ```bash
-# Ver exemplo completo
-curl http://localhost:3000/api/users        # GET
+# Health check
+curl http://localhost:3000/api/health
+
+# Listar usuários
+curl http://localhost:3000/api/users
+
+# Criar usuário
 curl -X POST http://localhost:3000/api/users \
   -H "Content-Type: application/json" \
   -d '{"name":"João","email":"joao@teste.com"}'
@@ -126,7 +146,7 @@ curl -X POST http://localhost:3000/api/users \
 open http://localhost:3000/swagger
 ```
 
-### **Component React**
+### **⚛️ Component React**
 ```tsx
 function UserList() {
   const { users, createUser, loading } = useUsers()
@@ -141,6 +161,8 @@ function UserList() {
   )
 }
 ```
+
+</div>
 
 ## 🔧 **Comandos Principais**
 
