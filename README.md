@@ -189,6 +189,17 @@ bun run test:ui         # 👁️ Interface visual dos testes
 bunx tsc --noEmit       # 🔍 Verificação TypeScript
 ```
 
+### **🎯 Modos de Desenvolvimento**
+
+| Comando | Porta | Descrição | Uso |
+|---------|-------|-----------|-----|
+| `bun run dev` | **3000** | 🔥 **Integrado** - Frontend + Backend + API | Desenvolvimento completo |
+| `bun run dev:backend` | **3001** | 🎯 **Backend apenas** - API + Swagger | Desenvolvimento de API |
+| `bun run dev:frontend` | **5173** | ⚛️ **Frontend apenas** - Vite standalone | Desenvolvimento de UI |
+
+> 💡 **Dica**: O modo integrado (`dev`) é recomendado para desenvolvimento completo.  
+> Use os modos separados quando precisar focar em uma camada específica!
+
 ## 🏆 **Diferenciais Únicos**
 
 ### **🎯 Type Safety Automática**
