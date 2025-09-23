@@ -45,18 +45,40 @@ export class APIException extends Error {
 
 // Minimal wrapper that preserves Eden's automatic type inference
 export async function apiCall(apiPromise: Promise<any>) {
-  const { data, error } = await apiPromise
-  
-  if (error) {
+  try {
+    const { data, error } = await apiPromise
+    
+    if (error) {
+      throw new APIException({
+        message: error.value?.message || 'API Error',
+        status: error.status,
+        code: error.value?.code,
+        details: error.value
+      })
+    }
+    
+    return data // ✨ Preserva a inferência automática do Eden
+  } catch (error) {
+    // Handle network errors and other promise rejections
+    if (error instanceof APIException) {
+      throw error // Re-throw APIException
+    }
+    
+    if (error instanceof Error) {
+      throw new APIException({
+        message: error.message,
+        status: 500,
+        code: 'NETWORK_ERROR'
+      })
+    }
+    
+    // Handle unknown error types
     throw new APIException({
-      message: error.value?.message || 'API Error',
-      status: error.status,
-      code: error.value?.code,
-      details: error.value
+      message: 'Unknown error',
+      status: 500,
+      code: 'NETWORK_ERROR'
     })
   }
-  
-  return data // ✨ Preserva a inferência automática do Eden
 }
 
 // User-friendly error messages

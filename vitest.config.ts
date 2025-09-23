@@ -9,7 +9,7 @@ export default defineConfig({
   plugins: [],
   test: {
     globals: true,
-    environment: 'node',
+    environment: 'jsdom', // Use jsdom for React components
     setupFiles: ['./tests/setup.ts'],
     testTimeout: 5000,
     include: [
@@ -21,6 +21,15 @@ export default defineConfig({
       '**/dist/**',
       '**/build/**',
       '**/.{idea,git,cache,output,temp}/**'
+    ],
+    environmentMatchGlobs: [
+      // Use node environment for backend/server tests  
+      ['**/core/**/*.test.{js,ts}', 'node'],
+      ['**/app/server/**/*.test.{js,ts}', 'node'],
+      ['**/controllers/**/*.test.{js,ts}', 'node'],
+      // Use jsdom for frontend/React tests
+      ['**/app/client/**/*.test.{js,ts,jsx,tsx}', 'jsdom'],
+      ['**/client/**/*.test.{js,ts,jsx,tsx}', 'jsdom']
     ],
     coverage: {
       provider: 'v8',

@@ -22,9 +22,12 @@ describe('Eden API Utilities', () => {
 
     it('should throw APIException on error response', async () => {
       const mockError = { 
-        message: 'Validation failed', 
-        code: 'VALIDATION_ERROR',
-        details: { field: 'email' }
+        status: 400,
+        value: {
+          message: 'Validation failed', 
+          code: 'VALIDATION_ERROR',
+          details: { field: 'email' }
+        }
       }
       const mockPromise = Promise.resolve({
         data: null,
@@ -42,7 +45,7 @@ describe('Eden API Utilities', () => {
         expect((error as APIException).message).toBe('Validation failed')
         expect((error as APIException).status).toBe(400)
         expect((error as APIException).code).toBe('VALIDATION_ERROR')
-        expect((error as APIException).details).toEqual(mockError)
+        expect((error as APIException).details).toEqual(mockError.value)
       }
     })
 
