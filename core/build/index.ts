@@ -1,11 +1,7 @@
 import { spawn } from "bun"
-import { copyFileSync, writeFileSync } from "fs"
-import { join, resolve, dirname } from "path"
-import { fileURLToPath } from "url"
+import { copyFile, copyFileSync, writeFileSync } from "fs"
+import { join } from "path"
 import type { FluxStackConfig } from "../config"
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
 
 export class FluxStackBuilder {
   private config: FluxStackConfig
@@ -17,52 +13,26 @@ export class FluxStackBuilder {
   async buildClient() {
     console.log("⚡ Building client...")
     
-    try {
-      // Try using npm/npx as fallback for Vite build issues with Bun
-      const buildProcess = spawn({
-        cmd: ["npm", "run", "build:frontend"],
-        cwd: resolve(__dirname, '../..'),
-        stdout: "pipe",
-        stderr: "pipe",
-        env: {
-          ...process.env,
-          VITE_BUILD_OUTDIR: this.config.client.build.outDir,
-          VITE_BUILD_MINIFY: this.config.client.build.minify.toString(),
-          VITE_BUILD_SOURCEMAPS: this.config.client.build.sourceMaps.toString()
-        }
-      })
-
-      const exitCode = await buildProcess.exited
-      
-      if (exitCode === 0) {
-        console.log("✅ Client build completed")
-      } else {
-        console.log("⚠️ NPM build failed, trying direct Vite build...")
-        
-        // Fallback to direct build from client directory
-        const viteBuildProcess = spawn({
-          cmd: ["bunx", "--bun", "vite", "build"],
-          cwd: "app/client",
-          stdout: "pipe", 
-          stderr: "pipe",
-          env: {
-            ...process.env,
-            NODE_ENV: "production"
-          }
-        })
-
-        const viteExitCode = await viteBuildProcess.exited
-        
-        if (viteExitCode === 0) {
-          console.log("✅ Client build completed (fallback)")
-        } else {
-          console.error("❌ Client build failed")
-          throw new Error("Client build failed")
-        }
+    const buildProcess = spawn({
+      cmd: ["bunx", "vite", "build", "--config", "vite.config.ts"],
+      cwd: process.cwd(),
+      stdout: "pipe",
+      stderr: "pipe",
+      env: {
+        ...process.env,
+        VITE_BUILD_OUTDIR: this.config.client.build.outDir,
+        VITE_BUILD_MINIFY: this.config.client.build.minify.toString(),
+        VITE_BUILD_SOURCEMAPS: this.config.client.build.sourceMaps.toString()
       }
-    } catch (error) {
-      console.error("❌ Client build error:", error)
-      throw new Error("Build error")
+    })
+
+    const exitCode = await buildProcess.exited
+    
+    if (exitCode === 0) {
+      console.log("✅ Client build completed")
+    } else {
+      console.error("❌ Client build failed")
+      process.exit(1)
     }
   }
 
@@ -91,7 +61,7 @@ export class FluxStackBuilder {
       console.log("✅ Server build completed")
     } else {
       console.error("❌ Server build failed")
-      throw new Error("Build error")
+      process.exit(1)
     }
   }
 
@@ -199,7 +169,7 @@ coverage
     writeFileSync(join(distDir, "Dockerfile"), dockerfile)
     writeFileSync(join(distDir, "docker-compose.yml"), dockerCompose)
     writeFileSync(join(distDir, ".dockerignore"), dockerignore)
-    copyFileSync(join(__dirname, '../..', '.env'), join(distDir, ".env"))
+    copyFileSync(join(process.cwd(),'.env'), join(distDir, ".env"))
     //writeFileSync(join(distDir, "package.json"), JSON.stringify(packageJson, null, 2))
     
     console.log("✅ Docker files created in dist/")

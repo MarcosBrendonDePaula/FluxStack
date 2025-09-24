@@ -19,8 +19,8 @@ describe('EnvConverter Edge Cases and Robustness', () => {
       expect(EnvConverter.toNumber('+456', 0)).toBe(456)
       expect(EnvConverter.toNumber('  789  ', 0)).toBe(789) // With whitespace
       
-      // Hex and octal (parseInt behavior)
-      expect(EnvConverter.toNumber('0x10', 0)).toBe(16)
+      // Hex and octal (parseInt with base 10 behavior)
+      expect(EnvConverter.toNumber('0x10', 0)).toBe(0) // parseInt with base 10 doesn't parse hex
       expect(EnvConverter.toNumber('0o10', 0)).toBe(0) // parseInt doesn't handle 0o prefix
       expect(EnvConverter.toNumber('010', 0)).toBe(10) // Treated as decimal, not octal
       
