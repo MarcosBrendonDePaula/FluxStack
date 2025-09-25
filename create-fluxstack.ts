@@ -43,7 +43,7 @@ program
       process.exit(1)
     }
     
-    console.log(chalk.cyan(`\\n🚀 Creating FluxStack project: ${chalk.bold(projectName)}`))
+    console.log(chalk.cyan(`\n🚀 Creating FluxStack project: ${chalk.bold(projectName)}`))
     console.log(chalk.gray(`📁 Location: ${projectPath}`))
     
     // Create project directory
@@ -62,6 +62,7 @@ program
         'tsconfig.json',
         'vite.config.ts',
         '.env.example',   // ✅ Use .env.example as template
+        '.gitignore',     // ✅ Git ignore file for proper repository setup
         'CLAUDE.md',      // ✅ Project instructions for AI assistants
         'README.md'
       ]
@@ -229,15 +230,15 @@ Built with ❤️ using FluxStack
       }
       
       // Success message
-      console.log(chalk.green('\\n🎉 Project created successfully!'))
-      console.log(chalk.cyan('\\nNext steps:'))
+      console.log(chalk.green('\n🎉 Project created successfully!'))
+      console.log(chalk.cyan('\nNext steps:'))
       console.log(chalk.white(`  cd ${projectName}`))
       if (!options.install) {
         console.log(chalk.white(`  bun install`))
       }
       console.log(chalk.white(`  bun run dev`))
-      console.log(chalk.magenta('\\nHappy coding with the divine Bun runtime! ⚡🔥'))
-      console.log(chalk.gray('\\nVisit http://localhost:3000 when ready!'))
+      console.log(chalk.magenta('\nHappy coding with the divine Bun runtime! ⚡🔥'))
+      console.log(chalk.gray('\nVisit http://localhost:3000 when ready!'))
       
     } catch (error) {
       spinner.fail('❌ Failed to create project')

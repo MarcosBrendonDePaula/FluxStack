@@ -60,8 +60,7 @@
     "vite": "^7.0.4"
   },
   "engines": {
-    "bun": ">=1.2.0",
-    "node": ">=20.0.0"
+    "bun": ">=1.2.0"
   },
   "preferredPackageManager": "bun",
   "trustedDependencies": ["esbuild"]
