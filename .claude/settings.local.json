@@ -43,7 +43,26 @@
       "Bash(git restore:*)",
       "Bash(NODE_ENV=production bun run app/server/index.ts)",
       "Bash(NODE_ENV=production bun dist/index.js)",
-      "Bash(NODE_ENV=production bun run build)"
+      "Bash(NODE_ENV=production bun run build)",
+      "Bash(chmod:*)",
+      "Bash(./flux-cli.ts:*)",
+      "Bash(./create-fluxstack.ts divine-app)",
+      "Bash(./create-fluxstack.ts divine-app-fixed)",
+      "Bash(NODE_ENV=development bun run dev)",
+      "Bash(./create-fluxstack.ts meu-app-teste)",
+      "Bash(npm whoami:*)",
+      "Bash(npm publish:*)",
+      "Read(/C:\\Users\\Marcos\\Documents\\GitHub\\aviso-projeto/**)",
+      "Bash(cat:*)",
+      "Bash(./create-fluxstack.ts teste-corrigido)",
+      "Bash(./create-fluxstack.ts teste-v103)",
+      "Bash(./create-fluxstack.ts my-final-test)",
+      "Read(/C:\\Users\\Marcos\\Documents\\GitHub\\aviso-projeto\\test-npm-global/**)",
+      "Read(/C:\\Users\\Marcos\\Documents\\GitHub\\aviso-projeto\\test-npm-global/**)",
+      "Read(/C:\\Users\\Marcos\\Documents\\GitHub\\aviso-projeto\\test-npm-global/**)",
+      "Read(/C:\\Users\\Marcos\\Documents\\GitHub\\aviso-projeto\\test-cli-update\\ai-context/**)",
+      "Read(/C:\\Users\\Marcos\\Documents\\GitHub\\aviso-projeto\\test-cli-update/**)",
+      "Read(/C:\\Users\\Marcos\\Documents\\GitHub\\aviso-projeto\\test-cli-update/**)"
     ],
     "deny": []
   }
