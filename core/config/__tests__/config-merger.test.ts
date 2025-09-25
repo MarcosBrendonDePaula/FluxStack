@@ -3,7 +3,7 @@
  * Tests configuration merging with precedence and environment-specific configs
  */
 
-import { describe, test, expect } from 'vitest'
+import { describe, test, expect, beforeEach } from 'vitest'
 import { 
   ConfigMerger, 
   EnvironmentConfigApplier 

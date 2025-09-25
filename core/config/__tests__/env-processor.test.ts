@@ -48,7 +48,7 @@ describe('EnvConverter', () => {
       expect(EnvConverter.toBoolean('0', true)).toBe(false)
       expect(EnvConverter.toBoolean('no', true)).toBe(false)
       expect(EnvConverter.toBoolean('off', true)).toBe(false)
-      expect(EnvConverter.toBoolean('', true)).toBe(true) // Empty string returns default
+      expect(EnvConverter.toBoolean('', true)).toBe(false) // Empty string is falsy
       expect(EnvConverter.toBoolean('invalid', true)).toBe(false)
     })
 
