@@ -56,6 +56,7 @@ const ENV_MAPPINGS = {
 
     // Server configuration
     'PORT': 'server.port',
+    'FLUXSTACK_PORT': 'server.port',
     'HOST': 'server.host',
     'FLUXSTACK_API_PREFIX': 'server.apiPrefix',
     'CORS_ORIGINS': 'server.cors.origins',
@@ -107,34 +108,9 @@ const ENV_MAPPINGS = {
     'PROFILING_SAMPLE_RATE': 'monitoring.profiling.sampleRate',
     'FLUXSTACK_PROFILING_SAMPLE_RATE': 'monitoring.profiling.sampleRate',
 
-    // Database configuration
-    'DATABASE_URL': 'database.url',
-    'DATABASE_HOST': 'database.host',
-    'DATABASE_PORT': 'database.port',
-    'DATABASE_NAME': 'database.database',
-    'DATABASE_USER': 'database.user',
-    'DATABASE_PASSWORD': 'database.password',
-    'DATABASE_SSL': 'database.ssl',
-    'DATABASE_POOL_SIZE': 'database.poolSize',
-
-    // Auth configuration
-    'JWT_SECRET': 'auth.secret',
-    'JWT_EXPIRES_IN': 'auth.expiresIn',
-    'JWT_ALGORITHM': 'auth.algorithm',
-    'JWT_ISSUER': 'auth.issuer',
-
-    // Email configuration
-    'SMTP_HOST': 'email.host',
-    'SMTP_PORT': 'email.port',
-    'SMTP_USER': 'email.user',
-    'SMTP_PASSWORD': 'email.password',
-    'SMTP_SECURE': 'email.secure',
-    'SMTP_FROM': 'email.from',
-
-    // Storage configuration
-    'UPLOAD_PATH': 'storage.uploadPath',
-    'MAX_FILE_SIZE': 'storage.maxFileSize',
-    'STORAGE_PROVIDER': 'storage.provider'
+    // Plugin configuration
+    'FLUXSTACK_PLUGINS_ENABLED': 'plugins.enabled',
+    'FLUXSTACK_PLUGINS_DISABLED': 'plugins.disabled'
 } as const
 
 /**
@@ -231,12 +207,12 @@ function loadFromEnvironment(prefix = 'FLUXSTACK_'): Partial<FluxStackConfig> {
             try {
                 // Determine target type from config path
                 let targetType = 'string'
-                if (configPath.includes('port') || configPath.includes('maxAge') || configPath.includes('collectInterval') || configPath.includes('sampleRate') || configPath.includes('poolSize')) {
+                if (configPath.includes('port') || configPath.includes('maxAge') || configPath.includes('collectInterval') || configPath.includes('sampleRate')) {
                     targetType = 'number'
-                } else if (configPath.includes('enabled') || configPath.includes('credentials') || configPath.includes('ssl') || configPath.includes('secure') || configPath.includes('minify') || configPath.includes('treeshake') || configPath.includes('compress') || configPath.includes('splitChunks') || configPath.includes('bundleAnalyzer') || configPath.includes('sourceMaps') || configPath.includes('clean')) {
-                    targetType = 'boolean'
-                } else if (configPath.includes('origins') || configPath.includes('methods') || configPath.includes('headers') || configPath.includes('exporters')) {
+                } else if (configPath.includes('origins') || configPath.includes('methods') || configPath.includes('headers') || configPath.includes('exporters') || configPath.includes('plugins.enabled') || configPath.includes('plugins.disabled')) {
                     targetType = 'array'
+                } else if (configPath.includes('enabled') || configPath.includes('credentials') || configPath.includes('minify') || configPath.includes('treeshake') || configPath.includes('compress') || configPath.includes('splitChunks') || configPath.includes('bundleAnalyzer') || configPath.includes('sourceMaps') || configPath.includes('clean')) {
+                    targetType = 'boolean'
                 }
 
                 const parsedValue = parseEnvValue(envValue, targetType)

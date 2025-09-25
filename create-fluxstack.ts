@@ -109,16 +109,16 @@ program
         writeFileSync(packageJsonPath, JSON.stringify(fallbackPackageJson, null, 2))
       }
       
-      // Create .env from .env.example and set development mode
+      // Create .env from .env.example and set development mode + project name
       const envExamplePath = join(projectPath, '.env.example')
       const envPath = join(projectPath, '.env')
       if (existsSync(envExamplePath)) {
-        const envExampleContent = readFileSync(envExamplePath, 'utf-8')
-        const devEnvContent = envExampleContent.replace(
-          'NODE_ENV=production',
-          'NODE_ENV=development'
-        )
-        writeFileSync(envPath, devEnvContent)
+        let envContent = readFileSync(envExamplePath, 'utf-8')
+        // Set development mode
+        envContent = envContent.replace('NODE_ENV=production', 'NODE_ENV=development')
+        // Customize app name to match project name
+        envContent = envContent.replace('VITE_APP_NAME=FluxStack', `VITE_APP_NAME=${projectName}`)
+        writeFileSync(envPath, envContent)
       }
       
       // Customize README.md
@@ -160,10 +160,57 @@ ${projectName}/
 - **🎨 Modern UI** - React 19 + Tailwind CSS v4
 - **📋 Auto Documentation** - Swagger UI generated
 - **🔄 Hot Reload** - Backend + Frontend
+- **🔌 Plugin System** - Extensible with custom plugins
+
+## 🔌 Adding Plugins
+
+### Built-in Plugins
+FluxStack includes several built-in plugins that are ready to use:
+
+\`\`\`typescript
+// app/server/index.ts
+import { loggerPlugin, swaggerPlugin, staticPlugin } from "@/core/server"
+
+// Add built-in plugins
+app.use(loggerPlugin)
+app.use(swaggerPlugin)
+\`\`\`
+
+### Custom Plugin Example
+
+\`\`\`typescript
+// app/server/plugins/auth.ts
+import { Elysia } from 'elysia'
+
+export const authPlugin = new Elysia({ name: 'auth' })
+  .derive(({ headers }) => ({
+    user: getUserFromToken(headers.authorization)
+  }))
+  .guard({
+    beforeHandle({ user, set }) {
+      if (!user) {
+        set.status = 401
+        return { error: 'Unauthorized' }
+      }
+    }
+  })
+
+// Use in app/server/index.ts
+import { authPlugin } from './plugins/auth'
+app.use(authPlugin)
+\`\`\`
+
+### Available Plugin Hooks
+- \`setup\` - Initialize plugin resources
+- \`onServerStart\` - Run when server starts
+- \`onRequest\` - Process incoming requests
+- \`onResponse\` - Process outgoing responses
+- \`onError\` - Handle errors
 
 ## 📖 Learn More
 
-Visit the [FluxStack Documentation](https://fluxstack.dev) to learn more!
+- **Plugin Guide**: Check \`ai-context/development/plugins-guide.md\`
+- **FluxStack Docs**: Visit the [FluxStack Repository](https://github.com/MarcosBrendonDePaula/FluxStack)
 
 ---
 
