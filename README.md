@@ -1,318 +1,214 @@
-# ⚡ FluxStack
+# ⚡ create-fluxstack
 
-<div align="center">
+> Create FluxStack apps with zero configuration - powered by Bun
 
-> **O Framework Full-Stack TypeScript que Você Estava Esperando**
+[![npm version](https://badge.fury.io/js/create-fluxstack.svg)](https://badge.fury.io/js/create-fluxstack)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.9.2-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Bun](https://img.shields.io/badge/Runtime-Bun%201.2.20-000000?style=flat-square&logo=bun)](https://bun.sh/)
-[![React](https://img.shields.io/badge/React-19.1.0-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
-[![Elysia](https://img.shields.io/badge/Elysia-1.4.6-8B5CF6?style=flat-square)](https://elysiajs.com/)
-[![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](./LICENSE)
-
-**🔥 Type Safety Automática • ⚡ Zero Configuração • 🚀 Performance Extrema • 🎯 Developer Experience**
-
-[🚀 **Começar Agora**](#-quick-start) • [📖 **Docs**](./ai-context/) • [💡 **Exemplos**](#-exemplos) • [🎯 **Por Que Escolher?**](#-por-que-fluxstack)
-
----
-
-![FluxStack Demo](https://img.shields.io/badge/🎬-Ver%20Demo%20ao%20Vivo-ff6b6b?style=for-the-badge)
-
-</div>
-
-## 🎯 **Por Que FluxStack?**
-
-### **🔥 O Problema Real**
-
-Quantas vezes você já perdeu horas configurando:
-- ❌ Múltiplos `package.json` (frontend + backend)
-- ❌ APIs sem type safety entre camadas  
-- ❌ Hot reload que quebra quando você mais precisa
-- ❌ Documentação desatualizada da API
-- ❌ Builds complexos e lentos
-- ❌ Erros TypeScript constantes
-
-### **✅ A Solução FluxStack**
-
-```typescript
-// ✨ Type safety AUTOMÁTICA client ↔ server
-const { data, error } = await api.users.post({
-  name: "João",           // ✅ Autocomplete
-  email: "joao@teste.com" // ✅ Validação em tempo real
-})
-
-if (!error) {
-  console.log(data.user.id)   // ✅ Types inferidos automaticamente
-  console.log(data.success)   // ✅ Zero configuração manual
-}
-```
-
-## 🚀 **Quick Start** (< 2 minutos)
+## 🚀 Quick Start
 
 ```bash
-# 1. Clone
-git clone https://github.com/MarcosBrendonDePaula/FluxStack.git
-cd FluxStack
+# Create a new FluxStack app
+bunx create-fluxstack my-awesome-app
 
-# 2. Uma instalação para TUDO ✨
-bun install
+# Or with npx
+npx create-fluxstack my-awesome-app
 
-# 3. Start & Magic ✨
+# Navigate and start developing
+cd my-awesome-app
 bun run dev
 ```
 
-**🎉 Pronto!** Abra http://localhost:3000 e veja a mágica acontecer.
+**That's it!** Your full-stack TypeScript app is ready at:
+- **Backend**: http://localhost:3000
+- **Frontend**: http://localhost:5173
+- **API Docs**: http://localhost:3000/swagger
 
-> 💡 **FluxStack Integrado**: Frontend e backend rodam no mesmo servidor (porta 3000)!  
-> 📁 Frontend: `http://localhost:3000/`  
-> 🔌 API: `http://localhost:3000/api/`  
-> 📚 Docs: `http://localhost:3000/swagger`
+## ✨ What You Get
 
-## ⚡ **Stack Tecnológica**
+### 🔥 Modern Tech Stack
+- **⚡ Bun Runtime** - 3x faster than Node.js
+- **🚀 Elysia.js** - Ultra-fast backend framework
+- **⚛️ React 19** - Latest React with modern features
+- **🎨 Tailwind CSS v4** - Latest styling framework
+- **📦 Vite 7** - Lightning-fast dev server
+- **🔒 TypeScript 5** - Full type safety end-to-end
 
-<div align="center">
+### 🛠️ Zero Configuration
+- **✅ Hot Reload** - Backend + Frontend coordinated
+- **✅ Type Safety** - Eden Treaty for API communication
+- **✅ Auto Documentation** - Swagger UI generated
+- **✅ Git Ready** - Initialized with first commit
+- **✅ Production Ready** - Build scripts included
 
-| Camada | Tecnologia | Versão | Por Que? |
-|--------|------------|---------|----------|
-| **Runtime** | Bun | 1.2.20 | 🚀 **3x mais rápido** que Node.js |
-| **Backend** | Elysia.js | 1.4.6 | ⚡ **Ultra-performático**, validação automática |
-| **Frontend** | React | 19.1.0 | ⚛️ **Concurrent Features**, hooks modernos |
-| **Build** | Vite | 7.0.4 | 🔥 **HMR instantâneo**, build otimizado |
-| **Language** | TypeScript | 5.9.2 | 🛡️ **100% type-safe** end-to-end |
-| **API Client** | Eden Treaty | Native | 🎯 **Inferência automática** de tipos |
+## 📁 Project Structure
 
-</div>
+```
+my-awesome-app/
+├── core/          # FluxStack framework (don't modify)
+├── app/           # Your application code
+│   ├── server/    # Backend API routes
+│   ├── client/    # Frontend React app
+│   └── shared/    # Shared types and utilities
+├── package.json   # Dependencies and scripts
+└── README.md      # Project documentation
+```
 
-## 🎬 **Demonstração ao Vivo**
+## 🎯 Available Scripts
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+```bash
+# Development
+bun run dev              # Start full-stack development
+bun run dev:frontend     # Frontend only
+bun run dev:backend      # Backend only
 
-### **🔧 Backend API (Elysia.js)**
+# Production
+bun run build            # Build for production
+bun run start            # Start production server
+
+# Utilities
+bun run typecheck        # Check TypeScript
+```
+
+## 🔧 Requirements
+
+- **Bun** >= 1.0.0 (recommended)
+- **Node.js** >= 18.0.0 (fallback)
+
+### Install Bun
+
+```bash
+# Install Bun (if not already installed)
+curl -fsSL https://bun.sh/install | bash
+```
+
+## 🎨 Customization
+
+### Environment Variables
+
+The generated app uses these environment variables (in `.env`):
+
+```bash
+NODE_ENV=development
+PORT=3000
+HOST=localhost
+VITE_PORT=5173
+VITE_API_URL=http://localhost:3000
+```
+
+### Adding Routes
+
+Backend routes in `app/server/routes/`:
+
 ```typescript
-// app/server/routes/users.routes.ts
-export const usersRoutes = new Elysia({ prefix: "/users" })
-  .get("/", () => ({ users: getAllUsers() }))
-  .post("/", ({ body }) => createUser(body), {
-    body: t.Object({
-      name: t.String(),
-      email: t.String({ format: "email" })
-    }),
-    response: t.Object({
-      success: t.Boolean(),
-      user: t.Optional(t.Object({
-        id: t.Number(),
-        name: t.String(),
-        email: t.String(),
-        createdAt: t.Date()
-      }))
-    })
-  })
+// app/server/routes/users.ts
+import { Elysia } from 'elysia'
+
+export const userRoutes = new Elysia({ prefix: '/users' })
+  .get('/', () => ({ users: [] }))
+  .post('/', ({ body }) => ({ user: body }))
 ```
 
-### **⚛️ Frontend com Type Safety (Zero config)**
+Frontend API calls with type safety:
+
 ```typescript
-// app/client/src/hooks/useUsers.ts
-export function useUsers() {
-  const [users, setUsers] = useState<User[]>([])
+// app/client/src/components/Users.tsx
+import { api } from '../lib/api'
 
-  const createUser = async (userData) => {
-    // ✨ Eden Treaty nativo - Type safety automático
-    const { data, error } = await api.users.post(userData)
-    
-    if (!error) {
-      setUsers(prev => [...prev, data.user]) // ✨ Types inferidos automaticamente!
-    }
-  }
-
-  return { users, createUser }
-}
+const users = await api.users.get() // ✅ Fully typed!
 ```
 
-</div>
+## 🚀 Deployment
 
-## 💡 **Exemplos Práticos**
-
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
-### **🌐 Testando a API (cURL)**
-```bash
-# Health check
-curl http://localhost:3000/api/health
-
-# Listar usuários
-curl http://localhost:3000/api/users
-
-# Criar usuário
-curl -X POST http://localhost:3000/api/users \
-  -H "Content-Type: application/json" \
-  -d '{"name":"João","email":"joao@teste.com"}'
-
-# Swagger automático
-open http://localhost:3000/swagger
-```
-
-### **⚛️ Component React**
-```tsx
-function UserList() {
-  const { users, createUser, loading } = useUsers()
-
-  return (
-    <div>
-      {users.map(user => (
-        <UserCard key={user.id} user={user} />  {/* ✨ Types! */}
-      ))}
-      <UserForm onSubmit={createUser} />
-    </div>
-  )
-}
-```
-
-</div>
-
-## 🔧 **Comandos Principais**
+### Option 1: Single Server (Recommended)
 
 ```bash
-# Desenvolvimento
-bun run dev              # 🚀 Full-stack (Backend + Frontend)
-bun run dev:clean        # 🧹 Output limpo (sem logs HEAD)
-bun run dev:backend      # 🎯 Backend apenas (porta 3001)
-bun run dev:frontend     # ⚛️ Frontend Vite standalone (porta 5173)
-
-# Build & Deploy
-bun run build           # 📦 Build otimizado para produção
-bun run start           # 🚀 Servidor de produção
-docker-compose up       # 🐳 Docker completo
-
-# Quality & Testing
-bun run test            # 🧪 Suite de testes
-bun run test:ui         # 👁️ Interface visual dos testes
-bunx tsc --noEmit       # 🔍 Verificação TypeScript
-```
-
-### **🎯 Modos de Desenvolvimento**
-
-| Comando | Porta | Descrição | Uso |
-|---------|-------|-----------|-----|
-| `bun run dev` | **3000** | 🔥 **Integrado** - Frontend + Backend + API | Desenvolvimento completo |
-| `bun run dev:backend` | **3001** | 🎯 **Backend apenas** - API + Swagger | Desenvolvimento de API |
-| `bun run dev:frontend` | **5173** | ⚛️ **Frontend apenas** - Vite standalone | Desenvolvimento de UI |
-
-> 💡 **Dica**: O modo integrado (`dev`) é recomendado para desenvolvimento completo.  
-> Use os modos separados quando precisar focar em uma camada específica!
-
-## 🏆 **Diferenciais Únicos**
-
-### **🎯 Type Safety Automática**
-- **Zero config manual**: Eden Treaty infere tipos automaticamente
-- **Sincronização em tempo real**: Mudança no server = tipos atualizados no client
-- **Autocomplete perfeito**: IntelliSense funcionando 100%
-
-### **⚡ Performance Extrema**
-- **Bun runtime**: 3x mais rápido que Node.js
-- **Hot reload independente**: Backend ≠ Frontend (zero conflitos)
-- **Build otimizado**: Vite + esbuild = velocidade máxima
-
-### **🔧 Developer Experience**
-- **Uma instalação**: `bun install` para todo o projeto
-- **Monorepo inteligente**: Compartilhamento natural de código
-- **Documentação viva**: Swagger UI sempre atualizado
-
-### **🚀 Production Ready**
-- **Docker otimizado**: Multi-stage builds
-- **Environment variables**: Sistema robusto com precedência
-- **Error handling**: Tratamento consistente e elegante
-
-## 📁 **Estrutura do Projeto**
-
-```
-FluxStack/
-├── 🔒 core/                 # Framework (não editar)
-│   ├── server/             # Elysia + plugins
-│   ├── config/             # Configurações
-│   └── build/              # Sistema de build
-├── 👨‍💻 app/                  # SEU CÓDIGO
-│   ├── server/             # Backend (controllers, routes)
-│   ├── client/             # Frontend (React + Vite)
-│   └── shared/             # Types compartilhados
-├── 📖 ai-context/           # Documentação AI
-└── 🐳 docker/              # Configurações Docker
-```
-
-## 🚀 **Deploy em Produção**
-
-### **Docker (Recomendado)**
-```bash
-# Build e deploy
-docker-compose up -d
-
-# Ou build customizado
-docker build -t fluxstack .
-docker run -p 3000:3000 fluxstack
-```
-
-### **Cloud Providers**
-```bash
-# Vercel, Netlify, Railway, etc.
+# Build everything
 bun run build
-# Deploy da pasta dist/
+
+# Start production server
+bun run start
 ```
 
-## 🤝 **Contribuindo**
+### Option 2: Separate Deploy
 
 ```bash
-# Fork o repositório
-git clone https://github.com/SEU-USER/FluxStack.git
+# Backend
+bun run build:backend
+bun dist/index.js
 
-# Crie uma branch
-git checkout -b minha-feature
-
-# Implemente e teste
-bun run dev
-bun run test
-
-# Commit e PR
-git commit -m "feat: minha feature incrível"
-git push origin minha-feature
+# Frontend
+bun run build:frontend
+# Deploy dist/ folder to CDN
 ```
 
-## 📊 **Roadmap**
+## 🤝 Examples
 
-- [x] ✅ Eden Treaty nativo com type inference
-- [x] ✅ Hot reload independente
-- [x] ✅ Monorepo unificado
-- [x] ✅ Docker otimizado
-- [ ] 🔄 Database layer (Prisma/Drizzle)
-- [ ] 🔄 Authentication built-in
-- [ ] 🔄 Real-time (WebSockets)
-- [ ] 🔄 CLI generator
+### Basic CRUD API
 
-## 📚 **Documentação Completa**
+```typescript
+// app/server/routes/posts.ts
+export const postRoutes = new Elysia({ prefix: '/posts' })
+  .get('/', () => ({ posts: [] }))
+  .post('/', ({ body }) => ({ id: 1, ...body }))
+  .get('/:id', ({ params }) => ({ id: params.id }))
+```
 
-- **[🚀 Quick Start AI](./ai-context/00-QUICK-START.md)** - 2 minutos para dominar
-- **[👨‍💻 Development Patterns](./ai-context/development/patterns.md)** - Melhores práticas
-- **[🔧 Eden Treaty Guide](./ai-context/development/eden-treaty-guide.md)** - Type safety automática
-- **[💡 CRUD Example](./ai-context/examples/crud-complete.md)** - Exemplo completo
-- **[🚨 Troubleshooting](./ai-context/reference/troubleshooting.md)** - Resolução de problemas
+### Frontend Integration
 
-## 🆘 **Suporte**
+```typescript
+// app/client/src/hooks/usePosts.ts
+import { api } from '../lib/api'
 
-- **🐛 Issues**: [GitHub Issues](https://github.com/MarcosBrendonDePaula/FluxStack/issues)
-- **💬 Discussões**: [GitHub Discussions](https://github.com/MarcosBrendonDePaula/FluxStack/discussions)
-- **📧 Email**: marcos.brendon@exemplo.com
+export function usePosts() {
+  return useQuery({
+    queryKey: ['posts'],
+    queryFn: () => api.posts.get()
+  })
+}
+```
 
-## 📄 **Licença**
+## 🛟 Troubleshooting
 
-MIT © [Marcos Brendon de Paula](https://github.com/MarcosBrendonDePaula)
+### Port Already in Use
+
+```bash
+# Kill processes on ports
+pkill -f "3000"
+pkill -f "5173"
+```
+
+### Type Errors
+
+```bash
+# Regenerate types
+bun run typecheck
+```
+
+### Environment Issues
+
+```bash
+# Force development mode
+NODE_ENV=development bun run dev
+```
+
+## 📖 Learn More
+
+- [FluxStack Documentation](https://fluxstack.dev)
+- [Bun Runtime](https://bun.sh)
+- [Elysia.js](https://elysiajs.com)
+- [React 19](https://react.dev)
+
+## 🐛 Issues & Contributing
+
+Found a bug? Have a suggestion?
+- [GitHub Issues](https://github.com/fluxstack/create-fluxstack/issues)
+- [GitHub Discussions](https://github.com/fluxstack/create-fluxstack/discussions)
+
+## 📄 License
+
+MIT © FluxStack Team
 
 ---
 
-<div align="center">
-
-**⭐ Se FluxStack te salvou horas de configuração, deixe uma estrela!**
-
-[![GitHub stars](https://img.shields.io/github/stars/MarcosBrendonDePaula/FluxStack?style=social)](https://github.com/MarcosBrendonDePaula/FluxStack/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/MarcosBrendonDePaula/FluxStack?style=social)](https://github.com/MarcosBrendonDePaula/FluxStack/network/members)
-
-**🚀 Desenvolvido com ❤️ para a comunidade dev brasileira**
-
-</div>
+**Happy coding with the divine Bun runtime! ⚡🔥**
