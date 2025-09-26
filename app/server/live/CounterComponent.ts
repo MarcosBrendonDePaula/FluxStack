@@ -1,6 +1,6 @@
 // 🔥 Example Live Component - Counter
 
-import { LiveComponent } from "@/core/server"
+import { LiveComponent } from "@/core/live-components"
 
 interface CounterState {
   count: number

@@ -4,14 +4,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
-import { 
-  useWebSocket, 
-  StateValidator,
-  type WebSocketMessage,
-  type HybridState, 
-  type StateConflict, 
-  type HybridComponentOptions
-} from '@/core/live-components'
+import { useWebSocket, type WebSocketMessage } from './useWebSocket'
+import { StateValidator } from './state-validator'
+import type { 
+  HybridState, 
+  StateConflict, 
+  HybridComponentOptions
+} from '../shared/types'
 
 interface HybridStore<T> {
   hybridState: HybridState<T>

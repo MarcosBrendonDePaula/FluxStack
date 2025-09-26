@@ -1,11 +1,8 @@
 // 🔥 FluxStack Live Components - WebSocket Plugin
 
 import { WebSocketServer } from 'ws'
-import { ComponentRegistry } from '../live-components/server/ComponentRegistry'
-import type { LiveMessage } from '../live-components/shared/types'
-
-// Create global registry instance
-const componentRegistry = new ComponentRegistry()
+import { componentRegistry } from './ComponentRegistry'
+import type { LiveMessage } from './types'
 
 let wsServer: WebSocketServer | null = null
 
@@ -142,13 +139,8 @@ export const liveComponentsPlugin = {
         })
       })
 
-      wsServer.on('listening', async () => {
+      wsServer.on('listening', () => {
         console.log('🔌 Live Components WebSocket Server listening on port 3001')
-        
-        // Auto-discover components
-        const path = await import('path')
-        const componentsPath = path.join(process.cwd(), 'app', 'server', 'live')
-        await componentRegistry.autoDiscoverComponents(componentsPath)
       })
 
       wsServer.on('error', (error) => {

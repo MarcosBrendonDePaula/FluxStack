@@ -1,9 +1,15 @@
 // 🔥 Register all live components
+// NOTE: Components are now auto-discovered from this directory!
+// Manual registration is optional for custom initial states
 
-import { componentRegistry } from "@/core/server"
 import { CounterComponent } from "./CounterComponent"
 
-// Register Counter component
+// Manual registration is now optional - components are auto-discovered
+// Uncomment below for custom initial states:
+
+/* 
+import { componentRegistry } from "@/core/live-components"
+
 componentRegistry.registerComponent({
   name: 'CounterComponent',
   component: CounterComponent,
@@ -15,6 +21,7 @@ componentRegistry.registerComponent({
     lastUpdated: new Date()
   }
 })
+*/
 
 console.log('📝 Live components registered successfully!')
 
