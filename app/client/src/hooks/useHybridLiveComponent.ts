@@ -108,6 +108,10 @@ export function useHybridLiveComponent<T = any>(
     debug = false
   } = options
 
+  // Create unique instance ID to avoid conflicts between multiple instances
+  const instanceId = useRef(`${componentName}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`)
+  const logPrefix = `${instanceId.current}${room ? `[${room}]` : ''}`
+
   // Create Zustand store instance (one per component instance)
   const storeRef = useRef<ReturnType<typeof createHybridStore<T>> | null>(null)
   if (!storeRef.current) {
@@ -115,16 +119,24 @@ export function useHybridLiveComponent<T = any>(
   }
   const store = storeRef.current
 
-  // Get state from Zustand store
+  // Get state from Zustand store directly
   const hybridState = store((state) => state.hybridState)
+  const stateData = store((state) => state.hybridState.data)
   const updateState = store((state) => state.updateState)
+  
+  // Log state changes
+  useEffect(() => {
+    if (debug) {
+      console.log('🔍 [Zustand] State data changed:', stateData)
+    }
+  }, [stateData, debug])
 
   // Direct WebSocket integration
   const { 
     connected, 
     sendMessage,
-    sendMessageAndWait, 
-    lastMessage,
+    sendMessageAndWait,
+    onMessage,
     error: wsError 
   } = useWebSocket({
     debug
@@ -135,49 +147,64 @@ export function useHybridLiveComponent<T = any>(
   const [error, setError] = useState<string | null>(null)
   const [componentId, setComponentId] = useState<string | null>(null)
   const [lastServerState, setLastServerState] = useState<T | null>(null)
+  const [, forceUpdate] = useState({})
   const mountedRef = useRef(false)
 
   const log = useCallback((message: string, data?: any) => {
     if (debug) {
-      console.log(`[useHybridLiveComponent:${componentName}] ${message}`, data)
+      console.log(`[${logPrefix}] ${message}`, data)
     }
-  }, [debug, componentName])
+  }, [debug, logPrefix])
 
-  // Handle incoming WebSocket messages
+  // Handle incoming WebSocket messages (real-time processing)
   useEffect(() => {
-    if (!lastMessage || !componentId) {
+    if (!componentId) {
       return
     }
 
-    if (lastMessage.componentId === componentId) {
-      switch (lastMessage.type) {
+    // Process each message immediately as it arrives
+    const unsubscribe = onMessage((message: any) => {
+      if (message.componentId !== componentId) {
+        return
+      }
+
+      log('Processing message immediately', { type: message.type, componentId: message.componentId })
+      
+      switch (message.type) {
         case 'STATE_UPDATE':
-          log('Processing STATE_UPDATE', lastMessage.payload)
-          if (lastMessage.payload?.state) {
-            const newState = lastMessage.payload.state
+          log('Processing STATE_UPDATE', message.payload)
+          if (message.payload?.state) {
+            const newState = message.payload.state
+            log('Updating Zustand with server state', newState)
             updateState(newState, 'server')
             setLastServerState(newState)
-            log('State updated from server', newState)
+            forceUpdate({}) // Force React re-render
+            log('State updated from server successfully', newState)
+          } else {
+            log('STATE_UPDATE has no state payload', message.payload)
           }
           break
 
         case 'MESSAGE_RESPONSE':
-          if (lastMessage.originalType !== 'CALL_ACTION') {
-            log('Received response for', lastMessage.originalType)
+          if (message.originalType !== 'CALL_ACTION') {
+            log('Received response for', message.originalType)
           }
           break
 
         case 'BROADCAST':
-          log('Received broadcast', lastMessage.payload)
+          log('Received broadcast', message.payload)
           break
 
         case 'ERROR':
-          log('Received error', lastMessage.payload)
-          setError(lastMessage.payload?.error || 'Unknown error')
+          log('Received error', message.payload)
+          setError(message.payload?.error || 'Unknown error')
           break
       }
-    }
-  }, [lastMessage, componentId, updateState, log])
+    })
+
+    // Cleanup callback on unmount
+    return unsubscribe
+  }, [componentId, updateState, log, onMessage])
 
   // Mount component
   const mount = useCallback(async () => {
@@ -320,9 +347,10 @@ export function useHybridLiveComponent<T = any>(
   // Auto-mount when connected
   useEffect(() => {
     if (connected && autoMount && !mountedRef.current && hybridState.status === 'disconnected') {
+      log('Auto-mounting component', { connected, autoMount, mounted: mountedRef.current, status: hybridState.status })
       mount()
     }
-  }, [connected, autoMount, mount, hybridState.status])
+  }, [connected, autoMount, mount, hybridState.status, log])
 
   // Unmount on cleanup
   useEffect(() => {
@@ -345,12 +373,12 @@ export function useHybridLiveComponent<T = any>(
     field: K,
     action: string = 'updateField'
   ) => {
-    const [tempValue, setTempValue] = useState<T[K]>(hybridState.data[field])
+    const [tempValue, setTempValue] = useState<T[K]>(stateData[field])
     
     // Always sync temp value with server state (server is source of truth)
     useEffect(() => {
-      setTempValue(hybridState.data[field])
-    }, [hybridState.data[field]])
+      setTempValue(stateData[field])
+    }, [stateData[field]])
     
     const commitValue = useCallback(async (value?: T[K]) => {
       const valueToCommit = value !== undefined ? value : tempValue
@@ -366,16 +394,21 @@ export function useHybridLiveComponent<T = any>(
       value: tempValue,
       setValue: setTempValue,
       commit: commitValue,
-      isDirty: JSON.stringify(tempValue) !== JSON.stringify(hybridState.data[field])
+      isDirty: JSON.stringify(tempValue) !== JSON.stringify(stateData[field])
     }
-  }, [hybridState.data, call, log])
+  }, [stateData, call, log])
 
   // Calculate simple status
   const status = hybridState.status === 'disconnected' ? 'disconnected' : 'synced'
 
+  // Debug log for state return
+  if (debug) {
+    console.log('🎯 [Hook] Returning state to component:', stateData)
+  }
+
   return {
     // Server-driven state
-    state: hybridState.data,
+    state: stateData,
     
     // Status
     loading,

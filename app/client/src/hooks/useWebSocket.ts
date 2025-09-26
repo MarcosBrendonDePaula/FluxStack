@@ -50,6 +50,7 @@ export interface UseWebSocketReturn {
   reconnect: () => void
   messageHistory: WebSocketResponse[]
   lastMessage: WebSocketResponse | null
+  onMessage: (callback: (message: WebSocketResponse) => void) => () => void
 }
 
 export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketReturn {
@@ -74,6 +75,9 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
     reject: (error: any) => void
     timeout: NodeJS.Timeout
   }>>(new Map())
+  
+  // Message callbacks for real-time processing
+  const messageCallbacksRef = useRef<Set<(message: WebSocketResponse) => void>>(new Set())
   
   // Generate unique request ID
   const generateRequestId = useCallback(() => {
@@ -147,6 +151,15 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
           // Update message history and last message
           setMessageHistory(prev => [...prev.slice(-99), response])
           setLastMessage(response)
+          
+          // Call all registered message callbacks immediately
+          messageCallbacksRef.current.forEach(callback => {
+            try {
+              callback(response)
+            } catch (error) {
+              log('Error in message callback', error)
+            }
+          })
 
         } catch (error) {
           log('Failed to parse WebSocket message', error)
@@ -327,6 +340,16 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
     }
   }, [autoConnect, connect, close])
 
+  // Register message callback
+  const onMessage = useCallback((callback: (message: WebSocketResponse) => void) => {
+    messageCallbacksRef.current.add(callback)
+    
+    // Return cleanup function
+    return () => {
+      messageCallbacksRef.current.delete(callback)
+    }
+  }, [])
+
   return {
     connected,
     connecting,
@@ -337,6 +360,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
     close,
     reconnect,
     messageHistory,
-    lastMessage
+    lastMessage,
+    onMessage
   }
 }

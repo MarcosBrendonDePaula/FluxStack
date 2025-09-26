@@ -8,12 +8,26 @@ interface CounterState {
   step: number
 }
 
-export function HybridLiveCounter() {
-  // Initial state - server will take control
+interface HybridLiveCounterProps {
+  initialCount?: number
+  title?: string
+  step?: number
+  room?: string
+  userId?: string
+}
+
+export function HybridLiveCounter({
+  initialCount = 0,
+  title = 'Simple Live Counter',
+  step = 1,
+  room,
+  userId
+}: HybridLiveCounterProps = {}) {
+  // Frontend provides initial state - server takes control after mount
   const initialState: CounterState = {
-    count: 0,
-    title: 'Simple Live Counter',
-    step: 1
+    count: initialCount,
+    title,
+    step
   }
 
   const { 
@@ -25,7 +39,9 @@ export function HybridLiveCounter() {
     callAndWait
   } = useHybridLiveComponent<CounterState>('CounterComponent', initialState, {
     debug: true,
-    autoMount: true
+    autoMount: true,
+    room,
+    userId
   })
 
   const handleIncrement = () => call('increment', state.step)
