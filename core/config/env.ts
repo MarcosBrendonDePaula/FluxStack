@@ -46,7 +46,8 @@ export class EnvConverter {
   }
 
   static toBoolean(value: string | undefined, defaultValue: boolean): boolean {
-    if (!value) return defaultValue
+    if (value === undefined) return defaultValue
+    if (value === '') return false
     return ['true', '1', 'yes', 'on'].includes(value.toLowerCase())
   }
 

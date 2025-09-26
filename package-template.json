@@ -1,7 +1,7 @@
 {
   "name": "PROJECT_NAME",
-  "version": "1.0.0",
-  "description": "PROJECT_NAME - FluxStack application",
+  "version": "1.0.0", 
+  "description": "PROJECT_NAME - Modern full-stack TypeScript application built with FluxStack",
   "keywords": ["fluxstack", "bun", "typescript", "full-stack", "elysia", "react", "vite"],
   "author": "Your Name",
   "license": "MIT",

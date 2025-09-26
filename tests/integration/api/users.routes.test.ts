@@ -64,17 +64,10 @@ describe('Users API Routes', () => {
       const response = await app
         .handle(new Request('http://localhost/users/99999'))
         
-      expect(response.status).toBe(200) // Elysia returns 200 by default
+      expect(response.status).toBe(404) // Not found
       
-      // Check if response has content before parsing JSON
-      const text = await response.text()
-      if (text) {
-        const data = JSON.parse(text)
-        expect(data.error).toBe('Usuário não encontrado')
-      } else {
-        // If no response body, the test still passes as the behavior is expected
-        expect(response.status).toBe(200)
-      }
+      const data = await response.json()
+      expect(data.error).toBe('Usuário não encontrado')
     })
 
     it('should validate ID parameter', async () => {

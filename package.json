@@ -1,19 +1,27 @@
 {
   "name": "create-fluxstack",
-  "version": "1.0.10",
+  "version": "1.0.13",
   "description": "⚡ Modern full-stack TypeScript framework with Elysia + React + Bun",
-  "keywords": ["framework", "full-stack", "typescript", "elysia", "react", "bun", "vite"],
+  "keywords": [
+    "framework",
+    "full-stack",
+    "typescript",
+    "elysia",
+    "react",
+    "bun",
+    "vite"
+  ],
   "author": "FluxStack Team",
   "license": "MIT",
   "homepage": "https://github.com/MarcosBrendonDePaula/FluxStack",
   "repository": {
     "type": "git",
-    "url": "https://github.com/MarcosBrendonDePaula/FluxStack.git"
+    "url": "git+https://github.com/MarcosBrendonDePaula/FluxStack.git"
   },
   "module": "app/server/index.ts",
   "type": "module",
   "bin": {
-    "create-fluxstack": "./create-fluxstack.ts"
+    "create-fluxstack": "create-fluxstack.ts"
   },
   "scripts": {
     "dev": "bun run core/cli/index.ts dev",

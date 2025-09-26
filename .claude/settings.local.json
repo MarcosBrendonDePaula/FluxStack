@@ -62,7 +62,14 @@
       "Read(/C:\\Users\\Marcos\\Documents\\GitHub\\aviso-projeto\\test-npm-global/**)",
       "Read(/C:\\Users\\Marcos\\Documents\\GitHub\\aviso-projeto\\test-cli-update\\ai-context/**)",
       "Read(/C:\\Users\\Marcos\\Documents\\GitHub\\aviso-projeto\\test-cli-update/**)",
-      "Read(/C:\\Users\\Marcos\\Documents\\GitHub\\aviso-projeto\\test-cli-update/**)"
+      "Read(/C:\\Users\\Marcos\\Documents\\GitHub\\aviso-projeto\\test-cli-update/**)",
+      "Read(/C:\\Users\\Marcos\\Documents\\GitHub\\aviso-projeto\\test-gitignore/**)",
+      "Read(/C:\\Users\\Marcos\\Documents\\GitHub\\aviso-projeto\\test-plugins-guide/**)",
+      "Read(/C:\\Users\\Marcos\\Documents\\GitHub\\aviso-projeto\\test-plugins-guide\\ai-context\\development/**)",
+      "Read(/C:\\Users\\Marcos\\Documents\\GitHub\\aviso-projeto\\test-env-fix/**)",
+      "Read(/C:\\Users\\Marcos\\Documents\\GitHub\\aviso-projeto\\final-test/**)",
+      "Bash(npm pkg:*)",
+      "Bash(git push:*)"
     ],
     "deny": []
   }

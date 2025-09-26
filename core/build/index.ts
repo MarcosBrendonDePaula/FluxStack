@@ -1,5 +1,5 @@
 import { spawn } from "bun"
-import { copyFile, copyFileSync, writeFileSync } from "fs"
+import { copyFile, copyFileSync, writeFileSync, existsSync, mkdirSync } from "fs"
 import { join } from "path"
 import type { FluxStackConfig } from "../config"
 
@@ -69,6 +69,16 @@ export class FluxStackBuilder {
     console.log("🐳 Creating Docker files...")
     
     const distDir = this.config.build.outDir
+    console.log(`📁 Output directory: ${distDir}`)
+    
+    // Ensure dist directory exists
+    if (!existsSync(distDir)) {
+      console.log(`📁 Creating directory: ${distDir}`)
+      mkdirSync(distDir, { recursive: true })
+      console.log(`✅ Directory created successfully`)
+    } else {
+      console.log(`✅ Directory already exists`)
+    }
     
     // Dockerfile optimizado para produção
     const dockerfile = `# FluxStack Production Docker Image
@@ -149,7 +159,6 @@ services:
 .git
 .gitignore
 README.md
-.env
 .env.local
 .env.*.local
 npm-debug.log*
@@ -166,11 +175,74 @@ coverage
 `
 
     // Escrever arquivos no dist
-    writeFileSync(join(distDir, "Dockerfile"), dockerfile)
-    writeFileSync(join(distDir, "docker-compose.yml"), dockerCompose)
-    writeFileSync(join(distDir, ".dockerignore"), dockerignore)
-    copyFileSync(join(process.cwd(),'.env'), join(distDir, ".env"))
-    //writeFileSync(join(distDir, "package.json"), JSON.stringify(packageJson, null, 2))
+    try {
+      console.log(`📝 Writing Dockerfile...`)
+      writeFileSync(join(distDir, "Dockerfile"), dockerfile)
+      console.log(`📝 Writing docker-compose.yml...`)
+      writeFileSync(join(distDir, "docker-compose.yml"), dockerCompose)
+      console.log(`📝 Writing .dockerignore...`)
+      writeFileSync(join(distDir, ".dockerignore"), dockerignore)
+    } catch (error) {
+      console.error(`❌ Error writing Docker files:`, error)
+      throw error
+    }
+    
+    // Copiar .env ou criar um de exemplo
+    const envPath = join(process.cwd(), '.env')
+    const envExamplePath = join(process.cwd(), '.env.example')
+    const distEnvPath = join(distDir, ".env")
+    
+    console.log(`🔍 Checking for .env files...`)
+    console.log(`  - .env path: ${envPath}`)
+    console.log(`  - .env.example path: ${envExamplePath}`)
+    console.log(`  - target path: ${distEnvPath}`)
+    
+    if (existsSync(envPath)) {
+      console.log(`📄 Copying .env file...`)
+      copyFileSync(envPath, distEnvPath)
+      console.log("📄 Environment file copied to dist/")
+    } else if (existsSync(envExamplePath)) {
+      console.log(`📄 Copying .env.example file...`)
+      copyFileSync(envExamplePath, distEnvPath)
+      console.log("📄 Example environment file copied to dist/")
+    } else {
+      console.log(`📄 Creating default .env file...`)
+      // Criar um .env básico para produção
+      const defaultEnv = `NODE_ENV=production
+PORT=3000
+FLUXSTACK_APP_NAME=fluxstack-app
+FLUXSTACK_APP_VERSION=1.0.0
+LOG_LEVEL=info
+MONITORING_ENABLED=true
+`
+      writeFileSync(distEnvPath, defaultEnv)
+      console.log("📄 Default environment file created for production")
+    }
+    
+    // Copy package.json for Docker build
+    const packageJsonPath = join(process.cwd(), 'package.json')
+    const distPackageJsonPath = join(distDir, 'package.json')
+    
+    console.log(`📦 Copying package.json...`)
+    console.log(`  - source: ${packageJsonPath}`)
+    console.log(`  - target: ${distPackageJsonPath}`)
+    
+    if (existsSync(packageJsonPath)) {
+      copyFileSync(packageJsonPath, distPackageJsonPath)
+      console.log("📦 Package.json copied successfully")
+    } else {
+      console.warn("⚠️ package.json not found, creating minimal version...")
+      const minimalPackageJson = {
+        name: "fluxstack-app",
+        version: "1.0.0",
+        type: "module",
+        scripts: {
+          start: "bun run index.js"
+        },
+        dependencies: {}
+      }
+      writeFileSync(distPackageJsonPath, JSON.stringify(minimalPackageJson, null, 2))
+    }
     
     console.log("✅ Docker files created in dist/")
   }
