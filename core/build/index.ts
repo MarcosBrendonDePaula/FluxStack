@@ -1,5 +1,5 @@
 import { spawn } from "bun"
-import { copyFile, copyFileSync, writeFileSync, existsSync } from "fs"
+import { copyFile, copyFileSync, writeFileSync, existsSync, mkdirSync } from "fs"
 import { join } from "path"
 import type { FluxStackConfig } from "../config"
 
@@ -69,6 +69,11 @@ export class FluxStackBuilder {
     console.log("🐳 Creating Docker files...")
     
     const distDir = this.config.build.outDir
+    
+    // Ensure dist directory exists
+    if (!existsSync(distDir)) {
+      mkdirSync(distDir, { recursive: true })
+    }
     
     // Dockerfile optimizado para produção
     const dockerfile = `# FluxStack Production Docker Image

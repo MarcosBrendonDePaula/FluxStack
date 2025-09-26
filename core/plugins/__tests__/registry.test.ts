@@ -9,12 +9,14 @@ import type { Logger } from '../../utils/logger/index'
 
 // Mock fs module
 vi.mock('fs', () => ({
+  default: {},
   existsSync: vi.fn(() => false),
   readFileSync: vi.fn(() => '{}'),
   readdirSync: vi.fn(() => [])
 }))
 
 vi.mock('fs/promises', () => ({
+  default: {},
   readdir: vi.fn(() => Promise.resolve([])),
   readFile: vi.fn(() => Promise.resolve('{}'))
 }))

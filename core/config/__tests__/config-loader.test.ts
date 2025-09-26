@@ -4,6 +4,14 @@
  */
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest'
+
+// Mock fs module
+vi.mock('fs', () => ({
+  default: {},
+  existsSync: vi.fn(() => true),
+  writeFileSync: vi.fn(),
+  unlinkSync: vi.fn()
+}))
 import { 
   getConfig, 
   getConfigSync, 
