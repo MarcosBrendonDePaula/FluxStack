@@ -7,6 +7,18 @@ import { PluginRegistry } from '../registry'
 import type { Plugin, PluginManifest } from '../types'
 import type { Logger } from '../../utils/logger/index'
 
+// Mock fs module
+vi.mock('fs', () => ({
+  existsSync: vi.fn(() => false),
+  readFileSync: vi.fn(() => '{}'),
+  readdirSync: vi.fn(() => [])
+}))
+
+vi.mock('fs/promises', () => ({
+  readdir: vi.fn(() => Promise.resolve([])),
+  readFile: vi.fn(() => Promise.resolve('{}'))
+}))
+
 // Mock logger
 const mockLogger: Logger = {
   debug: vi.fn(),

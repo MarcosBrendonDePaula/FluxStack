@@ -136,7 +136,6 @@ describe('EnvironmentProcessor', () => {
     for (const key in process.env) {
       if (key.startsWith('FLUXSTACK_') || key.startsWith('PORT') || key.startsWith('HOST') || 
           key.startsWith('CORS_') || key.startsWith('LOG_') || key.startsWith('BUILD_') ||
-          key.startsWith('DATABASE_') || key.startsWith('JWT_') || key.startsWith('SMTP_') ||
           key.startsWith('VITE_') || key.startsWith('API_') || key.startsWith('CLIENT_') ||
           key.startsWith('MONITORING_') || key.startsWith('METRICS_') || key.startsWith('PROFILING_')) {
         delete process.env[key]
@@ -233,53 +232,8 @@ describe('EnvironmentProcessor', () => {
       expect(config.monitoring?.profiling?.sampleRate).toBe(0) // parseInt converts '0.1' to 0
     })
 
-    test('processes database configuration', () => {
-      process.env.DATABASE_URL = 'postgresql://user:pass@localhost:5432/db'
-      process.env.DATABASE_HOST = 'db.example.com'
-      process.env.DATABASE_PORT = '5433'
-      process.env.DATABASE_NAME = 'myapp'
-      process.env.DATABASE_SSL = 'true'
-      process.env.DATABASE_POOL_SIZE = '20'
 
-      const config = processor.processEnvironmentVariables()
 
-      expect(config.database?.url).toBe('postgresql://user:pass@localhost:5432/db')
-      expect(config.database?.host).toBe('db.example.com')
-      expect(config.database?.port).toBe(5433)
-      expect(config.database?.database).toBe('myapp')
-      expect(config.database?.ssl).toBe(true)
-      expect(config.database?.poolSize).toBe(20)
-    })
-
-    test('processes auth configuration', () => {
-      process.env.JWT_SECRET = 'my-secret-key'
-      process.env.JWT_EXPIRES_IN = '7d'
-      process.env.JWT_ALGORITHM = 'HS256'
-      process.env.JWT_ISSUER = 'fluxstack'
-
-      const config = processor.processEnvironmentVariables()
-
-      expect(config.auth?.secret).toBe('my-secret-key')
-      expect(config.auth?.expiresIn).toBe('7d')
-      expect(config.auth?.algorithm).toBe('HS256')
-      expect(config.auth?.issuer).toBe('fluxstack')
-    })
-
-    test('processes email configuration', () => {
-      process.env.SMTP_HOST = 'smtp.gmail.com'
-      process.env.SMTP_PORT = '587'
-      process.env.SMTP_USER = 'user@example.com'
-      process.env.SMTP_SECURE = 'true'
-      process.env.SMTP_FROM = 'noreply@example.com'
-
-      const config = processor.processEnvironmentVariables()
-
-      expect(config.email?.host).toBe('smtp.gmail.com')
-      expect(config.email?.port).toBe(587)
-      expect(config.email?.user).toBe('user@example.com')
-      expect(config.email?.secure).toBe(true)
-      expect(config.email?.from).toBe('noreply@example.com')
-    })
 
     test('processes plugin configuration', () => {
       process.env.FLUXSTACK_PLUGINS_ENABLED = 'plugin1,plugin2,plugin3'

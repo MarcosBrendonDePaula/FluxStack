@@ -12,10 +12,10 @@ import {
 } from '../loader'
 import { defaultFluxStackConfig } from '../schema'
 import { writeFileSync, unlinkSync, existsSync } from 'fs'
-import { join } from 'path'
+import * as path from 'path'
 
 describe('Configuration Loader', () => {
-  const testConfigPath = join(process.cwd(), 'test.config.ts')
+  const testConfigPath = path.join(process.cwd(), 'test.config.ts')
   const originalEnv = { ...process.env }
 
   beforeEach(() => {

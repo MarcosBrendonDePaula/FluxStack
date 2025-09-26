@@ -184,18 +184,6 @@ describe('Environment Configuration System', () => {
       expect(config.build?.sourceMaps).toBe(true)
     })
 
-    it('should process optional database configuration', () => {
-      process.env.DATABASE_URL = 'postgresql://localhost:5432/test'
-      process.env.DATABASE_SSL = 'true'
-      process.env.DATABASE_POOL_SIZE = '10'
-
-      const processor = new EnvironmentProcessor()
-      const config = processor.processEnvironmentVariables()
-
-      expect(config.database?.url).toBe('postgresql://localhost:5432/test')
-      expect(config.database?.ssl).toBe(true)
-      expect(config.database?.poolSize).toBe(10)
-    })
 
     it('should track precedence information', () => {
       process.env.PORT = '5000'

@@ -18,11 +18,12 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
     }
   })
   
-  .get("/:id", async ({ params: { id } }) => {
+  .get("/:id", async ({ params: { id }, set }) => {
     const userId = parseInt(id)
     const result = await UsersController.getUserById(userId)
     
     if (!result) {
+      set.status = 404
       return { error: "Usuário não encontrado" }
     }
     
@@ -30,14 +31,6 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
   }, {
     params: t.Object({
       id: t.String()
-    }),
-    response: t.Object({
-      user: t.Object({
-        id: t.Number(),
-        name: t.String(),
-        email: t.String(),
-        createdAt: t.Date()
-      })
     }),
     detail: {
       tags: ['Users'],

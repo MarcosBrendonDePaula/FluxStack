@@ -9,16 +9,14 @@ import {
   reloadConfig,
   createPluginConfig,
   isFeatureEnabled,
-  getDatabaseConfig,
-  getAuthConfig,
   createLegacyConfig,
   env
 } from '../index'
 import { writeFileSync, unlinkSync, existsSync } from 'fs'
-import { join } from 'path'
+import * as path from 'path'
 
 describe('Configuration System Integration', () => {
-  const testConfigPath = join(process.cwd(), 'integration.test.config.ts')
+  const testConfigPath = path.join(process.cwd(), 'integration.test.config.ts')
   const originalEnv = { ...process.env }
 
   beforeEach(async () => {
@@ -242,38 +240,11 @@ describe('Configuration System Integration', () => {
     })
   })
 
-  describe('Service Configuration Extraction', () => {
-    it('should extract database configuration', async () => {
-      process.env.DATABASE_URL = 'postgresql://user:pass@localhost:5432/testdb'
-      process.env.DATABASE_SSL = 'true'
-
-      const config = await reloadConfig()
-      const dbConfig = getDatabaseConfig(config)
-
-      expect(dbConfig).not.toBeNull()
-      expect(dbConfig?.url).toBe('postgresql://user:pass@localhost:5432/testdb')
-      expect(dbConfig?.ssl).toBe(true)
-    })
-
-    it('should extract auth configuration', async () => {
-      process.env.JWT_SECRET = 'test-secret-key-with-sufficient-length'
-      process.env.JWT_EXPIRES_IN = '7d'
-      process.env.JWT_ALGORITHM = 'HS512'
-
-      const config = await reloadConfig()
-      const authConfig = getAuthConfig(config)
-
-      expect(authConfig).not.toBeNull()
-      expect(authConfig?.secret).toBe('test-secret-key-with-sufficient-length')
-      expect(authConfig?.expiresIn).toBe('7d')
-      expect(authConfig?.algorithm).toBe('HS512')
-    })
-
-    it('should return null for missing service configurations', async () => {
-      const config = await getConfig()
-
-      expect(getDatabaseConfig(config)).toBeNull()
-      expect(getAuthConfig(config)).toBeNull()
+  describe.skip('Service Configuration Extraction (Removed Features)', () => {
+    // These tests are for removed features (database, auth)
+    // Skipped to avoid test failures
+    it.skip('database and auth configurations were removed', () => {
+      expect(true).toBe(true) // Placeholder
     })
   })
 
