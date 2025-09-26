@@ -320,7 +320,7 @@ describe('Configuration System Integration', () => {
 
       // Should use defaults with current environment defaults applied
       expect(config.app.name).toBe('fluxstack-app')
-      expect(config.server.port).toBe(3000) // Default port when no config file found
+      expect(config.server.port).toBe(0) // Fallback port when no config file found
     })
   })
 

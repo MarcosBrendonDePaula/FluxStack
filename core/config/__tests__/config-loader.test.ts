@@ -5,26 +5,16 @@
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest'
 
-// Mock fs module
+// Mock fs module with proper default export
 vi.mock('fs', () => ({
-  default: {},
+  default: {
+    existsSync: vi.fn(() => true),
+    writeFileSync: vi.fn(),
+    unlinkSync: vi.fn()
+  },
   existsSync: vi.fn(() => true),
   writeFileSync: vi.fn(),
-  unlinkSync: vi.fn()
-}))
-import { 
-  getConfig, 
-  getConfigSync, 
-  reloadConfig,
-  createPluginConfig,
-  isFeatureEnabled,
-  createLegacyConfig
-} from '../index'
-import type { FluxStackConfig } from '../schema'
-
-// Mock file system operations
-vi.mock('fs', () => ({
-  existsSync: vi.fn(),
+  unlinkSync: vi.fn(),
   promises: {
     readFile: vi.fn(),
     access: vi.fn()
@@ -35,6 +25,16 @@ vi.mock('fs/promises', () => ({
   readFile: vi.fn(),
   access: vi.fn()
 }))
+
+import { 
+  getConfig, 
+  getConfigSync, 
+  reloadConfig,
+  createPluginConfig,
+  isFeatureEnabled,
+  createLegacyConfig
+} from '../index'
+import type { FluxStackConfig } from '../schema'
 
 describe('Configuration Loader', () => {
   let originalEnv: NodeJS.ProcessEnv

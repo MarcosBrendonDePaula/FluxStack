@@ -7,9 +7,13 @@ import { PluginRegistry } from '../registry'
 import type { Plugin, PluginManifest } from '../types'
 import type { Logger } from '../../utils/logger/index'
 
-// Mock fs module
+// Mock fs module with proper default export
 vi.mock('fs', () => ({
-  default: {},
+  default: {
+    existsSync: vi.fn(() => false),
+    readFileSync: vi.fn(() => '{}'),
+    readdirSync: vi.fn(() => [])
+  },
   existsSync: vi.fn(() => false),
   readFileSync: vi.fn(() => '{}'),
   readdirSync: vi.fn(() => [])
