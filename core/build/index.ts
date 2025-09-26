@@ -1,5 +1,5 @@
 import { spawn } from "bun"
-import { copyFile, copyFileSync, writeFileSync } from "fs"
+import { copyFile, copyFileSync, writeFileSync, existsSync } from "fs"
 import { join } from "path"
 import type { FluxStackConfig } from "../config"
 
@@ -149,7 +149,6 @@ services:
 .git
 .gitignore
 README.md
-.env
 .env.local
 .env.*.local
 npm-debug.log*
@@ -169,7 +168,31 @@ coverage
     writeFileSync(join(distDir, "Dockerfile"), dockerfile)
     writeFileSync(join(distDir, "docker-compose.yml"), dockerCompose)
     writeFileSync(join(distDir, ".dockerignore"), dockerignore)
-    copyFileSync(join(process.cwd(),'.env'), join(distDir, ".env"))
+    
+    // Copiar .env ou criar um de exemplo
+    const envPath = join(process.cwd(), '.env')
+    const envExamplePath = join(process.cwd(), '.env.example')
+    const distEnvPath = join(distDir, ".env")
+    
+    if (existsSync(envPath)) {
+      copyFileSync(envPath, distEnvPath)
+      console.log("📄 Environment file copied to dist/")
+    } else if (existsSync(envExamplePath)) {
+      copyFileSync(envExamplePath, distEnvPath)
+      console.log("📄 Example environment file copied to dist/")
+    } else {
+      // Criar um .env básico para produção
+      const defaultEnv = `NODE_ENV=production
+PORT=3000
+FLUXSTACK_APP_NAME=fluxstack-app
+FLUXSTACK_APP_VERSION=1.0.0
+LOG_LEVEL=info
+MONITORING_ENABLED=true
+`
+      writeFileSync(distEnvPath, defaultEnv)
+      console.log("📄 Default environment file created for production")
+    }
+    
     //writeFileSync(join(distDir, "package.json"), JSON.stringify(packageJson, null, 2))
     
     console.log("✅ Docker files created in dist/")
