@@ -10,14 +10,21 @@ export interface WebSocketMessage {
   timestamp?: number
   userId?: string
   room?: string
+  // Request-Response system
+  requestId?: string
+  responseId?: string
+  expectResponse?: boolean
 }
 
 export interface WebSocketResponse {
-  type: 'MESSAGE_RESPONSE' | 'CONNECTION_ESTABLISHED' | 'ERROR' | 'BROADCAST'
+  type: 'MESSAGE_RESPONSE' | 'CONNECTION_ESTABLISHED' | 'ERROR' | 'BROADCAST' | 'ACTION_RESPONSE'
   originalType?: string
   componentId?: string
   success?: boolean
   result?: any
+  // Request-Response system
+  requestId?: string
+  responseId?: string
   error?: string
   timestamp?: number
   connectionId?: string
@@ -38,6 +45,7 @@ export interface UseWebSocketReturn {
   error: string | null
   connectionId: string | null
   sendMessage: (message: WebSocketMessage) => Promise<WebSocketResponse | null>
+  sendMessageAndWait: (message: WebSocketMessage, timeout?: number) => Promise<any>
   close: () => void
   reconnect: () => void
   messageHistory: WebSocketResponse[]
@@ -59,6 +67,18 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
   const [connectionId, setConnectionId] = useState<string | null>(null)
   const [messageHistory, setMessageHistory] = useState<WebSocketResponse[]>([])
   const [lastMessage, setLastMessage] = useState<WebSocketResponse | null>(null)
+  
+  // Request-Response system
+  const pendingRequests = useRef<Map<string, {
+    resolve: (value: any) => void
+    reject: (error: any) => void
+    timeout: NodeJS.Timeout
+  }>>(new Map())
+  
+  // Generate unique request ID
+  const generateRequestId = useCallback(() => {
+    return `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  }, [])
 
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectAttempts = useRef(0)
@@ -101,7 +121,21 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
             setConnectionId(response.connectionId || null)
           }
 
-          // Handle message callbacks
+          // Handle request-response system
+          if (response.requestId && pendingRequests.current.has(response.requestId)) {
+            const request = pendingRequests.current.get(response.requestId)!
+            clearTimeout(request.timeout)
+            pendingRequests.current.delete(response.requestId)
+            
+            if (response.success !== false) {
+              request.resolve(response.result)
+            } else {
+              request.reject(new Error(response.error || 'Request failed'))
+            }
+            return // Don't process further for request-response
+          }
+
+          // Handle message callbacks (legacy)
           if (response.type === 'MESSAGE_RESPONSE' && response.componentId) {
             const callback = messageCallbacks.current.get(response.componentId)
             if (callback) {
@@ -213,6 +247,51 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
     })
   }, [log])
 
+  // Send message and wait for response with unique ID
+  const sendMessageAndWait = useCallback(async (
+    message: WebSocketMessage, 
+    timeout: number = 10000
+  ): Promise<any> => {
+    return new Promise((resolve, reject) => {
+      if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+        reject(new Error('WebSocket is not connected'))
+        return
+      }
+
+      const requestId = generateRequestId()
+      
+      // Set up timeout
+      const timeoutHandle = setTimeout(() => {
+        pendingRequests.current.delete(requestId)
+        reject(new Error(`Request timeout after ${timeout}ms`))
+      }, timeout)
+
+      // Store the pending request
+      pendingRequests.current.set(requestId, {
+        resolve,
+        reject,
+        timeout: timeoutHandle
+      })
+
+      try {
+        const messageWithRequestId = {
+          ...message,
+          requestId,
+          expectResponse: true,
+          timestamp: Date.now()
+        }
+        
+        wsRef.current.send(JSON.stringify(messageWithRequestId))
+        log('Sent message with request ID', { requestId, message: messageWithRequestId })
+      } catch (error) {
+        // Cleanup on send error
+        clearTimeout(timeoutHandle)
+        pendingRequests.current.delete(requestId)
+        reject(error)
+      }
+    })
+  }, [log, generateRequestId])
+
   const close = useCallback(() => {
     if (reconnectTimeout.current) {
       clearTimeout(reconnectTimeout.current)
@@ -254,6 +333,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
     error,
     connectionId,
     sendMessage,
+    sendMessageAndWait,
     close,
     reconnect,
     messageHistory,

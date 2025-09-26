@@ -209,13 +209,19 @@ export class ComponentRegistry {
           return { success: true }
 
         case 'CALL_ACTION':
-          // Execute action - no response needed, let backend decide if state changes
-          await this.executeAction(
+          // Execute action - response depends on expectResponse flag
+          const actionResult = await this.executeAction(
             message.componentId,
             message.action!,
             message.payload
           )
-          // No return - if state changed, component will emit STATE_UPDATE automatically
+          
+          // If client expects response, return it
+          if (message.expectResponse) {
+            return { success: true, result: actionResult }
+          }
+          
+          // Otherwise no return - if state changed, component will emit STATE_UPDATE automatically
           return null
 
         case 'PROPERTY_UPDATE':

@@ -4,7 +4,7 @@ export interface StateValidation {
   checksum: string
   version: number
   lastSync: number
-  source: 'client' | 'server' | 'merged'
+  source: 'server' | 'mount'
 }
 
 export interface StateConflict<T = any> {
@@ -18,7 +18,7 @@ export interface HybridState<T = any> {
   data: T
   validation: StateValidation
   conflicts: StateConflict<T>[]
-  status: 'synced' | 'pending' | 'conflict' | 'disconnected'
+  status: 'synced' | 'disconnected'
 }
 
 export interface SyncResult<T = any> {
@@ -35,9 +35,6 @@ export interface HybridComponentOptions {
   autoMount?: boolean
   debug?: boolean
   
-  // Hybrid options
-  enableValidation?: boolean
-  conflictResolution?: 'auto' | 'manual'
-  syncStrategy?: 'optimistic' | 'pessimistic'
+  // Simplified options (server-only model)
   fallbackToLocal?: boolean
 }

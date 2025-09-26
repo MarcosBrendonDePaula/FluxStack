@@ -95,16 +95,16 @@ export const liveComponentsPlugin = {
             // Handle message through registry
             const result = await componentRegistry.handleMessage(ws, message)
             
-            // Only send MESSAGE_RESPONSE if result is not null
-            // CALL_ACTION returns null - let STATE_UPDATE be the response
+            // Only send response if result is not null
             if (result !== null) {
               const response = {
-                type: 'MESSAGE_RESPONSE',
+                type: message.expectResponse ? 'ACTION_RESPONSE' : 'MESSAGE_RESPONSE',
                 originalType: message.type,
                 componentId: message.componentId,
                 success: result.success,
                 result: result.result,
                 error: result.error,
+                requestId: message.requestId, // Include requestId for request-response
                 timestamp: Date.now()
               }
 
@@ -115,11 +115,14 @@ export const liveComponentsPlugin = {
             console.error('❌ WebSocket message error:', error.message)
             
             // Send error response
-            ws.send(JSON.stringify({
+            const errorResponse = {
               type: 'ERROR',
+              requestId: message.requestId, // Include requestId even for errors
               error: error.message,
               timestamp: Date.now()
-            }))
+            }
+            
+            ws.send(JSON.stringify(errorResponse))
           }
         })
 

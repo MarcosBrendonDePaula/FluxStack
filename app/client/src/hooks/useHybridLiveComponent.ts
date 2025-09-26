@@ -1,26 +1,25 @@
-// 🔥 Hybrid Live Component Hook - Zustand + Live Components
+// 🔥 Hybrid Live Component Hook - Server-Driven with Zustand
+// Direct WebSocket integration (no dependency on useLiveComponent)
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
-import { useLiveComponent } from './useLiveComponent'
+import { useWebSocket, type WebSocketMessage } from './useWebSocket'
 import { StateValidator } from '../lib/state-validator'
 import type { 
   HybridState, 
   StateConflict, 
-  HybridComponentOptions, 
-  SyncResult 
+  HybridComponentOptions
 } from '../lib/hybrid-types'
 
 interface HybridStore<T> {
   hybridState: HybridState<T>
-  updateState: (newState: Partial<T>, source?: 'client' | 'server') => void
-  resolveConflicts: (conflicts: StateConflict<T>[]) => void
+  updateState: (newState: T, source?: 'server' | 'mount') => void
   reset: (initialState: T) => void
 }
 
 export interface UseHybridLiveComponentReturn<T> {
-  // Combined state (client + server merged)
+  // Server-driven state (read-only from frontend perspective)
   state: T
   
   // Status information
@@ -29,21 +28,22 @@ export interface UseHybridLiveComponentReturn<T> {
   connected: boolean
   componentId: string | null
   
-  // Hybrid-specific info
-  conflicts: StateConflict<T>[]
-  status: 'synced' | 'pending' | 'conflict' | 'disconnected'
-  validation: boolean
+  // Simple status (no conflicts in server-only model)
+  status: 'synced' | 'disconnected'
   
-  // Actions
+  // Actions (all go to server)
   call: (action: string, payload?: any) => Promise<void>
-  set: (property: string, value: any) => void
+  callAndWait: (action: string, payload?: any, timeout?: number) => Promise<any>
   mount: () => Promise<void>
   unmount: () => Promise<void>
   
-  // Hybrid actions
-  sync: () => Promise<SyncResult<T>>
-  resolveConflict: (field: keyof T, resolution: 'client' | 'server') => void
-  validateState: () => boolean
+  // Helper for temporary input state
+  useControlledField: <K extends keyof T>(field: K, action?: string) => {
+    value: T[K]
+    setValue: (value: T[K]) => void
+    commit: (value?: T[K]) => Promise<void>
+    isDirty: boolean
+  }
 }
 
 /**
@@ -54,21 +54,18 @@ function createHybridStore<T>(initialState: T) {
     subscribeWithSelector((set, get) => ({
       hybridState: {
         data: initialState,
-        validation: StateValidator.createValidation(initialState, 'client'),
+        validation: StateValidator.createValidation(initialState, 'mount'),
         conflicts: [],
         status: 'disconnected' as const
       },
 
-      updateState: (newState: Partial<T> | T, source: 'client' | 'server' | 'mount' = 'server') => {
-        console.log('🔄 [Zustand] updateState called', { newState, source })
+      updateState: (newState: T, source: 'server' | 'mount' = 'server') => {
+        console.log('🔄 [Zustand] Server state update', { newState, source })
         set((state) => {
-          // Server/Mount: Replace state entirely (source of truth)
-          // Client: Only for initial mount/reconnection
-          const updatedData = source === 'client' || source === 'mount' 
-            ? { ...state.hybridState.data, ...newState }
-            : newState as T // Server replaces entirely
+          // Backend is ONLY source of state mutations
+          const updatedData = newState
           
-          console.log('🔄 [Zustand] State updated', {
+          console.log('🔄 [Zustand] State replaced from server', {
             from: state.hybridState.data,
             to: updatedData
           })
@@ -77,28 +74,18 @@ function createHybridStore<T>(initialState: T) {
             hybridState: {
               data: updatedData,
               validation: StateValidator.createValidation(updatedData, source),
-              conflicts: [], // No conflicts in simplified model
-              status: source === 'server' ? 'synced' : 'pending'
+              conflicts: [], // No conflicts - server is source of truth
+              status: 'synced'
             }
           }
         })
-      },
-
-      resolveConflicts: (conflicts: StateConflict<T>[]) => {
-        set((state) => ({
-          hybridState: {
-            ...state.hybridState,
-            conflicts,
-            status: conflicts.length > 0 ? 'conflict' : 'synced'
-          }
-        }))
       },
 
       reset: (initialState: T) => {
         set({
           hybridState: {
             data: initialState,
-            validation: StateValidator.createValidation(initialState, 'client'),
+            validation: StateValidator.createValidation(initialState, 'mount'),
             conflicts: [],
             status: 'disconnected'
           }
@@ -114,11 +101,11 @@ export function useHybridLiveComponent<T = any>(
   options: HybridComponentOptions = {}
 ): UseHybridLiveComponentReturn<T> {
   const {
-    enableValidation = true,
-    conflictResolution = 'auto',
-    syncStrategy = 'optimistic',
     fallbackToLocal = true,
-    ...liveOptions
+    room,
+    userId,
+    autoMount = true,
+    debug = false
   } = options
 
   // Create Zustand store instance (one per component instance)
@@ -131,115 +118,236 @@ export function useHybridLiveComponent<T = any>(
   // Get state from Zustand store
   const hybridState = store((state) => state.hybridState)
   const updateState = store((state) => state.updateState)
-  const resolveConflicts = store((state) => state.resolveConflicts)
 
-  // Live Component integration
-  const liveComponent = useLiveComponent<T>(componentName, initialState, {
-    ...liveOptions,
-    autoMount: false // We'll control mounting manually
+  // Direct WebSocket integration
+  const { 
+    connected, 
+    sendMessage,
+    sendMessageAndWait, 
+    lastMessage,
+    error: wsError 
+  } = useWebSocket({
+    debug
   })
 
+  // Component state
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [componentId, setComponentId] = useState<string | null>(null)
   const [lastServerState, setLastServerState] = useState<T | null>(null)
-  const syncInProgress = useRef(false)
+  const mountedRef = useRef(false)
 
   const log = useCallback((message: string, data?: any) => {
-    if (options.debug) {
+    if (debug) {
       console.log(`[useHybridLiveComponent:${componentName}] ${message}`, data)
     }
-  }, [componentName, options.debug])
+  }, [debug, componentName])
 
-  // Server state sync (Backend is ONLY source of mutations after mount)
+  // Handle incoming WebSocket messages
   useEffect(() => {
-    if (!liveComponent.componentId) {
+    if (!lastMessage || !componentId) {
       return
     }
 
-    // Server state changed - directly sync (no conflict detection)
-    if (liveComponent.state && JSON.stringify(liveComponent.state) !== JSON.stringify(lastServerState)) {
-      log('Server state update', { 
-        from: lastServerState, 
-        to: liveComponent.state 
-      })
-      
-      // Backend is source of truth - replace client state entirely
-      updateState(liveComponent.state, 'server')
-      setLastServerState(liveComponent.state)
-    }
-  }, [liveComponent.state, liveComponent.componentId, lastServerState, updateState, log])
+    if (lastMessage.componentId === componentId) {
+      switch (lastMessage.type) {
+        case 'STATE_UPDATE':
+          log('Processing STATE_UPDATE', lastMessage.payload)
+          if (lastMessage.payload?.state) {
+            const newState = lastMessage.payload.state
+            updateState(newState, 'server')
+            setLastServerState(newState)
+            log('State updated from server', newState)
+          }
+          break
 
-  // Mount when connected (with initial client state for hydration)
-  const mount = useCallback(async () => {
-    if (!liveComponent.connected) return
+        case 'MESSAGE_RESPONSE':
+          if (lastMessage.originalType !== 'CALL_ACTION') {
+            log('Received response for', lastMessage.originalType)
+          }
+          break
 
-    try {
-      log('Mounting with initial client state', hybridState.data)
-      
-      // Mount with current client state as initial props (for first-time hydration)
-      await liveComponent.mount()
-      
-      // After mount, server becomes source of truth
-      log('Mount successful - server now controls state')
-    } catch (error) {
-      log('Mount failed', error)
-      if (fallbackToLocal) {
-        // Keep local state on mount failure
-        log('Using local state as fallback')
-      } else {
-        throw error
+        case 'BROADCAST':
+          log('Received broadcast', lastMessage.payload)
+          break
+
+        case 'ERROR':
+          log('Received error', lastMessage.payload)
+          setError(lastMessage.payload?.error || 'Unknown error')
+          break
       }
     }
-  }, [liveComponent, hybridState.data, log, fallbackToLocal])
+  }, [lastMessage, componentId, updateState, log])
+
+  // Mount component
+  const mount = useCallback(async () => {
+    if (!connected || mountedRef.current) {
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+    log('Mounting component - server will control all state')
+
+    try {
+      const message: WebSocketMessage = {
+        type: 'COMPONENT_MOUNT',
+        componentId: 'mounting',
+        payload: {
+          component: componentName,
+          props: initialState,
+          room,
+          userId
+        }
+      }
+
+      const response = await sendMessage(message)
+      
+      if (response?.success) {
+        const newComponentId = response.result?.componentId
+        if (newComponentId) {
+          setComponentId(newComponentId)
+          mountedRef.current = true
+          log('Component mounted successfully', { componentId: newComponentId })
+        } else {
+          throw new Error('No component ID returned')
+        }
+      } else {
+        throw new Error(response?.error || 'Failed to mount component')
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Mount failed'
+      setError(errorMessage)
+      log('Mount failed', err)
+      
+      if (fallbackToLocal) {
+        log('Using local state as fallback until reconnection')
+      } else {
+        throw err
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [connected, componentName, initialState, room, userId, sendMessage, log, fallbackToLocal])
+
+  // Unmount component
+  const unmount = useCallback(async () => {
+    if (!componentId || !connected) {
+      return
+    }
+
+    log('Unmounting component', { componentId })
+
+    try {
+      await sendMessage({
+        type: 'COMPONENT_UNMOUNT',
+        componentId
+      })
+      
+      setComponentId(null)
+      mountedRef.current = false
+      log('Component unmounted successfully')
+    } catch (err) {
+      log('Unmount failed', err)
+    }
+  }, [componentId, connected, sendMessage, log])
+
+  // Server-only actions (no client-side state mutations)
+  const call = useCallback(async (action: string, payload?: any): Promise<void> => {
+    if (!componentId || !connected) {
+      throw new Error('Component not mounted or WebSocket not connected')
+    }
+
+    log('Calling server action', { action, payload })
+
+    try {
+      setLoading(true)
+      
+      const message: WebSocketMessage = {
+        type: 'CALL_ACTION',
+        componentId,
+        action,
+        payload
+      }
+
+      // Send action - server will update state and send back changes
+      await sendMessage(message)
+      
+      log('Action sent to server - waiting for server state update', { action, payload })
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Action failed'
+      setError(errorMessage)
+      log('Action failed', { action, error: err })
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }, [componentId, connected, sendMessage, log])
+
+  // Call action and wait for specific return value
+  const callAndWait = useCallback(async (action: string, payload?: any, timeout?: number): Promise<any> => {
+    if (!componentId || !connected) {
+      throw new Error('Component not mounted or WebSocket not connected')
+    }
+
+    log('Calling server action and waiting for response', { action, payload })
+
+    try {
+      setLoading(true)
+      
+      const message: WebSocketMessage = {
+        type: 'CALL_ACTION',
+        componentId,
+        action,
+        payload
+      }
+
+      // Send action and wait for response
+      const result = await sendMessageAndWait(message, timeout)
+      
+      log('Action completed with result', { action, payload, result })
+      return result
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Action failed'
+      setError(errorMessage)
+      log('Action failed', { action, error: err })
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }, [componentId, connected, sendMessageAndWait, log])
 
   // Auto-mount when connected
   useEffect(() => {
-    if (liveComponent.connected && !liveComponent.componentId && hybridState.status === 'disconnected') {
+    if (connected && autoMount && !mountedRef.current && hybridState.status === 'disconnected') {
       mount()
     }
-  }, [liveComponent.connected, liveComponent.componentId, hybridState.status, mount])
+  }, [connected, autoMount, mount, hybridState.status])
 
-  // Hybrid call action (with proper server sync)
-  const call = useCallback(async (action: string, payload?: any): Promise<void> => {
-    log('Calling server action', { action, payload, syncStrategy })
-
-    // Execute on server (no optimistic updates - let server be source of truth via STATE_UPDATE)
-    await liveComponent.call(action, payload)
-    
-    log('Action sent to server', { action, payload })
-  }, [liveComponent, log])
-
-  // Sync function (simplified - just request current server state)
-  const sync = useCallback(async (): Promise<SyncResult<T>> => {
-    if (!liveComponent.connected || !liveComponent.componentId) {
-      return { success: false, error: 'Not connected' }
+  // Unmount on cleanup
+  useEffect(() => {
+    return () => {
+      if (mountedRef.current) {
+        unmount()
+      }
     }
+  }, [unmount])
 
-    try {
-      // Server state is already synced automatically - just return current state
-      return { success: true, state: hybridState.data }
-    } catch (error) {
-      return { success: false, error: 'Sync failed' }
+  // Update error from WebSocket
+  useEffect(() => {
+    if (wsError) {
+      setError(wsError)
     }
-  }, [liveComponent.connected, liveComponent.componentId, hybridState.data])
+  }, [wsError])
 
-  // Simplified conflict resolution (no-op in simplified model)
-  const resolveConflict = useCallback((field: keyof T, resolution: 'client' | 'server') => {
-    log('No conflicts in simplified model', { field, resolution })
-  }, [log])
-
-  // Validate state
-  const validateState = useCallback(() => {
-    if (!enableValidation) return true
-    return StateValidator.validateState(hybridState)
-  }, [hybridState, enableValidation])
-
-  // Helper for controlled inputs (temporary state + backend sync)
+  // Helper for controlled inputs (temporary local state + server commit)
   const useControlledField = useCallback(<K extends keyof T>(
     field: K,
-    action: string = 'set'
+    action: string = 'updateField'
   ) => {
     const [tempValue, setTempValue] = useState<T[K]>(hybridState.data[field])
     
-    // Sync temp value with server state when it changes
+    // Always sync temp value with server state (server is source of truth)
     useEffect(() => {
       setTempValue(hybridState.data[field])
     }, [hybridState.data[field]])
@@ -247,7 +355,11 @@ export function useHybridLiveComponent<T = any>(
     const commitValue = useCallback(async (value?: T[K]) => {
       const valueToCommit = value !== undefined ? value : tempValue
       log('Committing field to server', { field, value: valueToCommit })
-      await call(action, { [field]: valueToCommit })
+      
+      // Call server action - server will update state and send back changes
+      await call(action, { field, value: valueToCommit })
+      
+      // No local state mutation - wait for server response
     }, [tempValue, field, action])
     
     return {
@@ -258,33 +370,27 @@ export function useHybridLiveComponent<T = any>(
     }
   }, [hybridState.data, call, log])
 
+  // Calculate simple status
+  const status = hybridState.status === 'disconnected' ? 'disconnected' : 'synced'
+
   return {
-    // State
+    // Server-driven state
     state: hybridState.data,
     
     // Status
-    loading: liveComponent.loading,
-    error: liveComponent.error,
-    connected: liveComponent.connected,
-    componentId: liveComponent.componentId,
+    loading,
+    error,
+    connected,
+    componentId,
+    status,
     
-    // Hybrid status
-    conflicts: hybridState.conflicts,
-    status: hybridState.status,
-    validation: validateState(),
-    
-    // Actions
+    // Actions (all server-driven)
     call,
-    set: liveComponent.set,
+    callAndWait,
     mount,
-    unmount: liveComponent.unmount,
+    unmount,
     
-    // Hybrid actions
-    sync,
-    resolveConflict,
-    validateState,
-    
-    // Field helpers
+    // Helper for forms
     useControlledField
   }
 }

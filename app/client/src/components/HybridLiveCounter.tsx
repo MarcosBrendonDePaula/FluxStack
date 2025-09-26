@@ -12,9 +12,7 @@ interface CounterState {
 }
 
 export function HybridLiveCounter() {
-  const [customStep, setCustomStep] = useState(1)
-  const [newTitle, setNewTitle] = useState('')
-  const [showConflicts, setShowConflicts] = useState(false)
+  const [showDebug, setShowDebug] = useState(false)
 
   // Initial state comes from frontend (component props)
   const initialState: CounterState = {
@@ -31,20 +29,13 @@ export function HybridLiveCounter() {
     error, 
     connected, 
     componentId,
-    conflicts,
     status,
-    validation,
     call,
-    sync,
-    resolveConflict,
-    validateState,
+    callAndWait,
     useControlledField
   } = useHybridLiveComponent<CounterState>('CounterComponent', initialState, {
     debug: true,
     autoMount: true,
-    enableValidation: true,
-    conflictResolution: 'auto',
-    syncStrategy: 'optimistic',
     fallbackToLocal: true
   })
 
@@ -75,12 +66,21 @@ export function HybridLiveCounter() {
     }
   }
 
-  const handleSync = async () => {
+  // Removed sync function - server automatically syncs state
+  
+  const handleGetStats = async () => {
     try {
-      const result = await sync()
-      console.log('Sync result:', result)
+      const response = await callAndWait('getStats')
+      console.log('📊 Response from server:', response)
+      
+      // Backend returns { success: true, stats: {...} }
+      const stats = response.stats
+      console.log('📊 Stats:', stats)
+      
+      alert(`📊 Stats:\nCurrent: ${stats.current}\nMin: ${stats.min}\nMax: ${stats.max}\nAverage: ${stats.average.toFixed(1)}\nHistory Length: ${stats.historyLength}`)
     } catch (err) {
-      console.error('Failed to sync:', err)
+      console.error('Failed to get stats:', err)
+      alert(`❌ Failed to get stats: ${err instanceof Error ? err.message : 'Unknown error'}`)
     }
   }
 
@@ -157,10 +157,8 @@ export function HybridLiveCounter() {
             {getStatusIcon()} {status.toUpperCase()}
           </span>
           
-          <span className={`inline-flex items-center px-2 py-1 rounded text-xs ${
-            validation ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-          }`}>
-            {validation ? '✅ Valid' : '❌ Invalid'}
+          <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-blue-100 text-blue-700">
+            🎯 Server-Driven
           </span>
           
           {componentId && (
@@ -178,12 +176,12 @@ export function HybridLiveCounter() {
         </div>
       )}
 
-      {/* Conflicts Display */}
-      {conflicts.length > 0 && (
+      {/* Server-Driven Info */}
+      {false && (
         <div className="mb-4 p-3 bg-yellow-100 border border-yellow-400 rounded">
           <div className="flex items-center justify-between">
             <span className="font-medium text-yellow-800">
-              ⚠️ {conflicts.length} conflict(s) detected
+              🎯 All state changes come from the server
             </span>
             <button
               onClick={() => setShowConflicts(!showConflicts)}
@@ -195,7 +193,7 @@ export function HybridLiveCounter() {
           
           {showConflicts && (
             <div className="mt-2 space-y-2">
-              {conflicts.map((conflict, index) => (
+              {[].map((conflict, index) => (
                 <div key={index} className="bg-white p-2 rounded border text-sm">
                   <div className="font-medium">Field: {String(conflict.field)}</div>
                   <div className="grid grid-cols-2 gap-2 mt-1">
@@ -256,7 +254,7 @@ export function HybridLiveCounter() {
       </div>
 
       {/* Action Buttons */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-4 gap-4 mb-6">
         <button
           onClick={handleReset}
           disabled={loading || !connected}
@@ -266,19 +264,20 @@ export function HybridLiveCounter() {
         </button>
         
         <button
-          onClick={handleSync}
-          disabled={loading || status === 'synced'}
-          className="px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white rounded transition-colors"
+          onClick={() => setShowDebug(!showDebug)}
+          className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded transition-colors"
         >
-          🔄 Sync
+          {showDebug ? '🙈 Hide' : '👁️ Show'} Debug
         </button>
         
         <button
-          onClick={() => validateState()}
-          className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded transition-colors"
+          onClick={handleGetStats}
+          disabled={loading || !connected}
+          className="px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white rounded transition-colors"
         >
-          ✅ Validate
+          📊 Get Stats
         </button>
+        
       </div>
 
       {/* History */}
@@ -314,8 +313,8 @@ export function HybridLiveCounter() {
           <pre className="mt-2 p-2 bg-gray-100 rounded overflow-auto">
             {JSON.stringify({
               status,
-              validation,
-              conflicts: conflicts.length,
+              // validation removed in server-only model
+              // conflicts removed in server-only model
               connected,
               componentId: componentId?.slice(-8)
             }, null, 2)}

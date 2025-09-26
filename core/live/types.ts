@@ -1,7 +1,7 @@
 // 🔥 FluxStack Live Components - Core Types
 
 export interface LiveMessage {
-  type: 'COMPONENT_MOUNT' | 'COMPONENT_UNMOUNT' | 'COMPONENT_ACTION' | 'PROPERTY_UPDATE' | 'STATE_UPDATE' | 'ERROR' | 'BROADCAST'
+  type: 'COMPONENT_MOUNT' | 'COMPONENT_UNMOUNT' | 'COMPONENT_ACTION' | 'CALL_ACTION' | 'ACTION_RESPONSE' | 'PROPERTY_UPDATE' | 'STATE_UPDATE' | 'ERROR' | 'BROADCAST'
   componentId: string
   action?: string
   property?: string
@@ -9,6 +9,10 @@ export interface LiveMessage {
   timestamp?: number
   userId?: string
   room?: string
+  // Request-Response system
+  requestId?: string
+  responseId?: string
+  expectResponse?: boolean
 }
 
 export interface ComponentState {

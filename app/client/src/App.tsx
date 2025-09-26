@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { api, getErrorMessage } from './lib/eden-api'
 import TestPage from './components/TestPage'
-import { LiveCounter } from './components/LiveCounter'
 import { HybridLiveCounter } from './components/HybridLiveCounter'
 
 type TabType = 'overview' | 'demo' | 'live-components' | 'hybrid-live' | 'api-docs' | 'tests'
@@ -722,7 +721,7 @@ const health = await api.health.get()`}
         <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-2xl p-6 text-center">
           <div className="text-4xl mb-2">⚛️</div>
           <div className="text-sm font-medium text-blue-700 uppercase tracking-wide">React Hooks</div>
-          <div className="text-xs text-blue-600 mt-1">useLiveComponent</div>
+          <div className="text-xs text-blue-600 mt-1">useHybridLiveComponent</div>
         </div>
         <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-2xl p-6 text-center">
           <div className="text-4xl mb-2">🚀</div>
@@ -733,7 +732,10 @@ const health = await api.health.get()`}
 
       {/* Live Counter Demo */}
       <div className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-2xl p-8">
-        <LiveCounter />
+        <div className="text-center p-8 bg-gray-50 rounded-lg">
+          <p className="text-gray-600">Simple Live Components removed.</p>
+          <p className="text-blue-600 font-medium">Use Hybrid Live Components instead!</p>
+        </div>
       </div>
 
       {/* How it Works */}
@@ -765,7 +767,7 @@ const health = await api.health.get()`}
               <h4 className="text-base font-semibold text-gray-900 mb-3">⚛️ Client-side (React):</h4>
               <pre className="bg-gray-900 text-gray-100 p-4 rounded-xl overflow-x-auto text-sm">
 {`function Counter() {
-  const { state, call } = useLiveComponent(
+  const { state, call } = useHybridLiveComponent(
     'CounterComponent', 
     { count: 0 }
   )
