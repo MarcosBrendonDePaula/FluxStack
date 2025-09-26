@@ -69,7 +69,10 @@
       "Read(/C:\\Users\\Marcos\\Documents\\GitHub\\aviso-projeto\\test-env-fix/**)",
       "Read(/C:\\Users\\Marcos\\Documents\\GitHub\\aviso-projeto\\final-test/**)",
       "Bash(npm pkg:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "WebFetch(domain:livewire.laravel.com)",
+      "WebFetch(domain:zustand.docs.pmnd.rs)",
+      "Bash(node:*)"
     ],
     "deny": []
   }

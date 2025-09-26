@@ -4,7 +4,8 @@ import './index.css'
 import App from './App.tsx'
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
+  // TODO: Re-enable StrictMode after fixing Live Components double mounting
+  // <StrictMode>
     <App />
-  </StrictMode>,
+  // </StrictMode>,
 )

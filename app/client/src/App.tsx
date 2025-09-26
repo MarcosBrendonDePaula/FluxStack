@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { api, getErrorMessage } from './lib/eden-api'
 import TestPage from './components/TestPage'
+import { LiveCounter } from './components/LiveCounter'
+import { HybridLiveCounter } from './components/HybridLiveCounter'
 
-type TabType = 'overview' | 'demo' | 'api-docs' | 'tests'
+type TabType = 'overview' | 'demo' | 'live-components' | 'hybrid-live' | 'api-docs' | 'tests'
 
 interface User {
   id: number
@@ -400,6 +402,149 @@ function App() {
     </div>
   )
 
+  const renderHybridLive = () => (
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="text-center">
+        <h2 className="text-3xl font-bold text-gray-900 mb-4">⚡ Hybrid Live Components</h2>
+        <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+          Sistema híbrido combinando <strong>Zustand (cliente)</strong> + <strong>Live Components (servidor)</strong> 
+          para máxima performance com fallback offline e validação de estado! 🚀
+        </p>
+      </div>
+
+      {/* Architecture Info Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-2xl p-4 text-center">
+          <div className="text-3xl mb-2">⚡</div>
+          <div className="text-sm font-medium text-blue-700 uppercase tracking-wide">Zustand</div>
+          <div className="text-xs text-blue-600 mt-1">Client State</div>
+        </div>
+        <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-2xl p-4 text-center">
+          <div className="text-3xl mb-2">🔄</div>
+          <div className="text-sm font-medium text-purple-700 uppercase tracking-wide">Sync</div>
+          <div className="text-xs text-purple-600 mt-1">Real-time</div>
+        </div>
+        <div className="bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200 rounded-2xl p-4 text-center">
+          <div className="text-3xl mb-2">✅</div>
+          <div className="text-sm font-medium text-orange-700 uppercase tracking-wide">Validation</div>
+          <div className="text-xs text-orange-600 mt-1">State Integrity</div>
+        </div>
+        <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-2xl p-4 text-center">
+          <div className="text-3xl mb-2">📱</div>
+          <div className="text-sm font-medium text-green-700 uppercase tracking-wide">Offline</div>
+          <div className="text-xs text-green-600 mt-1">Fallback Ready</div>
+        </div>
+      </div>
+
+      {/* Hybrid Counter Demo */}
+      <div className="bg-gradient-to-br from-slate-50 to-purple-50 rounded-2xl p-8 border-2 border-purple-200">
+        <HybridLiveCounter />
+      </div>
+
+      {/* Features Comparison */}
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+        <div className="bg-gradient-to-r from-purple-50 to-blue-100 px-6 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">🆚 Live vs Hybrid Comparison</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Feature</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">🔥 Live Components</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">⚡ Hybrid Live</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              <tr>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">State Location</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Server Only</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">Client + Server</td>
+              </tr>
+              <tr className="bg-gray-50">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Offline Support</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-red-500">❌ None</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">✅ Full Fallback</td>
+              </tr>
+              <tr>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Performance</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-yellow-600">⚡ Network Dependent</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">🚀 Optimistic Updates</td>
+              </tr>
+              <tr className="bg-gray-50">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Conflict Resolution</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-yellow-600">⚠️ Manual</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">🔄 Auto + Manual</td>
+              </tr>
+              <tr>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">State Validation</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-yellow-600">⚠️ Basic</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">✅ Checksum + Version</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Architecture Explanation */}
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+        <div className="bg-gradient-to-r from-gray-50 to-purple-100 px-6 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">🏗️ Hybrid Architecture</h3>
+        </div>
+        <div className="p-6 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h4 className="text-base font-semibold text-gray-900 mb-3">🔧 Frontend (useHybridLiveComponent):</h4>
+              <pre className="bg-gray-900 text-gray-100 p-4 rounded-xl overflow-x-auto text-sm">
+{`const { 
+  state, status, conflicts,
+  call, sync, resolveConflict 
+} = useHybridLiveComponent('Counter', {
+  count: 0,
+  title: 'Hybrid Counter'
+}, {
+  enableValidation: true,
+  conflictResolution: 'auto',
+  syncStrategy: 'optimistic'
+})`}
+              </pre>
+            </div>
+            <div>
+              <h4 className="text-base font-semibold text-gray-900 mb-3">⚙️ Features:</h4>
+              <ul className="space-y-2 text-sm text-gray-700">
+                <li className="flex items-center">
+                  <span className="text-green-500 mr-2">✅</span>
+                  <strong>Estado inicial do frontend</strong> (component props)
+                </li>
+                <li className="flex items-center">
+                  <span className="text-green-500 mr-2">✅</span>
+                  <strong>Zustand store local</strong> (performance + cache)
+                </li>
+                <li className="flex items-center">
+                  <span className="text-green-500 mr-2">✅</span>
+                  <strong>Live Components sync</strong> (servidor autoritativo)
+                </li>
+                <li className="flex items-center">
+                  <span className="text-green-500 mr-2">✅</span>
+                  <strong>Conflict detection</strong> (checksum + versioning)
+                </li>
+                <li className="flex items-center">
+                  <span className="text-green-500 mr-2">✅</span>
+                  <strong>Auto reconnection</strong> (state sync on reconnect)
+                </li>
+                <li className="flex items-center">
+                  <span className="text-green-500 mr-2">✅</span>
+                  <strong>Optimistic updates</strong> (immediate UI feedback)
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+
   const renderApiDocs = () => (
     <div className="space-y-8">
       {/* Header */}
@@ -557,6 +702,164 @@ const health = await api.health.get()`}
     </div>
   )
 
+  const renderLiveComponents = () => (
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="text-center">
+        <h2 className="text-3xl font-bold text-gray-900 mb-4">🔥 Live Components Demo</h2>
+        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          Teste os Live Components com WebSocket real-time e comunicação server-side! ⚡
+        </p>
+      </div>
+
+      {/* Info Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-2xl p-6 text-center">
+          <div className="text-4xl mb-2">🔌</div>
+          <div className="text-sm font-medium text-purple-700 uppercase tracking-wide">WebSocket</div>
+          <div className="text-xs text-purple-600 mt-1">Port 3001</div>
+        </div>
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-2xl p-6 text-center">
+          <div className="text-4xl mb-2">⚛️</div>
+          <div className="text-sm font-medium text-blue-700 uppercase tracking-wide">React Hooks</div>
+          <div className="text-xs text-blue-600 mt-1">useLiveComponent</div>
+        </div>
+        <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-2xl p-6 text-center">
+          <div className="text-4xl mb-2">🚀</div>
+          <div className="text-sm font-medium text-green-700 uppercase tracking-wide">Real-time</div>
+          <div className="text-xs text-green-600 mt-1">Live State Sync</div>
+        </div>
+      </div>
+
+      {/* Live Counter Demo */}
+      <div className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-2xl p-8">
+        <LiveCounter />
+      </div>
+
+      {/* How it Works */}
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+        <div className="bg-gradient-to-r from-gray-50 to-slate-100 px-6 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">🛠️ Como Funciona</h3>
+        </div>
+        <div className="p-6 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h4 className="text-base font-semibold text-gray-900 mb-3">🖥️ Server-side (Backend):</h4>
+              <pre className="bg-gray-900 text-gray-100 p-4 rounded-xl overflow-x-auto text-sm">
+{`class CounterComponent extends LiveComponent {
+  async increment(amount = 1) {
+    this.setState({
+      count: this.state.count + amount
+    })
+    
+    // Broadcast to all connected clients
+    this.broadcast('COUNTER_INCREMENTED', {
+      count: this.state.count
+    })
+  }
+}`}
+              </pre>
+            </div>
+            
+            <div>
+              <h4 className="text-base font-semibold text-gray-900 mb-3">⚛️ Client-side (React):</h4>
+              <pre className="bg-gray-900 text-gray-100 p-4 rounded-xl overflow-x-auto text-sm">
+{`function Counter() {
+  const { state, call } = useLiveComponent(
+    'CounterComponent', 
+    { count: 0 }
+  )
+  
+  return (
+    <div>
+      <span>{state.count}</span>
+      <button onClick={() => call('increment', 1)}>
+        +1
+      </button>
+    </div>
+  )
+}`}
+              </pre>
+            </div>
+          </div>
+          
+          <div className="border-t pt-6">
+            <h4 className="text-base font-semibold text-gray-900 mb-3">🔄 Fluxo de Dados:</h4>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
+              <div className="bg-blue-50 rounded-lg p-4">
+                <div className="text-2xl mb-2">1️⃣</div>
+                <div className="text-sm font-medium">User clicks button</div>
+              </div>
+              <div className="bg-purple-50 rounded-lg p-4">
+                <div className="text-2xl mb-2">2️⃣</div>
+                <div className="text-sm font-medium">WebSocket message to server</div>
+              </div>
+              <div className="bg-green-50 rounded-lg p-4">
+                <div className="text-2xl mb-2">3️⃣</div>
+                <div className="text-sm font-medium">Server processes & updates state</div>
+              </div>
+              <div className="bg-orange-50 rounded-lg p-4">
+                <div className="text-2xl mb-2">4️⃣</div>
+                <div className="text-sm font-medium">All clients receive update</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Features */}
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+        <div className="bg-gradient-to-r from-gray-50 to-slate-100 px-6 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 text-center">✨ Funcionalidades dos Live Components</h3>
+        </div>
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[
+              {
+                icon: "🔄",
+                title: "Real-time Sync",
+                description: "Estado sincronizado automaticamente entre server e client"
+              },
+              {
+                icon: "🌐",
+                title: "Multi-user",
+                description: "Múltiplos usuários veem updates em tempo real"
+              },
+              {
+                icon: "🛡️",
+                title: "Server-side Logic",
+                description: "Lógica de negócio segura no servidor"
+              },
+              {
+                icon: "⚡",
+                title: "Zero Latency",
+                description: "WebSocket para comunicação instantânea"
+              },
+              {
+                icon: "🔒",
+                title: "Type Safe",
+                description: "TypeScript end-to-end com inferência automática"
+              },
+              {
+                icon: "🎯",
+                title: "Simple API",
+                description: "Hooks React simples para uso intuitivo"
+              }
+            ].map((feature, index) => (
+              <div key={index} className="flex items-start gap-4 p-4 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors duration-200">
+                <div className="text-2xl">{feature.icon}</div>
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-1">{feature.title}</h4>
+                  <p className="text-gray-600 text-sm">{feature.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Header */}
@@ -579,6 +882,8 @@ const health = await api.health.get()`}
                 {[
                   { id: 'overview', label: '📋 Visão Geral', icon: '📋' },
                   { id: 'demo', label: '🚀 Demo', icon: '🚀' },
+                  { id: 'live-components', label: '🔥 Live Components', icon: '🔥' },
+                  { id: 'hybrid-live', label: '⚡ Hybrid Live', icon: '⚡' },
                   { id: 'api-docs', label: '📚 API Docs', icon: '📚' },
                   { id: 'tests', label: '🧪 Testes', icon: '🧪' }
                 ].map(tab => (
@@ -616,6 +921,7 @@ const health = await api.health.get()`}
               {[
                 { id: 'overview', label: '📋 Visão Geral' },
                 { id: 'demo', label: '🚀 Demo' },
+                { id: 'live-components', label: '🔥 Live' },
                 { id: 'api-docs', label: '📚 Docs' },
                 { id: 'tests', label: '🧪 Testes' }
               ].map(tab => (
@@ -640,6 +946,8 @@ const health = await api.health.get()`}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'overview' && renderOverview()}
         {activeTab === 'demo' && renderDemo()}
+        {activeTab === 'live-components' && renderLiveComponents()}
+        {activeTab === 'hybrid-live' && renderHybridLive()}
         {activeTab === 'api-docs' && renderApiDocs()}
         {activeTab === 'tests' && <TestPage />}
       </main>
