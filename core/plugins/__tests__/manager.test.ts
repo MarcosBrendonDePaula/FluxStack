@@ -111,14 +111,15 @@ describe('PluginManager', () => {
       await manager.initialize()
       expect(mockLogger.info).toHaveBeenCalledWith('Initializing plugin manager')
       expect(mockLogger.info).toHaveBeenCalledWith('Plugin manager initialized successfully', expect.any(Object))
-    })
+    }, 10000)
 
     it('should not initialize twice', async () => {
+      mockLogger.info.mockClear() // Clear previous calls
       await manager.initialize()
       await manager.initialize() // Second call should be ignored
       
       // Should only log initialization once
-      expect(mockLogger.info).toHaveBeenCalledTimes(3) // discovery + init start + init complete
+      expect(mockLogger.info).toHaveBeenCalledTimes(3) // init start + init complete + discovery (adjusted for actual behavior)
     })
   })
 

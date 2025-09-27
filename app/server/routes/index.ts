@@ -1,8 +1,11 @@
-import { Elysia } from "elysia"
+import { Elysia, t } from "elysia"
 import { usersRoutes } from "./users.routes"
 
 export const apiRoutes = new Elysia({ prefix: "/api" })
   .get("/", () => ({ message: "🔥 Hot Reload funcionando! FluxStack API v1.4.0 ⚡" }), {
+    response: t.Object({
+      message: t.String()
+    }),
     detail: {
       tags: ['Health'],
       summary: 'API Root',
@@ -16,6 +19,13 @@ export const apiRoutes = new Elysia({ prefix: "/api" })
     version: "1.4.0",
     environment: "development"
   }), {
+    response: t.Object({
+      status: t.String(),
+      timestamp: t.String(),
+      uptime: t.String(),
+      version: t.String(),
+      environment: t.String()
+    }),
     detail: {
       tags: ['Health'],
       summary: 'Health Check',
