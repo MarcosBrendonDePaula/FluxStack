@@ -37,7 +37,7 @@ export function HybridLiveCounter({
     connected, 
     call,
     callAndWait
-  } = useHybridLiveComponent<CounterState>('CounterComponent', initialState, {
+  } = useHybridLiveComponent<CounterState>('Counter', initialState, {
     debug: true,
     autoMount: true,
     room,

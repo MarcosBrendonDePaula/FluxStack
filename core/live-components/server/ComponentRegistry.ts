@@ -44,7 +44,7 @@ export class ComponentRegistry {
         if (file.endsWith('.ts') || file.endsWith('.js')) {
           try {
             const fullPath = path.join(componentsPath, file)
-            const module = await import(fullPath)
+            const module = await import(/* @vite-ignore */ fullPath)
             
             // Look for exported classes that extend LiveComponent
             Object.keys(module).forEach(exportName => {

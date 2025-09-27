@@ -15,6 +15,11 @@ export class CounterComponent extends LiveComponent<CounterState> {
   constructor(initialState: CounterState, ws: any, options?: { room?: string; userId?: string }) {
     super(initialState, ws, options)
     
+    // Ensure history is initialized
+    if (!this.state.history) {
+      this.state.history = []
+    }
+
     // Log component creation
     console.log(`🔢 Counter component created: ${this.id}`, {
       initialState,

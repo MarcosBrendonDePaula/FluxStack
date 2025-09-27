@@ -1,7 +1,7 @@
 // 🔥 WebSocket Hook for Live Components
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { WebSocketMessage, WebSocketResponse } from '../shared/types'
+import type { WebSocketMessage, WebSocketResponse } from '../shared/types'
 
 export interface UseWebSocketOptions {
   url?: string
