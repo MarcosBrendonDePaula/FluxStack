@@ -114,8 +114,8 @@ export abstract class LiveComponent<TState = ComponentState> {
   public readonly id: string
   public state: TState
   protected ws: any
-  protected room?: string
-  protected userId?: string
+  public room?: string
+  public userId?: string
   public broadcastToRoom: (message: BroadcastMessage) => void = () => {} // Will be injected by registry
 
   constructor(initialState: TState, ws: any, options?: { room?: string; userId?: string }) {
@@ -127,7 +127,7 @@ export abstract class LiveComponent<TState = ComponentState> {
   }
 
   // State management
-  protected setState(updates: Partial<TState> | ((prev: TState) => Partial<TState>)) {
+  public setState(updates: Partial<TState> | ((prev: TState) => Partial<TState>)) {
     const newUpdates = typeof updates === 'function' ? updates(this.state) : updates
     this.state = { ...this.state, ...newUpdates }
     this.emit('STATE_UPDATE', { state: this.state })

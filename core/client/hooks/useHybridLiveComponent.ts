@@ -10,7 +10,7 @@ import type {
   HybridState, 
   StateConflict, 
   HybridComponentOptions
-} from '../shared/types'
+} from '../../types/types'
 
 interface HybridStore<T> {
   hybridState: HybridState<T>

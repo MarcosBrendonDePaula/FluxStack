@@ -232,7 +232,7 @@ const TestPage: React.FC = () => {
         hasUsersEndpoint,
         hasUsersPost,
         apiObjectExists: !!api,
-        apiCallExists: typeof apiCall === 'function'
+        apiCallExists: false // apiCall wrapper removed in favor of direct Eden Treaty usage
       }
 
       const allChecksPass = Object.values(typeChecks).every(Boolean)

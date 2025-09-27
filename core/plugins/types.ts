@@ -75,13 +75,16 @@ export interface PluginConfigSchema {
   additionalProperties?: boolean
 }
 
-export interface Plugin {
+export namespace FluxStack {
+  export interface Plugin {
   name: string
   version?: string
   description?: string
   author?: string
   dependencies?: string[]
   priority?: number | PluginPriority
+  category?: string
+  tags?: string[]
   
   // Lifecycle hooks
   setup?: (context: PluginContext) => void | Promise<void>
@@ -94,18 +97,15 @@ export interface Plugin {
   onBuild?: (context: BuildContext) => void | Promise<void>
   onBuildComplete?: (context: BuildContext) => void | Promise<void>
   
-  // CLI commands
-  commands?: CliCommand[]
-  
   // Configuration
   configSchema?: PluginConfigSchema
   defaultConfig?: any
   
-  // Plugin metadata
-  enabled?: boolean
-  tags?: string[]
-  category?: string
+  // CLI commands
+  commands?: CliCommand[]
+  }
 }
+
 
 export interface PluginManifest {
   name: string

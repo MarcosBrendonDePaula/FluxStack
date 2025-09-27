@@ -8,7 +8,7 @@ import { CounterComponent } from "./CounterComponent"
 // Uncomment below for custom initial states:
 
 /* 
-import { componentRegistry } from "@/core/live-components"
+import { componentRegistry } from "@/core/server/live/ComponentRegistry"
 
 componentRegistry.registerComponent({
   name: 'CounterComponent',

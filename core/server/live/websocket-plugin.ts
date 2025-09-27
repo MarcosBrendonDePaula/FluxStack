@@ -2,19 +2,24 @@
 
 import { WebSocketServer } from 'ws'
 import { componentRegistry } from './ComponentRegistry'
-import type { LiveMessage } from './types'
+import type { LiveMessage } from '../../types/types'
+import type { Plugin, PluginContext } from '../../plugins/types'
 
 let wsServer: WebSocketServer | null = null
 
-export const liveComponentsPlugin = {
+export const liveComponentsPlugin: Plugin = {
   name: 'live-components',
   version: '1.0.0',
-  dependencies: [],
+  description: 'Real-time Live Components with WebSocket support',
+  author: 'FluxStack Team',
+  priority: 'normal',
+  category: 'core',
+  tags: ['websocket', 'real-time', 'live-components'],
   
-  setup: async (context: any) => {
-    console.log('🔌 Setting up Live Components plugin...')
+  setup: async (context: PluginContext) => {
+    context.logger.info('🔌 Setting up Live Components plugin...')
     
-    // Add routes to the app
+    // Add Live Components routes to the app
     context.app
       .get('/api/live/websocket-info', () => {
         return {
@@ -44,7 +49,7 @@ export const liveComponentsPlugin = {
       })
   },
 
-  onServerStart: async (context: any) => {
+  onServerStart: async (context: PluginContext) => {
     // Initialize WebSocket server when main server starts
     if (!wsServer) {
       wsServer = new WebSocketServer({ 
@@ -73,13 +78,16 @@ export const liveComponentsPlugin = {
 
         // Handle incoming messages
         ws.on('message', async (rawMessage) => {
+          let message: LiveMessage | null = null;
           try {
-            let message: LiveMessage
-            
             if (typeof rawMessage === 'string') {
               message = JSON.parse(rawMessage)
             } else {
               message = JSON.parse(rawMessage.toString())
+            }
+
+            if (!message) {
+              throw new Error("Empty message received");
             }
 
             // Add connection metadata
@@ -117,7 +125,7 @@ export const liveComponentsPlugin = {
             // Send error response
             const errorResponse = {
               type: 'ERROR',
-              requestId: message.requestId, // Include requestId even for errors
+              requestId: message?.requestId, // Include requestId even for errors
               error: error.message,
               timestamp: Date.now()
             }
@@ -139,21 +147,28 @@ export const liveComponentsPlugin = {
         })
       })
 
-      wsServer.on('listening', () => {
+      wsServer.on('listening', async () => {
         console.log('🔌 Live Components WebSocket Server listening on port 3001')
+        
+        // Auto-discover components
+        const path = await import('path')
+        const componentsPath = path.join(process.cwd(), 'app', 'server', 'live')
+        await componentRegistry.autoDiscoverComponents(componentsPath)
       })
 
       wsServer.on('error', (error) => {
         console.error('❌ WebSocket Server error:', error)
       })
     }
+
+    context.logger.info('🔌 Live Components WebSocket Server listening on port 3001')
   },
 
-  onServerStop: async (context: any) => {
+  onServerStop: async (context: PluginContext) => {
     if (wsServer) {
       wsServer.close()
       wsServer = null
-      console.log('🔌 Live Components WebSocket Server stopped')
+      context.logger.info('🔌 Live Components WebSocket Server stopped')
     }
   }
 }

@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { nodePolyfills } from 'vite-plugin-node-polyfills'
 import { resolve } from 'path'
 import { fileURLToPath, URL } from 'node:url'
 
@@ -8,7 +9,20 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(), 
+    tailwindcss(),
+    nodePolyfills({
+      // Para adicionar polyfills específicos do Node.js
+      include: ['process'],
+      // Polyfill de globals específicos
+      globals: {
+        Buffer: false, // Não precisamos de Buffer
+        global: true,
+        process: true,
+      },
+    })
+  ],
   root: 'app/client',
   server: {
     port: 5173,

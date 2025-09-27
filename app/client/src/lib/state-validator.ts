@@ -22,12 +22,12 @@ export class StateValidator {
    */
   static createValidation(
     state: any, 
-    source: 'client' | 'server' | 'merged' = 'client'
+    source: 'client' | 'server' | 'mount' = 'mount'
   ): StateValidation {
     return {
       checksum: this.generateChecksum(state),
       version: Date.now(),
-      lastSync: Date.now(),
+      timestamp: Date.now(),
       source
     }
   }
@@ -38,16 +38,16 @@ export class StateValidator {
   static detectConflicts<T>(
     clientState: T, 
     serverState: T,
-    excludeFields: (keyof T)[] = ['lastUpdated', 'version']
-  ): StateConflict<T>[] {
-    const conflicts: StateConflict<T>[] = []
+    excludeFields: string[] = ['lastUpdated', 'version']
+  ): StateConflict[] {
+    const conflicts: StateConflict[] = []
     
     const clientKeys = Object.keys(clientState as any) as (keyof T)[]
     const serverKeys = Object.keys(serverState as any) as (keyof T)[]
     const allKeys = new Set([...clientKeys, ...serverKeys])
 
     for (const key of allKeys) {
-      if (excludeFields.includes(key)) continue
+      if (excludeFields.includes(key as string)) continue
 
       const clientValue = (clientState as any)?.[key]
       const serverValue = (serverState as any)?.[key]
@@ -118,7 +118,7 @@ export class StateValidator {
    */
   static updateValidation<T>(
     hybridState: HybridState<T>,
-    source: 'client' | 'server' | 'merged' = 'client'
+    source: 'client' | 'server' | 'mount' = 'client'
   ): HybridState<T> {
     return {
       ...hybridState,

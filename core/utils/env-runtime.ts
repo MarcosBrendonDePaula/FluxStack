@@ -216,6 +216,13 @@ export const validate = {
     if (value && !validValues.includes(value)) {
       throw new Error(`${key} must be one of: ${validValues.join(', ')}, got: ${value}`)
     }
+  },
+
+  validate(key: string, validator: (value: string) => boolean, errorMessage: string): void {
+    const value = smartEnv.get(key, '')
+    if (value && !validator(value)) {
+      throw new Error(`${key}: ${errorMessage}`)
+    }
   }
 }
 

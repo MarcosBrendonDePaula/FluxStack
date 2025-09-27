@@ -237,7 +237,7 @@ export class DynamicEnvironmentProcessor {
  * Enhanced environment info with dynamic access
  */
 export function getDynamicEnvironmentInfo() {
-  const nodeEnv = env.get('NODE_ENV', 'development')
+  const nodeEnv = env.get('NODE_ENV', 'development') as 'development' | 'production' | 'test'
 
   return {
     name: nodeEnv,

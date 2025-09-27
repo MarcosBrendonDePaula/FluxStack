@@ -177,7 +177,7 @@ export const runtimeConfig = {
    * Auto-detect environment and create appropriate config
    */
   auto(overrides?: Partial<FluxStackConfig>): FluxStackConfig {
-    const environment = env.get('NODE_ENV', 'development')
+    const environment = env.get('NODE_ENV', 'development') as 'development' | 'production' | 'test'
     
     let config: FluxStackConfig
     
@@ -245,7 +245,7 @@ export const configHelpers = {
    * Get database URL with validation
    */
   getDatabaseUrl(): string | null {
-    const url = env.get('DATABASE_URL')
+    const url = env.get('DATABASE_URL') as string | undefined
     
     if (url) {
       envValidation.validate('DATABASE_URL', 
@@ -264,7 +264,7 @@ export const configHelpers = {
     const origins = env.array('CORS_ORIGINS')
     
     if (origins.length === 0) {
-      const environment = env.get('NODE_ENV', 'development')
+      const environment = env.get('NODE_ENV', 'development') as 'development' | 'production' | 'test'
       
       if (environment === 'development') {
         return ['http://localhost:3000', 'http://localhost:5173']

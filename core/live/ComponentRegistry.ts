@@ -6,18 +6,81 @@ import type {
   BroadcastMessage, 
   ComponentDefinition,
   WebSocketData 
-} from './types'
+} from '../types/types'
 
 export class ComponentRegistry {
   private components = new Map<string, LiveComponent>()
   private definitions = new Map<string, ComponentDefinition>()
   private rooms = new Map<string, Set<string>>() // roomId -> componentIds
   private wsConnections = new Map<string, any>() // componentId -> websocket
+  private autoDiscoveredComponents = new Map<string, any>() // Auto-discovered component classes
   
   // Register component definition
   registerComponent<TState>(definition: ComponentDefinition<TState>) {
     this.definitions.set(definition.name, definition)
     console.log(`📝 Registered component: ${definition.name}`)
+  }
+
+  // Register component class dynamically
+  registerComponentClass(name: string, componentClass: any) {
+    this.autoDiscoveredComponents.set(name, componentClass)
+    console.log(`🔍 Auto-discovered component: ${name}`)
+  }
+
+  // Auto-discover components from directory
+  async autoDiscoverComponents(componentsPath: string) {
+    try {
+      const fs = await import('fs')
+      const path = await import('path')
+      
+      if (!fs.existsSync(componentsPath)) {
+        console.log(`⚠️ Components path not found: ${componentsPath}`)
+        return
+      }
+
+      const files = fs.readdirSync(componentsPath)
+      
+      for (const file of files) {
+        if (file.endsWith('.ts') || file.endsWith('.js')) {
+          try {
+            const fullPath = path.join(componentsPath, file)
+            const module = await import(/* @vite-ignore */ fullPath)
+            
+            // Look for exported classes that extend LiveComponent
+            Object.keys(module).forEach(exportName => {
+              const exportedItem = module[exportName]
+              if (typeof exportedItem === 'function' && 
+                  exportedItem.prototype && 
+                  this.isLiveComponentClass(exportedItem)) {
+                
+                const componentName = exportName.replace(/Component$/, '')
+                this.registerComponentClass(componentName, exportedItem)
+              }
+            })
+          } catch (error) {
+            console.warn(`⚠️ Failed to load component from ${file}:`, error)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('❌ Auto-discovery failed:', error)
+    }
+  }
+
+  // Check if a class extends LiveComponent
+  private isLiveComponentClass(cls: any): boolean {
+    try {
+      let prototype = cls.prototype
+      while (prototype) {
+        if (prototype.constructor.name === 'LiveComponent') {
+          return true
+        }
+        prototype = Object.getPrototypeOf(prototype)
+      }
+      return false
+    } catch {
+      return false
+    }
   }
 
   // Mount component instance
@@ -27,15 +90,47 @@ export class ComponentRegistry {
     props: any = {},
     options?: { room?: string; userId?: string }
   ): Promise<string> {
-    const definition = this.definitions.get(componentName)
-    if (!definition) {
-      throw new Error(`Component '${componentName}' not found. Available: ${Array.from(this.definitions.keys()).join(', ')}`)
+    // Try to find component definition first
+    let definition = this.definitions.get(componentName)
+    let ComponentClass: any = null
+    let initialState: any = {}
+
+    if (definition) {
+      // Use registered definition
+      ComponentClass = definition.component
+      initialState = definition.initialState
+    } else {
+      // Try auto-discovered components
+      ComponentClass = this.autoDiscoveredComponents.get(componentName)
+      if (!ComponentClass) {
+        // Try variations of the name
+        const variations = [
+          componentName + 'Component',
+          componentName.charAt(0).toUpperCase() + componentName.slice(1) + 'Component',
+          componentName.charAt(0).toUpperCase() + componentName.slice(1)
+        ]
+        
+        for (const variation of variations) {
+          ComponentClass = this.autoDiscoveredComponents.get(variation)
+          if (ComponentClass) break
+        }
+      }
+      
+      if (!ComponentClass) {
+        const availableComponents = [
+          ...Array.from(this.definitions.keys()),
+          ...Array.from(this.autoDiscoveredComponents.keys())
+        ]
+        throw new Error(`Component '${componentName}' not found. Available: ${availableComponents.join(', ')}`)
+      }
+      
+      // Create a default initial state for auto-discovered components
+      initialState = {}
     }
 
     // Create component instance with registry methods
-    const ComponentClass = definition.component as any
     const component = new ComponentClass(
-      { ...definition.initialState, ...props },
+      { ...initialState, ...props },
       ws,
       options
     )
@@ -144,7 +239,7 @@ export class ComponentRegistry {
 
   // Unsubscribe from all rooms
   private unsubscribeFromAllRooms(componentId: string) {
-    for (const [roomId, components] of this.rooms.entries()) {
+    for (const [roomId, components] of Array.from(this.rooms.entries())) {
       if (components.has(componentId)) {
         this.unsubscribeFromRoom(componentId, roomId)
       }
@@ -171,7 +266,7 @@ export class ComponentRegistry {
 
     let broadcastCount = 0
     
-    for (const componentId of roomComponents) {
+    for (const componentId of Array.from(roomComponents)) {
       // Skip sender if excludeUser is specified
       const component = this.components.get(componentId)
       if (message.excludeUser && component?.userId === message.excludeUser) {
@@ -261,7 +356,7 @@ export class ComponentRegistry {
   cleanupConnection(ws: any) {
     if (!ws.data?.components) return
 
-    const componentsToCleanup = Array.from(ws.data.components.keys())
+    const componentsToCleanup = Array.from(ws.data.components.keys()) as string[]
     
     for (const componentId of componentsToCleanup) {
       this.unmountComponent(componentId)

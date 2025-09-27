@@ -6,7 +6,7 @@ import type {
   BroadcastMessage, 
   ComponentDefinition,
   WebSocketData 
-} from '../shared/types'
+} from '../../types/types'
 
 export class ComponentRegistry {
   private components = new Map<string, LiveComponent>()
@@ -239,7 +239,7 @@ export class ComponentRegistry {
 
   // Unsubscribe from all rooms
   private unsubscribeFromAllRooms(componentId: string) {
-    for (const [roomId, components] of this.rooms.entries()) {
+    for (const [roomId, components] of Array.from(this.rooms.entries())) {
       if (components.has(componentId)) {
         this.unsubscribeFromRoom(componentId, roomId)
       }
@@ -266,7 +266,7 @@ export class ComponentRegistry {
 
     let broadcastCount = 0
     
-    for (const componentId of roomComponents) {
+    for (const componentId of Array.from(roomComponents)) {
       // Skip sender if excludeUser is specified
       const component = this.components.get(componentId)
       if (message.excludeUser && component?.userId === message.excludeUser) {
@@ -356,7 +356,7 @@ export class ComponentRegistry {
   cleanupConnection(ws: any) {
     if (!ws.data?.components) return
 
-    const componentsToCleanup = Array.from(ws.data.components.keys())
+    const componentsToCleanup = Array.from(ws.data.components.keys()) as string[]
     
     for (const componentId of componentsToCleanup) {
       this.unmountComponent(componentId)

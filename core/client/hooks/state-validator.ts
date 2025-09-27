@@ -1,6 +1,6 @@
 // 🔥 State Validation Utilities
 
-import type { StateValidation, StateConflict, HybridState } from '../shared/types'
+import type { StateValidation, StateConflict, HybridState } from '../../types/types'
 
 export class StateValidator {
   /**
@@ -38,13 +38,13 @@ export class StateValidator {
   static detectConflicts<T>(
     clientState: T, 
     serverState: T,
-    excludeFields: (keyof T)[] = ['lastUpdated', 'version']
+    excludeFields: string[] = ['lastUpdated', 'version']
   ): StateConflict[] {
     const conflicts: StateConflict[] = []
     
-    const clientKeys = Object.keys(clientState as any) as (keyof T)[]
-    const serverKeys = Object.keys(serverState as any) as (keyof T)[]
-    const allKeys = new Set([...clientKeys, ...serverKeys])
+    const clientKeys = Object.keys(clientState as any)
+    const serverKeys = Object.keys(serverState as any)
+    const allKeys = Array.from(new Set([...clientKeys, ...serverKeys]))
 
     for (const key of allKeys) {
       if (excludeFields.includes(key)) continue

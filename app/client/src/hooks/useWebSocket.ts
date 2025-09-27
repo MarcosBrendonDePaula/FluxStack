@@ -1,4 +1,4 @@
-// 🔥 WebSocket Hook for Live Components (Deprecated - Use @/core/live-components)
+// 🔥 WebSocket Hook for Live Components (Deprecated - Use @/core/client/hooks)
 
 import { 
   useWebSocket as coreUseWebSocket,
@@ -6,7 +6,7 @@ import {
   type WebSocketResponse,
   type UseWebSocketOptions,
   type UseWebSocketReturn
-} from '@/core/live-components'
+} from '@/core/client/hooks/useWebSocket'
 
 // Re-export from core for backward compatibility
 export { coreUseWebSocket as useWebSocket }

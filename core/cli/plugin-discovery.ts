@@ -19,31 +19,30 @@ export class CliPluginDiscovery {
   }
 
   private async loadBuiltInPlugins(): Promise<void> {
-    const builtInPluginsDir = join(__dirname, '../server/plugins')
+    const builtInPluginsDir = join(__dirname, '../plugins/built-in')
     
     if (!existsSync(builtInPluginsDir)) {
       return
     }
 
     try {
-      // For now, we'll manually list built-in plugins that might have CLI commands
-      const potentialPlugins = [
-        'logger',
-        'vite', 
-        'swagger',
-        'static',
-        'database'
-      ]
+      const fs = await import('fs')
+      const potentialPlugins = fs.readdirSync(builtInPluginsDir, { withFileTypes: true })
+        .filter(entry => entry.isDirectory())
+        .map(entry => entry.name)
 
       for (const pluginName of potentialPlugins) {
         try {
-          const pluginPath = join(builtInPluginsDir, `${pluginName}.ts`)
+          const pluginPath = join(builtInPluginsDir, pluginName, 'index.ts')
           if (existsSync(pluginPath)) {
             const pluginModule = await import(pluginPath)
-            const plugin = pluginModule[`${pluginName}Plugin`] as Plugin
             
-            if (plugin && plugin.commands) {
-              this.registerPluginCommands(plugin)
+            if (pluginModule.commands) {
+              for (const command of pluginModule.commands) {
+                cliRegistry.register(command)
+              }
+              this.loadedPlugins.add(pluginName)
+              logger.debug(`Registered ${pluginModule.commands.length} CLI commands from built-in plugin: ${pluginName}`)
             }
           }
         } catch (error) {

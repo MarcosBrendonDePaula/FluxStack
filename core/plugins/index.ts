@@ -5,7 +5,7 @@
 
 // Core plugin types and interfaces
 export type {
-    Plugin,
+    FluxStack,
     PluginContext,
     PluginHook,
     PluginPriority,
@@ -26,6 +26,8 @@ export type {
     ErrorContext,
     BuildContext
 } from './types'
+
+export type Plugin = FluxStack.Plugin
 
 // Plugin registry
 export { PluginRegistry } from './registry'
@@ -78,6 +80,7 @@ export const PluginUtils = {
         onServerStart?: (context: PluginContext) => void | Promise<void>
         onServerStop?: (context: PluginContext) => void | Promise<void>
         onRequest?: (context: RequestContext) => void | Promise<void>
+        onBeforeRoute?: (context: RequestContext) => void | Promise<void>
         onResponse?: (context: ResponseContext) => void | Promise<void>
         onError?: (context: ErrorContext) => void | Promise<void>
         configSchema?: any
@@ -93,6 +96,7 @@ export const PluginUtils = {
             ...(config.onServerStart && { onServerStart: config.onServerStart }),
             ...(config.onServerStop && { onServerStop: config.onServerStop }),
             ...(config.onRequest && { onRequest: config.onRequest }),
+            ...(config.onBeforeRoute && { onBeforeRoute: config.onBeforeRoute }),
             ...(config.onResponse && { onResponse: config.onResponse }),
             ...(config.onError && { onError: config.onError }),
             ...(config.configSchema && { configSchema: config.configSchema }),

@@ -68,9 +68,11 @@
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.3.0",
     "jsdom": "^26.1.0",
+    "rollup": "4.20.0",
     "tailwindcss": "^4.1.13",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.35.1",
+    "vite-plugin-node-polyfills": "^0.24.0",
     "vitest": "^3.2.4"
   },
   "dependencies": {
@@ -90,13 +92,17 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-icons": "^5.5.0",
+    "react-router-dom": "^7.9.3",
     "uuid": "^13.0.0",
-    "vite": "^7.0.4",
+    "vite": "^7.1.7",
     "ws": "^8.18.3",
     "zustand": "^5.0.8"
   },
   "engines": {
     "bun": ">=1.2.0"
   },
-  "preferredPackageManager": "bun"
+  "preferredPackageManager": "bun",
+  "overrides": {
+    "rollup": "npm:@rollup/wasm-node"
+  }
 }
