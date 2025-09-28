@@ -1,7 +1,7 @@
 // 🔥 FluxStack Live Components - Shared Types
 
 export interface LiveMessage {
-  type: 'COMPONENT_MOUNT' | 'COMPONENT_UNMOUNT' | 'COMPONENT_ACTION' | 'CALL_ACTION' | 'ACTION_RESPONSE' | 'PROPERTY_UPDATE' | 'STATE_UPDATE' | 'ERROR' | 'BROADCAST'
+  type: 'COMPONENT_MOUNT' | 'COMPONENT_UNMOUNT' | 'COMPONENT_REHYDRATE' | 'COMPONENT_ACTION' | 'CALL_ACTION' | 'ACTION_RESPONSE' | 'PROPERTY_UPDATE' | 'STATE_UPDATE' | 'STATE_REHYDRATED' | 'ERROR' | 'BROADCAST'
   componentId: string
   action?: string
   property?: string
@@ -65,7 +65,7 @@ export interface WebSocketMessage {
 }
 
 export interface WebSocketResponse {
-  type: 'MESSAGE_RESPONSE' | 'CONNECTION_ESTABLISHED' | 'ERROR' | 'BROADCAST' | 'ACTION_RESPONSE' | 'FILE_UPLOAD_PROGRESS' | 'FILE_UPLOAD_COMPLETE' | 'FILE_UPLOAD_ERROR' | 'FILE_UPLOAD_START_RESPONSE'
+  type: 'MESSAGE_RESPONSE' | 'CONNECTION_ESTABLISHED' | 'ERROR' | 'BROADCAST' | 'ACTION_RESPONSE' | 'COMPONENT_MOUNTED' | 'COMPONENT_REHYDRATED' | 'STATE_UPDATE' | 'STATE_REHYDRATED' | 'FILE_UPLOAD_PROGRESS' | 'FILE_UPLOAD_COMPLETE' | 'FILE_UPLOAD_ERROR' | 'FILE_UPLOAD_START_RESPONSE'
   originalType?: string
   componentId?: string
   success?: boolean
@@ -86,6 +86,10 @@ export interface WebSocketResponse {
   progress?: number
   filename?: string
   fileUrl?: string
+  // Re-hydration specific fields
+  signedState?: any
+  oldComponentId?: string
+  newComponentId?: string
 }
 
 // Hybrid Live Component Types

@@ -57,7 +57,9 @@ const initialState: UserProfileState = {
 };
 
 export function UserProfile() {
-  const { state, call, connected, status, componentId, sendMessageAndWait } = useHybridLiveComponent<UserProfileState>('UserProfile', initialState);
+  const { state, call, connected, status, componentId, sendMessageAndWait, error } = useHybridLiveComponent<UserProfileState>('UserProfile', initialState, {
+    debug: true // Enable debug logs to track re-hydration
+  });
   
   const chunkedUpload = useChunkedUpload(componentId, {
     sendMessageAndWait,
@@ -168,7 +170,25 @@ export function UserProfile() {
     }
   };
 
-  if (!connected) {
+  // Show connection status
+  if (!connected || status !== 'synced') {
+    const getStatusMessage = () => {
+      switch (status) {
+        case 'connecting':
+          return '🔄 Conectando ao UserProfile...'
+        case 'reconnecting':
+          return '🔄 Reconectando componente...'
+        case 'mounting':
+          return '🚀 Montando componente...'
+        case 'loading':
+          return '⏳ Carregando...'
+        case 'error':
+          return '❌ Erro de conexão'
+        default:
+          return '🔄 Preparando componente...'
+      }
+    }
+
     return (
       <div style={{ 
         padding: '2rem', 
@@ -179,7 +199,12 @@ export function UserProfile() {
         margin: '1rem'
       }}>
         <FaUser size={32} style={{ marginBottom: '1rem' }} />
-        <p>🔄 Conectando ao UserProfile...</p>
+        <p>{getStatusMessage()}</p>
+        {error && (
+          <p style={{ fontSize: '0.9rem', marginTop: '0.5rem', opacity: 0.8 }}>
+            {error}
+          </p>
+        )}
       </div>
     );
   }
@@ -282,17 +307,36 @@ export function UserProfile() {
       {/* Avatar and Basic Info */}
       <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
         <div style={{ position: 'relative', display: 'inline-block', marginBottom: '1rem' }}>
-          <img 
-            src={state.avatar} 
-            alt={state.name}
-            style={{
-              width: '100px',
-              height: '100px',
-              borderRadius: '50%',
-              border: `4px solid ${getStatusColor(state.status)}`,
-              objectFit: 'cover'
-            }}
-          />
+          {state.avatar ? (
+            <img 
+              src={state.avatar} 
+              alt={state.name}
+              style={{
+                width: '100px',
+                height: '100px',
+                borderRadius: '50%',
+                border: `4px solid ${getStatusColor(state.status)}`,
+                objectFit: 'cover'
+              }}
+            />
+          ) : (
+            <div 
+              style={{
+                width: '100px',
+                height: '100px',
+                borderRadius: '50%',
+                border: `4px solid ${getStatusColor(state.status)}`,
+                backgroundColor: '#f0f0f0',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '2rem',
+                color: '#999'
+              }}
+            >
+              👤
+            </div>
+          )}
           <button
             onClick={() => call('toggleStatus')}
             style={{

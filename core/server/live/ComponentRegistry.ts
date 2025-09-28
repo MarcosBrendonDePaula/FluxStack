@@ -7,6 +7,7 @@ import type {
   ComponentDefinition,
   WebSocketData 
 } from '../../types/types'
+import { stateSignature, SignedState } from './StateSignature'
 
 export class ComponentRegistry {
   private components = new Map<string, LiveComponent>()
@@ -89,7 +90,7 @@ export class ComponentRegistry {
     componentName: string, 
     props: any = {},
     options?: { room?: string; userId?: string }
-  ): Promise<string> {
+  ): Promise<{ componentId: string; initialState: any; signedState: any }> {
     // Try to find component definition first
     let definition = this.definitions.get(componentName)
     let ComponentClass: any = null
@@ -162,10 +163,148 @@ export class ComponentRegistry {
 
     console.log(`🚀 Mounted component: ${componentName} (${component.id})`)
     
-    // Send initial state to client
-    component.emit('STATE_UPDATE', { state: component.getSerializableState() })
+    // Send initial state to client with signature
+    const signedState = stateSignature.signState(component.id, component.getSerializableState())
+    component.emit('STATE_UPDATE', { 
+      state: component.getSerializableState(),
+      signedState 
+    })
 
-    return component.id
+    // Return component ID with signed state for immediate persistence
+    return { 
+      componentId: component.id,
+      initialState: component.getSerializableState(),
+      signedState 
+    }
+  }
+
+  // Re-hydrate component with signed client state
+  async rehydrateComponent(
+    componentId: string,
+    componentName: string, 
+    signedState: SignedState,
+    ws: any,
+    options?: { room?: string; userId?: string }
+  ): Promise<{ success: boolean; newComponentId?: string; error?: string }> {
+    console.log('🔄 Attempting component re-hydration:', {
+      oldComponentId: componentId,
+      componentName,
+      signedState: {
+        timestamp: signedState.timestamp,
+        version: signedState.version,
+        signature: signedState.signature.substring(0, 16) + '...'
+      }
+    })
+
+    try {
+      // Validate signed state integrity
+      const validation = stateSignature.validateState(signedState)
+      if (!validation.valid) {
+        console.warn('❌ State signature validation failed:', validation.error)
+        return {
+          success: false,
+          error: validation.error || 'Invalid state signature'
+        }
+      }
+
+      // Try to find component definition (same logic as mountComponent)
+      let definition = this.definitions.get(componentName)
+      let ComponentClass: any = null
+      let initialState: any = {}
+
+      if (definition) {
+        // Use registered definition
+        ComponentClass = definition.component
+        initialState = definition.initialState
+      } else {
+        // Try auto-discovered components
+        ComponentClass = this.autoDiscoveredComponents.get(componentName)
+        if (!ComponentClass) {
+          // Try variations of the name
+          const variations = [
+            componentName + 'Component',
+            componentName.charAt(0).toUpperCase() + componentName.slice(1) + 'Component',
+            componentName.charAt(0).toUpperCase() + componentName.slice(1)
+          ]
+          
+          for (const variation of variations) {
+            ComponentClass = this.autoDiscoveredComponents.get(variation)
+            if (ComponentClass) break
+          }
+        }
+        
+        if (!ComponentClass) {
+          const availableComponents = [
+            ...Array.from(this.definitions.keys()),
+            ...Array.from(this.autoDiscoveredComponents.keys())
+          ]
+          return {
+            success: false,
+            error: `Component '${componentName}' not found. Available: ${availableComponents.join(', ')}`
+          }
+        }
+      }
+
+      // Extract validated state
+      const clientState = stateSignature.extractData(signedState)
+      
+      // Create new component instance with client state (merge with initial state if from definition)
+      const finalState = definition ? { ...initialState, ...clientState } : clientState
+      const component = new ComponentClass(finalState, ws, options)
+      
+      // Store component
+      this.components.set(component.id, component)
+      this.wsConnections.set(component.id, ws)
+
+      // Setup room if specified
+      if (options?.room) {
+        this.subscribeToRoom(component.id, options.room)
+      }
+
+      // Initialize WebSocket data
+      if (!ws.data) {
+        ws.data = {
+          components: new Map(),
+          subscriptions: new Set(),
+          userId: options?.userId
+        } as WebSocketData
+      }
+
+      ws.data.components.set(component.id, component)
+
+      console.log('✅ Component re-hydrated successfully:', {
+        oldComponentId: componentId,
+        newComponentId: component.id,
+        componentName,
+        stateVersion: signedState.version
+      })
+      
+      // Send updated state to client (with new signature)
+      const newSignedState = stateSignature.signState(
+        component.id, 
+        component.getSerializableState(),
+        signedState.version + 1
+      )
+      
+      component.emit('STATE_REHYDRATED', { 
+        state: component.getSerializableState(),
+        signedState: newSignedState,
+        oldComponentId: componentId,
+        newComponentId: component.id
+      })
+
+      return {
+        success: true,
+        newComponentId: component.id
+      }
+
+    } catch (error: any) {
+      console.error('❌ Component re-hydration failed:', error.message)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
   }
 
   // Unmount component
@@ -190,7 +329,9 @@ export class ComponentRegistry {
   async executeAction(componentId: string, action: string, payload: any): Promise<any> {
     const component = this.components.get(componentId)
     if (!component) {
-      throw new Error(`Component '${componentId}' not found`)
+      console.log(`🔄 Component '${componentId}' not found - triggering re-hydration request`)
+      // Return special error that triggers re-hydration on client
+      throw new Error(`COMPONENT_REHYDRATION_REQUIRED:${componentId}`)
     }
 
     try {
@@ -288,7 +429,7 @@ export class ComponentRegistry {
     try {
       switch (message.type) {
         case 'COMPONENT_MOUNT':
-          const componentId = await this.mountComponent(
+          const mountResult = await this.mountComponent(
             ws, 
             message.payload.component, 
             message.payload.props,
@@ -297,7 +438,7 @@ export class ComponentRegistry {
               userId: message.userId 
             }
           )
-          return { success: true, result: { componentId } }
+          return { success: true, result: mountResult }
 
         case 'COMPONENT_UNMOUNT':
           await this.unmountComponent(message.componentId)
@@ -334,20 +475,7 @@ export class ComponentRegistry {
     } catch (error: any) {
       console.error('❌ Registry error:', error.message)
       
-      // Send error back to client
-      const errorMessage: LiveMessage = {
-        type: 'ERROR',
-        componentId: message.componentId || 'system',
-        payload: {
-          error: error.message,
-          action: message.action,
-          originalMessage: message.type
-        },
-        timestamp: Date.now()
-      }
-      
-      ws.send(JSON.stringify(errorMessage))
-      
+      // Return error for handleActionCall to process
       return { success: false, error: error.message }
     }
   }

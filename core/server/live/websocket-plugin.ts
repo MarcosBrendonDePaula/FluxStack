@@ -84,6 +84,9 @@ export const liveComponentsPlugin: Plugin = {
               case 'COMPONENT_MOUNT':
                 await handleComponentMount(ws, message)
                 break
+              case 'COMPONENT_REHYDRATE':
+                await handleComponentRehydrate(ws, message)
+                break
               case 'COMPONENT_UNMOUNT':
                 await handleComponentUnmount(ws, message)
                 break
@@ -177,6 +180,65 @@ async function handleComponentMount(ws: any, message: LiveMessage) {
       timestamp: Date.now()
     }
     ws.send(JSON.stringify(response))
+  }
+}
+
+async function handleComponentRehydrate(ws: any, message: LiveMessage) {
+  console.log('🔄 Processing component re-hydration request:', {
+    componentId: message.componentId,
+    payload: message.payload
+  })
+
+  try {
+    const { componentName, signedState, room, userId } = message.payload || {}
+    
+    if (!componentName || !signedState) {
+      throw new Error('Missing componentName or signedState in rehydration payload')
+    }
+
+    const result = await componentRegistry.rehydrateComponent(
+      message.componentId,
+      componentName,
+      signedState,
+      ws,
+      { room, userId }
+    )
+
+    const response = {
+      type: 'COMPONENT_REHYDRATED',
+      componentId: message.componentId,
+      success: result.success,
+      result: {
+        newComponentId: result.newComponentId,
+        ...result
+      },
+      error: result.error,
+      requestId: message.requestId,
+      timestamp: Date.now()
+    }
+
+    console.log('📤 Sending COMPONENT_REHYDRATED response:', {
+      type: response.type,
+      success: response.success,
+      newComponentId: response.result?.newComponentId,
+      requestId: response.requestId
+    })
+    
+    ws.send(JSON.stringify(response))
+
+  } catch (error: any) {
+    console.error('❌ Re-hydration handler error:', error.message)
+    
+    const errorResponse = {
+      type: 'COMPONENT_REHYDRATED',
+      componentId: message.componentId,
+      success: false,
+      error: error.message,
+      requestId: message.requestId,
+      timestamp: Date.now()
+    }
+    
+    ws.send(JSON.stringify(errorResponse))
   }
 }
 

@@ -53,7 +53,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
   const {
     url = getWebSocketUrl(),
     autoConnect = true,
-    reconnectInterval = 1000, // Reduced from 3000ms to 1000ms for faster reconnects
+    reconnectInterval = 300, // Reduced from 3000ms to 1000ms for faster reconnects
     maxReconnectAttempts = 5,
     debug = false
   } = options
@@ -136,7 +136,12 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
             if (response.success !== false) {
               request.resolve(response) // Pass full response, not just result
             } else {
-              request.reject(new Error(response.error || 'Request failed'))
+              // Don't reject COMPONENT_REHYDRATION_REQUIRED - let client handle it
+              if (response.error?.includes?.('COMPONENT_REHYDRATION_REQUIRED')) {
+                request.resolve(response) // Return response so client can handle re-hydration
+              } else {
+                request.reject(new Error(response.error || 'Request failed'))
+              }
             }
             return // Don't process further for request-response
           }
