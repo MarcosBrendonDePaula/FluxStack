@@ -29,8 +29,22 @@ export interface UseWebSocketReturn {
 }
 
 export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketReturn {
+  // Get WebSocket URL dynamically based on current environment
+  const getWebSocketUrl = () => {
+    if (typeof window === 'undefined') return 'ws://localhost:3000/api/live/ws'
+    
+    // In production, use current origin with ws/wss protocol
+    if (window.location.hostname !== 'localhost') {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+      return `${protocol}//${window.location.host}/api/live/ws`
+    }
+    
+    // In development, use backend server (port 3000 for integrated mode)
+    return 'ws://localhost:3000/api/live/ws'
+  }
+
   const {
-    url = 'ws://localhost:3001/live',
+    url = getWebSocketUrl(),
     autoConnect = true,
     reconnectInterval = 3000,
     maxReconnectAttempts = 5,
@@ -107,7 +121,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
             pendingRequests.current.delete(response.requestId)
             
             if (response.success !== false) {
-              request.resolve(response.result)
+              request.resolve(response) // Pass full response, not just result
             } else {
               request.reject(new Error(response.error || 'Request failed'))
             }

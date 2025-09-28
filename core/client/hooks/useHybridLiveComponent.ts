@@ -149,6 +149,7 @@ export function useHybridLiveComponent<T = any>(
   const [lastServerState, setLastServerState] = useState<T | null>(null)
   const [, forceUpdate] = useState({})
   const mountedRef = useRef(false)
+  const mountingRef = useRef(false)
 
   const log = useCallback((message: string, data?: any) => {
     if (debug) {
@@ -208,10 +209,11 @@ export function useHybridLiveComponent<T = any>(
 
   // Mount component
   const mount = useCallback(async () => {
-    if (!connected || mountedRef.current) {
+    if (!connected || mountedRef.current || mountingRef.current) {
       return
     }
 
+    mountingRef.current = true
     setLoading(true)
     setError(null)
     log('Mounting component - server will control all state')
@@ -219,7 +221,7 @@ export function useHybridLiveComponent<T = any>(
     try {
       const message: WebSocketMessage = {
         type: 'COMPONENT_MOUNT',
-        componentId: 'mounting',
+        componentId: instanceId.current,
         payload: {
           component: componentName,
           props: initialState,
@@ -228,19 +230,24 @@ export function useHybridLiveComponent<T = any>(
         }
       }
 
-      const response = await sendMessage(message)
+      const response = await sendMessageAndWait(message, 10000)
       
-      if (response?.success) {
-        const newComponentId = response.result?.componentId
-        if (newComponentId) {
-          setComponentId(newComponentId)
-          mountedRef.current = true
-          log('Component mounted successfully', { componentId: newComponentId })
-        } else {
-          throw new Error('No component ID returned')
-        }
+      log('Mount response received', { response, fullResponse: JSON.stringify(response) })
+      
+      if (response?.success && response?.result?.componentId) {
+        const newComponentId = response.result.componentId
+        setComponentId(newComponentId)
+        mountedRef.current = true
+        log('Component mounted successfully', { componentId: newComponentId })
       } else {
-        throw new Error(response?.error || 'Failed to mount component')
+        log('Failed to parse response', { 
+          hasResponse: !!response,
+          hasSuccess: response?.success,
+          hasResult: !!response?.result,
+          hasComponentId: response?.result?.componentId,
+          error: response?.error 
+        })
+        throw new Error(response?.error || 'No component ID returned from server')
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Mount failed'
@@ -254,6 +261,7 @@ export function useHybridLiveComponent<T = any>(
       }
     } finally {
       setLoading(false)
+      mountingRef.current = false
     }
   }, [connected, componentName, initialState, room, userId, sendMessage, log, fallbackToLocal])
 
@@ -273,6 +281,7 @@ export function useHybridLiveComponent<T = any>(
       
       setComponentId(null)
       mountedRef.current = false
+      mountingRef.current = false
       log('Component unmounted successfully')
     } catch (err) {
       log('Unmount failed', err)
@@ -346,11 +355,11 @@ export function useHybridLiveComponent<T = any>(
 
   // Auto-mount when connected
   useEffect(() => {
-    if (connected && autoMount && !mountedRef.current && hybridState.status === 'disconnected') {
-      log('Auto-mounting component', { connected, autoMount, mounted: mountedRef.current, status: hybridState.status })
+    if (connected && autoMount && !mountedRef.current && !componentId && !mountingRef.current) {
+      log('Auto-mounting component', { connected, autoMount, mounted: mountedRef.current, componentId, mounting: mountingRef.current })
       mount()
     }
-  }, [connected, autoMount, mount, hybridState.status, log])
+  }, [connected, autoMount, mount, componentId, log])
 
   // Unmount on cleanup
   useEffect(() => {

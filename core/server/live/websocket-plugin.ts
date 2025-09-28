@@ -1,32 +1,120 @@
-// 🔥 FluxStack Live Components - WebSocket Plugin
+// 🔥 FluxStack Live Components - WebSocket Plugin (Elysia Native)
 
-import { WebSocketServer } from 'ws'
 import { componentRegistry } from './ComponentRegistry'
 import type { LiveMessage } from '../../types/types'
 import type { Plugin, PluginContext } from '../../plugins/types'
-
-let wsServer: WebSocketServer | null = null
+import { t } from 'elysia'
+import path from 'path'
 
 export const liveComponentsPlugin: Plugin = {
   name: 'live-components',
   version: '1.0.0',
-  description: 'Real-time Live Components with WebSocket support',
+  description: 'Real-time Live Components with Elysia native WebSocket support',
   author: 'FluxStack Team',
   priority: 'normal',
   category: 'core',
   tags: ['websocket', 'real-time', 'live-components'],
   
   setup: async (context: PluginContext) => {
-    context.logger.info('🔌 Setting up Live Components plugin...')
+    context.logger.info('🔌 Setting up Live Components plugin with Elysia WebSocket...')
     
-    // Add Live Components routes to the app
+    // Auto-discover components from app/server/live directory
+    const componentsPath = path.join(process.cwd(), 'app', 'server', 'live')
+    await componentRegistry.autoDiscoverComponents(componentsPath)
+    context.logger.info('🔍 Component auto-discovery completed')
+    
+    // Add WebSocket route for Live Components
     context.app
+      .ws('/api/live/ws', {
+        body: t.Object({
+          type: t.String(),
+          componentId: t.String(),
+          action: t.Optional(t.String()),
+          payload: t.Optional(t.Any()),
+          timestamp: t.Optional(t.Number()),
+          userId: t.Optional(t.String()),
+          room: t.Optional(t.String()),
+          requestId: t.Optional(t.String()),
+          expectResponse: t.Optional(t.Boolean())
+        }),
+        
+        open(ws) {
+          const connectionId = `ws-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+          console.log(`🔌 Live Components WebSocket connected: ${connectionId}`)
+          
+          // Store connection data in ws.data
+          ws.data.connectionId = connectionId
+          ws.data.components = new Map()
+          ws.data.subscriptions = new Set()
+          ws.data.connectedAt = new Date()
+          
+          // Send connection confirmation
+          ws.send(JSON.stringify({
+            type: 'CONNECTION_ESTABLISHED',
+            connectionId,
+            timestamp: Date.now()
+          }))
+        },
+        
+        async message(ws, message: LiveMessage) {
+          try {
+            // Add connection metadata
+            message.timestamp = Date.now()
+            
+            console.log(`📨 Received message:`, {
+              type: message.type,
+              componentId: message.componentId,
+              action: message.action,
+              requestId: message.requestId
+            })
+
+            // Handle different message types
+            switch (message.type) {
+              case 'COMPONENT_MOUNT':
+                await handleComponentMount(ws, message)
+                break
+              case 'COMPONENT_UNMOUNT':
+                await handleComponentUnmount(ws, message)
+                break
+              case 'CALL_ACTION':
+                await handleActionCall(ws, message)
+                break
+              case 'PROPERTY_UPDATE':
+                await handlePropertyUpdate(ws, message)
+                break
+              default:
+                console.warn(`❌ Unknown message type: ${message.type}`)
+                ws.send(JSON.stringify({
+                  type: 'ERROR',
+                  error: `Unknown message type: ${message.type}`,
+                  timestamp: Date.now()
+                }))
+            }
+          } catch (error) {
+            console.error('❌ WebSocket message error:', error)
+            ws.send(JSON.stringify({
+              type: 'ERROR',
+              error: error instanceof Error ? error.message : 'Unknown error',
+              timestamp: Date.now()
+            }))
+          }
+        },
+        
+        close(ws) {
+          console.log(`🔌 Live Components WebSocket disconnected: ${ws.data.connectionId}`)
+          
+          // Cleanup components for this connection
+          componentRegistry.cleanupConnection(ws)
+        }
+      })
+      
+      // Add Live Components info routes
       .get('/api/live/websocket-info', () => {
         return {
           success: true,
-          message: 'Live Components WebSocket available',
-          endpoint: 'ws://localhost:3001/live',
-          status: wsServer ? 'running' : 'initializing'
+          message: 'Live Components WebSocket available via Elysia',
+          endpoint: 'ws://localhost:3000/api/live/ws',
+          status: 'running'
         }
       })
       .get('/api/live/stats', () => {
@@ -50,125 +138,74 @@ export const liveComponentsPlugin: Plugin = {
   },
 
   onServerStart: async (context: PluginContext) => {
-    // Initialize WebSocket server when main server starts
-    if (!wsServer) {
-      wsServer = new WebSocketServer({ 
-        port: 3001, // Different port for WebSocket
-        path: '/live'
-      })
+    context.logger.info('🔌 Live Components WebSocket ready on /api/live/ws')
+  }
+}
 
-      wsServer.on('connection', (ws, request) => {
-        const connectionId = `ws-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-        console.log(`🔌 Live Components WebSocket connected: ${connectionId}`)
-        
-        // Store connection data
-        ;(ws as any).data = {
-          connectionId,
-          components: new Map(),
-          subscriptions: new Set(),
-          connectedAt: new Date()
-        }
-
-        // Send connection confirmation
-        ws.send(JSON.stringify({
-          type: 'CONNECTION_ESTABLISHED',
-          connectionId,
-          timestamp: Date.now()
-        }))
-
-        // Handle incoming messages
-        ws.on('message', async (rawMessage) => {
-          let message: LiveMessage | null = null;
-          try {
-            if (typeof rawMessage === 'string') {
-              message = JSON.parse(rawMessage)
-            } else {
-              message = JSON.parse(rawMessage.toString())
-            }
-
-            if (!message) {
-              throw new Error("Empty message received");
-            }
-
-            // Add connection metadata
-            message.timestamp = Date.now()
-            
-            console.log(`📨 Received message:`, {
-              type: message.type,
-              componentId: message.componentId,
-              action: message.action,
-              property: message.property
-            })
-
-            // Handle message through registry
-            const result = await componentRegistry.handleMessage(ws, message)
-            
-            // Only send response if result is not null
-            if (result !== null) {
-              const response = {
-                type: message.expectResponse ? 'ACTION_RESPONSE' : 'MESSAGE_RESPONSE',
-                originalType: message.type,
-                componentId: message.componentId,
-                success: result.success,
-                result: result.result,
-                error: result.error,
-                requestId: message.requestId, // Include requestId for request-response
-                timestamp: Date.now()
-              }
-
-              ws.send(JSON.stringify(response))
-            }
-
-          } catch (error: any) {
-            console.error('❌ WebSocket message error:', error.message)
-            
-            // Send error response
-            const errorResponse = {
-              type: 'ERROR',
-              requestId: message?.requestId, // Include requestId even for errors
-              error: error.message,
-              timestamp: Date.now()
-            }
-            
-            ws.send(JSON.stringify(errorResponse))
-          }
-        })
-
-        // Handle connection close
-        ws.on('close', () => {
-          console.log(`❌ Live Components WebSocket disconnected: ${connectionId}`)
-          componentRegistry.cleanupConnection(ws)
-        })
-
-        // Handle errors
-        ws.on('error', (error) => {
-          console.error('❌ WebSocket error:', error)
-          componentRegistry.cleanupConnection(ws)
-        })
-      })
-
-      wsServer.on('listening', async () => {
-        console.log('🔌 Live Components WebSocket Server listening on port 3001')
-        
-        // Auto-discover components
-        const path = await import('path')
-        const componentsPath = path.join(process.cwd(), 'app', 'server', 'live')
-        await componentRegistry.autoDiscoverComponents(componentsPath)
-      })
-
-      wsServer.on('error', (error) => {
-        console.error('❌ WebSocket Server error:', error)
-      })
+// Handler functions for WebSocket messages
+async function handleComponentMount(ws: any, message: LiveMessage) {
+  const result = await componentRegistry.handleMessage(ws, message)
+  
+  if (result !== null) {
+    const response = {
+      type: 'COMPONENT_MOUNTED',
+      componentId: message.componentId,
+      success: result.success,
+      result: result.result,
+      error: result.error,
+      requestId: message.requestId,
+      timestamp: Date.now()
     }
+    ws.send(JSON.stringify(response))
+  }
+}
 
-    context.logger.info('🔌 Live Components WebSocket Server listening on port 3001')
-  },
-
-  onServerStop: async (context: PluginContext) => {
-    if (wsServer) {
-      wsServer.close()
-      wsServer = null
-      context.logger.info('🔌 Live Components WebSocket Server stopped')
+async function handleComponentUnmount(ws: any, message: LiveMessage) {
+  const result = await componentRegistry.handleMessage(ws, message)
+  
+  if (result !== null) {
+    const response = {
+      type: 'COMPONENT_UNMOUNTED',
+      componentId: message.componentId,
+      success: result.success,
+      requestId: message.requestId,
+      timestamp: Date.now()
     }
+    ws.send(JSON.stringify(response))
+  }
+}
+
+async function handleActionCall(ws: any, message: LiveMessage) {
+  const result = await componentRegistry.handleMessage(ws, message)
+  
+  if (result !== null) {
+    const response = {
+      type: message.expectResponse ? 'ACTION_RESPONSE' : 'MESSAGE_RESPONSE',
+      originalType: message.type,
+      componentId: message.componentId,
+      success: result.success,
+      result: result.result,
+      error: result.error,
+      requestId: message.requestId,
+      timestamp: Date.now()
+    }
+    ws.send(JSON.stringify(response))
+  }
+}
+
+async function handlePropertyUpdate(ws: any, message: LiveMessage) {
+  const result = await componentRegistry.handleMessage(ws, message)
+  
+  if (result !== null) {
+    const response = {
+      type: 'PROPERTY_UPDATED',
+      componentId: message.componentId,
+      success: result.success,
+      result: result.result,
+      error: result.error,
+      requestId: message.requestId,
+      timestamp: Date.now()
+    }
+    ws.send(JSON.stringify(response))
   }
 }
