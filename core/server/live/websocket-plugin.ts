@@ -1,7 +1,8 @@
 // 🔥 FluxStack Live Components - WebSocket Plugin (Elysia Native)
 
 import { componentRegistry } from './ComponentRegistry'
-import type { LiveMessage } from '../../types/types'
+import { fileUploadManager } from './FileUploadManager'
+import type { LiveMessage, FileUploadStartMessage, FileUploadChunkMessage, FileUploadCompleteMessage } from '../../types/types'
 import type { Plugin, PluginContext } from '../../plugins/types'
 import { t } from 'elysia'
 import path from 'path'
@@ -35,7 +36,17 @@ export const liveComponentsPlugin: Plugin = {
           userId: t.Optional(t.String()),
           room: t.Optional(t.String()),
           requestId: t.Optional(t.String()),
-          expectResponse: t.Optional(t.Boolean())
+          expectResponse: t.Optional(t.Boolean()),
+          // File upload specific fields
+          uploadId: t.Optional(t.String()),
+          filename: t.Optional(t.String()),
+          fileType: t.Optional(t.String()),
+          fileSize: t.Optional(t.Number()),
+          chunkSize: t.Optional(t.Number()),
+          chunkIndex: t.Optional(t.Number()),
+          totalChunks: t.Optional(t.Number()),
+          data: t.Optional(t.String()),
+          hash: t.Optional(t.String())
         }),
         
         open(ws) {
@@ -81,6 +92,15 @@ export const liveComponentsPlugin: Plugin = {
                 break
               case 'PROPERTY_UPDATE':
                 await handlePropertyUpdate(ws, message)
+                break
+              case 'FILE_UPLOAD_START':
+                await handleFileUploadStart(ws, message as FileUploadStartMessage)
+                break
+              case 'FILE_UPLOAD_CHUNK':
+                await handleFileUploadChunk(ws, message as FileUploadChunkMessage)
+                break
+              case 'FILE_UPLOAD_COMPLETE':
+                await handleFileUploadComplete(ws, message as FileUploadCompleteMessage)
                 break
               default:
                 console.warn(`❌ Unknown message type: ${message.type}`)
@@ -208,4 +228,51 @@ async function handlePropertyUpdate(ws: any, message: LiveMessage) {
     }
     ws.send(JSON.stringify(response))
   }
+}
+
+// File Upload Handler Functions
+async function handleFileUploadStart(ws: any, message: FileUploadStartMessage) {
+  console.log('📤 Starting file upload:', message.uploadId)
+  
+  const result = await fileUploadManager.startUpload(message)
+  
+  const response = {
+    type: 'FILE_UPLOAD_START_RESPONSE',
+    componentId: message.componentId,
+    uploadId: message.uploadId,
+    success: result.success,
+    error: result.error,
+    requestId: message.requestId,
+    timestamp: Date.now()
+  }
+  
+  ws.send(JSON.stringify(response))
+}
+
+async function handleFileUploadChunk(ws: any, message: FileUploadChunkMessage) {
+  console.log(`📦 Receiving chunk ${message.chunkIndex + 1} for upload ${message.uploadId}`)
+  
+  const progressResponse = await fileUploadManager.receiveChunk(message, ws)
+  
+  if (progressResponse) {
+    ws.send(JSON.stringify(progressResponse))
+  } else {
+    // Send error response
+    const errorResponse = {
+      type: 'FILE_UPLOAD_ERROR',
+      componentId: message.componentId,
+      uploadId: message.uploadId,
+      error: 'Failed to process chunk',
+      requestId: message.requestId,
+      timestamp: Date.now()
+    }
+    ws.send(JSON.stringify(errorResponse))
+  }
+}
+
+async function handleFileUploadComplete(ws: any, message: FileUploadCompleteMessage) {
+  console.log('✅ Completing file upload:', message.uploadId)
+  
+  const completeResponse = await fileUploadManager.completeUpload(message)
+  ws.send(JSON.stringify(completeResponse))
 }

@@ -432,6 +432,10 @@ export function useHybridLiveComponent<T = any>(
     mount,
     unmount,
     
+    // WebSocket utilities
+    sendMessage,
+    sendMessageAndWait,
+    
     // Helper for forms
     useControlledField
   }

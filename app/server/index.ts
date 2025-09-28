@@ -1,5 +1,5 @@
 // User application entry point
-import { FluxStackFramework, loggerPlugin, vitePlugin, swaggerPlugin, staticPlugin, liveComponentsPlugin } from "@/core/server"
+import { FluxStackFramework, loggerPlugin, vitePlugin, swaggerPlugin, staticPlugin, liveComponentsPlugin, staticFilesPlugin } from "@/core/server"
 import { isDevelopment } from "@/core/utils/helpers"
 import { apiRoutes } from "./routes"
 // Import sistema de env dinâmico simplificado
@@ -47,7 +47,6 @@ const app = new FluxStackFramework({
 
 // Usar plugins de infraestrutura primeiro (mas NÃO o Swagger ainda)
 app.use(loggerPlugin)
-app.use(liveComponentsPlugin) // Add Live Components support
 
 // Usar plugins condicionalmente baseado no ambiente
 if (isDevelopment()) {
@@ -55,6 +54,10 @@ if (isDevelopment()) {
 } else {
   app.use(staticPlugin)
 }
+
+// Add static files AFTER Vite to avoid conflicts, but BEFORE Live Components
+app.use(staticFilesPlugin) // Add Static Files support 
+app.use(liveComponentsPlugin) // Add Live Components support
   
 
 // Adicionar rota de teste para mostrar env dinâmico (antes das rotas)

@@ -33,20 +33,27 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
   const getWebSocketUrl = () => {
     if (typeof window === 'undefined') return 'ws://localhost:3000/api/live/ws'
     
+    const hostname = window.location.hostname
+    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1'
+    
     // In production, use current origin with ws/wss protocol
-    if (window.location.hostname !== 'localhost') {
+    if (!isLocalhost) {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-      return `${protocol}//${window.location.host}/api/live/ws`
+      const url = `${protocol}//${window.location.host}/api/live/ws`
+      console.log('🔗 [WebSocket] Production URL:', url)
+      return url
     }
     
     // In development, use backend server (port 3000 for integrated mode)
-    return 'ws://localhost:3000/api/live/ws'
+    const url = 'ws://localhost:3000/api/live/ws'
+    console.log('🔗 [WebSocket] Development URL:', url)
+    return url
   }
 
   const {
     url = getWebSocketUrl(),
     autoConnect = true,
-    reconnectInterval = 3000,
+    reconnectInterval = 1000, // Reduced from 3000ms to 1000ms for faster reconnects
     maxReconnectAttempts = 5,
     debug = false
   } = options
@@ -86,6 +93,12 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
 
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.CONNECTING) {
+      log('WebSocket already connecting, skipping...')
+      return
+    }
+
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      log('WebSocket already connected, skipping...')
       return
     }
 
@@ -315,7 +328,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
   const reconnect = useCallback(() => {
     close()
     reconnectAttempts.current = 0
-    setTimeout(connect, 100) // Small delay before reconnecting
+    setTimeout(connect, 50) // Reduced delay from 100ms to 50ms
   }, [close, connect])
 
   // Auto-connect on mount

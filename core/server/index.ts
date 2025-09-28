@@ -11,4 +11,8 @@ export * from "../types"
 export { liveComponentsPlugin } from "./live/websocket-plugin"
 export { componentRegistry } from "./live/ComponentRegistry"
 export { LiveComponent } from "../types/types"
+
+// Static Files Plugin
+export { staticFilesPlugin } from "./plugins/static-files-plugin"
+
 export * from "../types/types"

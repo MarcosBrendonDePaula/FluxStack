@@ -65,7 +65,7 @@ export interface WebSocketMessage {
 }
 
 export interface WebSocketResponse {
-  type: 'MESSAGE_RESPONSE' | 'CONNECTION_ESTABLISHED' | 'ERROR' | 'BROADCAST' | 'ACTION_RESPONSE'
+  type: 'MESSAGE_RESPONSE' | 'CONNECTION_ESTABLISHED' | 'ERROR' | 'BROADCAST' | 'ACTION_RESPONSE' | 'FILE_UPLOAD_PROGRESS' | 'FILE_UPLOAD_COMPLETE' | 'FILE_UPLOAD_ERROR' | 'FILE_UPLOAD_START_RESPONSE'
   originalType?: string
   componentId?: string
   success?: boolean
@@ -77,6 +77,15 @@ export interface WebSocketResponse {
   timestamp?: number
   connectionId?: string
   payload?: any
+  // File upload specific fields
+  uploadId?: string
+  chunkIndex?: number
+  totalChunks?: number
+  bytesUploaded?: number
+  totalBytes?: number
+  progress?: number
+  filename?: string
+  fileUrl?: string
 }
 
 // Hybrid Live Component Types
@@ -223,3 +232,84 @@ export type ComponentProps<T extends LiveComponent> = T extends LiveComponent<in
 export type ActionParameters<T, K extends keyof T> = T[K] extends (...args: infer P) => any ? P : never
 
 export type ActionReturnType<T, K extends keyof T> = T[K] extends (...args: any[]) => infer R ? R : never
+
+// File Upload Types for Chunked WebSocket Upload
+export interface FileChunkData {
+  uploadId: string
+  filename: string
+  fileType: string
+  fileSize: number
+  chunkIndex: number
+  totalChunks: number
+  chunkSize: number
+  data: string // Base64 encoded chunk data
+  hash?: string // Optional chunk hash for verification
+}
+
+export interface FileUploadStartMessage {
+  type: 'FILE_UPLOAD_START'
+  componentId: string
+  uploadId: string
+  filename: string
+  fileType: string
+  fileSize: number
+  chunkSize?: number // Optional, defaults to 64KB
+  requestId?: string
+}
+
+export interface FileUploadChunkMessage {
+  type: 'FILE_UPLOAD_CHUNK'
+  componentId: string
+  uploadId: string
+  chunkIndex: number
+  totalChunks: number
+  data: string // Base64 encoded chunk
+  hash?: string
+  requestId?: string
+}
+
+export interface FileUploadCompleteMessage {
+  type: 'FILE_UPLOAD_COMPLETE'
+  componentId: string
+  uploadId: string
+  requestId?: string
+}
+
+export interface FileUploadProgressResponse {
+  type: 'FILE_UPLOAD_PROGRESS'
+  componentId: string
+  uploadId: string
+  chunkIndex: number
+  totalChunks: number
+  bytesUploaded: number
+  totalBytes: number
+  progress: number // 0-100
+  requestId?: string
+  timestamp: number
+}
+
+export interface FileUploadCompleteResponse {
+  type: 'FILE_UPLOAD_COMPLETE'
+  componentId: string
+  uploadId: string
+  success: boolean
+  filename?: string
+  fileUrl?: string
+  error?: string
+  requestId?: string
+  timestamp: number
+}
+
+// File Upload Manager for handling uploads
+export interface ActiveUpload {
+  uploadId: string
+  componentId: string
+  filename: string
+  fileType: string
+  fileSize: number
+  totalChunks: number
+  receivedChunks: Map<number, string>
+  startTime: number
+  lastChunkTime: number
+  tempFilePath?: string
+}
