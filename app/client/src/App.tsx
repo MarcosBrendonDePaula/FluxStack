@@ -16,6 +16,7 @@ import { OverviewPage } from './pages/Overview'
 import { DemoPage } from './pages/Demo'
 import { HybridLivePage } from './pages/HybridLive'
 import { ApiDocsPage } from './pages/ApiDocs'
+import { MainLayout } from './components/MainLayout'
 
 interface User {
   id: number
@@ -132,123 +133,135 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            {/* Logo and Navigation */}
-            <div className="flex items-center space-x-8">
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center gap-2">
-                  <FaFire className="text-2xl text-orange-500" />
-                  <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
-                    FluxStack
+    <div>
+      <Routes>
+        {/* Full-screen Live App Route */}
+        <Route path="/live-app" element={<MainLayout />} />
+        
+        {/* Regular routes with header and layout */}
+        <Route path="*" element={
+          <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+            {/* Header */}
+            <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex justify-between items-center h-16">
+                  {/* Logo and Navigation */}
+                  <div className="flex items-center space-x-8">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex items-center gap-2">
+                        <FaFire className="text-2xl text-orange-500" />
+                        <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                          FluxStack
+                        </div>
+                      </div>
+                      <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                        v1.4.0
+                      </span>
+                    </div>
+                    
+                    {/* Navigation Tabs */}
+                    <nav className="hidden md:flex space-x-1">
+                      {[
+                        { id: 'overview', label: 'Visão Geral', icon: <FaClipboardList />, path: '/' },
+                        { id: 'demo', label: 'Demo', icon: <FaRocket />, path: '/demo' },
+                        { id: 'hybrid-live', label: 'Hybrid Live', icon: <FaBolt />, path: '/hybrid-live' },
+                        { id: 'live-app', label: 'Live App', icon: <FaFire />, path: '/live-app' },
+                        { id: 'api-docs', label: 'API Docs', icon: <FaBook />, path: '/api-docs' },
+                        { id: 'tests', label: 'Testes', icon: <FaTest />, path: '/tests' }
+                      ].map(tab => (
+                        <Link
+                          key={tab.id}
+                          to={tab.path}
+                          className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                            location.pathname === tab.path
+                              ? 'bg-blue-100 text-blue-700 shadow-sm'
+                              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            {tab.icon}
+                            {tab.label}
+                          </div>
+                        </Link>
+                      ))}
+                    </nav>
+                  </div>
+
+                  {/* Status Badge */}
+                  <div className={`flex items-center space-x-2 px-3 py-2 rounded-full text-sm font-medium ${
+                    apiStatus === 'online' 
+                      ? 'bg-emerald-100 text-emerald-700' 
+                      : 'bg-red-100 text-red-700'
+                  }`}>
+                    <div className={`w-2 h-2 rounded-full ${
+                      apiStatus === 'online' ? 'bg-emerald-400' : 'bg-red-400'
+                    }`}></div>
+                    <span>API {apiStatus === 'online' ? 'Online' : 'Offline'}</span>
                   </div>
                 </div>
-                <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                  v1.4.0
-                </span>
+
+                {/* Mobile Navigation */}
+                <div className="md:hidden pb-3">
+                  <nav className="flex space-x-1">
+                    {[
+                      { id: 'overview', label: 'Visão', icon: <FaClipboardList />, path: '/' },
+                      { id: 'demo', label: 'Demo', icon: <FaRocket />, path: '/demo' },
+                      { id: 'hybrid-live', label: 'Hybrid', icon: <FaBolt />, path: '/hybrid-live' },
+                      { id: 'live-app', label: 'Live', icon: <FaFire />, path: '/live-app' },
+                      { id: 'api-docs', label: 'Docs', icon: <FaBook />, path: '/api-docs' },
+                      { id: 'tests', label: 'Testes', icon: <FaTest />, path: '/tests' }
+                    ].map(tab => (
+                      <Link
+                        key={tab.id}
+                        to={tab.path}
+                        className={`flex-1 px-3 py-2 text-xs font-medium rounded-lg transition-all duration-200 ${
+                          location.pathname === tab.path
+                            ? 'bg-blue-100 text-blue-700'
+                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                        }`}
+                      >
+                        <div className="flex flex-col items-center gap-1">
+                          {tab.icon}
+                          <span>{tab.label}</span>
+                        </div>
+                      </Link>
+                    ))}
+                  </nav>
+                </div>
               </div>
-              
-              {/* Navigation Tabs */}
-              <nav className="hidden md:flex space-x-1">
-                {[
-                  { id: 'overview', label: 'Visão Geral', icon: <FaClipboardList />, path: '/' },
-                  { id: 'demo', label: 'Demo', icon: <FaRocket />, path: '/demo' },
-                  { id: 'hybrid-live', label: 'Hybrid Live', icon: <FaBolt />, path: '/hybrid-live' },
-                  { id: 'api-docs', label: 'API Docs', icon: <FaBook />, path: '/api-docs' },
-                  { id: 'tests', label: 'Testes', icon: <FaTest />, path: '/tests' }
-                ].map(tab => (
-                  <Link
-                    key={tab.id}
-                    to={tab.path}
-                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
-                      location.pathname === tab.path
-                        ? 'bg-blue-100 text-blue-700 shadow-sm'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      {tab.icon}
-                      {tab.label}
-                    </div>
-                  </Link>
-                ))}
-              </nav>
-            </div>
+            </header>
 
-            {/* Status Badge */}
-            <div className={`flex items-center space-x-2 px-3 py-2 rounded-full text-sm font-medium ${
-              apiStatus === 'online' 
-                ? 'bg-emerald-100 text-emerald-700' 
-                : 'bg-red-100 text-red-700'
-            }`}>
-              <div className={`w-2 h-2 rounded-full ${
-                apiStatus === 'online' ? 'bg-emerald-400' : 'bg-red-400'
-              }`}></div>
-              <span>API {apiStatus === 'online' ? 'Online' : 'Offline'}</span>
-            </div>
+            {/* Main Content */}
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+              <Routes>
+                <Route path="/" element={<OverviewPage />} />
+                <Route 
+                  path="/demo" 
+                  element={
+                    <DemoPage 
+                      users={users}
+                      apiStatus={apiStatus}
+                      loading={loading}
+                      submitting={submitting}
+                      name={name}
+                      email={email}
+                      setName={setName}
+                      setEmail={setEmail}
+                      handleSubmit={handleSubmit}
+                      handleDelete={handleDelete}
+                      loadUsers={loadUsers}
+                      getInitials={getInitials}
+                    />
+                  }
+                />
+                <Route path="/hybrid-live" element={<HybridLivePage />} />
+                <Route path="/api-docs" element={<ApiDocsPage />} />
+                <Route path="/tests" element={<TestPage />} />
+              </Routes>
+            </main>
           </div>
-
-          {/* Mobile Navigation */}
-          <div className="md:hidden pb-3">
-            <nav className="flex space-x-1">
-              {[
-                { id: 'overview', label: 'Visão Geral', icon: <FaClipboardList />, path: '/' },
-                { id: 'demo', label: 'Demo', icon: <FaRocket />, path: '/demo' },
-                { id: 'hybrid-live', label: 'Hybrid', icon: <FaBolt />, path: '/hybrid-live' },
-                { id: 'api-docs', label: 'Docs', icon: <FaBook />, path: '/api-docs' },
-                { id: 'tests', label: 'Testes', icon: <FaTest />, path: '/tests' }
-              ].map(tab => (
-                <Link
-                  key={tab.id}
-                  to={tab.path}
-                  className={`flex-1 px-3 py-2 text-xs font-medium rounded-lg transition-all duration-200 ${
-                    location.pathname === tab.path
-                      ? 'bg-blue-100 text-blue-700'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                  }`}
-                >
-                  <div className="flex flex-col items-center gap-1">
-                    {tab.icon}
-                    <span>{tab.label}</span>
-                  </div>
-                </Link>
-              ))}
-            </nav>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Routes>
-          <Route path="/" element={<OverviewPage />} />
-          <Route 
-            path="/demo" 
-            element={
-              <DemoPage 
-                users={users}
-                apiStatus={apiStatus}
-                loading={loading}
-                submitting={submitting}
-                name={name}
-                email={email}
-                setName={setName}
-                setEmail={setEmail}
-                handleSubmit={handleSubmit}
-                handleDelete={handleDelete}
-                loadUsers={loadUsers}
-                getInitials={getInitials}
-              />
-            }
-          />
-          <Route path="/hybrid-live" element={<HybridLivePage />} />
-          <Route path="/api-docs" element={<ApiDocsPage />} />
-          <Route path="/tests" element={<TestPage />} />
-        </Routes>
-      </main>
+        } />
+      </Routes>
 
       {/* Toast Notification */}
       {message && (
