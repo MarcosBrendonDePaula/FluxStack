@@ -1186,8 +1186,8 @@ export const createLiveComponentCommand: CliCommand = {
       }
 
       context.logger.info("");
-      context.logger.info("📚 Import options:");
-      context.logger.info("   # Recommended - Use fluxstack lib:");
+      context.logger.info("📚 Import guide:");
+      context.logger.info("   # Use the fluxstack library (recommended):");
       context.logger.info("   import { useHybridLiveComponent } from '@/lib/fluxstack';");
       context.logger.info("");
       context.logger.info("   # Alternative - Direct core import:");

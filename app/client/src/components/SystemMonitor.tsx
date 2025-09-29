@@ -1,7 +1,7 @@
 // 🔥 System Monitor Dashboard Component
 
 import React, { useState, useEffect } from 'react'
-import { useHybridLiveComponent } from '../../../../core/client/hooks/useHybridLiveComponent'
+import { useHybridLiveComponent } from '../lib/fluxstack'
 import { 
   FaServer, 
   FaUsers, 
