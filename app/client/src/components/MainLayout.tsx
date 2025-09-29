@@ -3,7 +3,9 @@
 import React, { useState } from 'react'
 import { SidebarNavigation } from './SidebarNavigation'
 import { UserProfile } from './UserProfile'
-import { FaHome, FaCog, FaFolder, FaChartBar, FaRocket } from 'react-icons/fa'
+import { SystemMonitor } from './SystemMonitor'
+import { FluxStackConfig } from './FluxStackConfig'
+import { FaHome, FaCog, FaFolder, FaChartBar, FaRocket, FaServer } from 'react-icons/fa'
 
 // Temporary placeholder components for other pages
 function Dashboard() {
@@ -265,13 +267,13 @@ function Analytics() {
           gap: '1rem',
           marginBottom: '2rem'
         }}>
-          <FaChartBar size={32} style={{ color: '#6b7280' }} />
-          <h1 style={{ color: '#374151', margin: 0 }}>Analytics & Métricas</h1>
+          <FaServer size={32} style={{ color: '#6b7280' }} />
+          <h1 style={{ color: '#374151', margin: 0 }}>Sistema de Monitoramento</h1>
         </div>
         
         <p style={{ color: '#6b7280', marginBottom: '2rem' }}>
-          Dashboard de analytics com métricas em tempo real do sistema FluxStack.
-          Monitoramento de performance, uso de recursos e estatísticas de usuário.
+          Dashboard completo de monitoramento dos Live Components em tempo real.
+          Métricas de performance, conexões WebSocket, uso de recursos e atividade do sistema.
         </p>
         
         <div style={{
@@ -356,7 +358,9 @@ export function MainLayout() {
       case 'files':
         return <Files />
       case 'analytics':
-        return <Analytics />
+        return <SystemMonitor />
+      case 'config':
+        return <FluxStackConfig />
       default:
         return <Dashboard />
     }

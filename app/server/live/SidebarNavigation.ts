@@ -1,9 +1,9 @@
 // 🔥 Sidebar Navigation Live Component
 
-import { LiveComponent } from '../../../core/types/types'
+import { LiveComponent } from '@/core/types/types'
 
 export interface SidebarNavigationState {
-  currentPage: 'dashboard' | 'profile' | 'settings' | 'files' | 'analytics'
+  currentPage: 'dashboard' | 'profile' | 'settings' | 'files' | 'analytics' | 'config'
   isCollapsed: boolean
   theme: 'light' | 'dark'
   notifications: {
@@ -11,6 +11,7 @@ export interface SidebarNavigationState {
     settings: number
     files: number
     analytics: number
+    config: number
   }
   lastNavigation: number
 }
@@ -28,7 +29,8 @@ export class SidebarNavigation extends LiveComponent<SidebarNavigationState> {
         profile: 0,
         settings: 0,
         files: 0,
-        analytics: 0
+        analytics: 0,
+        config: 0
       },
       lastNavigation: Date.now(),
       ...initialState
@@ -37,7 +39,7 @@ export class SidebarNavigation extends LiveComponent<SidebarNavigationState> {
 
   // Navigate to a different page
   async navigateTo(data: { page: string }) {
-    const validPages = ['dashboard', 'profile', 'settings', 'files', 'analytics']
+    const validPages = ['dashboard', 'profile', 'settings', 'files', 'analytics', 'config']
     
     if (!validPages.includes(data.page)) {
       throw new Error(`Invalid page: ${data.page}`)
