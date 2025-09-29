@@ -1,6 +1,6 @@
 // 🔥 FluxStack Configuration Viewer Component
 
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useHybridLiveComponent } from '../lib/fluxstack'
 import { 
   FaCog, 
@@ -8,21 +8,17 @@ import {
   FaPlug, 
   FaLock, 
   FaDatabase,
-  FaFile,
-  FaHome,
   FaCode,
   FaInfoCircle,
   FaSync,
   FaDownload,
   FaCheckCircle,
-  FaExclamationTriangle,
   FaTimesCircle,
   FaEye,
   FaEyeSlash,
   FaCopy,
   FaTerminal,
   FaMemory,
-  FaUser,
   FaFolder,
   FaGlobe,
   FaBolt,
@@ -256,7 +252,7 @@ const initialState: FluxStackConfigState = {
 }
 
 export function FluxStackConfig() {
-  const { state, call, connected, status, error } = useHybridLiveComponent<FluxStackConfigState>(
+  const { state, call, callAndWait, connected, status, error } = useHybridLiveComponent<FluxStackConfigState>(
     'FluxStackConfig',
     initialState,
     { debug: true }
@@ -326,8 +322,8 @@ export function FluxStackConfig() {
 
   const handleValidateConfiguration = async () => {
     try {
-      const result = await call('validateConfiguration')
-      alert(`Validation ${result.valid ? 'passed' : 'failed'}!\n\nIssues: ${result.issues.join(', ') || 'None'}`)
+      const result = await callAndWait('validateConfiguration')
+      alert(`Validation ${result.valid ? 'passed' : 'failed'}!\n\nIssues: ${result.issues?.join(', ') || 'None'}`)
     } catch (error) {
       console.error('Validate configuration error:', error)
     }

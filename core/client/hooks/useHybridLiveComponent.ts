@@ -103,14 +103,18 @@ export interface UseHybridLiveComponentReturn<T> {
   connected: boolean
   componentId: string | null
   
-  // Simple status (no conflicts in server-only model)
-  status: 'synced' | 'disconnected'
+  // Connection status with all possible states
+  status: 'synced' | 'disconnected' | 'connecting' | 'reconnecting' | 'loading' | 'mounting' | 'error'
   
   // Actions (all go to server)
   call: (action: string, payload?: any) => Promise<void>
   callAndWait: (action: string, payload?: any, timeout?: number) => Promise<any>
   mount: () => Promise<void>
   unmount: () => Promise<void>
+  
+  // WebSocket utilities
+  sendMessage: (message: any) => Promise<void>
+  sendMessageAndWait: (message: any, timeout?: number) => Promise<any>
   
   // Helper for temporary input state
   useControlledField: <K extends keyof T>(field: K, action?: string) => {
