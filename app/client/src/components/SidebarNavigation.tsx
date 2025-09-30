@@ -1,6 +1,6 @@
 // 🔥 Sidebar Navigation Component
 
-import { useHybridLiveComponent } from '../lib/fluxstack'
+import { useHybridLiveComponent } from 'fluxstack'
 import { 
   FaHome, 
   FaUser, 

@@ -40,6 +40,7 @@ export default defineConfig({
   },
   resolve: {
     alias: [
+      { find: 'fluxstack', replacement: resolve(__dirname, './core/client/fluxstack') },
       { find: '@/core', replacement: resolve(__dirname, './core') },
       { find: '@', replacement: resolve(__dirname, './app/client/src') },
       { find: '@/app', replacement: resolve(__dirname, './app') },

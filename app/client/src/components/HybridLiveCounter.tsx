@@ -1,6 +1,6 @@
 // 🔥 Simple Hybrid Live Counter - Server-Driven with Zustand
 
-import { useHybridLiveComponent } from '../lib/fluxstack'
+import { useHybridLiveComponent } from 'fluxstack'
 
 interface CounterState {
   count: number

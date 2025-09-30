@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   FaBook, FaClipboardList, FaRocket, FaFileAlt, FaCog, FaLock, FaSync, FaCode, FaEye,
   FaBolt

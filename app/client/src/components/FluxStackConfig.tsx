@@ -1,7 +1,7 @@
 // 🔥 FluxStack Configuration Viewer Component
 
 import { useState } from 'react'
-import { useHybridLiveComponent } from '../lib/fluxstack'
+import { useHybridLiveComponent } from 'fluxstack'
 import { 
   FaCog, 
   FaServer, 

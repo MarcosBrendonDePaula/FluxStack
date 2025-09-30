@@ -500,7 +500,7 @@ const getClientTemplate = (componentName: string, type: string, room?: string) =
     case 'counter':
       return `// 🔥 ${componentName} - Counter Client Component
 import React from 'react';
-import { useHybridLiveComponent } from '@/lib/fluxstack';
+import { useHybridLiveComponent } from 'fluxstack';
 
 interface ${componentName}State {
   count: number;
@@ -617,7 +617,7 @@ export function ${componentName}() {
     case 'form':
       return `// 🔥 ${componentName} - Form Client Component
 import React from 'react';
-import { useHybridLiveComponent } from '@/lib/fluxstack';
+import { useHybridLiveComponent } from 'fluxstack';
 
 interface ${componentName}State {
   formData: Record<string, any>;
@@ -772,7 +772,7 @@ export function ${componentName}() {
     case 'chat':
       return `// 🔥 ${componentName} - Chat Client Component
 import React, { useState, useEffect, useRef } from 'react';
-import { useHybridLiveComponent } from '@/lib/fluxstack';
+import { useHybridLiveComponent } from 'fluxstack';
 
 interface Message {
   id: string;
@@ -952,7 +952,7 @@ export function ${componentName}() {
     default: // basic
       return `// 🔥 ${componentName} - Client Component
 import React from 'react';
-import { useHybridLiveComponent } from '@/lib/fluxstack';
+import { useHybridLiveComponent } from 'fluxstack';
 
 interface ${componentName}State {
   message: string;
@@ -1188,7 +1188,7 @@ export const createLiveComponentCommand: CliCommand = {
       context.logger.info("");
       context.logger.info("📚 Import guide:");
       context.logger.info("   # Use the fluxstack library (recommended):");
-      context.logger.info("   import { useHybridLiveComponent } from '@/lib/fluxstack';");
+      context.logger.info("   import { useHybridLiveComponent } from 'fluxstack';");
       context.logger.info("");
       context.logger.info("   # Alternative - Direct core import:");
       context.logger.info("   import { useHybridLiveComponent } from '@/core/client';");
