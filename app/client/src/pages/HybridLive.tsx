@@ -7,6 +7,7 @@ import {
 } from 'react-icons/fa';
 import { HybridLiveCounter } from '../components/HybridLiveCounter';
 import { UserProfile } from '../components/UserProfile';
+import { LiveClock } from '../components/LiveClock';
 
 export function HybridLivePage() {
   return (
@@ -60,7 +61,7 @@ export function HybridLivePage() {
 
       {/* Hybrid Counter Demo */}
       <div className="bg-gradient-to-br from-slate-50 to-purple-50 rounded-2xl p-8 border-2 border-purple-200">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {/* Default Counter */}
           <HybridLiveCounter />
           
@@ -73,6 +74,9 @@ export function HybridLivePage() {
             userId="user-123"
           />
           <UserProfile />
+          
+          {/* Live Clock Component */}
+          <LiveClock />
         </div>
         
         <div className="mt-6 p-4 bg-blue-50 rounded-lg">

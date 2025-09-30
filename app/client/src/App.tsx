@@ -16,6 +16,7 @@ import { DemoPage } from './pages/Demo'
 import { HybridLivePage } from './pages/HybridLive'
 import { ApiDocsPage } from './pages/ApiDocs'
 import { MainLayout } from './components/MainLayout'
+import { LiveClock } from './components/LiveClock'
 
 interface User {
   id: number
