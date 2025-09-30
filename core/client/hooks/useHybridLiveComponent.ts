@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
-import { useWebSocket, type WebSocketMessage } from './useWebSocket'
+import { useWebSocket, type WebSocketMessage, type WebSocketResponse } from './useWebSocket'
 import { StateValidator } from './state-validator'
 import type { 
   HybridState, 

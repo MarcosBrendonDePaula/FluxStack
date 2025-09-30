@@ -1,6 +1,5 @@
 // 🔥 Sidebar Navigation Component
 
-import { useState, useEffect } from 'react'
 import { useHybridLiveComponent } from '../lib/fluxstack'
 import { 
   FaHome, 
