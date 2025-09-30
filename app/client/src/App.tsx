@@ -18,6 +18,8 @@ import { ApiDocsPage } from './pages/ApiDocs'
 import { MainLayout } from './components/MainLayout'
 import { LiveClock } from './components/LiveClock'
 
+// State management is now handled by Zustand stores directly
+
 interface User {
   id: number
   name: string
@@ -25,7 +27,7 @@ interface User {
   createdAt: string
 }
 
-function App() {
+function AppContent() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(false)
   const [apiStatus, setApiStatus] = useState<'online' | 'offline'>('offline')
@@ -290,6 +292,11 @@ function App() {
       )}
     </div>
   )
+}
+
+// Main App component - Zustand stores are available globally
+function App() {
+  return <AppContent />
 }
 
 export default App

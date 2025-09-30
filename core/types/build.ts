@@ -62,21 +62,27 @@ export interface BuildStats {
   dependencies: string[]
 }
 
-export interface BundleOptions {
-  entry: string | string[]
-  format: BundleFormat
-  external?: string[]
-  globals?: Record<string, string>
-  banner?: string
-  footer?: string
-}
+
 
 export interface BundleResult {
-  code: string
+  success: boolean
+  duration: number
+  outputPath?: string
+  entryPoint?: string
+  assets?: string[]
+  error?: string
+  code?: string
   map?: string
-  imports: string[]
-  exports: string[]
-  warnings: BuildWarning[]
+  imports?: string[]
+  exports?: string[]
+  warnings?: BuildWarning[]
+}
+
+export interface BundleOptions {
+  env?: Record<string, string>
+  external?: string[]
+  minify?: boolean
+  sourceMaps?: boolean
 }
 
 export interface OptimizationOptions {
@@ -89,11 +95,29 @@ export interface OptimizationOptions {
 }
 
 export interface OptimizationResult {
+  success: boolean
+  duration: number
   originalSize: number
   optimizedSize: number
   compressionRatio: number
-  optimizations: string[]
-  warnings: BuildWarning[]
+  optimizations: OptimizationStep[]
+  error?: string
+  warnings?: BuildWarning[]
+}
+
+export interface OptimizationStep {
+  type: string
+  description: string
+  sizeSaved: number
+}
+
+export interface OptimizationConfig {
+  minify: boolean
+  treeshake: boolean
+  compress: boolean
+  removeUnusedCSS: boolean
+  optimizeImages: boolean
+  bundleAnalysis: boolean
 }
 
 export interface BuildManifest {
