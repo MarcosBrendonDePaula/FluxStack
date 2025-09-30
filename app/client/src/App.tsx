@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { api, getErrorMessage } from './lib/eden-api'
-import TestPage from './components/TestPage'
 import { 
   FaRocket, FaReact, FaLink, FaDocker, FaFlask, FaPalette,
   FaCheckCircle, FaTimesCircle, FaSpinner, FaSync,
@@ -256,7 +255,12 @@ function App() {
                 />
                 <Route path="/hybrid-live" element={<HybridLivePage />} />
                 <Route path="/api-docs" element={<ApiDocsPage />} />
-                <Route path="/tests" element={<TestPage />} />
+                <Route path="/tests" element={
+                  <div className="p-6">
+                    <h2 className="text-2xl font-bold mb-4">🧪 Tests</h2>
+                    <p className="text-gray-600">Test suite functionality will be available here.</p>
+                  </div>
+                } />
               </Routes>
             </main>
           </div>

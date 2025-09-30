@@ -113,8 +113,8 @@ export interface UseHybridLiveComponentReturn<T> {
   unmount: () => Promise<void>
   
   // WebSocket utilities
-  sendMessage: (message: any) => Promise<void>
-  sendMessageAndWait: (message: any, timeout?: number) => Promise<any>
+  sendMessage: (message: any) => Promise<WebSocketResponse>
+  sendMessageAndWait: (message: any, timeout?: number) => Promise<WebSocketResponse>
   
   // Helper for temporary input state
   useControlledField: <K extends keyof T>(field: K, action?: string) => {
