@@ -90,56 +90,76 @@ describe('Helper Utilities', () => {
   })
 
   describe('debounce', () => {
-    beforeEach(() => {
-      vi.useFakeTimers()
-    })
-
-    afterEach(() => {
-      vi.useRealTimers()
-    })
-
-    it('should debounce function calls', () => {
+    it('should debounce function calls', async () => {
       const fn = vi.fn()
-      const debouncedFn = debounce(fn, 100)
+      const debouncedFn = debounce(fn, 50) // Reduced delay for faster tests
 
       debouncedFn('arg1')
       debouncedFn('arg2')
       debouncedFn('arg3')
 
+      // Function should not be called immediately
       expect(fn).not.toHaveBeenCalled()
 
-      vi.advanceTimersByTime(100)
+      // Wait for debounce delay
+      await new Promise(resolve => setTimeout(resolve, 60))
 
       expect(fn).toHaveBeenCalledTimes(1)
       expect(fn).toHaveBeenCalledWith('arg3')
     })
+
+    it('should reset debounce timer on subsequent calls', async () => {
+      const fn = vi.fn()
+      const debouncedFn = debounce(fn, 50)
+
+      debouncedFn('arg1')
+      
+      // Call again before timer expires
+      await new Promise(resolve => setTimeout(resolve, 25))
+      debouncedFn('arg2')
+      
+      // Wait for original timer (should not fire)
+      await new Promise(resolve => setTimeout(resolve, 30))
+      expect(fn).not.toHaveBeenCalled()
+      
+      // Wait for second timer to complete
+      await new Promise(resolve => setTimeout(resolve, 30))
+      expect(fn).toHaveBeenCalledTimes(1)
+      expect(fn).toHaveBeenCalledWith('arg2')
+    })
   })
 
   describe('throttle', () => {
-    beforeEach(() => {
-      vi.useFakeTimers()
-    })
-
-    afterEach(() => {
-      vi.useRealTimers()
-    })
-
-    it('should throttle function calls', () => {
+    it('should throttle function calls', async () => {
       const fn = vi.fn()
-      const throttledFn = throttle(fn, 100)
+      const throttledFn = throttle(fn, 50) // Reduced delay for faster tests
 
+      // First call should execute immediately
       throttledFn('arg1')
-      throttledFn('arg2')
-      throttledFn('arg3')
-
       expect(fn).toHaveBeenCalledTimes(1)
       expect(fn).toHaveBeenCalledWith('arg1')
 
-      vi.advanceTimersByTime(100)
+      // Subsequent calls within throttle period should be ignored
+      throttledFn('arg2')
+      throttledFn('arg3')
+      expect(fn).toHaveBeenCalledTimes(1)
 
+      // Wait for throttle period to pass
+      await new Promise(resolve => setTimeout(resolve, 60))
+
+      // Next call should execute
       throttledFn('arg4')
       expect(fn).toHaveBeenCalledTimes(2)
       expect(fn).toHaveBeenCalledWith('arg4')
+    })
+
+    it('should execute function immediately on first call', () => {
+      const fn = vi.fn()
+      const throttledFn = throttle(fn, 100)
+
+      throttledFn('first')
+      expect(fn).toHaveBeenCalledTimes(1)
+      expect(fn).toHaveBeenCalledWith('first')
     })
   })
 
