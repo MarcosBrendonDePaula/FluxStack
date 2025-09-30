@@ -5,12 +5,17 @@ import { ProjectCreator } from "../templates/create-project"
 import { getConfigSync } from "../config"
 import { cliRegistry } from "./command-registry"
 import { pluginDiscovery } from "./plugin-discovery"
+import { generateCommand, interactiveGenerateCommand } from "./generators/index.js"
 
 const command = process.argv[2]
 const args = process.argv.slice(3)
 
 // Register built-in commands
 async function registerBuiltInCommands() {
+  // Register generate commands
+  cliRegistry.register(generateCommand)
+  cliRegistry.register(interactiveGenerateCommand)
+  
   // Help command
   cliRegistry.register({
     name: 'help',
