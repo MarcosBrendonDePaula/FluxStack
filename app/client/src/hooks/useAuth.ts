@@ -1,6 +1,6 @@
 /**
  * Authentication hooks
- * Provides hooks for user authentication and profile management using Zustand
+ * App-specific authentication hook using FluxStack core
  */
 
 import { useUserStore } from '../store/slices/userSlice'

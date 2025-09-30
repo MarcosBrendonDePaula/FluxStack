@@ -5,7 +5,7 @@
 
 import type { FluxStackConfig } from '../../../core/config'
 import type { Logger } from '../../../core/utils/logger/index'
-import { ServiceContainer } from './ServiceContainer'
+import { ServiceContainer } from '../../../core/server/services/index.js'
 import { UserService } from './UserService'
 import { NotificationService } from './NotificationService'
 
@@ -13,7 +13,7 @@ import { NotificationService } from './NotificationService'
  * Create and configure the service container
  */
 export function createServiceContainer(config: FluxStackConfig, logger: Logger): ServiceContainer {
-  const container = new ServiceContainer(config, logger)
+  const container = new ServiceContainer(logger)
 
   // Register all services
   container.registerMany([
@@ -34,13 +34,11 @@ export function createServiceContainer(config: FluxStackConfig, logger: Logger):
 }
 
 // Re-export service classes and types
-export { BaseService } from './BaseService'
-export { ServiceContainer } from './ServiceContainer'
+export { BaseService, ServiceContainer } from '../../../core/server/services/index.js'
 export { UserService } from './UserService'
 export { NotificationService } from './NotificationService'
 
-export type { ServiceContext, ServiceContainer as IServiceContainer } from './BaseService'
-export type { ServiceDefinition } from './ServiceContainer'
+export type { ServiceContext, ServiceDefinition } from '../../../core/server/services/index.js'
 export type { User, CreateUserData, UpdateUserData } from './UserService'
 export type { 
   Notification, 

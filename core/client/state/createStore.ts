@@ -1,31 +1,58 @@
 /**
- * User Store
- * App-specific user store using FluxStack core
+ * Store Factory
+ * Core FluxStack state management utilities
  */
 
-// Temporary direct implementation until module resolution is fixed
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 
+export interface StoreOptions<T> {
+  name?: string
+  persist?: boolean
+  storage?: 'localStorage' | 'sessionStorage'
+  version?: number
+  migrate?: (persistedState: unknown, version: number) => T
+}
+
+/**
+ * Create a Zustand store with FluxStack conventions
+ */
+export function createFluxStore<T>(
+  storeFactory: (set: any, get: any) => T,
+  options: StoreOptions<T> = {}
+) {
+  const { name, persist: shouldPersist = false, storage = 'localStorage', version = 1, migrate } = options
+
+  if (shouldPersist && name) {
+    return create<T>()(
+      persist(
+        storeFactory,
+        {
+          name,
+          storage: createJSONStorage(() => 
+            storage === 'localStorage' ? localStorage : sessionStorage
+          ),
+          version,
+          migrate: migrate as any,
+          onRehydrateStorage: () => (state) => {
+            console.log('FluxStack: Store rehydrated', name, state)
+          }
+        }
+      )
+    )
+  }
+
+  return create<T>()(storeFactory)
+}
+
+/**
+ * Base user store interface
+ */
 export interface BaseUser {
   id: string
   email: string
   name: string
   role: 'admin' | 'user'
-}
-
-// Type aliases for compatibility
-export type User = BaseUser
-
-export interface LoginCredentials {
-  email: string
-  password: string
-}
-
-export interface RegisterData {
-  email: string
-  password: string
-  name: string
 }
 
 export interface BaseUserStore {
@@ -41,9 +68,11 @@ export interface BaseUserStore {
   setLoading: (loading: boolean) => void
 }
 
-// Create user store using Zustand directly (temporary)
-export const useUserStore = create<BaseUserStore>()(
-  persist(
+/**
+ * Create user store with FluxStack conventions
+ */
+export function createUserStore(options: StoreOptions<BaseUserStore> = {}) {
+  return createFluxStore<BaseUserStore>(
     (set, get) => ({
       currentUser: null,
       isAuthenticated: false,
@@ -65,15 +94,15 @@ export const useUserStore = create<BaseUserStore>()(
           }
 
           const { user } = await response.json()
-          set({
-            currentUser: user,
-            isAuthenticated: true,
-            isLoading: false
+          set({ 
+            currentUser: user, 
+            isAuthenticated: true, 
+            isLoading: false 
           })
         } catch (error) {
-          set({
-            error: error instanceof Error ? error.message : 'Login failed',
-            isLoading: false
+          set({ 
+            error: error instanceof Error ? error.message : 'Login failed', 
+            isLoading: false 
           })
           throw error
         }
@@ -94,26 +123,28 @@ export const useUserStore = create<BaseUserStore>()(
           }
 
           const { user } = await response.json()
-          set({
-            currentUser: user,
-            isAuthenticated: true,
-            isLoading: false
+          set({ 
+            currentUser: user, 
+            isAuthenticated: true, 
+            isLoading: false 
           })
         } catch (error) {
-          set({
-            error: error instanceof Error ? error.message : 'Registration failed',
-            isLoading: false
+          set({ 
+            error: error instanceof Error ? error.message : 'Registration failed', 
+            isLoading: false 
           })
           throw error
         }
       },
 
       logout: () => {
+        // Call logout API
         fetch('/api/auth/logout', { method: 'POST' }).catch(console.error)
-        set({
-          currentUser: null,
-          isAuthenticated: false,
-          error: null
+        
+        set({ 
+          currentUser: null, 
+          isAuthenticated: false, 
+          error: null 
         })
       },
 
@@ -137,14 +168,14 @@ export const useUserStore = create<BaseUserStore>()(
           }
 
           const { user } = await response.json()
-          set({
-            currentUser: user,
-            isLoading: false
+          set({ 
+            currentUser: user, 
+            isLoading: false 
           })
         } catch (error) {
-          set({
-            error: error instanceof Error ? error.message : 'Profile update failed',
-            isLoading: false
+          set({ 
+            error: error instanceof Error ? error.message : 'Profile update failed', 
+            isLoading: false 
           })
           throw error
         }
@@ -155,7 +186,8 @@ export const useUserStore = create<BaseUserStore>()(
     }),
     {
       name: 'user-store',
-      storage: createJSONStorage(() => localStorage)
+      persist: true,
+      ...options
     }
   )
-)
+}
