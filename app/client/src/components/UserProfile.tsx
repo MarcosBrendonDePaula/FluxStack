@@ -60,7 +60,7 @@ export function UserProfile() {
     debug: true // Enable debug logs to track re-hydration
   });
   
-  const chunkedUpload = useChunkedUpload(componentId, {
+  const chunkedUpload = useChunkedUpload(componentId || '', {
     sendMessageAndWait,
     onProgress: (progress, bytesUploaded, totalBytes) => {
       console.log(`📊 Upload progress: ${progress}% (${bytesUploaded}/${totalBytes} bytes)`)

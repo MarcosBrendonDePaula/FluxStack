@@ -1,10 +1,9 @@
 // 🔥 System Monitor Dashboard Component
 
-import React, { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useHybridLiveComponent } from '../lib/fluxstack'
 import { 
   FaServer, 
-  FaUsers, 
   FaHome, 
   FaMemory,
   FaHeartbeat,
@@ -19,7 +18,6 @@ import {
   FaExclamationTriangle,
   FaCheckCircle,
   FaTimesCircle,
-  FaCog,
   FaEye,
   FaBolt,
   FaDatabase,
