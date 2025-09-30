@@ -1,4 +1,4 @@
-// 🔥 FluxStack Live Components - Component Registry
+// 🔥 FluxStack Live Components - Enhanced Component Registry
 
 import type { 
   LiveComponent, 
@@ -7,19 +7,137 @@ import type {
   ComponentDefinition,
   WebSocketData 
 } from '../../types/types'
-import { stateSignature, SignedState } from './StateSignature'
+import { stateSignature, type SignedState } from './StateSignature'
+import { performanceMonitor } from './LiveComponentPerformanceMonitor'
+
+// Enhanced interfaces for registry improvements
+export interface ComponentMetadata {
+  id: string
+  name: string
+  version: string
+  mountedAt: Date
+  lastActivity: Date
+  state: 'mounting' | 'active' | 'inactive' | 'error' | 'destroying'
+  healthStatus: 'healthy' | 'degraded' | 'unhealthy'
+  dependencies: string[]
+  services: Map<string, any>
+  metrics: ComponentMetrics
+  migrationHistory: StateMigration[]
+}
+
+export interface ComponentMetrics {
+  renderCount: number
+  actionCount: number
+  errorCount: number
+  averageRenderTime: number
+  memoryUsage: number
+  lastRenderTime?: number
+}
+
+export interface StateMigration {
+  fromVersion: string
+  toVersion: string
+  migratedAt: Date
+  success: boolean
+  error?: string
+}
+
+export interface ComponentDependency {
+  name: string
+  version: string
+  required: boolean
+  factory: () => any
+}
+
+export interface ComponentHealthCheck {
+  componentId: string
+  status: 'healthy' | 'degraded' | 'unhealthy'
+  lastCheck: Date
+  issues: string[]
+  metrics: ComponentMetrics
+}
+
+export interface ServiceContainer {
+  register<T>(name: string, factory: () => T): void
+  resolve<T>(name: string): T
+  has(name: string): boolean
+}
 
 export class ComponentRegistry {
   private components = new Map<string, LiveComponent>()
   private definitions = new Map<string, ComponentDefinition>()
+  private metadata = new Map<string, ComponentMetadata>()
   private rooms = new Map<string, Set<string>>() // roomId -> componentIds
   private wsConnections = new Map<string, any>() // componentId -> websocket
   private autoDiscoveredComponents = new Map<string, any>() // Auto-discovered component classes
+  private dependencies = new Map<string, ComponentDependency[]>()
+  private services: ServiceContainer
+  private healthCheckInterval: NodeJS.Timeout
+  private recoveryStrategies = new Map<string, () => Promise<void>>()
   
-  // Register component definition
-  registerComponent<TState>(definition: ComponentDefinition<TState>) {
+  constructor() {
+    this.services = this.createServiceContainer()
+    this.setupHealthMonitoring()
+    this.setupRecoveryStrategies()
+  }
+
+  private createServiceContainer(): ServiceContainer {
+    const services = new Map<string, any>()
+    
+    return {
+      register<T>(name: string, factory: () => T): void {
+        services.set(name, factory)
+      },
+      resolve<T>(name: string): T {
+        const factory = services.get(name)
+        if (!factory) {
+          throw new Error(`Service '${name}' not found`)
+        }
+        return factory()
+      },
+      has(name: string): boolean {
+        return services.has(name)
+      }
+    }
+  }
+
+  private setupHealthMonitoring(): void {
+    // Health check every 30 seconds
+    this.healthCheckInterval = setInterval(() => {
+      this.performHealthChecks()
+    }, 30000)
+  }
+
+  private setupRecoveryStrategies(): void {
+    // Default recovery strategy for unhealthy components
+    this.recoveryStrategies.set('default', async () => {
+      console.log('🔄 Executing default recovery strategy')
+      // Restart unhealthy components
+      for (const [componentId, metadata] of this.metadata) {
+        if (metadata.healthStatus === 'unhealthy') {
+          await this.recoverComponent(componentId)
+        }
+      }
+    })
+  }
+
+  // Register component definition with versioning support
+  registerComponent<TState>(definition: ComponentDefinition<TState>, version: string = '1.0.0') {
+    // Store version separately in metadata when component is mounted
     this.definitions.set(definition.name, definition)
-    console.log(`📝 Registered component: ${definition.name}`)
+    console.log(`📝 Registered component: ${definition.name} v${version}`)
+  }
+
+  // Register component dependencies
+  registerDependencies(componentName: string, dependencies: ComponentDependency[]): void {
+    this.dependencies.set(componentName, dependencies)
+    console.log(`🔗 Registered dependencies for ${componentName}:`, dependencies.map(d => d.name))
+  }
+
+  // Register service in DI container
+  registerService<T>(name: string, factory: () => T): void {
+    this.services.register(name, factory)
+    console.log(`🔧 Registered service: ${name}`)
   }
 
   // Register component class dynamically
@@ -84,20 +202,26 @@ export class ComponentRegistry {
     }
   }
 
-  // Mount component instance
+  // Enhanced component mounting with lifecycle management
   async mountComponent(
     ws: any, 
     componentName: string, 
     props: any = {},
-    options?: { room?: string; userId?: string }
+    options?: { room?: string; userId?: string; version?: string }
   ): Promise<{ componentId: string; initialState: any; signedState: any }> {
-    // Try to find component definition first
-    let definition = this.definitions.get(componentName)
-    let ComponentClass: any = null
-    let initialState: any = {}
+    const startTime = Date.now()
+    
+    try {
+      // Validate dependencies
+      await this.validateDependencies(componentName)
+      
+      // Try to find component definition first
+      let definition = this.definitions.get(componentName)
+      let ComponentClass: any = null
+      let initialState: any = {}
 
-    if (definition) {
-      // Use registered definition
+      if (definition) {
+        // Use registered definition
       ComponentClass = definition.component
       initialState = definition.initialState
     } else {
@@ -141,6 +265,23 @@ export class ComponentRegistry {
       this.broadcastToRoom(message, component.id)
     }
 
+    // Create and store component metadata
+    const metadata = this.createComponentMetadata(component.id, componentName, options?.version)
+    this.metadata.set(component.id, metadata)
+
+    // Inject services into component
+    const dependencies = this.dependencies.get(componentName) || []
+    for (const dep of dependencies) {
+      if (this.services.has(dep.name)) {
+        const service = this.services.resolve(dep.name)
+        metadata.services.set(dep.name, service)
+        // Inject service into component if it has a setter
+        if (typeof (component as any)[`set${dep.name}`] === 'function') {
+          (component as any)[`set${dep.name}`](service)
+        }
+      }
+    }
+
     // Store component and connection
     this.components.set(component.id, component)
     this.wsConnections.set(component.id, ws)
@@ -151,6 +292,10 @@ export class ComponentRegistry {
     }
 
     // Initialize WebSocket data if needed
+    if (!ws || typeof ws !== 'object') {
+      throw new Error('Invalid WebSocket object provided')
+    }
+    
     if (!ws.data) {
       ws.data = {
         components: new Map(),
@@ -159,13 +304,30 @@ export class ComponentRegistry {
       } as WebSocketData
     }
 
+    // Ensure components map exists
+    if (!ws.data.components) {
+      ws.data.components = new Map()
+    }
+
     ws.data.components.set(component.id, component)
 
-    console.log(`🚀 Mounted component: ${componentName} (${component.id})`)
+    // Update metadata state
+    metadata.state = 'active'
+    const renderTime = Date.now() - startTime
+    this.recordComponentMetrics(component.id, renderTime)
+
+    // Initialize performance monitoring
+    performanceMonitor.initializeComponent(component.id, componentName)
+    performanceMonitor.recordRenderTime(component.id, renderTime)
+
+    console.log(`🚀 Mounted component: ${componentName} (${component.id}) in ${renderTime}ms`)
     
     // Send initial state to client with signature
-    const signedState = stateSignature.signState(component.id, component.getSerializableState())
-    component.emit('STATE_UPDATE', { 
+    const signedState = await stateSignature.signState(component.id, component.getSerializableState(), 1, {
+      compress: true,
+      backup: true
+    })
+    ;(component as any).emit('STATE_UPDATE', { 
       state: component.getSerializableState(),
       signedState 
     })
@@ -175,6 +337,10 @@ export class ComponentRegistry {
       componentId: component.id,
       initialState: component.getSerializableState(),
       signedState 
+    }
+    } catch (error: any) {
+      console.error(`❌ Failed to mount component ${componentName}:`, error)
+      throw error
     }
   }
 
@@ -198,7 +364,7 @@ export class ComponentRegistry {
 
     try {
       // Validate signed state integrity
-      const validation = stateSignature.validateState(signedState)
+      const validation = await stateSignature.validateState(signedState)
       if (!validation.valid) {
         console.warn('❌ State signature validation failed:', validation.error)
         return {
@@ -246,7 +412,7 @@ export class ComponentRegistry {
       }
 
       // Extract validated state
-      const clientState = stateSignature.extractData(signedState)
+      const clientState = await stateSignature.extractData(signedState)
       
       // Create new component instance with client state (merge with initial state if from definition)
       const finalState = definition ? { ...initialState, ...clientState } : clientState
@@ -270,6 +436,10 @@ export class ComponentRegistry {
         } as WebSocketData
       }
 
+      // Ensure components map exists
+      if (!ws.data.components) {
+        ws.data.components = new Map()
+      }
       ws.data.components.set(component.id, component)
 
       console.log('✅ Component re-hydrated successfully:', {
@@ -280,7 +450,7 @@ export class ComponentRegistry {
       })
       
       // Send updated state to client (with new signature)
-      const newSignedState = stateSignature.signState(
+      const newSignedState = await stateSignature.signState(
         component.id, 
         component.getSerializableState(),
         signedState.version + 1
@@ -424,9 +594,16 @@ export class ComponentRegistry {
     console.log(`📡 Broadcast '${message.type}' to room '${message.room}': ${broadcastCount} recipients`)
   }
 
-  // Handle WebSocket message
+  // Handle WebSocket message with enhanced metrics and lifecycle tracking
   async handleMessage(ws: any, message: LiveMessage): Promise<any> {
+    const startTime = Date.now()
+    
     try {
+      // Update component activity
+      if (message.componentId) {
+        this.updateComponentActivity(message.componentId)
+      }
+
       switch (message.type) {
         case 'COMPONENT_MOUNT':
           const mountResult = await this.mountComponent(
@@ -445,20 +622,38 @@ export class ComponentRegistry {
           return { success: true }
 
         case 'CALL_ACTION':
-          // Execute action - response depends on expectResponse flag
-          const actionResult = await this.executeAction(
-            message.componentId,
-            message.action!,
-            message.payload
-          )
+          // Record action metrics
+          this.recordComponentMetrics(message.componentId, undefined, message.action)
           
-          // If client expects response, return it
-          if (message.expectResponse) {
-            return { success: true, result: actionResult }
+          // Execute action with performance monitoring
+          const actionStartTime = Date.now()
+          let actionError: Error | undefined
+          
+          try {
+            const actionResult = await this.executeAction(
+              message.componentId,
+              message.action!,
+              message.payload
+            )
+            
+            // Record successful action performance
+            const actionTime = Date.now() - actionStartTime
+            performanceMonitor.recordActionTime(message.componentId, message.action!, actionTime)
+            
+            // If client expects response, return it
+            if (message.expectResponse) {
+              return { success: true, result: actionResult }
+            }
+            
+            // Otherwise no return - if state changed, component will emit STATE_UPDATE automatically
+            return null
+          } catch (error) {
+            actionError = error as Error
+            const actionTime = Date.now() - actionStartTime
+            performanceMonitor.recordActionTime(message.componentId, message.action!, actionTime, actionError)
+            throw error
           }
-          
-          // Otherwise no return - if state changed, component will emit STATE_UPDATE automatically
-          return null
+
 
         case 'PROPERTY_UPDATE':
           this.updateProperty(
@@ -475,8 +670,19 @@ export class ComponentRegistry {
     } catch (error: any) {
       console.error('❌ Registry error:', error.message)
       
+      // Record error metrics if component ID is available
+      if (message.componentId) {
+        this.recordComponentError(message.componentId, error)
+      }
+      
       // Return error for handleActionCall to process
       return { success: false, error: error.message }
+    } finally {
+      // Record processing time
+      const processingTime = Date.now() - startTime
+      if (message.componentId && processingTime > 0) {
+        this.recordComponentMetrics(message.componentId, processingTime)
+      }
     }
   }
 
@@ -486,9 +692,14 @@ export class ComponentRegistry {
 
     const componentsToCleanup = Array.from(ws.data.components.keys()) as string[]
     
+    console.log(`🧹 Cleaning up ${componentsToCleanup.length} components for disconnected WebSocket`)
+    
     for (const componentId of componentsToCleanup) {
-      this.unmountComponent(componentId)
+      this.cleanupComponent(componentId)
     }
+
+    // Clear the WebSocket's component map
+    ws.data.components.clear()
 
     console.log(`🧹 Cleaned up ${componentsToCleanup.length} components from disconnected WebSocket`)
   }
@@ -520,6 +731,285 @@ export class ComponentRegistry {
     return Array.from(componentIds)
       .map(id => this.components.get(id))
       .filter(Boolean) as LiveComponent[]
+  }
+  // Validate component dependencies
+  private async validateDependencies(componentName: string): Promise<void> {
+    const dependencies = this.dependencies.get(componentName)
+    if (!dependencies) return
+
+    for (const dep of dependencies) {
+      if (dep.required && !this.services.has(dep.name)) {
+        throw new Error(`Required dependency '${dep.name}' not found for component '${componentName}'`)
+      }
+    }
+  }
+
+  // Create component metadata
+  private createComponentMetadata(componentId: string, componentName: string, version: string = '1.0.0'): ComponentMetadata {
+    return {
+      id: componentId,
+      name: componentName,
+      version,
+      mountedAt: new Date(),
+      lastActivity: new Date(),
+      state: 'mounting',
+      healthStatus: 'healthy',
+      dependencies: this.dependencies.get(componentName)?.map(d => d.name) || [],
+      services: new Map(),
+      metrics: {
+        renderCount: 0,
+        actionCount: 0,
+        errorCount: 0,
+        averageRenderTime: 0,
+        memoryUsage: 0
+      },
+      migrationHistory: []
+    }
+  }
+
+  // Update component activity
+  updateComponentActivity(componentId: string): void {
+    const metadata = this.metadata.get(componentId)
+    if (metadata) {
+      metadata.lastActivity = new Date()
+      metadata.state = 'active'
+    }
+  }
+
+  // Record component metrics
+  recordComponentMetrics(componentId: string, renderTime?: number, action?: string): void {
+    const metadata = this.metadata.get(componentId)
+    if (!metadata) return
+
+    if (renderTime) {
+      metadata.metrics.renderCount++
+      metadata.metrics.averageRenderTime = 
+        (metadata.metrics.averageRenderTime * (metadata.metrics.renderCount - 1) + renderTime) / metadata.metrics.renderCount
+      metadata.metrics.lastRenderTime = renderTime
+    }
+
+    if (action) {
+      metadata.metrics.actionCount++
+    }
+
+    this.updateComponentActivity(componentId)
+  }
+
+  // Record component error
+  recordComponentError(componentId: string, error: Error): void {
+    const metadata = this.metadata.get(componentId)
+    if (metadata) {
+      metadata.metrics.errorCount++
+      metadata.healthStatus = metadata.metrics.errorCount > 5 ? 'unhealthy' : 'degraded'
+      console.error(`❌ Component ${componentId} error:`, error.message)
+    }
+  }
+
+  // Perform health checks on all components
+  private async performHealthChecks(): Promise<void> {
+    const healthChecks: ComponentHealthCheck[] = []
+    
+    for (const [componentId, metadata] of this.metadata) {
+      const component = this.components.get(componentId)
+      if (!component) continue
+
+      const issues: string[] = []
+      let status: 'healthy' | 'degraded' | 'unhealthy' = 'healthy'
+
+      // Check if component is responsive
+      const timeSinceLastActivity = Date.now() - metadata.lastActivity.getTime()
+      if (timeSinceLastActivity > 300000) { // 5 minutes
+        issues.push('Component inactive for more than 5 minutes')
+        status = 'degraded'
+      }
+
+      // Check error rate
+      if (metadata.metrics.errorCount > 10) {
+        issues.push('High error rate detected')
+        status = 'unhealthy'
+      }
+
+      // Check memory usage (if available)
+      if (metadata.metrics.memoryUsage > 100 * 1024 * 1024) { // 100MB
+        issues.push('High memory usage detected')
+        status = 'degraded'
+      }
+
+      metadata.healthStatus = status
+
+      healthChecks.push({
+        componentId,
+        status,
+        lastCheck: new Date(),
+        issues,
+        metrics: { ...metadata.metrics }
+      })
+    }
+
+    // Log unhealthy components
+    const unhealthyComponents = healthChecks.filter(hc => hc.status === 'unhealthy')
+    if (unhealthyComponents.length > 0) {
+      console.warn(`⚠️ Found ${unhealthyComponents.length} unhealthy components:`, 
+        unhealthyComponents.map(hc => hc.componentId))
+      
+      // Trigger recovery if needed
+      await this.triggerRecovery()
+    }
+  }
+
+  // Trigger recovery for unhealthy components
+  private async triggerRecovery(): Promise<void> {
+    const defaultStrategy = this.recoveryStrategies.get('default')
+    if (defaultStrategy) {
+      try {
+        await defaultStrategy()
+      } catch (error) {
+        console.error('❌ Recovery strategy failed:', error)
+      }
+    }
+  }
+
+  // Recover a specific component
+  private async recoverComponent(componentId: string): Promise<void> {
+    const metadata = this.metadata.get(componentId)
+    const component = this.components.get(componentId)
+    
+    if (!metadata || !component) return
+
+    try {
+      console.log(`🔄 Recovering component ${componentId}`)
+      
+      // Reset error count
+      metadata.metrics.errorCount = 0
+      metadata.healthStatus = 'healthy'
+      metadata.state = 'active'
+      
+      // Emit recovery event to client using the protected emit method
+      ;(component as any).emit('COMPONENT_RECOVERED', {
+        componentId,
+        timestamp: Date.now()
+      })
+      
+    } catch (error) {
+      console.error(`❌ Failed to recover component ${componentId}:`, error)
+      metadata.state = 'error'
+    }
+  }
+
+  // Migrate component state to new version
+  async migrateComponentState(componentId: string, fromVersion: string, toVersion: string, migrationFn: (state: any) => any): Promise<boolean> {
+    const component = this.components.get(componentId)
+    const metadata = this.metadata.get(componentId)
+    
+    if (!component || !metadata) return false
+
+    try {
+      console.log(`🔄 Migrating component ${componentId} from v${fromVersion} to v${toVersion}`)
+      
+      const oldState = component.getSerializableState()
+      const newState = migrationFn(oldState)
+      
+      // Update component state
+      component.setState(newState)
+      
+      // Record migration
+      const migration: StateMigration = {
+        fromVersion,
+        toVersion,
+        migratedAt: new Date(),
+        success: true
+      }
+      
+      metadata.migrationHistory.push(migration)
+      metadata.version = toVersion
+      
+      console.log(`✅ Successfully migrated component ${componentId}`)
+      return true
+      
+    } catch (error: any) {
+      console.error(`❌ Migration failed for component ${componentId}:`, error)
+      
+      const migration: StateMigration = {
+        fromVersion,
+        toVersion,
+        migratedAt: new Date(),
+        success: false,
+        error: error.message
+      }
+      
+      metadata?.migrationHistory.push(migration)
+      return false
+    }
+  }
+
+  // Get component health status
+  getComponentHealth(componentId: string): ComponentHealthCheck | null {
+    const metadata = this.metadata.get(componentId)
+    if (!metadata) return null
+
+    return {
+      componentId,
+      status: metadata.healthStatus,
+      lastCheck: new Date(),
+      issues: [],
+      metrics: { ...metadata.metrics }
+    }
+  }
+
+  // Get all component health statuses
+  getAllComponentHealth(): ComponentHealthCheck[] {
+    return Array.from(this.metadata.values()).map(metadata => ({
+      componentId: metadata.id,
+      status: metadata.healthStatus,
+      lastCheck: new Date(),
+      issues: [],
+      metrics: { ...metadata.metrics }
+    }))
+  }
+
+  // Cleanup method to be called on shutdown
+  cleanup(): void {
+    if (this.healthCheckInterval) {
+      clearInterval(this.healthCheckInterval)
+    }
+    
+    // Cleanup all components
+    for (const [componentId] of this.components) {
+      this.cleanupComponent(componentId)
+    }
+  }
+
+  // Enhanced cleanup for individual components
+  private cleanupComponent(componentId: string): void {
+    const component = this.components.get(componentId)
+    const metadata = this.metadata.get(componentId)
+    
+    if (component) {
+      try {
+        component.destroy()
+      } catch (error) {
+        console.error(`❌ Error destroying component ${componentId}:`, error)
+      }
+    }
+    
+    if (metadata) {
+      metadata.state = 'destroying'
+    }
+    
+    // Remove from performance monitoring
+    performanceMonitor.removeComponent(componentId)
+    
+    this.components.delete(componentId)
+    this.metadata.delete(componentId)
+    this.wsConnections.delete(componentId)
+    
+    // Remove from rooms
+    for (const [roomId, componentIds] of this.rooms) {
+      componentIds.delete(componentId)
+      if (componentIds.size === 0) {
+        this.rooms.delete(roomId)
+      }
+    }
   }
 }
 

@@ -1,7 +1,9 @@
-// 🔥 FluxStack Live Components - WebSocket Plugin (Elysia Native)
+// 🔥 FluxStack Live Components - Enhanced WebSocket Plugin with Connection Management
 
 import { componentRegistry } from './ComponentRegistry'
 import { fileUploadManager } from './FileUploadManager'
+import { connectionManager } from './WebSocketConnectionManager'
+import { performanceMonitor } from './LiveComponentPerformanceMonitor'
 import type { LiveMessage, FileUploadStartMessage, FileUploadChunkMessage, FileUploadCompleteMessage } from '../../types/types'
 import type { Plugin, PluginContext } from '../../plugins/types'
 import { t } from 'elysia'
@@ -53,7 +55,13 @@ export const liveComponentsPlugin: Plugin = {
           const connectionId = `ws-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
           console.log(`🔌 Live Components WebSocket connected: ${connectionId}`)
           
-          // Store connection data in ws.data
+          // Register connection with enhanced connection manager
+          connectionManager.registerConnection(ws, connectionId, 'live-components')
+          
+          // Initialize and store connection data in ws.data
+          if (!ws.data) {
+            ws.data = {}
+          }
           ws.data.connectionId = connectionId
           ws.data.components = new Map()
           ws.data.subscriptions = new Set()
@@ -63,7 +71,13 @@ export const liveComponentsPlugin: Plugin = {
           ws.send(JSON.stringify({
             type: 'CONNECTION_ESTABLISHED',
             connectionId,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            features: {
+              compression: true,
+              encryption: true,
+              offlineQueue: true,
+              loadBalancing: true
+            }
           }))
         },
         
@@ -124,7 +138,13 @@ export const liveComponentsPlugin: Plugin = {
         },
         
         close(ws) {
-          console.log(`🔌 Live Components WebSocket disconnected: ${ws.data.connectionId}`)
+          const connectionId = ws.data?.connectionId
+          console.log(`🔌 Live Components WebSocket disconnected: ${connectionId}`)
+          
+          // Cleanup connection in connection manager
+          if (connectionId) {
+            connectionManager.cleanupConnection(connectionId)
+          }
           
           // Cleanup components for this connection
           componentRegistry.cleanupConnection(ws)
@@ -137,7 +157,8 @@ export const liveComponentsPlugin: Plugin = {
           success: true,
           message: 'Live Components WebSocket available via Elysia',
           endpoint: 'ws://localhost:3000/api/live/ws',
-          status: 'running'
+          status: 'running',
+          connectionManager: connectionManager.getSystemStats()
         }
       })
       .get('/api/live/stats', () => {
@@ -154,7 +175,81 @@ export const liveComponentsPlugin: Plugin = {
           service: 'FluxStack Live Components',
           status: 'operational',
           components: componentRegistry.getStats().components,
+          connections: connectionManager.getSystemStats(),
           uptime: process.uptime(),
+          timestamp: new Date().toISOString()
+        }
+      })
+      .get('/api/live/connections', () => {
+        return {
+          success: true,
+          connections: connectionManager.getAllConnectionMetrics(),
+          systemStats: connectionManager.getSystemStats(),
+          timestamp: new Date().toISOString()
+        }
+      })
+      .get('/api/live/connections/:connectionId', ({ params }) => {
+        const metrics = connectionManager.getConnectionMetrics(params.connectionId)
+        if (!metrics) {
+          return {
+            success: false,
+            error: 'Connection not found'
+          }
+        }
+        return {
+          success: true,
+          connection: metrics,
+          timestamp: new Date().toISOString()
+        }
+      })
+      .get('/api/live/pools/:poolId/stats', ({ params }) => {
+        const stats = connectionManager.getPoolStats(params.poolId)
+        if (!stats) {
+          return {
+            success: false,
+            error: 'Pool not found'
+          }
+        }
+        return {
+          success: true,
+          pool: params.poolId,
+          stats,
+          timestamp: new Date().toISOString()
+        }
+      })
+      .get('/api/live/performance/dashboard', () => {
+        return {
+          success: true,
+          dashboard: performanceMonitor.generateDashboard(),
+          timestamp: new Date().toISOString()
+        }
+      })
+      .get('/api/live/performance/components/:componentId', ({ params }) => {
+        const metrics = performanceMonitor.getComponentMetrics(params.componentId)
+        if (!metrics) {
+          return {
+            success: false,
+            error: 'Component metrics not found'
+          }
+        }
+        
+        const alerts = performanceMonitor.getComponentAlerts(params.componentId)
+        const suggestions = performanceMonitor.getComponentSuggestions(params.componentId)
+        
+        return {
+          success: true,
+          component: params.componentId,
+          metrics,
+          alerts,
+          suggestions,
+          timestamp: new Date().toISOString()
+        }
+      })
+      .post('/api/live/performance/alerts/:alertId/resolve', ({ params }) => {
+        const resolved = performanceMonitor.resolveAlert(params.alertId)
+        return {
+          success: resolved,
+          message: resolved ? 'Alert resolved' : 'Alert not found',
           timestamp: new Date().toISOString()
         }
       })

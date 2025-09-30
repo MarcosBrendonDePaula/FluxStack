@@ -101,28 +101,45 @@ export class FileUploadManager {
       }
 
       // Calculate progress
-      const bytesUploaded = upload.receivedChunks.size * 64 * 1024 // Approximate
-      const progress = Math.min((upload.receivedChunks.size / totalChunks) * 100, 100)
+      const progress = (upload.receivedChunks.size / totalChunks) * 100
+      const bytesUploaded = upload.receivedChunks.size * (upload.fileSize / totalChunks)
 
-      const progressResponse: FileUploadProgressResponse = {
+      // Check if upload is complete
+      if (upload.receivedChunks.size === totalChunks) {
+        await this.finalizeUpload(upload)
+      }
+
+      return {
         type: 'FILE_UPLOAD_PROGRESS',
         componentId: upload.componentId,
-        uploadId,
+        uploadId: upload.uploadId,
         chunkIndex,
         totalChunks,
-        bytesUploaded,
+        bytesUploaded: Math.min(bytesUploaded, upload.fileSize),
         totalBytes: upload.fileSize,
-        progress,
-        requestId: message.requestId,
+        progress: Math.min(progress, 100),
         timestamp: Date.now()
       }
 
-      return progressResponse
-
     } catch (error: any) {
-      console.error('❌ Chunk receive failed:', error.message)
-      this.activeUploads.delete(message.uploadId)
-      return null
+      console.error(`❌ Chunk receive failed for upload ${message.uploadId}:`, error.message)
+      throw error
+    }
+  }
+
+  private async finalizeUpload(upload: ActiveUpload): Promise<void> {
+    try {
+      console.log(`✅ Upload completed: ${upload.uploadId}`)
+      
+      // Assemble file from chunks
+      const fileUrl = await this.assembleFile(upload)
+      
+      // Cleanup
+      this.activeUploads.delete(upload.uploadId)
+      
+    } catch (error: any) {
+      console.error(`❌ Upload finalization failed for ${upload.uploadId}:`, error.message)
+      throw error
     }
   }
 
@@ -135,8 +152,10 @@ export class FileUploadManager {
         throw new Error(`Upload ${uploadId} not found`)
       }
 
-      // Check if all chunks received
-      const missingChunks = []
+      console.log(`✅ Upload completed: ${uploadId}`)
+
+      // Check for missing chunks
+      const missingChunks: number[] = []
       for (let i = 0; i < upload.totalChunks; i++) {
         if (!upload.receivedChunks.has(i)) {
           missingChunks.push(i)
@@ -147,92 +166,81 @@ export class FileUploadManager {
         throw new Error(`Missing chunks: ${missingChunks.join(', ')}`)
       }
 
-      // Reconstruct file from chunks
-      const chunks: string[] = []
-      for (let i = 0; i < upload.totalChunks; i++) {
-        chunks.push(upload.receivedChunks.get(i)!)
+      // Assemble file from chunks
+      const fileUrl = await this.assembleFile(upload)
+
+      // Cleanup
+      this.activeUploads.delete(uploadId)
+
+      return {
+        type: 'FILE_UPLOAD_COMPLETE',
+        componentId: upload.componentId,
+        uploadId: upload.uploadId,
+        success: true,
+        filename: upload.filename,
+        fileUrl,
+        timestamp: Date.now()
       }
 
-      // Combine all base64 chunks
-      const base64Data = chunks.join('')
+    } catch (error: any) {
+      console.error(`❌ Upload completion failed for ${message.uploadId}:`, error.message)
       
-      // Convert base64 to buffer
-      const buffer = Buffer.from(base64Data, 'base64')
-
-      // Validate reconstructed file size
-      if (buffer.length !== upload.fileSize) {
-        throw new Error(`File size mismatch: expected ${upload.fileSize}, got ${buffer.length}`)
+      return {
+        type: 'FILE_UPLOAD_COMPLETE',
+        componentId: '',
+        uploadId: message.uploadId,
+        success: false,
+        error: error.message,
+        timestamp: Date.now()
       }
+    }
+  }
 
-      // Create uploads directory if needed
-      const uploadsDir = join(process.cwd(), 'uploads', 'avatars')
+  private async assembleFile(upload: ActiveUpload): Promise<string> {
+    try {
+      // Create uploads directory if it doesn't exist
+      const uploadsDir = './uploads'
       if (!existsSync(uploadsDir)) {
         await mkdir(uploadsDir, { recursive: true })
       }
 
       // Generate unique filename
       const timestamp = Date.now()
-      const randomId = Math.random().toString(36).substring(2, 8)
-      const extension = extname(upload.filename) || '.jpg'
-      const filename = `avatar-${timestamp}-${randomId}${extension}`
-      const filepath = join(uploadsDir, filename)
+      const extension = extname(upload.filename)
+      const baseName = upload.filename.replace(extension, '')
+      const safeFilename = `${baseName}_${timestamp}${extension}`
+      const filePath = join(uploadsDir, safeFilename)
 
-      // Write file
-      await writeFile(filepath, buffer)
-
-      // Generate file URL (using static files plugin)
-      const fileUrl = `/api/uploads/avatars/${filename}`
-
-      // Cleanup upload record
-      this.activeUploads.delete(uploadId)
-
-      const duration = Date.now() - upload.startTime
-      console.log('✅ Upload completed:', {
-        uploadId,
-        filename,
-        fileSize: upload.fileSize,
-        chunks: upload.totalChunks,
-        duration: `${duration}ms`,
-        fileUrl
-      })
-
-      return {
-        type: 'FILE_UPLOAD_COMPLETE',
-        componentId: upload.componentId,
-        uploadId,
-        success: true,
-        filename,
-        fileUrl,
-        requestId: message.requestId,
-        timestamp: Date.now()
+      // Assemble chunks in order
+      const chunks: Buffer[] = []
+      for (let i = 0; i < upload.totalChunks; i++) {
+        const chunkData = upload.receivedChunks.get(i)
+        if (chunkData) {
+          chunks.push(Buffer.from(chunkData, 'base64'))
+        }
       }
 
-    } catch (error: any) {
-      console.error('❌ Upload completion failed:', error.message)
-      
-      // Cleanup failed upload
-      this.activeUploads.delete(message.uploadId)
+      // Write assembled file
+      const fileBuffer = Buffer.concat(chunks)
+      await writeFile(filePath, fileBuffer)
 
-      return {
-        type: 'FILE_UPLOAD_COMPLETE',
-        componentId: message.componentId,
-        uploadId: message.uploadId,
-        success: false,
-        error: error.message,
-        requestId: message.requestId,
-        timestamp: Date.now()
-      }
+      console.log(`📁 File assembled: ${filePath}`)
+      return `/uploads/${safeFilename}`
+
+    } catch (error) {
+      console.error('❌ File assembly failed:', error)
+      throw error
     }
   }
 
-  private cleanupStaleUploads() {
+  private cleanupStaleUploads(): void {
     const now = Date.now()
     const staleUploads: string[] = []
 
-    for (const [uploadId, upload] of this.activeUploads.entries()) {
+    for (const [uploadId, upload] of this.activeUploads) {
       const timeSinceLastChunk = now - upload.lastChunkTime
       
-      if (timeSinceLastChunk > this.chunkTimeout) {
+      if (timeSinceLastChunk > this.chunkTimeout * 2) {
         staleUploads.push(uploadId)
       }
     }
@@ -254,16 +262,11 @@ export class FileUploadManager {
   getStats() {
     return {
       activeUploads: this.activeUploads.size,
-      uploads: Array.from(this.activeUploads.values()).map(upload => ({
-        uploadId: upload.uploadId,
-        componentId: upload.componentId,
-        filename: upload.filename,
-        progress: (upload.receivedChunks.size / upload.totalChunks) * 100,
-        duration: Date.now() - upload.startTime
-      }))
+      maxUploadSize: this.maxUploadSize,
+      allowedTypes: this.allowedTypes
     }
   }
 }
 
-// Global file upload manager instance
+// Global instance
 export const fileUploadManager = new FileUploadManager()
