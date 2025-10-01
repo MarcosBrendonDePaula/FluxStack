@@ -162,6 +162,7 @@ export class ProjectCreator {
       },
       dependencies: {
         "@elysiajs/eden": "^1.3.2",
+        "@sinclair/typebox": "^0.34.41",
         "@vitejs/plugin-react": "^4.0.0",
         elysia: "latest",
         react: "^18.2.0",
@@ -233,6 +234,42 @@ lockfile = true
 `
 
     await Bun.write(join(this.targetDir, "bunfig.toml"), bunConfig)
+
+    // Vite config
+    const viteConfig = `import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import { resolve } from 'path'
+
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, '.'),
+      '@/core': resolve(__dirname, './core'),
+      '@/app': resolve(__dirname, './app'),
+      '@/config': resolve(__dirname, './config'),
+      '@/shared': resolve(__dirname, './app/shared')
+    }
+  },
+  server: {
+    port: 5173,
+    host: 'localhost',
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true
+      }
+    }
+  },
+  build: {
+    outDir: 'dist/client',
+    emptyOutDir: true,
+    sourcemap: true
+  }
+})
+`
+
+    await Bun.write(join(this.targetDir, "vite.config.ts"), viteConfig)
 
     // Environment file
     const envContent = `# FluxStack Environment Variables
