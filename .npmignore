@@ -15,9 +15,12 @@ coverage/
 
 # Build artifacts
 dist/
-build/
 .vite/
 node_modules/
+
+# Exclude build directories but keep core/build
+/build/
+!core/build/
 
 # IDE and editor files
 .vscode/
