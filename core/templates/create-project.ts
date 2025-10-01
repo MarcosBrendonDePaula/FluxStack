@@ -527,44 +527,6 @@ Built with ❤️ using FluxStack framework.
 `
 
     await Bun.write(join(this.targetDir, "README.md"), readme)
-
-    // .gitignore
-    const gitignore = `# Dependencies
-node_modules/
-*.lockb
-
-# Build outputs
-dist/
-build/
-.next/
-
-# Environment variables
-.env.local
-.env.production
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
-logs/
-
-# Runtime
-.tmp/
-.cache/
-
-# Bun
-bun.lockb
-`
-
-    await Bun.write(join(this.targetDir, ".gitignore"), gitignore)
   }
 
   private async installDependencies() {
