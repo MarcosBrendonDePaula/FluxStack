@@ -110,8 +110,5 @@
   "engines": {
     "bun": ">=1.2.0"
   },
-  "preferredPackageManager": "bun",
-  "overrides": {
-    "rollup": "npm:@rollup/wasm-node"
-  }
+  "preferredPackageManager": "bun"
 }

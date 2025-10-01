@@ -1,2 +1,0 @@
-{"timestamp":"2025-09-30T18:50:30.309Z","level":"warn","message":"Rate limit approaching","context":{"requestId":"942bd7a2-8b0b-41c1-891b-9f55b88589d7","userId":123},"meta":{"service":"test-service","version":"1.0.0","remaining":5}}
-{"timestamp":"2025-09-30T18:58:41.431Z","level":"warn","message":"Rate limit approaching","context":{"requestId":"56d0f79d-6554-40df-ac44-3f6c15595c69","userId":123},"meta":{"service":"test-service","version":"1.0.0","remaining":5}}
