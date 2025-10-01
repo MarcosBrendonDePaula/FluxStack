@@ -93,8 +93,15 @@ export class ProjectCreator {
   private async copyDirectory(src: string, dest: string, exclude: string[] = []) {
     await mkdir(dest, { recursive: true })
     
-    const entries = await Bun.file(src).exists() ? 
-      await (await import("fs/promises")).readdir(src, { withFileTypes: true }) : []
+    const fs = await import("fs/promises")
+    let entries: any[] = []
+    
+    try {
+      entries = await fs.readdir(src, { withFileTypes: true })
+    } catch (error) {
+      console.warn(`Warning: Could not read directory ${src}`)
+      return
+    }
     
     for (const entry of entries) {
       if (exclude.includes(entry.name)) continue
