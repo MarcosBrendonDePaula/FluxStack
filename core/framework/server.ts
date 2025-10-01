@@ -2,6 +2,7 @@ import { Elysia } from "elysia"
 import type { FluxStackConfig, FluxStackContext } from "../types"
 import type { Plugin, PluginContext, PluginUtils } from "../plugins/types"
 import { PluginRegistry } from "../plugins/registry"
+import { PluginManager } from "../plugins/manager"
 import { getConfigSync, getEnvironmentInfo } from "../config"
 import { logger } from "../utils/logger"
 import { createErrorHandler } from "../utils/errors/handlers"
@@ -11,6 +12,7 @@ export class FluxStackFramework {
   private app: Elysia
   private context: FluxStackContext
   private pluginRegistry: PluginRegistry
+  private pluginManager: PluginManager
   private pluginContext: PluginContext
   private isStarted: boolean = false
 
@@ -29,6 +31,8 @@ export class FluxStackFramework {
 
     this.app = new Elysia()
     this.pluginRegistry = new PluginRegistry()
+    
+
 
     // Create plugin utilities
     const pluginUtils: PluginUtils = {
@@ -83,6 +87,13 @@ export class FluxStackFramework {
       utils: pluginUtils
     }
 
+    // Initialize plugin manager
+    this.pluginManager = new PluginManager({
+      config: fullConfig,
+      logger: pluginLogger as any,
+      app: this.app
+    })
+
     this.setupCors()
     this.setupHooks()
     this.setupErrorHandling()
@@ -91,6 +102,25 @@ export class FluxStackFramework {
       environment: envInfo.name,
       port: fullConfig.server.port
     })
+    
+    // Initialize automatic plugin discovery in background
+    this.initializeAutomaticPlugins().catch(error => {
+      logger.error('Failed to initialize automatic plugins', { error })
+    })
+  }
+
+  private async initializeAutomaticPlugins() {
+    try {
+      await this.pluginManager.initialize()
+      const stats = this.pluginManager.getRegistry().getStats()
+      logger.framework('Automatic plugins loaded successfully', {
+        pluginCount: stats.totalPlugins,
+        enabledPlugins: stats.enabledPlugins,
+        disabledPlugins: stats.disabledPlugins
+      })
+    } catch (error) {
+      logger.error('Failed to initialize automatic plugins', { error })
+    }
   }
 
   private setupCors() {

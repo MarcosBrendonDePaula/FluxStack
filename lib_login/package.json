@@ -1,0 +1,92 @@
+{
+  "name": "@fluxstack/crypto-auth",
+  "version": "1.0.0",
+  "description": "Ed25519 cryptographic authentication library for modern web applications",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    },
+    "./client": {
+      "import": "./dist/client/index.js",
+      "require": "./dist/client/index.cjs",
+      "types": "./dist/client/index.d.ts"
+    },
+    "./server": {
+      "import": "./dist/server/index.js",
+      "require": "./dist/server/index.cjs",
+      "types": "./dist/server/index.d.ts"
+    },
+    "./react": {
+      "import": "./dist/client/react/index.js",
+      "require": "./dist/client/react/index.cjs",
+      "types": "./dist/client/react/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "type-check": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "authentication",
+    "ed25519",
+    "cryptography",
+    "session",
+    "web3",
+    "zero-knowledge",
+    "privacy",
+    "security",
+    "react",
+    "typescript"
+  ],
+  "author": "FluxStack",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fluxstack/crypto-auth.git"
+  },
+  "bugs": {
+    "url": "https://github.com/fluxstack/crypto-auth/issues"
+  },
+  "homepage": "https://github.com/fluxstack/crypto-auth#readme",
+  "peerDependencies": {
+    "react": ">=16.8.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@noble/curves": "^1.2.0",
+    "@noble/hashes": "^1.3.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "react": "^18.0.0",
+    "tsup": "^7.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^0.34.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

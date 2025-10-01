@@ -8,7 +8,7 @@ export const vitePlugin: Plugin = {
   version: "1.0.0",
   description: "Enhanced Vite integration plugin for FluxStack with improved error handling and monitoring",
   author: "FluxStack Team",
-  priority: "high", // Should run early to setup proxying
+  priority: 800, // Should run early to setup proxying
   category: "development",
   tags: ["vite", "development", "hot-reload"],
   dependencies: [], // No dependencies

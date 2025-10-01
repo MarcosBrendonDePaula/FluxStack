@@ -106,5 +106,7 @@ app.listen(() => {
   console.log('💡 Mude as env vars e reinicie para ver a diferença!')
 })
 
+
+
 // Exportar tipo da aplicação para Eden Treaty (método correto)
 export type App = typeof app

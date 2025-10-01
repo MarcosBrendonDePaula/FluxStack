@@ -6,7 +6,7 @@ export const swaggerPlugin: Plugin = {
   version: '1.0.0',
   description: 'Enhanced Swagger documentation plugin for FluxStack with customizable options',
   author: 'FluxStack Team',
-  priority: 'normal',
+  priority: 500,
   category: 'documentation',
   tags: ['swagger', 'documentation', 'api'],
   dependencies: [], // No dependencies

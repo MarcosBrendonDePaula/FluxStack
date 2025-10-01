@@ -16,6 +16,70 @@ async function registerBuiltInCommands() {
   cliRegistry.register(generateCommand)
   cliRegistry.register(interactiveGenerateCommand)
   
+  // Register plugin dependency commands
+  cliRegistry.register({
+    name: 'plugin:deps',
+    description: 'Gerenciar dependências de plugins',
+    category: 'Plugins',
+    handler: async (args, options, context) => {
+      if (args.length === 0) {
+        console.log(`
+⚡ FluxStack Plugin Dependencies Manager
+
+Usage:
+  flux plugin:deps install     Install plugin dependencies
+  flux plugin:deps list        List plugin dependencies  
+  flux plugin:deps check       Check for dependency conflicts
+  flux plugin:deps clean       Clean unused dependencies
+
+Examples:
+  flux plugin:deps install --dry-run    # Show what would be installed
+  flux plugin:deps list --plugin crypto-auth  # Show specific plugin deps
+  flux plugin:deps check                # Check for conflicts
+        `)
+        return
+      }
+      
+      // Handle subcommands
+      const subcommand = args[0]
+      const subArgs = args.slice(1)
+      
+      // Import dinamicamente para evitar problemas de inicialização
+      const { createPluginDepsCommand } = await import('./commands/plugin-deps')
+      const cmd = createPluginDepsCommand()
+      
+      switch (subcommand) {
+        case 'install':
+          const installCmd = cmd.commands.find(c => c.name() === 'install')
+          if (installCmd) {
+            await installCmd.parseAsync(['node', 'cli', ...subArgs], { from: 'user' })
+          }
+          break
+        case 'list':
+          const listCmd = cmd.commands.find(c => c.name() === 'list')
+          if (listCmd) {
+            await listCmd.parseAsync(['node', 'cli', ...subArgs], { from: 'user' })
+          }
+          break
+        case 'check':
+          const checkCmd = cmd.commands.find(c => c.name() === 'check')
+          if (checkCmd) {
+            await checkCmd.parseAsync(['node', 'cli', ...subArgs], { from: 'user' })
+          }
+          break
+        case 'clean':
+          const cleanCmd = cmd.commands.find(c => c.name() === 'clean')
+          if (cleanCmd) {
+            await cleanCmd.parseAsync(['node', 'cli', ...subArgs], { from: 'user' })
+          }
+          break
+        default:
+          console.error(`❌ Unknown subcommand: ${subcommand}`)
+          console.error('Available subcommands: install, list, check, clean')
+      }
+    }
+  })
+  
   // Help command
   cliRegistry.register({
     name: 'help',

@@ -1,0 +1,37 @@
+{
+  "name": "@fluxstack/example-plugin",
+  "version": "1.0.0",
+  "description": "Plugin de exemplo com dependências",
+  "main": "index.ts",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "lodash": "^4.17.21",
+    "date-fns": "^2.30.0"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0",
+    "typescript": ">=4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.14.0"
+  },
+  "fluxstack": {
+    "version": "^1.0.0",
+    "hooks": [
+      "setup",
+      "onRequest",
+      "onResponse"
+    ],
+    "category": "utility",
+    "tags": [
+      "http",
+      "utility",
+      "example"
+    ]
+  }
+}
