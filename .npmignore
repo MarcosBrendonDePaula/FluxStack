@@ -87,10 +87,10 @@ publish.sh
 test-scripts.md
 
 # Config files for development
-eslint.config.js
-tailwind.config.js
-vitest.config*.ts
-workspace.json
+# eslint.config.js
+# tailwind.config.js
+# vitest.config*.ts
+# workspace.json
 
 # Examples (keep basic ones)
 examples/
