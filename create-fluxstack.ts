@@ -62,7 +62,6 @@ program
         'tsconfig.json',
         'vite.config.ts',
         '.env.example',   // ✅ Use .env.example as template
-        '.gitignore',     // ✅ Git ignore file for proper repository setup
         'CLAUDE.md',      // ✅ Project instructions for AI assistants
         'README.md'
       ]
@@ -75,6 +74,123 @@ program
           cpSync(sourcePath, destPath, { recursive: true })
         }
       }
+      
+      // Generate .gitignore using template (instead of copying)
+      const gitignoreContent = `# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Production builds
+/dist
+/build
+/.next/
+/out/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Dependency directories
+jspm_packages/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# Next.js build output
+.next
+
+# Nuxt.js build / generate output
+.nuxt
+dist
+
+# Storybook build outputs
+.out
+.storybook-out
+
+# Temporary folders
+tmp/
+temp/
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# FluxStack specific
+uploads/
+public/uploads/
+.fluxstack/
+
+# Bun
+bun.lockb
+`
+      writeFileSync(join(projectPath, '.gitignore'), gitignoreContent)
       
       // Create package.json from template
       const packageJsonPath = join(projectPath, 'package.json')
