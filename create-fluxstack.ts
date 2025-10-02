@@ -59,6 +59,7 @@ program
         'app',
         'ai-context',     // ✅ CRITICAL: Copy AI documentation for users
         'bun.lock',       // ✅ CRITICAL: Copy lockfile to maintain working versions
+        'package.json',   // ✅ Copy real package.json from framework
         'tsconfig.json',
         'vite.config.ts',
         '.env.example',   // ✅ Use .env.example as template
@@ -192,37 +193,18 @@ bun.lockb
 `
       writeFileSync(join(projectPath, '.gitignore'), gitignoreContent)
       
-      // Create package.json from template
+      // Customize package.json with project name
       const packageJsonPath = join(projectPath, 'package.json')
-      const templatePath = join(import.meta.dir, 'package-template.json')
-      
-      if (existsSync(templatePath)) {
-        const templateContent = readFileSync(templatePath, 'utf-8')
-        const packageTemplate = templateContent.replace(/PROJECT_NAME/g, projectName)
-        writeFileSync(packageJsonPath, packageTemplate)
-      } else {
-        // Fallback template if package-template.json doesn't exist
-        const fallbackPackageJson = {
-          "name": projectName,
-          "version": "1.0.0",
-          "description": `${projectName} - FluxStack application`,
-          "keywords": ["fluxstack", "bun", "typescript", "full-stack", "elysia", "react", "vite"],
-          "author": "Your Name",
-          "license": "MIT",
-          "type": "module",
-          "scripts": {
-            "dev": "bun core/cli/index.ts dev",
-            "dev:clean": "bun run-clean.ts",
-            "dev:backend": "bun core/cli/index.ts dev:backend",
-            "dev:frontend": "bun core/cli/index.ts dev:frontend",
-            "build": "bun core/cli/index.ts build",
-            "build:backend": "bun core/cli/index.ts build:backend",
-            "build:frontend": "bun core/cli/index.ts build:frontend",
-            "start": "NODE_ENV=production bun app/server/index.ts",
-            "typecheck": "bunx tsc --noEmit"
-          }
-        }
-        writeFileSync(packageJsonPath, JSON.stringify(fallbackPackageJson, null, 2))
+      if (existsSync(packageJsonPath)) {
+        const packageContent = readFileSync(packageJsonPath, 'utf-8')
+        const packageJson = JSON.parse(packageContent)
+        
+        // Update project-specific fields
+        packageJson.name = projectName
+        packageJson.description = `${projectName} - FluxStack application`
+        packageJson.version = "1.0.0"
+        
+        writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2))
       }
       
       // Create .env from .env.example and set development mode + project name

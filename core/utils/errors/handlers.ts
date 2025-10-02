@@ -157,6 +157,18 @@ export class EnhancedErrorHandler {
       return true
     }
 
+    // Skip logging for Vite internal routes (even if NOT_FOUND logging is enabled)
+    if (error.code === 'NOT_FOUND' && error.metadata?.path) {
+      const path = error.metadata.path
+      if (path.startsWith('/@') || 
+          path.startsWith('/__vite') || 
+          path.includes('/.vite/') ||
+          path.endsWith('.js.map') ||
+          path.endsWith('.css.map')) {
+        return true
+      }
+    }
+
     // Skip logging for rate limit errors to prevent log spam
     if (error.code === 'RATE_LIMIT_EXCEEDED' && !process.env.ENABLE_RATE_LIMIT_LOGS) {
       return true
