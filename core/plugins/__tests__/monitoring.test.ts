@@ -145,7 +145,7 @@ describe('Monitoring Plugin', () => {
     it('should have correct metadata', () => {
       expect(monitoringPlugin.name).toBe('monitoring')
       expect(monitoringPlugin.version).toBe('1.0.0')
-      expect(monitoringPlugin.priority).toBe('high')
+      expect(monitoringPlugin.priority).toBe(900)
       expect(monitoringPlugin.category).toBe('monitoring')
       expect(monitoringPlugin.tags).toContain('monitoring')
       expect(monitoringPlugin.tags).toContain('metrics')

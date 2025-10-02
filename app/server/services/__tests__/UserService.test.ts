@@ -142,7 +142,7 @@ describe('UserService', () => {
       }
 
       await expect(userService.createUser(userData)).rejects.toThrow(
-        'Missing required parameters: name'
+        'Missing required field: name'
       )
     })
 
@@ -153,7 +153,7 @@ describe('UserService', () => {
       }
 
       await expect(userService.createUser(userData)).rejects.toThrow(
-        'Missing required parameters: email'
+        'Missing required field: email'
       )
     })
 

@@ -2,7 +2,7 @@
  * Tests for Enhanced Logger System
  */
 
-import { describe, it, expect, beforeEach, afterEach, mock } from 'bun:test'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { 
   createLogger, 
   ConsoleTransport, 
@@ -18,10 +18,10 @@ describe('Enhanced Logger System', () => {
 
   beforeEach(() => {
     originalConsole = { ...console }
-    console.debug = mock(() => {})
-    console.info = mock(() => {})
-    console.warn = mock(() => {})
-    console.error = mock(() => {})
+    console.debug = vi.fn(() => {})
+    console.info = vi.fn(() => {})
+    console.warn = vi.fn(() => {})
+    console.error = vi.fn(() => {})
   })
 
   afterEach(() => {
@@ -252,7 +252,7 @@ describe('Enhanced Logger System', () => {
       const errorTransport = {
         name: 'error-transport',
         level: 'info' as const,
-        write: mock(() => {
+        write: vi.fn(() => {
           throw new Error('Transport error')
         })
       }
@@ -274,7 +274,7 @@ describe('Enhanced Logger System', () => {
       const asyncErrorTransport = {
         name: 'async-error-transport',
         level: 'info' as const,
-        write: mock(async () => {
+        write: vi.fn(async () => {
           throw new Error('Async transport error')
         })
       }

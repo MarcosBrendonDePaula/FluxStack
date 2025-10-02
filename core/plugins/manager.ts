@@ -448,7 +448,7 @@ export class PluginManager extends EventEmitter {
 
     const context: PluginContext = {
       config: this.config,
-      logger: this.logger,
+      logger: this.logger.child({ plugin: plugin.name }),
       app: this.app,
       utils: createPluginUtils(this.logger),
       registry: this.registry

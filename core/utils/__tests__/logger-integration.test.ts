@@ -3,7 +3,7 @@
  * Tests the complete logging system working together
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'bun:test'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { 
   createLogger, 
   ConsoleTransport, 

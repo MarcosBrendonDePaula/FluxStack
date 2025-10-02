@@ -101,6 +101,9 @@ describe('Core Framework Integration', () => {
 
   describe('Logger Integration', () => {
     it('should use enhanced logger throughout the system', () => {
+      // Clear any previous log calls
+      consoleSpy.info.mockClear()
+      
       // Test basic logger functionality
       logger.info('Test message')
 

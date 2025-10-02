@@ -2,7 +2,7 @@
  * Tests for Logger Transports
  */
 
-import { describe, it, expect, beforeEach, afterEach, mock } from 'bun:test'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { ConsoleTransport, FileTransport, JSONTransport } from '../logger/transports'
 import type { LogEntry } from '../logger/transports'
 import { unlink, readFile, mkdir } from 'fs/promises'
@@ -16,10 +16,10 @@ describe('Logger Transports', () => {
     beforeEach(() => {
       originalConsole = { ...console }
       mockConsole = {
-        debug: mock(() => {}),
-        info: mock(() => {}),
-        warn: mock(() => {}),
-        error: mock(() => {})
+        debug: vi.fn(() => {}),
+        info: vi.fn(() => {}),
+        warn: vi.fn(() => {}),
+        error: vi.fn(() => {})
       }
       Object.assign(console, mockConsole)
     })
