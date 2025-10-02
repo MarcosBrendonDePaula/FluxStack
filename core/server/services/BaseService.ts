@@ -71,10 +71,15 @@ export abstract class BaseService {
     fn: () => Promise<T> | T,
     metadata?: any
   ): Promise<T> {
-    this.logOperation(`Starting ${operation}`, metadata)
+    const startTime = Date.now()
+    this.logger.debug(`Starting ${operation}`, metadata)
     try {
       const result = await fn()
-      this.logOperation(`Completed ${operation}`, metadata)
+      const duration = Date.now() - startTime
+      this.logger.debug(`Completed ${operation}`, { 
+        ...metadata, 
+        duration: `${duration}ms` 
+      })
       return result
     } catch (error) {
       this.logError(operation, error as Error, metadata)

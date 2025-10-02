@@ -56,6 +56,12 @@ vi.mock('elysia', () => ({
     onError: vi.fn().mockReturnThis(),
     options: vi.fn().mockReturnThis(),
     use: vi.fn().mockReturnThis(),
+    head: vi.fn().mockReturnThis(),
+    get: vi.fn().mockReturnThis(),
+    post: vi.fn().mockReturnThis(),
+    put: vi.fn().mockReturnThis(),
+    delete: vi.fn().mockReturnThis(),
+    patch: vi.fn().mockReturnThis(),
     listen: vi.fn((_port, callback) => {
       if (callback) callback()
     })

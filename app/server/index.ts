@@ -2,8 +2,13 @@
 import { FluxStackFramework, loggerPlugin, vitePlugin, swaggerPlugin, staticPlugin, liveComponentsPlugin, staticFilesPlugin } from "@/core/server"
 import { isDevelopment } from "@/core/utils/helpers"
 import { apiRoutes } from "./routes"
-// Import sistema de env dinâmico simplificado
-import { env, helpers } from "@/core/utils/env-runtime-v2"
+// Environment helpers
+const env = process.env
+const helpers = {
+  isDevelopment: () => env.NODE_ENV === 'development' || !env.NODE_ENV,
+  isProduction: () => env.NODE_ENV === 'production',
+  isTest: () => env.NODE_ENV === 'test'
+}
 // Import live components registration
 import "./live/register-components"
 

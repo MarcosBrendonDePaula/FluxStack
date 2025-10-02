@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react'
+import React, { useState, useCallback, useRef, useEffect } from 'react'
 import { logClientError } from '../errors'
 import { getErrorMessage, isRetryableError, shouldShowErrorToUser } from '../eden-api'
 
@@ -117,7 +117,7 @@ export function useErrorHandler(options: UseErrorHandlerOptions = {}) {
 
       throw error
     }
-  }, [errorState?.retryCount, errorState?.canRetry, errorState?.isRetrying, maxRetries, showUserFriendlyMessages, onRetry, onMaxRetriesReached])
+  }, [errorState, maxRetries, showUserFriendlyMessages, onRetry, onMaxRetriesReached])
 
   const clearError = useCallback(() => {
     if (retryTimeoutRef.current) {
@@ -199,13 +199,13 @@ export function useApiCall<T>(
   }, [apiCall, errorHandler])
 
   // Execute immediately if requested
-  React.useEffect(() => {
+  useEffect(() => {
     if (immediate) {
       execute()
     }
-  }, [immediate, ...dependencies])
+  }, [immediate, execute, ...dependencies])
 
-  const { retry: errorHandlerRetry, ...restErrorHandler } = errorHandler
+  const { retry: errorHandlerRetry, ...restErrorHandler } = errorHandler || {}
   
   return {
     data,
@@ -246,7 +246,7 @@ export function useFormSubmission<T>(
     return errorHandler.retry(() => submit(formData))
   }, [submit, errorHandler])
 
-  const { retry: errorHandlerRetry, ...restErrorHandler } = errorHandler
+  const { retry: errorHandlerRetry, ...restErrorHandler } = errorHandler || {}
 
   return {
     submit,

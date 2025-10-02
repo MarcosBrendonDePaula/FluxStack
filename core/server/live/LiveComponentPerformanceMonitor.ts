@@ -904,6 +904,16 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
   }
 
   /**
+   * Reset performance monitor (for testing)
+   */
+  reset(): void {
+    this.metrics.clear()
+    this.alerts.clear()
+    this.suggestions.clear()
+    this.alertCooldowns.clear()
+  }
+
+  /**
    * Shutdown performance monitor
    */
   shutdown(): void {
@@ -917,10 +927,7 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
       this.performanceObserver.disconnect()
     }
 
-    this.metrics.clear()
-    this.alerts.clear()
-    this.suggestions.clear()
-    this.alertCooldowns.clear()
+    this.reset()
 
     console.log('✅ Performance Monitor shutdown complete')
   }

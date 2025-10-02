@@ -24,9 +24,7 @@ export interface ConfigPrecedence {
  * Get current environment information
  */
 export function getEnvironmentInfo(): EnvironmentInfo {
-  // Import here to avoid circular dependency
-  const { env } = require('../utils/env-runtime-v2')
-  const nodeEnv = env.NODE_ENV
+  const nodeEnv = process.env.NODE_ENV || 'development'
 
   return {
     name: nodeEnv,

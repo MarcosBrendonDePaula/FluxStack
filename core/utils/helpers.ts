@@ -87,21 +87,15 @@ export const throttle = <T extends (...args: any[]) => any>(
 }
 
 export const isProduction = (): boolean => {
-  // Import here to avoid circular dependency  
-  const { env } = require('./env-runtime-v2')
-  return env.NODE_ENV === 'production'
+  return process.env.NODE_ENV === 'production'
 }
 
 export const isDevelopment = (): boolean => {
-  // Import here to avoid circular dependency
-  const { env } = require('./env-runtime-v2')
-  return env.NODE_ENV === 'development' || !env.NODE_ENV
+  return process.env.NODE_ENV === 'development' || !process.env.NODE_ENV
 }
 
 export const isTest = (): boolean => {
-  // Import here to avoid circular dependency
-  const { env } = require('./env-runtime-v2')
-  return env.NODE_ENV === 'test'
+  return process.env.NODE_ENV === 'test'
 }
 
 export const deepMerge = <T extends Record<string, any>>(target: T, source: Partial<T>): T => {
