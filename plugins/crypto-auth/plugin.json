@@ -1,0 +1,29 @@
+{
+  "name": "crypto-auth",
+  "version": "1.0.0",
+  "description": "Sistema de autenticação baseado em criptografia Ed25519 para FluxStack",
+  "author": "FluxStack Team",
+  "license": "MIT",
+  "main": "index.ts",
+  "keywords": ["fluxstack", "plugin", "authentication", "ed25519", "cryptography"],
+  "fluxstack": {
+    "plugin": true,
+    "version": "^1.0.0",
+    "category": "auth",
+    "tags": ["authentication", "ed25519", "cryptography", "security"]
+  },
+  "dependencies": {
+    "@noble/curves": "^1.2.0",
+    "@noble/hashes": "^1.3.2",
+    "react": ">=16.8.0"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0"
+  },
+  "files": [
+    "index.ts",
+    "server/",
+    "client/",
+    "README.md"
+  ]
+}

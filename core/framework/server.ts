@@ -73,7 +73,7 @@ export class FluxStackFramework {
       info: (message: string, meta?: any) => logger.info(message, meta),
       warn: (message: string, meta?: any) => logger.warn(message, meta),
       error: (message: string, meta?: any) => logger.error(message, meta),
-      child: (context: any) => (logger as any).child(context),
+      child: (context: any) => (logger as any).child ? (logger as any).child(context) : logger,
       time: (label: string) => (logger as any).time(label),
       timeEnd: (label: string) => (logger as any).timeEnd(label),
       request: (method: string, path: string, status?: number, duration?: number) =>

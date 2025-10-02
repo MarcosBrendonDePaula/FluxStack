@@ -31,6 +31,7 @@ export class Bundler {
         stderr: "pipe",
         env: {
           ...process.env,
+          NODE_ENV: 'production',  // Force production environment for builds
           VITE_BUILD_OUTDIR: this.config.outDir,
           VITE_BUILD_MINIFY: (this.config.minify || false).toString(),
           VITE_BUILD_SOURCEMAPS: this.config.sourceMaps.toString(),
@@ -72,8 +73,21 @@ export class Bundler {
     console.log("⚡ Bundling server...")
     
     const startTime = Date.now()
+    let liveComponentsGenerator: any = null
     
     try {
+      // 🚀 PRE-BUILD: Auto-generate Live Components registration
+      const generatorModule = await import('./live-components-generator')
+      liveComponentsGenerator = generatorModule.liveComponentsGenerator
+      const discoveredComponents = await liveComponentsGenerator.preBuild()
+      console.log(`🔍 Auto-discovered ${discoveredComponents.length} Live Components for bundle`)
+      
+      // 🔌 PRE-BUILD: Auto-generate FluxStack Plugins registration
+      const pluginsGeneratorModule = await import('./flux-plugins-generator')
+      const fluxPluginsGenerator = pluginsGeneratorModule.fluxPluginsGenerator
+      const discoveredPlugins = await fluxPluginsGenerator.preBuild()
+      console.log(`🔍 Auto-discovered ${discoveredPlugins.length} FluxStack Plugins for bundle`)
+      
       // Ensure output directory exists
       if (!existsSync(this.config.outDir)) {
         mkdirSync(this.config.outDir, { recursive: true })
@@ -109,6 +123,7 @@ export class Bundler {
         stderr: "pipe",
         env: {
           ...process.env,
+          NODE_ENV: 'production',  // Force production environment for builds
           ...options.env
         }
       })
@@ -116,8 +131,20 @@ export class Bundler {
       const exitCode = await buildProcess.exited
       const duration = Date.now() - startTime
       
+      // 🧹 POST-BUILD: Handle auto-generated registration file
+      // (liveComponentsGenerator already available from above)
+      
       if (exitCode === 0) {
         console.log("✅ Server bundle completed")
+        
+        // Keep generated files for production (they're now baked into bundle)
+        await liveComponentsGenerator.postBuild(false)
+        
+        // Cleanup plugins registry
+        const pluginsGeneratorModule = await import('./flux-plugins-generator')
+        const fluxPluginsGenerator = pluginsGeneratorModule.fluxPluginsGenerator
+        await fluxPluginsGenerator.postBuild(false)
+        
         return {
           success: true,
           duration,
@@ -125,8 +152,17 @@ export class Bundler {
           entryPoint: join(this.config.outDir, "index.js")
         }
       } else {
-        const stderr = await new Response(buildProcess.stderr).text()
         console.error("❌ Server bundle failed")
+        
+        // Restore original files since build failed
+        await liveComponentsGenerator.postBuild(false)
+        
+        // Restore plugins registry
+        const pluginsGeneratorModule = await import('./flux-plugins-generator')
+        const fluxPluginsGenerator = pluginsGeneratorModule.fluxPluginsGenerator
+        await fluxPluginsGenerator.postBuild(false)
+        
+        const stderr = await new Response(buildProcess.stderr).text()
         return {
           success: false,
           duration,
@@ -135,6 +171,21 @@ export class Bundler {
       }
     } catch (error) {
       const duration = Date.now() - startTime
+      
+      // 🧹 CLEANUP: Restore original files on error
+      try {
+        if (liveComponentsGenerator) {
+          await liveComponentsGenerator.postBuild(false)
+        }
+        
+        // Cleanup plugins registry
+        const pluginsGeneratorModule = await import('./flux-plugins-generator')
+        const fluxPluginsGenerator = pluginsGeneratorModule.fluxPluginsGenerator
+        await fluxPluginsGenerator.postBuild(false)
+      } catch (cleanupError) {
+        console.warn('⚠️ Failed to cleanup generated files:', cleanupError)
+      }
+      
       return {
         success: false,
         duration,
