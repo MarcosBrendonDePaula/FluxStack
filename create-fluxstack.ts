@@ -59,10 +59,10 @@ program
         'app',
         'ai-context',     // ✅ CRITICAL: Copy AI documentation for users
         'bun.lock',       // ✅ CRITICAL: Copy lockfile to maintain working versions
+        'package.json',   // ✅ Copy real package.json from framework
         'tsconfig.json',
         'vite.config.ts',
         '.env.example',   // ✅ Use .env.example as template
-        '.gitignore',     // ✅ Git ignore file for proper repository setup
         'CLAUDE.md',      // ✅ Project instructions for AI assistants
         'README.md'
       ]
@@ -76,37 +76,135 @@ program
         }
       }
       
-      // Create package.json from template
-      const packageJsonPath = join(projectPath, 'package.json')
-      const templatePath = join(import.meta.dir, 'package-template.json')
+      // Generate .gitignore using template (instead of copying)
+      const gitignoreContent = `# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Production builds
+/dist
+/build
+/.next/
+/out/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Dependency directories
+jspm_packages/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# Next.js build output
+.next
+
+# Nuxt.js build / generate output
+.nuxt
+dist
+
+# Storybook build outputs
+.out
+.storybook-out
+
+# Temporary folders
+tmp/
+temp/
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# FluxStack specific
+uploads/
+public/uploads/
+.fluxstack/
+
+# Bun
+bun.lockb
+`
+      writeFileSync(join(projectPath, '.gitignore'), gitignoreContent)
       
-      if (existsSync(templatePath)) {
-        const templateContent = readFileSync(templatePath, 'utf-8')
-        const packageTemplate = templateContent.replace(/PROJECT_NAME/g, projectName)
-        writeFileSync(packageJsonPath, packageTemplate)
-      } else {
-        // Fallback template if package-template.json doesn't exist
-        const fallbackPackageJson = {
-          "name": projectName,
-          "version": "1.0.0",
-          "description": `${projectName} - FluxStack application`,
-          "keywords": ["fluxstack", "bun", "typescript", "full-stack", "elysia", "react", "vite"],
-          "author": "Your Name",
-          "license": "MIT",
-          "type": "module",
-          "scripts": {
-            "dev": "bun core/cli/index.ts dev",
-            "dev:clean": "bun run-clean.ts",
-            "dev:backend": "bun core/cli/index.ts dev:backend",
-            "dev:frontend": "bun core/cli/index.ts dev:frontend",
-            "build": "bun core/cli/index.ts build",
-            "build:backend": "bun core/cli/index.ts build:backend",
-            "build:frontend": "bun core/cli/index.ts build:frontend",
-            "start": "NODE_ENV=production bun app/server/index.ts",
-            "typecheck": "bunx tsc --noEmit"
-          }
-        }
-        writeFileSync(packageJsonPath, JSON.stringify(fallbackPackageJson, null, 2))
+      // Customize package.json with project name
+      const packageJsonPath = join(projectPath, 'package.json')
+      if (existsSync(packageJsonPath)) {
+        const packageContent = readFileSync(packageJsonPath, 'utf-8')
+        const packageJson = JSON.parse(packageContent)
+        
+        // Update project-specific fields
+        packageJson.name = projectName
+        packageJson.description = `${projectName} - FluxStack application`
+        packageJson.version = "1.0.0"
+        
+        writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2))
       }
       
       // Create .env from .env.example and set development mode + project name

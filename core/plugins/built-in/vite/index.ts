@@ -8,11 +8,11 @@ export const vitePlugin: Plugin = {
   version: "1.0.0",
   description: "Enhanced Vite integration plugin for FluxStack with improved error handling and monitoring",
   author: "FluxStack Team",
-  priority: "high", // Should run early to setup proxying
+  priority: 800, // Should run early to setup proxying
   category: "development",
   tags: ["vite", "development", "hot-reload"],
   dependencies: [], // No dependencies
-  
+
   configSchema: {
     type: "object",
     properties: {
@@ -51,14 +51,14 @@ export const vitePlugin: Plugin = {
         description: "Paths to proxy to Vite (defaults to all non-API paths)"
       },
       excludePaths: {
-        type: "array", 
+        type: "array",
         items: { type: "string" },
         description: "Paths to exclude from Vite proxying"
       }
     },
     additionalProperties: false
   },
-  
+
   defaultConfig: {
     enabled: true,
     port: 5173,
@@ -72,17 +72,17 @@ export const vitePlugin: Plugin = {
 
   setup: async (context: PluginContext) => {
     const config = getPluginConfig(context)
-    
+
     if (!config.enabled || !context.config.client) {
       context.logger.info('Vite plugin disabled or no client configuration found')
       return
     }
-    
+
     const vitePort = config.port || context.config.client.port || 5173
     const viteHost = config.host || "localhost"
-    
+
     context.logger.info(`🎨 Starting Vite dev server programmatically on ${viteHost}:${vitePort}`)
-    
+
     try {
       // Start Vite dev server programmatically
       viteServer = await createServer({
@@ -93,21 +93,21 @@ export const vitePlugin: Plugin = {
           host: viteHost
         }
       })
-      
+
       await viteServer.listen()
       viteServer.printUrls()
-      
+
       context.logger.info(`✅ Vite server started successfully on ${viteHost}:${vitePort}`)
       context.logger.info('🔄 Hot reload coordination active - Zero órfãos!')
-      
-      // Store Vite config in context for later use
-      ;(context as any).viteConfig = {
-        port: vitePort,
-        host: viteHost,
-        ...config,
-        server: viteServer
-      }
-      
+
+        // Store Vite config in context for later use
+        ; (context as any).viteConfig = {
+          port: vitePort,
+          host: viteHost,
+          ...config,
+          server: viteServer
+        }
+
       // Setup cleanup on process exit
       const cleanup = async () => {
         if (viteServer) {
@@ -116,21 +116,21 @@ export const vitePlugin: Plugin = {
           viteServer = null
         }
       }
-      
+
       process.on('SIGINT', cleanup)
       process.on('SIGTERM', cleanup)
       process.on('exit', cleanup)
-      
+
     } catch (error) {
       context.logger.error('❌ Failed to start Vite server programmatically:', error)
       context.logger.info('⚠️ Falling back to monitoring mode...')
-      
-      // Fallback to monitoring if programmatic start fails
-      ;(context as any).viteConfig = {
-        port: vitePort,
-        host: viteHost,
-        ...config
-      }
+
+        // Fallback to monitoring if programmatic start fails
+        ; (context as any).viteConfig = {
+          port: vitePort,
+          host: viteHost,
+          ...config
+        }
       monitorVite(context, viteHost, vitePort, config)
     }
   },
@@ -138,7 +138,7 @@ export const vitePlugin: Plugin = {
   onServerStart: async (context: PluginContext) => {
     const config = getPluginConfig(context)
     const viteConfig = (context as any).viteConfig
-    
+
     if (config.enabled && viteConfig) {
       context.logger.info(`Vite integration active - monitoring ${viteConfig.host}:${viteConfig.port}`)
     }
@@ -149,27 +149,70 @@ export const vitePlugin: Plugin = {
     if (requestContext.path.startsWith("/api") || requestContext.path.startsWith("/swagger")) {
       return
     }
-    
+
+    // For Vite internal routes, proxy directly to Vite server
+    if (requestContext.path.startsWith("/@") ||           // All Vite internal routes (/@vite/, /@fs/, /@react-refresh, etc.)
+      requestContext.path.startsWith("/__vite") ||      // Vite HMR and dev routes
+      requestContext.path.startsWith("/node_modules") || // Direct node_modules access
+      requestContext.path.includes("/.vite/") ||        // Vite cache and deps
+      requestContext.path.endsWith(".js.map") ||        // Source maps
+      requestContext.path.endsWith(".css.map")) {       // CSS source maps
+
+      // Use fixed configuration for Vite proxy
+      const viteHost = "localhost"
+      const vitePort = 5173
+
+      try {
+        const url = new URL(requestContext.request.url)
+        const viteUrl = `http://${viteHost}:${vitePort}${requestContext.path}${url.search}`
+
+        // Forward request to Vite
+        const response = await fetch(viteUrl, {
+          method: requestContext.method,
+          headers: requestContext.headers,
+          body: requestContext.method !== 'GET' && requestContext.method !== 'HEAD' ? requestContext.request.body : undefined
+        })
+
+        // Return the Vite response
+        const body = await response.arrayBuffer()
+
+        requestContext.handled = true
+        requestContext.response = new Response(body, {
+          status: response.status,
+          statusText: response.statusText,
+          headers: response.headers
+        })
+
+      } catch (viteError) {
+        // If Vite fails, let the request continue to normal routing (will become 404)
+        // Only log if explicitly enabled for debugging
+        if (process.env.ENABLE_VITE_PROXY_LOGS === 'true') {
+          console.warn(`Vite proxy error: ${viteError}`)
+        }
+      }
+      return
+    }
+
     // Use fixed configuration for simplicity - Vite should be running on port 5173
     const viteHost = "localhost"
     const vitePort = 5173
-    
+
     try {
       const url = new URL(requestContext.request.url)
       const viteUrl = `http://${viteHost}:${vitePort}${requestContext.path}${url.search}`
-      
+
       // Forward request to Vite
       const response = await fetch(viteUrl, {
         method: requestContext.method,
         headers: requestContext.headers,
         body: requestContext.method !== 'GET' && requestContext.method !== 'HEAD' ? requestContext.request.body : undefined
       })
-      
+
       // If Vite responds successfully, handle the request
       if (response.ok || response.status < 500) {
         // Return a proper Response object with all headers and status
         const body = await response.arrayBuffer()
-        
+
         requestContext.handled = true
         requestContext.response = new Response(body, {
           status: response.status,
@@ -177,7 +220,7 @@ export const vitePlugin: Plugin = {
           headers: response.headers
         })
       }
-      
+
     } catch (viteError) {
       // If Vite fails, let the request continue to normal routing (will become 404)
       // Only log if explicitly enabled for debugging
@@ -196,16 +239,16 @@ function getPluginConfig(context: PluginContext) {
 
 // Monitor Vite server status with automatic port detection
 async function monitorVite(
-  context: PluginContext, 
-  host: string, 
-  initialPort: number, 
+  context: PluginContext,
+  host: string,
+  initialPort: number,
   config: any
 ) {
   let retries = 0
   let isConnected = false
   let actualPort = initialPort
   let portDetected = false
-  
+
   const checkVite = async () => {
     try {
       // If we haven't found the correct port yet, try to detect it
@@ -216,13 +259,13 @@ async function monitorVite(
           portDetected = true
           // Update the context with the detected port
           if ((context as any).viteConfig) {
-            ;(context as any).viteConfig.port = actualPort
+            ; (context as any).viteConfig.port = actualPort
           }
         }
       }
-      
+
       const isRunning = await checkViteRunning(host, actualPort, config.timeout)
-      
+
       if (isRunning && !isConnected) {
         isConnected = true
         retries = 0
@@ -255,11 +298,11 @@ async function monitorVite(
         context.logger.error('Error checking Vite server status', { error })
       }
     }
-    
+
     // Continue monitoring
     setTimeout(checkVite, config.checkInterval)
   }
-  
+
   // Start monitoring after a brief delay
   setTimeout(checkVite, 1000)
 }
@@ -278,7 +321,7 @@ async function detectVitePort(host: string, startPort: number): Promise<number |
     3000, // Sometimes Vite might use this
     4173  // Another common alternative
   ]
-  
+
   for (const port of portsToTry) {
     try {
       const isRunning = await checkViteRunning(host, port, 1000)
@@ -289,7 +332,7 @@ async function detectVitePort(host: string, startPort: number): Promise<number |
       // Continue trying other ports
     }
   }
-  
+
   return null
 }
 
@@ -298,12 +341,12 @@ async function checkViteRunning(host: string, port: number, timeout: number = 10
   try {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), timeout)
-    
+
     const response = await fetch(`http://${host}:${port}`, {
       signal: controller.signal,
       method: 'HEAD' // Use HEAD to minimize data transfer
     })
-    
+
     clearTimeout(timeoutId)
     return response.status >= 200 && response.status < 500
   } catch (error) {

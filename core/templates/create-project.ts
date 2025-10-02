@@ -34,14 +34,14 @@ export class ProjectCreator {
       // 3. Generate package.json
       await this.generatePackageJson()
       
-      // 4. Generate config files
+      // 4. Generate config files (including .gitignore)
       await this.generateConfigFiles()
       
-      // 5. Install dependencies
-      await this.installDependencies()
-      
-      // 6. Initialize git
+      // 5. Initialize git (before installing dependencies)
       await this.initGit()
+      
+      // 6. Install dependencies (last step)
+      await this.installDependencies()
       
       console.log()
       console.log("🎉 Project created successfully!")
@@ -93,8 +93,15 @@ export class ProjectCreator {
   private async copyDirectory(src: string, dest: string, exclude: string[] = []) {
     await mkdir(dest, { recursive: true })
     
-    const entries = await Bun.file(src).exists() ? 
-      await (await import("fs/promises")).readdir(src, { withFileTypes: true }) : []
+    const fs = await import("fs/promises")
+    let entries: any[] = []
+    
+    try {
+      entries = await fs.readdir(src, { withFileTypes: true })
+    } catch (error) {
+      console.warn(`Warning: Could not read directory ${src}`)
+      return
+    }
     
     for (const entry of entries) {
       if (exclude.includes(entry.name)) continue
@@ -144,6 +151,8 @@ export class ProjectCreator {
         "@types/bun": "latest",
         "@types/react": "^18.2.0",
         "@types/react-dom": "^18.2.0",
+        "@types/uuid": "^10.0.0",
+        "@types/ws": "^8.18.1",
         "@testing-library/react": "^14.0.0",
         "@testing-library/jest-dom": "^6.1.0",
         "@testing-library/user-event": "^14.5.0",
@@ -155,11 +164,18 @@ export class ProjectCreator {
       },
       dependencies: {
         "@elysiajs/eden": "^1.3.2",
+        "@sinclair/typebox": "^0.34.41",
         "@vitejs/plugin-react": "^4.0.0",
-        elysia: "latest",
-        react: "^18.2.0",
+        "chalk": "^5.3.0",
+        "chokidar": "^4.0.3",
+        "elysia": "latest",
+        "react": "^18.2.0",
         "react-dom": "^18.2.0",
-        vite: "^5.0.0"
+        "react-icons": "^5.5.0",
+        "uuid": "^13.0.0",
+        "vite": "^5.0.0",
+        "ws": "^8.18.3",
+        "zustand": "^5.0.8"
       }
     }
 
@@ -227,6 +243,42 @@ lockfile = true
 
     await Bun.write(join(this.targetDir, "bunfig.toml"), bunConfig)
 
+    // Vite config
+    const viteConfig = `import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import { resolve } from 'path'
+
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, '.'),
+      '@/core': resolve(__dirname, './core'),
+      '@/app': resolve(__dirname, './app'),
+      '@/config': resolve(__dirname, './config'),
+      '@/shared': resolve(__dirname, './app/shared')
+    }
+  },
+  server: {
+    port: 5173,
+    host: 'localhost',
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true
+      }
+    }
+  },
+  build: {
+    outDir: 'dist/client',
+    emptyOutDir: true,
+    sourcemap: true
+  }
+})
+`
+
+    await Bun.write(join(this.targetDir, "vite.config.ts"), viteConfig)
+
     // Environment file
     const envContent = `# FluxStack Environment Variables
 
@@ -285,6 +337,124 @@ BUILD_OUTDIR=dist
 `
 
     await Bun.write(join(this.targetDir, ".env"), envContent)
+
+    // .gitignore
+    const gitignoreContent = `# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Production builds
+/dist
+/build
+/.next/
+/out/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Dependency directories
+jspm_packages/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# Next.js build output
+.next
+
+# Nuxt.js build / generate output
+.nuxt
+dist
+
+# Storybook build outputs
+.out
+.storybook-out
+
+# Temporary folders
+tmp/
+temp/
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# FluxStack specific
+uploads/
+public/uploads/
+.fluxstack/
+
+# Bun
+bun.lockb
+`
+
+    await Bun.write(join(this.targetDir, ".gitignore"), gitignoreContent)
 
     // README
     const readme = `# ${this.projectName}
@@ -365,44 +535,6 @@ Built with ❤️ using FluxStack framework.
 `
 
     await Bun.write(join(this.targetDir, "README.md"), readme)
-
-    // .gitignore
-    const gitignore = `# Dependencies
-node_modules/
-*.lockb
-
-# Build outputs
-dist/
-build/
-.next/
-
-# Environment variables
-.env.local
-.env.production
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
-logs/
-
-# Runtime
-.tmp/
-.cache/
-
-# Bun
-bun.lockb
-`
-
-    await Bun.write(join(this.targetDir, ".gitignore"), gitignore)
   }
 
   private async installDependencies() {
@@ -425,31 +557,32 @@ bun.lockb
   private async initGit() {
     console.log("🔧 Initializing git repository...")
     
-    const gitInitProcess = spawn({
-      cmd: ["git", "init"],
-      cwd: this.targetDir,
-      stdout: "pipe",
-      stderr: "pipe"
-    })
+    try {
+      // Initialize git repository
+      await spawn({
+        cmd: ["git", "init", "--quiet"],
+        cwd: this.targetDir,
+        stdout: "ignore",
+        stderr: "ignore"
+      }).exited
 
-    await gitInitProcess.exited
+      // Add all files
+      await spawn({
+        cmd: ["git", "add", "."],
+        cwd: this.targetDir,
+        stdout: "ignore",
+        stderr: "ignore"
+      }).exited
 
-    const gitAddProcess = spawn({
-      cmd: ["git", "add", "."],
-      cwd: this.targetDir,
-      stdout: "pipe",
-      stderr: "pipe"
-    })
-
-    await gitAddProcess.exited
-
-    const gitCommitProcess = spawn({
-      cmd: ["git", "commit", "-m", "Initial commit - FluxStack project created"],
-      cwd: this.targetDir,
-      stdout: "pipe",
-      stderr: "pipe"
-    })
-
-    await gitCommitProcess.exited
+      // Initial commit
+      await spawn({
+        cmd: ["git", "commit", "-m", "Initial commit - FluxStack project created", "--quiet"],
+        cwd: this.targetDir,
+        stdout: "ignore",
+        stderr: "ignore"
+      }).exited
+    } catch (error) {
+      console.warn("⚠️ Git initialization failed (git may not be installed)")
+    }
   }
 }

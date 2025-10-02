@@ -1,0 +1,103 @@
+# Development files
+.env
+.env.*
+!.env.example
+
+# Test files
+tests/
+test-logs/
+*.test.ts
+*.test.js
+*.spec.ts
+*.spec.js
+__tests__/
+coverage/
+
+# Build artifacts
+dist/
+.vite/
+node_modules/
+
+# Exclude build directories but keep core/build
+/build/
+!core/build/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Uploads and user data
+uploads/
+public/uploads/
+
+# Cache directories
+.cache/
+.parcel-cache/
+.next/
+.nuxt/
+
+# Temporary files
+tmp/
+temp/
+
+# AI context (development only)
+ai-context/
+.claude/
+.kiro/
+
+# Documentation (keep README.md)
+docs/
+studies/
+COMPONENTS.md
+CLAUDE.md
+TEST_RESULTS.md
+README-Docker.md
+
+# Docker files (not needed for npm package)
+Dockerfile*
+docker-compose*.yml
+nginx-lb.conf
+
+# Scripts and utilities
+scripts/
+run-*.ts
+create-test-app.ts
+flux-cli.ts
+publish.sh
+test-scripts.md
+
+# Config files for development
+# eslint.config.js
+# tailwind.config.js
+# vitest.config*.ts
+# workspace.json
+
+# Examples (keep basic ones)
+examples/
+
+# GitHub workflows
+.github/
+
+# Bun lock file (npm users don't need this)
+bun.lock
+bunfig.toml

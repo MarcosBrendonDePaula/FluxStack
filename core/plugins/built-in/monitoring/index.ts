@@ -66,7 +66,7 @@ export const monitoringPlugin: Plugin = {
   version: "1.0.0",
   description: "Performance monitoring plugin with metrics collection and system monitoring",
   author: "FluxStack Team",
-  priority: "high", // Should run early to capture all metrics
+  priority: 900, // Should run early to capture all metrics
   category: "monitoring",
   tags: ["monitoring", "metrics", "performance", "observability"],
   dependencies: [], // No dependencies

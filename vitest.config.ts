@@ -1,45 +1,42 @@
 /// <reference types="vitest" />
+/// <reference types="@testing-library/jest-dom" />
 import { defineConfig } from 'vitest/config'
+import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
-import { fileURLToPath, URL } from 'node:url'
-
-const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 export default defineConfig({
-  plugins: [],
+  plugins: [react()],
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: ['./tests/setup.ts'],
-    testTimeout: 5000,
-    // Handle unhandled rejections to prevent CI failures
-    onConsoleLog: () => false,
-    // Ignore esbuild TextEncoder errors in CI
-    silent: process.env.CI === 'true',
-    // Don't fail on unhandled rejections
-    dangerouslyIgnoreUnhandledErrors: true,
+    setupFiles: ['./app/client/src/test/setup.ts'],
+    include: [
+      'app/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
+      'core/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'
+    ],
+    exclude: [
+      'node_modules',
+      'dist',
+      '.git',
+      '.cache'
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       exclude: [
         'node_modules/',
-        'dist/',
-        'build/',
-        'tests/',
+        'app/client/src/test/',
         '**/*.d.ts',
-        '**/*.config.{js,ts}',
+        '**/*.config.*',
         '**/coverage/**'
       ]
     }
   },
   resolve: {
     alias: {
-      '@': resolve(__dirname, '.'),
-      '@/core': resolve(__dirname, './core'),
-      '@/app': resolve(__dirname, './app'),
-      '@/config': resolve(__dirname, './config'),
-      '@/shared': resolve(__dirname, './app/shared'),
-      '@/tests': resolve(__dirname, './tests')
+      '@': resolve(__dirname, './app/client/src'),
+      '@core': resolve(__dirname, './core'),
+      '@server': resolve(__dirname, './app/server')
     }
   }
 })

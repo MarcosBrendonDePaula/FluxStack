@@ -11,39 +11,35 @@ export class CliPluginDiscovery {
     // 1. Load built-in plugins with CLI commands
     await this.loadBuiltInPlugins()
     
-    // 2. Load external plugins from node_modules
-    await this.loadExternalPlugins()
-    
-    // 3. Load local plugins from project
+    // 2. Load local plugins from project
     await this.loadLocalPlugins()
   }
 
   private async loadBuiltInPlugins(): Promise<void> {
-    const builtInPluginsDir = join(__dirname, '../server/plugins')
+    const builtInPluginsDir = join(__dirname, '../plugins/built-in')
     
     if (!existsSync(builtInPluginsDir)) {
       return
     }
 
     try {
-      // For now, we'll manually list built-in plugins that might have CLI commands
-      const potentialPlugins = [
-        'logger',
-        'vite', 
-        'swagger',
-        'static',
-        'database'
-      ]
+      const fs = await import('fs')
+      const potentialPlugins = fs.readdirSync(builtInPluginsDir, { withFileTypes: true })
+        .filter(entry => entry.isDirectory())
+        .map(entry => entry.name)
 
       for (const pluginName of potentialPlugins) {
         try {
-          const pluginPath = join(builtInPluginsDir, `${pluginName}.ts`)
+          const pluginPath = join(builtInPluginsDir, pluginName, 'index.ts')
           if (existsSync(pluginPath)) {
             const pluginModule = await import(pluginPath)
-            const plugin = pluginModule[`${pluginName}Plugin`] as Plugin
             
-            if (plugin && plugin.commands) {
-              this.registerPluginCommands(plugin)
+            if (pluginModule.commands) {
+              for (const command of pluginModule.commands) {
+                cliRegistry.register(command)
+              }
+              this.loadedPlugins.add(pluginName)
+              logger.debug(`Registered ${pluginModule.commands.length} CLI commands from built-in plugin: ${pluginName}`)
             }
           }
         } catch (error) {
@@ -55,74 +51,9 @@ export class CliPluginDiscovery {
     }
   }
 
-  private async loadExternalPlugins(): Promise<void> {
-    const nodeModulesDir = join(process.cwd(), 'node_modules')
-    
-    if (!existsSync(nodeModulesDir)) {
-      return
-    }
-
-    try {
-      const fs = await import('fs')
-      const entries = fs.readdirSync(nodeModulesDir, { withFileTypes: true })
-      
-      for (const entry of entries) {
-        if (!entry.isDirectory()) continue
-        
-        // Check for FluxStack plugins (convention: fluxstack-plugin-*)
-        if (entry.name.startsWith('fluxstack-plugin-')) {
-          await this.loadExternalPlugin(entry.name)
-        }
-        
-        // Check for scoped packages (@fluxstack/plugin-*)
-        if (entry.name.startsWith('@fluxstack')) {
-          const scopedDir = join(nodeModulesDir, entry.name)
-          if (existsSync(scopedDir)) {
-            const scopedEntries = fs.readdirSync(scopedDir, { withFileTypes: true })
-            for (const scopedEntry of scopedEntries) {
-              if (scopedEntry.isDirectory() && scopedEntry.name.startsWith('plugin-')) {
-                await this.loadExternalPlugin(`${entry.name}/${scopedEntry.name}`)
-              }
-            }
-          }
-        }
-      }
-    } catch (error) {
-      logger.debug('Failed to scan external plugins:', error)
-    }
-  }
-
-  private async loadExternalPlugin(packageName: string): Promise<void> {
-    try {
-      const packagePath = join(process.cwd(), 'node_modules', packageName)
-      const packageJsonPath = join(packagePath, 'package.json')
-      
-      if (!existsSync(packageJsonPath)) {
-        return
-      }
-
-      const packageJson = JSON.parse(await import('fs').then(fs => 
-        fs.readFileSync(packageJsonPath, 'utf-8')
-      ))
-
-      // Check if this is a FluxStack plugin
-      if (packageJson.fluxstack?.plugin) {
-        const entryPoint = packageJson.main || 'index.js'
-        const pluginPath = join(packagePath, entryPoint)
-        
-        if (existsSync(pluginPath)) {
-          const pluginModule = await import(pluginPath)
-          const plugin = pluginModule.default || pluginModule[packageJson.fluxstack.plugin] as Plugin
-          
-          if (plugin && plugin.commands) {
-            this.registerPluginCommands(plugin)
-          }
-        }
-      }
-    } catch (error) {
-      logger.debug(`Failed to load external plugin ${packageName}:`, error)
-    }
-  }
+  // Métodos removidos - não carregamos mais plugins do node_modules
+  // private async loadExternalPlugins(): Promise<void> { ... }
+  // private async loadExternalPlugin(packageName: string): Promise<void> { ... }
 
   private async loadLocalPlugins(): Promise<void> {
     const localPluginsDir = join(process.cwd(), 'plugins')

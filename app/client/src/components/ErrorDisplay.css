@@ -1,0 +1,365 @@
+/* Error Display Components Styles */
+
+.error-display {
+  border-radius: 8px;
+  padding: 16px;
+  margin: 8px 0;
+  border: 1px solid;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.error-display--inline {
+  background-color: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+.error-display--toast {
+  background-color: #ffffff;
+  border-color: #e5e7eb;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  max-width: 400px;
+  animation: slideIn 0.3s ease-out;
+}
+
+.error-display--modal {
+  background-color: #ffffff;
+  border-color: #e5e7eb;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1001;
+  max-width: 500px;
+  width: 90%;
+}
+
+.error-display--warning {
+  background-color: #fffbeb;
+  border-color: #fed7aa;
+  color: #92400e;
+}
+
+.error-display--severe {
+  background-color: #fef2f2;
+  border-color: #fca5a5;
+  color: #dc2626;
+}
+
+.error-display__content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.error-display__icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.error-display__message {
+  flex: 1;
+}
+
+.error-display__text {
+  margin: 0 0 8px 0;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.error-display__correlation {
+  margin: 0;
+  font-size: 12px;
+  opacity: 0.7;
+  font-family: monospace;
+}
+
+.error-display__actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.error-display__button {
+  padding: 6px 12px;
+  border: 1px solid;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.error-display__button--retry {
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.error-display__button--retry:hover {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.error-display__button--dismiss {
+  border-color: #6b7280;
+  color: #6b7280;
+}
+
+.error-display__button--dismiss:hover {
+  background-color: #6b7280;
+  color: white;
+}
+
+/* Error Boundary Styles */
+.error-boundary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  padding: 20px;
+}
+
+.error-boundary-content {
+  text-align: center;
+  max-width: 500px;
+}
+
+.error-boundary-content h2 {
+  color: #dc2626;
+  margin-bottom: 16px;
+}
+
+.error-boundary-content p {
+  color: #6b7280;
+  margin-bottom: 20px;
+}
+
+.error-details {
+  text-align: left;
+  margin: 16px 0;
+  padding: 12px;
+  background-color: #f9fafb;
+  border-radius: 4px;
+  border: 1px solid #e5e7eb;
+}
+
+.error-details summary {
+  cursor: pointer;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.error-details pre {
+  font-size: 12px;
+  color: #374151;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.error-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.retry-button, .reload-button {
+  padding: 8px 16px;
+  border: 1px solid #3b82f6;
+  border-radius: 4px;
+  background: #3b82f6;
+  color: white;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.retry-button:hover, .reload-button:hover {
+  background-color: #2563eb;
+}
+
+.reload-button {
+  background: transparent;
+  color: #3b82f6;
+}
+
+.reload-button:hover {
+  background-color: #3b82f6;
+  color: white;
+}
+
+/* Toast Container */
+.error-toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+}
+
+/* Inline Error */
+.inline-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 4px;
+  color: #dc2626;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.inline-error__icon {
+  font-size: 16px;
+}
+
+.inline-error__message {
+  flex: 1;
+}
+
+/* Loading Spinner */
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  gap: 16px;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e5e7eb;
+  border-top: 3px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loading-spinner p {
+  color: #6b7280;
+  margin: 0;
+}
+
+/* Error Summary */
+.error-summary {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 16px 0;
+}
+
+.error-summary__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #fecaca;
+}
+
+.error-summary__header h3 {
+  margin: 0;
+  color: #dc2626;
+  font-size: 16px;
+}
+
+.error-summary__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.error-summary__button {
+  padding: 4px 8px;
+  border: 1px solid #dc2626;
+  border-radius: 4px;
+  background: transparent;
+  color: #dc2626;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.error-summary__button:hover {
+  background-color: #dc2626;
+  color: white;
+}
+
+.error-summary__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.error-summary__item {
+  padding: 8px;
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: 4px;
+}
+
+.error-summary__more {
+  padding: 8px;
+  text-align: center;
+  color: #6b7280;
+  font-style: italic;
+  font-size: 14px;
+}
+
+/* Animations */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .error-display--toast {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    max-width: none;
+  }
+  
+  .error-display--modal {
+    top: 20px;
+    left: 10px;
+    right: 10px;
+    transform: none;
+    width: auto;
+    max-width: none;
+  }
+  
+  .error-display__content {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .error-display__actions {
+    justify-content: center;
+    width: 100%;
+  }
+  
+  .error-summary__header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+}

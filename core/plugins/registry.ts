@@ -1,7 +1,10 @@
-import type { Plugin, PluginManifest, PluginLoadResult, PluginDiscoveryOptions } from "./types"
+import type { FluxStack, PluginManifest, PluginLoadResult, PluginDiscoveryOptions } from "./types"
+
+type FluxStackPlugin = FluxStack.Plugin
 import type { FluxStackConfig } from "../config/schema"
 import type { Logger } from "../utils/logger/index"
 import { FluxStackError } from "../utils/errors"
+import { PluginDependencyManager } from "./dependency-manager"
 import { readdir, readFile } from "fs/promises"
 import { join, resolve } from "path"
 import { existsSync } from "fs"
@@ -13,23 +16,29 @@ export interface PluginRegistryConfig {
 }
 
 export class PluginRegistry {
-  private plugins: Map<string, Plugin> = new Map()
+  private plugins: Map<string, FluxStackPlugin> = new Map()
   private manifests: Map<string, PluginManifest> = new Map()
   private loadOrder: string[] = []
   private dependencies: Map<string, string[]> = new Map()
   private conflicts: string[] = []
   private logger?: Logger
   private config?: FluxStackConfig
+  private dependencyManager: PluginDependencyManager
 
   constructor(options: PluginRegistryConfig = {}) {
     this.logger = options.logger
     this.config = options.config
+    this.dependencyManager = new PluginDependencyManager({
+      logger: this.logger,
+      autoInstall: true,
+      packageManager: 'bun'
+    })
   }
 
   /**
    * Register a plugin with the registry
    */
-  async register(plugin: Plugin, manifest?: PluginManifest): Promise<void> {
+  async register(plugin: FluxStackPlugin, manifest?: PluginManifest): Promise<void> {
     if (this.plugins.has(plugin.name)) {
       throw new FluxStackError(
         `Plugin '${plugin.name}' is already registered`,
@@ -100,7 +109,7 @@ export class PluginRegistry {
   /**
    * Get a plugin by name
    */
-  get(name: string): Plugin | undefined {
+  get(name: string): FluxStackPlugin | undefined {
     return this.plugins.get(name)
   }
 
@@ -114,7 +123,7 @@ export class PluginRegistry {
   /**
    * Get all registered plugins
    */
-  getAll(): Plugin[] {
+  getAll(): FluxStackPlugin[] {
     return Array.from(this.plugins.values())
   }
 
@@ -208,19 +217,23 @@ export class PluginRegistry {
   async discoverPlugins(options: PluginDiscoveryOptions = {}): Promise<PluginLoadResult[]> {
     const results: PluginLoadResult[] = []
     const {
-      directories = ['core/plugins/built-in', 'plugins', 'node_modules'],
+      directories = ['plugins'],
       patterns: _patterns = ['**/plugin.{js,ts}', '**/index.{js,ts}'],
-      includeBuiltIn: _includeBuiltIn = true,
+      includeBuiltIn: _includeBuiltIn = false,
       includeExternal: _includeExternal = true
     } = options
 
+    // Descobrir plugins
     for (const directory of directories) {
+      this.logger?.info(`Scanning directory: ${directory}`)
       if (!existsSync(directory)) {
+        this.logger?.warn(`Directory does not exist: ${directory}`)
         continue
       }
 
       try {
         const pluginResults = await this.discoverPluginsInDirectory(directory, _patterns)
+        this.logger?.info(`Found ${pluginResults.length} plugins in ${directory}`)
         results.push(...pluginResults)
       } catch (error) {
         this.logger?.warn(`Failed to discover plugins in directory '${directory}'`, { error })
@@ -230,6 +243,9 @@ export class PluginRegistry {
         })
       }
     }
+
+    // Resolver e instalar dependências
+    await this.resolveDependencies(results)
 
     return results
   }
@@ -250,7 +266,7 @@ export class PluginRegistry {
 
       // Try to import the plugin
       const pluginModule = await import(resolve(pluginPath))
-      const plugin: Plugin = pluginModule.default || pluginModule
+      const plugin: FluxStackPlugin = pluginModule.default || pluginModule
 
       if (!plugin || typeof plugin !== 'object' || !plugin.name) {
         return {
@@ -278,7 +294,7 @@ export class PluginRegistry {
   /**
    * Validate plugin structure
    */
-  private validatePlugin(plugin: Plugin): void {
+  private validatePlugin(plugin: FluxStackPlugin): void {
     if (!plugin.name || typeof plugin.name !== 'string') {
       throw new FluxStackError(
         'Plugin must have a valid name property',
@@ -315,7 +331,7 @@ export class PluginRegistry {
   /**
    * Validate plugin configuration against schema
    */
-  private validatePluginConfig(plugin: Plugin, config: any): void {
+  private validatePluginConfig(plugin: FluxStackPlugin, config: any): void {
     if (!plugin.configSchema) {
       return
     }
@@ -388,6 +404,62 @@ export class PluginRegistry {
   }
 
   /**
+   * Resolver dependências de todos os plugins descobertos
+   */
+  private async resolveDependencies(results: PluginLoadResult[]): Promise<void> {
+    const resolutions = []
+    
+    // Resolver dependências para cada plugin carregado com sucesso
+    for (const result of results) {
+      if (result.success && result.plugin) {
+        try {
+          // Tentar encontrar o diretório do plugin
+          const pluginDir = this.findPluginDirectory(result.plugin.name)
+          if (pluginDir) {
+            const resolution = await this.dependencyManager.resolvePluginDependencies(pluginDir)
+            resolutions.push(resolution)
+            
+            if (!resolution.resolved) {
+              this.logger?.warn(`Plugin '${result.plugin.name}' tem conflitos de dependências`, {
+                conflicts: resolution.conflicts.length
+              })
+            }
+          }
+        } catch (error) {
+          this.logger?.warn(`Erro ao resolver dependências do plugin '${result.plugin.name}'`, { error })
+        }
+      }
+    }
+
+    // Instalar dependências se houver resoluções
+    if (resolutions.length > 0) {
+      try {
+        await this.dependencyManager.installPluginDependencies(resolutions)
+      } catch (error) {
+        this.logger?.error('Erro ao instalar dependências de plugins', { error })
+      }
+    }
+  }
+
+  /**
+   * Encontrar diretório de um plugin pelo nome
+   */
+  private findPluginDirectory(pluginName: string): string | null {
+    const possiblePaths = [
+      `plugins/${pluginName}`,
+      `core/plugins/built-in/${pluginName}`
+    ]
+
+    for (const path of possiblePaths) {
+      if (existsSync(path)) {
+        return path
+      }
+    }
+
+    return null
+  }
+
+  /**
    * Discover plugins in a specific directory
    */
   private async discoverPluginsInDirectory(
@@ -404,12 +476,18 @@ export class PluginRegistry {
           const pluginDir = join(directory, entry.name)
           
           // Check if this looks like a plugin directory
+          // Skip if it's just an index file in the root of built-in directory
+          if (directory === 'core/plugins/built-in' && entry.name === 'index.ts') {
+            continue
+          }
+          
           const hasPluginFile = existsSync(join(pluginDir, 'index.ts')) || 
                                existsSync(join(pluginDir, 'index.js')) ||
                                existsSync(join(pluginDir, 'plugin.ts')) ||
                                existsSync(join(pluginDir, 'plugin.js'))
           
           if (hasPluginFile) {
+            this.logger?.info(`Loading plugin from: ${pluginDir}`)
             const result = await this.loadPlugin(pluginDir)
             results.push(result)
           }

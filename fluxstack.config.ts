@@ -65,7 +65,7 @@ export const config: FluxStackConfig = {
 
   // Plugin configuration
   plugins: {
-    enabled: env.get('FLUXSTACK_PLUGINS_ENABLED', ['logger', 'swagger', 'vite', 'cors']),
+    enabled: env.get('FLUXSTACK_PLUGINS_ENABLED', ['logger', 'swagger', 'vite', 'cors', 'static-files', 'crypto-auth']),
     disabled: env.get('FLUXSTACK_PLUGINS_DISABLED', []),
     config: {
       // Plugin-specific configurations can be added here
@@ -76,6 +76,22 @@ export const config: FluxStackConfig = {
         title: env.get('SWAGGER_TITLE', 'FluxStack API'),
         version: env.get('SWAGGER_VERSION', '1.0.0'),
         description: env.get('SWAGGER_DESCRIPTION', 'API documentation for FluxStack application')
+      },
+      staticFiles: {
+        publicDir: env.get('STATIC_PUBLIC_DIR', 'public'),
+        uploadsDir: env.get('STATIC_UPLOADS_DIR', 'uploads'),
+        cacheMaxAge: env.get('STATIC_CACHE_MAX_AGE', 31536000), // 1 year
+        enableUploads: env.get('STATIC_ENABLE_UPLOADS', true),
+        enablePublic: env.get('STATIC_ENABLE_PUBLIC', true)
+      },
+      'crypto-auth': {
+        enabled: env.get('CRYPTO_AUTH_ENABLED', true),
+        sessionTimeout: env.get('CRYPTO_AUTH_SESSION_TIMEOUT', 1800000), // 30 minutos
+        maxTimeDrift: env.get('CRYPTO_AUTH_MAX_TIME_DRIFT', 300000), // 5 minutos
+        adminKeys: env.get('CRYPTO_AUTH_ADMIN_KEYS', []),
+        protectedRoutes: env.get('CRYPTO_AUTH_PROTECTED_ROUTES', ['/api/admin/*', '/api/protected/*']),
+        publicRoutes: env.get('CRYPTO_AUTH_PUBLIC_ROUTES', ['/api/auth/*', '/api/health', '/api/docs']),
+        enableMetrics: env.get('CRYPTO_AUTH_ENABLE_METRICS', true)
       }
     }
   },

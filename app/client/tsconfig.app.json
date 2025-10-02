@@ -28,6 +28,7 @@
       "@/shared/*": ["../shared/*"],
       "@/core/*": ["../../core/*"],
       "@/config/*": ["../../config/*"],
+      "fluxstack": ["../../core/client/fluxstack"],
       "elysia": ["../../node_modules/elysia"]
     },
 

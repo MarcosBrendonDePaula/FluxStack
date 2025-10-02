@@ -4,7 +4,7 @@
  */
 
 import type { 
-  Plugin, 
+  FluxStack,
   PluginContext, 
   PluginHook, 
   PluginHookResult, 
@@ -16,6 +16,8 @@ import type {
   ErrorContext,
   BuildContext
 } from "./types"
+
+type Plugin = FluxStack.Plugin
 import type { FluxStackConfig } from "../config/schema"
 import type { Logger } from "../utils/logger/index"
 import { PluginRegistry } from "./registry"
@@ -394,8 +396,10 @@ export class PluginManager extends EventEmitter {
    */
   private async discoverPlugins(): Promise<void> {
     try {
+      this.logger.info('Discovering external plugins in directory: plugins')
       const results = await this.registry.discoverPlugins({
-        includeBuiltIn: true,
+        directories: ['plugins'],
+        includeBuiltIn: false,
         includeExternal: true
       })
 
@@ -444,7 +448,7 @@ export class PluginManager extends EventEmitter {
 
     const context: PluginContext = {
       config: this.config,
-      logger: this.logger.child({ plugin: plugin.name }),
+      logger: this.logger,
       app: this.app,
       utils: createPluginUtils(this.logger),
       registry: this.registry

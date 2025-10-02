@@ -5,7 +5,7 @@ export const loggerPlugin: Plugin = {
   version: "1.0.0",
   description: "Enhanced logging plugin for FluxStack with request/response logging",
   author: "FluxStack Team",
-  priority: "highest", // Logger should run first
+  priority: 1000, // Logger should run first
   category: "core",
   tags: ["logging", "monitoring"],
   

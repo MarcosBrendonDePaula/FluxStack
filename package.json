@@ -1,6 +1,6 @@
 {
   "name": "create-fluxstack",
-  "version": "1.0.13",
+  "version": "1.0.22",
   "description": "⚡ Modern full-stack TypeScript framework with Elysia + React + Bun",
   "keywords": [
     "framework",
@@ -40,11 +40,18 @@
     "docker:compose": "cd dist && docker-compose up -d",
     "docker:stop": "cd dist && docker-compose down",
     "create": "bun run core/cli/index.ts create",
+    "cli": "bun run core/cli/index.ts",
+    "make:component": "bun run core/cli/index.ts make:component",
+    "make:live": "bun run core/cli/index.ts make:component",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest --watch",
+    "test:live": "tsx scripts/test-live-components.ts",
+    "test:live:coverage": "tsx scripts/test-live-components.ts --coverage",
+    "test:live:watch": "tsx scripts/test-live-components.ts --watch",
+    "test:live:verbose": "tsx scripts/test-live-components.ts --verbose",
     "test:config": "bun run core/config/__tests__/run-tests.ts",
     "test:config:coverage": "bun run core/config/__tests__/run-tests.ts coverage",
     "test:config:manual": "bun run core/config/__tests__/manual-test.ts",
@@ -68,15 +75,20 @@
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.3.0",
     "jsdom": "^26.1.0",
+    "rollup": "4.20.0",
     "tailwindcss": "^4.1.13",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.35.1",
+    "vite-plugin-node-polyfills": "^0.24.0",
     "vitest": "^3.2.4"
   },
   "dependencies": {
     "@elysiajs/eden": "^1.3.2",
     "@elysiajs/swagger": "^1.3.1",
+    "@noble/curves": "^1.2.0",
+    "@noble/hashes": "^1.3.2",
     "@types/http-proxy-middleware": "^1.0.0",
+    "@types/ws": "^8.18.1",
     "@vitejs/plugin-react": "^4.6.0",
     "chalk": "^5.3.0",
     "chokidar": "^4.0.3",
@@ -88,7 +100,12 @@
     "ora": "^8.1.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "vite": "^7.0.4"
+    "react-icons": "^5.5.0",
+    "react-router-dom": "^7.9.3",
+    "uuid": "^13.0.0",
+    "vite": "^7.1.7",
+    "ws": "^8.18.3",
+    "zustand": "^5.0.8"
   },
   "engines": {
     "bun": ">=1.2.0"

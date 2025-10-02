@@ -1,9 +1,11 @@
 // User application entry point
-import { FluxStackFramework, loggerPlugin, vitePlugin, swaggerPlugin, staticPlugin } from "@/core/server"
+import { FluxStackFramework, loggerPlugin, vitePlugin, swaggerPlugin, staticPlugin, liveComponentsPlugin, staticFilesPlugin } from "@/core/server"
 import { isDevelopment } from "@/core/utils/helpers"
 import { apiRoutes } from "./routes"
 // Import sistema de env dinâmico simplificado
 import { env, helpers } from "@/core/utils/env-runtime-v2"
+// Import live components registration
+import "./live/register-components"
 
 console.log('🔧 Loading dynamic environment configuration...')
 console.log(`📊 Environment: ${env.NODE_ENV}`)           // Direto!
@@ -52,6 +54,10 @@ if (isDevelopment()) {
 } else {
   app.use(staticPlugin)
 }
+
+// Add static files AFTER Vite to avoid conflicts, but BEFORE Live Components
+app.use(staticFilesPlugin) // Add Static Files support 
+app.use(liveComponentsPlugin) // Add Live Components support
   
 
 // Adicionar rota de teste para mostrar env dinâmico (antes das rotas)
@@ -99,6 +105,8 @@ app.listen(() => {
   
   console.log('💡 Mude as env vars e reinicie para ver a diferença!')
 })
+
+
 
 // Exportar tipo da aplicação para Eden Treaty (método correto)
 export type App = typeof app

@@ -1,68 +1,50 @@
-import { spawn } from "bun"
-import { copyFile, copyFileSync, writeFileSync, existsSync, mkdirSync } from "fs"
+import { copyFileSync, writeFileSync, existsSync, mkdirSync } from "fs"
 import { join } from "path"
 import type { FluxStackConfig } from "../config"
+import type { BuildResult, BuildManifest } from "../types/build"
+import { Bundler } from "./bundler"
+import { Optimizer } from "./optimizer"
 
 export class FluxStackBuilder {
   private config: FluxStackConfig
+  private bundler: Bundler
+  private optimizer: Optimizer
 
   constructor(config: FluxStackConfig) {
     this.config = config
+    
+    // Initialize bundler with configuration
+    this.bundler = new Bundler({
+      target: config.build.target,
+      outDir: config.build.outDir,
+      sourceMaps: config.build.sourceMaps,
+      minify: config.build.minify,
+      external: config.build.external
+    })
+    
+    // Initialize optimizer with configuration
+    this.optimizer = new Optimizer({
+      minify: config.build.minify,
+      treeshake: config.build.treeshake,
+      compress: config.build.compress || false,
+      removeUnusedCSS: config.build.removeUnusedCSS || false,
+      optimizeImages: config.build.optimizeImages || false,
+      bundleAnalysis: config.build.bundleAnalysis || false
+    })
   }
 
   async buildClient() {
-    console.log("⚡ Building client...")
-    
-    const buildProcess = spawn({
-      cmd: ["bunx", "vite", "build", "--config", "vite.config.ts"],
-      cwd: process.cwd(),
-      stdout: "pipe",
-      stderr: "pipe",
+    return await this.bundler.bundleClient({
       env: {
-        ...process.env,
         VITE_BUILD_OUTDIR: this.config.client.build.outDir,
         VITE_BUILD_MINIFY: this.config.client.build.minify.toString(),
         VITE_BUILD_SOURCEMAPS: this.config.client.build.sourceMaps.toString()
       }
     })
-
-    const exitCode = await buildProcess.exited
-    
-    if (exitCode === 0) {
-      console.log("✅ Client build completed")
-    } else {
-      console.error("❌ Client build failed")
-      process.exit(1)
-    }
   }
 
   async buildServer() {
-    console.log("⚡ Building server...")
-    
-    const buildProcess = spawn({
-      cmd: [
-        "bun", "build", 
-        "app/server/index.ts", 
-        "--outdir", this.config.build.outDir,
-        "--target", this.config.build.target,
-        "--external", "@tailwindcss/vite",
-        "--external", "tailwindcss", 
-        "--external", "lightningcss",
-        "--external", "vite",
-        "--external", "@vitejs/plugin-react"
-      ],
-      stdout: "pipe",
-      stderr: "pipe"
-    })
-
-    const exitCode = await buildProcess.exited
-    
-    if (exitCode === 0) {
-      console.log("✅ Server build completed")
-    } else {
-      console.error("❌ Server build failed")
-      process.exit(1)
-    }
+    return await this.bundler.bundleServer("app/server/index.ts")
   }
 
   async createDockerFiles() {
@@ -247,12 +229,158 @@ MONITORING_ENABLED=true
     console.log("✅ Docker files created in dist/")
   }
 
-  async build() {
+  async build(): Promise<BuildResult> {
     console.log("⚡ FluxStack Framework - Building...")
-    await this.buildClient()
-    await this.buildServer()
-    await this.createDockerFiles()
-    console.log("🎉 Build completed successfully!")
-    console.log("🐳 Ready for Docker deployment from dist/ directory")
+    
+    const startTime = Date.now()
+    
+    try {
+      // Validate configuration
+      await this.validateConfig()
+      
+      // Clean output directory if requested
+      if (this.config.build.clean) {
+        await this.clean()
+      }
+      
+      // Build client and server
+      const clientResult = await this.buildClient()
+      const serverResult = await this.buildServer()
+      
+      // Check if builds were successful
+      if (!clientResult.success || !serverResult.success) {
+        return {
+          success: false,
+          duration: Date.now() - startTime,
+          error: clientResult.error || serverResult.error || "Build failed",
+          outputFiles: [],
+          warnings: [],
+          errors: [],
+          stats: {
+            totalSize: 0,
+            gzippedSize: 0,
+            chunkCount: 0,
+            assetCount: 0,
+            entryPoints: [],
+            dependencies: []
+          }
+        }
+      }
+      
+      // Optimize build if enabled
+      let optimizationResult
+      if (this.config.build.optimize) {
+        optimizationResult = await this.optimizer.optimize(this.config.build.outDir)
+      }
+      
+      // Create Docker files
+      await this.createDockerFiles()
+      
+      // Generate build manifest
+      const manifest = await this.generateManifest(clientResult, serverResult, optimizationResult)
+      
+      const duration = Date.now() - startTime
+      
+      console.log("🎉 Build completed successfully!")
+      console.log(`⏱️ Build time: ${duration}ms`)
+      console.log("🐳 Ready for Docker deployment from dist/ directory")
+      
+      return {
+        success: true,
+        duration,
+        outputFiles: [],
+        warnings: [],
+        errors: [],
+        stats: {
+          totalSize: optimizationResult?.optimizedSize || 0,
+          gzippedSize: 0,
+          chunkCount: 0,
+          assetCount: clientResult.assets?.length || 0,
+          entryPoints: [serverResult.entryPoint || ""].filter(Boolean),
+          dependencies: []
+        }
+      }
+      
+    } catch (error) {
+      const duration = Date.now() - startTime
+      const errorMessage = error instanceof Error ? error.message : "Unknown build error"
+      
+      console.error("❌ Build failed:", errorMessage)
+      
+      return {
+        success: false,
+        duration,
+        error: errorMessage,
+        outputFiles: [],
+        warnings: [],
+        errors: [],
+        stats: {
+          totalSize: 0,
+          gzippedSize: 0,
+          chunkCount: 0,
+          assetCount: 0,
+          entryPoints: [],
+          dependencies: []
+        }
+      }
+    }
+  }
+
+  private async validateConfig(): Promise<void> {
+    // Validate build configuration
+    if (!this.config.build.outDir) {
+      throw new Error("Build output directory not specified")
+    }
+    
+    if (!this.config.build.target) {
+      throw new Error("Build target not specified")
+    }
+  }
+
+  private async clean(): Promise<void> {
+    // Clean output directory - implementation would go here
+    console.log("🧹 Cleaning output directory...")
+  }
+
+  private async generateManifest(
+    clientResult: any, 
+    serverResult: any, 
+    optimizationResult?: any
+  ): Promise<BuildManifest> {
+    return {
+      version: this.config.app.version,
+      timestamp: new Date().toISOString(),
+      target: this.config.build.target,
+      mode: this.config.build.mode || 'production',
+      client: {
+        entryPoints: [],
+        chunks: [],
+        assets: clientResult.assets || [],
+        publicPath: '/'
+      },
+      server: {
+        entryPoint: serverResult.entryPoint || '',
+        dependencies: [],
+        externals: this.config.build.external || []
+      },
+      assets: [],
+      optimization: {
+        minified: this.config.build.minify,
+        treeshaken: this.config.build.treeshake,
+        compressed: this.config.build.compress || false,
+        originalSize: optimizationResult?.originalSize || 0,
+        optimizedSize: optimizationResult?.optimizedSize || 0,
+        compressionRatio: optimizationResult?.compressionRatio || 0
+      },
+      metrics: {
+        buildTime: clientResult.duration + serverResult.duration,
+        bundleTime: 0,
+        optimizationTime: optimizationResult?.duration || 0,
+        totalSize: optimizationResult?.optimizedSize || 0,
+        gzippedSize: 0,
+        chunkCount: 0,
+        assetCount: clientResult.assets?.length || 0
+      }
+    }
   }
 }

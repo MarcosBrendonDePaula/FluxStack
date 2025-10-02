@@ -7,7 +7,7 @@ export const staticPlugin: Plugin = {
   version: "1.0.0",
   description: "Enhanced static file serving plugin for FluxStack with caching and compression",
   author: "FluxStack Team",
-  priority: "low", // Should run after other plugins
+  priority: 100, // Should run after other plugins
   category: "core",
   tags: ["static", "files", "spa"],
   dependencies: [], // No hard dependencies, but works with vite plugin
