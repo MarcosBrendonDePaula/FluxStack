@@ -119,7 +119,7 @@ describe('PluginManager', () => {
       await manager.initialize() // Second call should be ignored
       
       // Should only log initialization once
-      expect(mockLogger.info).toHaveBeenCalledTimes(6) // init start + plugin discovery start + discovery complete + init complete + additional logs
+      expect(mockLogger.info).toHaveBeenCalledTimes(5) // init start + plugin discovery start + discovery complete + init complete + (possibly more)
     })
   })
 

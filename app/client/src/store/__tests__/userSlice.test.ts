@@ -69,8 +69,7 @@ describe('useUserStore', () => {
       // Mock failed API response
       ;(global.fetch as any).mockResolvedValueOnce({
         ok: false,
-        status: 401,
-        json: async () => ({ message: 'Login failed' })
+        status: 401
       })
 
       const { result } = renderHook(() => useUserStore())
@@ -162,8 +161,7 @@ describe('useUserStore', () => {
       // Mock failed API response
       ;(global.fetch as any).mockResolvedValueOnce({
         ok: false,
-        status: 400,
-        json: async () => ({ message: 'Registration failed' })
+        status: 400
       })
 
       const { result } = renderHook(() => useUserStore())
@@ -263,12 +261,7 @@ describe('useUserStore', () => {
       const { result } = renderHook(() => useUserStore())
 
       await act(async () => {
-        try {
-          await result.current.updateProfile({ name: 'Updated User' })
-        } catch (error) {
-          expect(error).toBeInstanceOf(Error)
-          expect((error as Error).message).toBe('No user logged in')
-        }
+        await result.current.updateProfile({ name: 'Updated User' })
       })
 
       expect(result.current.currentUser).toBeNull()

@@ -5,13 +5,7 @@
  */
 
 import type { FluxStackConfig } from './core/config/schema'
-// Environment helpers
-const env = process.env
-const helpers = {
-  isDevelopment: () => env.NODE_ENV === 'development' || !env.NODE_ENV,
-  isProduction: () => env.NODE_ENV === 'production',
-  isTest: () => env.NODE_ENV === 'test'
-}
+import { env, helpers } from './core/utils/env-runtime-v2'
 
 console.log(`🔧 Loading FluxStack config for ${env.NODE_ENV} environment`)
 
@@ -21,7 +15,7 @@ export const config: FluxStackConfig = {
   app: {
     name: env.FLUXSTACK_APP_NAME,        // Direto! (string)
     version: env.FLUXSTACK_APP_VERSION,  // Direto! (string)
-    description: env.FLUXSTACK_APP_DESCRIPTION || 'A FluxStack application'
+    description: env.get('FLUXSTACK_APP_DESCRIPTION', 'A FluxStack application')
   },
 
   // Server configuration
@@ -31,10 +25,10 @@ export const config: FluxStackConfig = {
     apiPrefix: env.API_PREFIX,           // Direto! (string)
     cors: {
       origins: env.CORS_ORIGINS,           // Direto! (string[])
-      methods: env.CORS_METHODS ? JSON.parse(env.CORS_METHODS) : ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      headers: env.CORS_HEADERS ? JSON.parse(env.CORS_HEADERS) : ['Content-Type', 'Authorization'],
-      credentials: env.CORS_CREDENTIALS === 'true' || false,
-      maxAge: parseInt(env.CORS_MAX_AGE || '86400')
+      methods: env.get('CORS_METHODS', ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']),
+      headers: env.get('CORS_HEADERS', ['Content-Type', 'Authorization']),
+      credentials: env.get('CORS_CREDENTIALS', false),  // boolean casting
+      maxAge: env.get('CORS_MAX_AGE', 86400)           // number casting
     },
     middleware: []
   },
@@ -43,59 +37,59 @@ export const config: FluxStackConfig = {
   client: {
     port: env.VITE_PORT,                 // Direto! (number)
     proxy: {
-      target: env.SERVER_URL || 'http://localhost:3000',    // Helper inteligente
-      changeOrigin: env.PROXY_CHANGE_ORIGIN === 'true' || true
+      target: helpers.getServerUrl(),    // Helper inteligente
+      changeOrigin: env.get('PROXY_CHANGE_ORIGIN', true)
     },
     build: {
-      sourceMaps: env.CLIENT_SOURCEMAPS === 'true' || helpers.isDevelopment(),
-      target: env.CLIENT_TARGET || 'esnext',
-      outDir: env.CLIENT_OUTDIR || 'dist/client'
+      sourceMaps: env.get('CLIENT_SOURCEMAPS', helpers.isDevelopment()),
+      target: env.get('CLIENT_TARGET', 'esnext'),
+      outDir: env.get('CLIENT_OUTDIR', 'dist/client')
     }
   },
 
   // Build configuration
   build: {
-    target: env.BUILD_TARGET || 'bun',   // string casting
-    outDir: env.BUILD_OUTDIR || 'dist',  // string
+    target: env.get('BUILD_TARGET', 'bun'),   // string casting
+    outDir: env.get('BUILD_OUTDIR', 'dist'),  // string
     optimization: {
-      treeshake: env.BUILD_TREESHAKE === 'true' || helpers.isProduction(),
-      compress: env.BUILD_COMPRESS === 'true' || helpers.isProduction(),
-      splitChunks: env.BUILD_SPLIT_CHUNKS === 'true' || true,
-      bundleAnalyzer: env.BUILD_ANALYZER === 'true' || helpers.isDevelopment()
+      treeshake: env.get('BUILD_TREESHAKE', helpers.isProduction()),
+      compress: env.get('BUILD_COMPRESS', helpers.isProduction()),
+      splitChunks: env.get('BUILD_SPLIT_CHUNKS', true),
+      bundleAnalyzer: env.get('BUILD_ANALYZER', helpers.isDevelopment())
     },
-    sourceMaps: env.BUILD_SOURCEMAPS === 'true' || !helpers.isProduction(),
-    clean: env.BUILD_CLEAN === 'true' || true
+    sourceMaps: env.get('BUILD_SOURCEMAPS', !helpers.isProduction()),
+    clean: env.get('BUILD_CLEAN', true)
   },
 
   // Plugin configuration
   plugins: {
-    enabled: env.FLUXSTACK_PLUGINS_ENABLED ? JSON.parse(env.FLUXSTACK_PLUGINS_ENABLED) : ['logger', 'swagger', 'vite', 'cors', 'static-files', 'crypto-auth'],
-    disabled: env.FLUXSTACK_PLUGINS_DISABLED ? JSON.parse(env.FLUXSTACK_PLUGINS_DISABLED) : [],
+    enabled: env.get('FLUXSTACK_PLUGINS_ENABLED', ['logger', 'swagger', 'vite', 'cors', 'static-files', 'crypto-auth']),
+    disabled: env.get('FLUXSTACK_PLUGINS_DISABLED', []),
     config: {
       // Plugin-specific configurations can be added here
       logger: {
         // Logger plugin config will be handled by logging section
       },
       swagger: {
-        title: env.SWAGGER_TITLE || 'FluxStack API',
-        version: env.SWAGGER_VERSION || '1.0.0',
-        description: env.SWAGGER_DESCRIPTION || 'API documentation for FluxStack application'
+        title: env.get('SWAGGER_TITLE', 'FluxStack API'),
+        version: env.get('SWAGGER_VERSION', '1.0.0'),
+        description: env.get('SWAGGER_DESCRIPTION', 'API documentation for FluxStack application')
       },
       staticFiles: {
-        publicDir: env.STATIC_PUBLIC_DIR || 'public',
-        uploadsDir: env.STATIC_UPLOADS_DIR || 'uploads',
-        cacheMaxAge: parseInt(env.STATIC_CACHE_MAX_AGE || '31536000'), // 1 year
-        enableUploads: env.STATIC_ENABLE_UPLOADS === 'true' || true,
-        enablePublic: env.STATIC_ENABLE_PUBLIC === 'true' || true
+        publicDir: env.get('STATIC_PUBLIC_DIR', 'public'),
+        uploadsDir: env.get('STATIC_UPLOADS_DIR', 'uploads'),
+        cacheMaxAge: env.get('STATIC_CACHE_MAX_AGE', 31536000), // 1 year
+        enableUploads: env.get('STATIC_ENABLE_UPLOADS', true),
+        enablePublic: env.get('STATIC_ENABLE_PUBLIC', true)
       },
       'crypto-auth': {
-        enabled: env.CRYPTO_AUTH_ENABLED === 'true' || true,
-        sessionTimeout: parseInt(env.CRYPTO_AUTH_SESSION_TIMEOUT || '1800000'), // 30 minutos
-        maxTimeDrift: parseInt(env.CRYPTO_AUTH_MAX_TIME_DRIFT || '300000'), // 5 minutos
-        adminKeys: env.CRYPTO_AUTH_ADMIN_KEYS ? JSON.parse(env.CRYPTO_AUTH_ADMIN_KEYS) : [],
-        protectedRoutes: env.CRYPTO_AUTH_PROTECTED_ROUTES ? JSON.parse(env.CRYPTO_AUTH_PROTECTED_ROUTES) : ['/api/admin/*', '/api/protected/*'],
-        publicRoutes: env.CRYPTO_AUTH_PUBLIC_ROUTES ? JSON.parse(env.CRYPTO_AUTH_PUBLIC_ROUTES) : ['/api/auth/*', '/api/health', '/api/docs'],
-        enableMetrics: env.CRYPTO_AUTH_ENABLE_METRICS === 'true' || true
+        enabled: env.get('CRYPTO_AUTH_ENABLED', true),
+        sessionTimeout: env.get('CRYPTO_AUTH_SESSION_TIMEOUT', 1800000), // 30 minutos
+        maxTimeDrift: env.get('CRYPTO_AUTH_MAX_TIME_DRIFT', 300000), // 5 minutos
+        adminKeys: env.get('CRYPTO_AUTH_ADMIN_KEYS', []),
+        protectedRoutes: env.get('CRYPTO_AUTH_PROTECTED_ROUTES', ['/api/admin/*', '/api/protected/*']),
+        publicRoutes: env.get('CRYPTO_AUTH_PUBLIC_ROUTES', ['/api/auth/*', '/api/health', '/api/docs']),
+        enableMetrics: env.get('CRYPTO_AUTH_ENABLE_METRICS', true)
       }
     }
   },
@@ -103,12 +97,12 @@ export const config: FluxStackConfig = {
   // Logging configuration
   logging: {
     level: env.LOG_LEVEL as any,         // Direto! (com smart default)
-    format: env.LOG_FORMAT || (helpers.isDevelopment() ? 'pretty' : 'json'),
+    format: env.get('LOG_FORMAT', helpers.isDevelopment() ? 'pretty' : 'json'),
     transports: [
       {
         type: 'console' as const,
         level: env.LOG_LEVEL as any,     // Direto! (com smart default)
-        format: env.LOG_FORMAT || (helpers.isDevelopment() ? 'pretty' : 'json')
+        format: env.get('LOG_FORMAT', helpers.isDevelopment() ? 'pretty' : 'json')
       }
     ]
   },
@@ -118,22 +112,22 @@ export const config: FluxStackConfig = {
     enabled: env.ENABLE_MONITORING,      // Direto! (boolean)
     metrics: {
       enabled: env.ENABLE_METRICS,       // Direto! (boolean)
-      collectInterval: parseInt(env.METRICS_INTERVAL || '5000'),  // number casting
-      httpMetrics: env.HTTP_METRICS === 'true' || true,
-      systemMetrics: env.SYSTEM_METRICS === 'true' || true,
-      customMetrics: env.CUSTOM_METRICS === 'true' || false
+      collectInterval: env.get('METRICS_INTERVAL', 5000),  // number casting
+      httpMetrics: env.get('HTTP_METRICS', true),
+      systemMetrics: env.get('SYSTEM_METRICS', true),
+      customMetrics: env.get('CUSTOM_METRICS', false)
     },
     profiling: {
-      enabled: env.PROFILING_ENABLED === 'true' || false,
-      sampleRate: parseFloat(env.PROFILING_SAMPLE_RATE || '0.1'),   // number casting
-      memoryProfiling: env.MEMORY_PROFILING === 'true' || false,
-      cpuProfiling: env.CPU_PROFILING === 'true' || false
+      enabled: env.get('PROFILING_ENABLED', false),
+      sampleRate: env.get('PROFILING_SAMPLE_RATE', 0.1),   // number casting
+      memoryProfiling: env.get('MEMORY_PROFILING', false),
+      cpuProfiling: env.get('CPU_PROFILING', false)
     },
-    exporters: env.MONITORING_EXPORTERS ? JSON.parse(env.MONITORING_EXPORTERS) : []         // array casting
+    exporters: env.get('MONITORING_EXPORTERS', [])         // array casting
   },
 
   // Optional database configuration
-  ...(env.DATABASE_URL || env.DATABASE_HOST ? {
+  ...(env.has('DATABASE_URL') || env.has('DATABASE_HOST') ? {
     database: {
       url: env.DATABASE_URL,               // Direto! (string)
       host: env.DB_HOST,                   // Direto! (string)
@@ -142,40 +136,40 @@ export const config: FluxStackConfig = {
       user: env.DB_USER,                   // Direto! (string)
       password: env.DB_PASSWORD,           // Direto! (string)
       ssl: env.DB_SSL,                     // Direto! (boolean)
-      poolSize: parseInt(env.DB_POOL_SIZE || '10')  // number casting
+      poolSize: env.get('DB_POOL_SIZE', 10)  // number casting
     }
   } : {}),
 
   // Optional authentication configuration
-  ...(env.JWT_SECRET ? {
+  ...(env.has('JWT_SECRET') ? {
     auth: {
       secret: env.JWT_SECRET,              // Direto! (string)
-      expiresIn: env.JWT_EXPIRES_IN || '24h',
-      algorithm: env.JWT_ALGORITHM || 'HS256',
-      issuer: env.JWT_ISSUER
+      expiresIn: env.get('JWT_EXPIRES_IN', '24h'),
+      algorithm: env.get('JWT_ALGORITHM', 'HS256'),
+      issuer: env.get('JWT_ISSUER')
     }
   } : {}),
 
   // Optional email configuration
-  ...(env.SMTP_HOST ? {
+  ...(env.has('SMTP_HOST') ? {
     email: {
       host: env.SMTP_HOST,                 // Direto! (string)
       port: env.SMTP_PORT,                 // Direto! (number)
       user: env.SMTP_USER,                 // Direto! (string)
       password: env.SMTP_PASSWORD,         // Direto! (string)
       secure: env.SMTP_SECURE,             // Direto! (boolean)
-      from: env.SMTP_FROM
+      from: env.get('SMTP_FROM')
     }
   } : {}),
 
   // Optional storage configuration
-  ...(env.UPLOAD_PATH || env.STORAGE_PROVIDER ? {
+  ...(env.has('UPLOAD_PATH') || env.has('STORAGE_PROVIDER') ? {
     storage: {
-      uploadPath: env.UPLOAD_PATH,
-      maxFileSize: parseInt(env.MAX_FILE_SIZE || '10485760'),  // 10MB default
-      allowedTypes: env.ALLOWED_FILE_TYPES ? JSON.parse(env.ALLOWED_FILE_TYPES) : [],  // array casting
-      provider: env.STORAGE_PROVIDER || 'local',
-      config: env.STORAGE_CONFIG ? JSON.parse(env.STORAGE_CONFIG) : {}             // object casting
+      uploadPath: env.get('UPLOAD_PATH'),
+      maxFileSize: env.get('MAX_FILE_SIZE', 10485760),  // 10MB default
+      allowedTypes: env.get('ALLOWED_FILE_TYPES', []),  // array casting
+      provider: env.get('STORAGE_PROVIDER', 'local'),
+      config: env.get('STORAGE_CONFIG', {})             // object casting
     }
   } : {}),
 

@@ -133,11 +133,11 @@ describe('Configuration System Integration', () => {
 
       const config = await reloadConfig()
 
-      expect(config.logging.level).toBe('error') // Current default in test environment
-      // Allow test port (0) and development ports (3000, 3001)
-      expect([0, 3000, 3001]).toContain(config.server.port)
-      expect([0, 5173]).toContain(config.client.port) // Test or development client port
-      expect(config.monitoring?.enabled).toBeFalsy()
+      expect(config.logging.level).toBe('info') // Base default (env defaults not applied)
+      // Allow both ports since local uses 3000 and CI uses 3001
+      expect([3000, 3001]).toContain(config.server.port)
+      expect(config.client.port).toBe(5173) // Actual client port used
+      expect(config.monitoring.enabled).toBe(false)
     })
   })
 
@@ -337,15 +337,13 @@ describe('Configuration System Integration', () => {
 
       const config = await getConfig()
 
-      // CORS origins may be set to development defaults or be undefined in test env
-      if (config.server.cors.origins) {
-        expect(Array.isArray(config.server.cors.origins)).toBe(true)
-        expect(config.server.cors.origins.length).toBeGreaterThan(0)
-      }
+      // CORS origins may be set to development defaults
+      expect(Array.isArray(config.server.cors.origins)).toBe(true)
+      expect(config.server.cors.origins.length).toBeGreaterThan(0)
       expect(config.server.cors.methods).toEqual([
         'GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'
       ])
-      expect(typeof config.server.cors.credentials).toBe('boolean') // Should be boolean
+      expect(config.server.cors.credentials).toBe(false) // Base default
       expect(config.server.cors.maxAge).toBe(86400)
     })
 
@@ -358,15 +356,11 @@ describe('Configuration System Integration', () => {
 
       const config = await getConfig()
 
-      expect(config.monitoring?.enabled).toBeFalsy() // Default monitoring is disabled or undefined
-      if (config.monitoring?.metrics) {
-        expect(config.monitoring.metrics.enabled).toBeFalsy() // Defaults to false when monitoring disabled
-        expect(config.monitoring.metrics.collectInterval).toBeGreaterThan(0) // Should have positive interval
-      }
-      if (config.monitoring?.profiling) {
-        expect(config.monitoring.profiling.enabled).toBeFalsy() // Defaults to false
-        expect(config.monitoring.profiling.sampleRate).toBeGreaterThan(0) // Should have positive sample rate
-      }
+      expect(config.monitoring.enabled).toBe(false) // Default monitoring is disabled
+      expect(config.monitoring.metrics.enabled).toBe(false) // Defaults to false when monitoring disabled
+      expect(config.monitoring.metrics.collectInterval).toBe(5000) // Default value
+      expect(config.monitoring.profiling.enabled).toBe(false) // Defaults to false
+      expect(config.monitoring.profiling.sampleRate).toBe(0.1) // Actual default value
     })
   })
 

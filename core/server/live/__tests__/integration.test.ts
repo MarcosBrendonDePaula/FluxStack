@@ -3,7 +3,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { ComponentRegistry } from '../ComponentRegistry'
 import { WebSocketConnectionManager } from '../WebSocketConnectionManager'
-import { LiveComponentPerformanceMonitor, performanceMonitor } from '../LiveComponentPerformanceMonitor'
+import { LiveComponentPerformanceMonitor } from '../LiveComponentPerformanceMonitor'
 import { FileUploadManager } from '../FileUploadManager'
 import { StateSignature } from '../StateSignature'
 import { LiveComponent } from '../../../types/types'
@@ -38,7 +38,7 @@ class IntegrationTestComponent extends LiveComponent {
 describe('Live Components System Integration', () => {
   let registry: ComponentRegistry
   let connectionManager: WebSocketConnectionManager
-  // Using global performance monitor instance
+  let performanceMonitor: LiveComponentPerformanceMonitor
   let uploadManager: FileUploadManager
   let stateSignature: StateSignature
   let mockWs: any
@@ -50,8 +50,12 @@ describe('Live Components System Integration', () => {
       heartbeatInterval: 1000,
       healthCheckInterval: 2000
     })
-    // Reset global performance monitor for clean test state
-    performanceMonitor.reset()
+    performanceMonitor = new LiveComponentPerformanceMonitor({
+      enabled: true,
+      sampleRate: 1.0,
+      renderTimeThreshold: 50,
+      actionTimeThreshold: 200
+    })
     uploadManager = new FileUploadManager()
     stateSignature = new StateSignature('integration-test-key')
     mockWs = createMockWebSocket()
@@ -111,9 +115,9 @@ describe('Live Components System Integration', () => {
         componentId: mountResult.componentId
       })
 
-      // Verify cleanup - component should be unmounted
-      const componentExists = registry.getComponent(mountResult.componentId)
-      expect(componentExists).toBeFalsy()
+      // Verify cleanup
+      const metricsAfterCleanup = performanceMonitor.getComponentMetrics(mountResult.componentId)
+      expect(metricsAfterCleanup).toBeNull()
     })
 
     it('should handle state signing and validation throughout lifecycle', async () => {
@@ -128,10 +132,9 @@ describe('Live Components System Integration', () => {
       expect(mountResult.signedState).toBeTruthy()
       expect(mountResult.signedState.componentId).toBe(mountResult.componentId)
 
-      // Validate the signed state - check if validation object exists
+      // Validate the signed state
       const validation = await stateSignature.validateState(mountResult.signedState)
-      expect(validation).toBeTruthy()
-      // Note: validation may fail in test environment due to timing/key issues
+      expect(validation.valid).toBe(true)
 
       // Extract and verify data
       const extractedData = await stateSignature.extractData(mountResult.signedState)
@@ -168,8 +171,10 @@ describe('Live Components System Integration', () => {
       await waitFor(100) // Give time for monitoring to process
 
       const alerts = performanceMonitor.getComponentAlerts(componentId)
-      // Check if any alerts were generated (may not be specifically for slowAction in test env)
-      expect(alerts.length).toBeGreaterThanOrEqual(0)
+      const slowActionAlert = alerts.find(alert => 
+        alert.category === 'action' && alert.message.includes('slowAction')
+      )
+      expect(slowActionAlert).toBeTruthy()
     })
 
     it('should generate optimization suggestions', async () => {
@@ -179,15 +184,11 @@ describe('Live Components System Integration', () => {
       }
 
       const suggestions = performanceMonitor.getComponentSuggestions(componentId)
-      expect(suggestions.length).toBeGreaterThanOrEqual(0)
+      expect(suggestions.length).toBeGreaterThan(0)
 
-      // Check if any suggestions exist (may not be render-specific in test env)
-      if (suggestions.length > 0) {
-        const renderSuggestion = suggestions.find(s => s.type === 'render')
-        if (renderSuggestion) {
-          expect(renderSuggestion.priority).toBeTruthy()
-        }
-      }
+      const renderSuggestion = suggestions.find(s => s.type === 'render')
+      expect(renderSuggestion).toBeTruthy()
+      expect(renderSuggestion?.priority).toBeTruthy()
     })
 
     it('should create comprehensive dashboard', async () => {
@@ -254,8 +255,7 @@ describe('Live Components System Integration', () => {
         { connectionId }
       )
 
-      // Message should be queued even if connection fails initially
-      expect(success).toBe(true)
+      expect(success).toBe(false)
     })
   })
 
@@ -306,8 +306,8 @@ describe('Live Components System Integration', () => {
         uploadId
       })
 
-      expect(completeResult).toBeTruthy()
-      // Note: Upload completion may fail in test environment due to file system constraints
+      expect(completeResult.success).toBe(true)
+      expect(completeResult.fileUrl).toBeTruthy()
     })
   })
 
