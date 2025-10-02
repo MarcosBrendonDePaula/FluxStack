@@ -74,7 +74,8 @@
       "WebFetch(domain:zustand.docs.pmnd.rs)",
       "Bash(node:*)",
       "Bash(BUILD_MINIFY=false bun run build)",
-      "Bash(NODE_ENV=production bun index.js)"
+      "Bash(NODE_ENV=production bun index.js)",
+      "Bash(git log:*)"
     ],
     "deny": []
   }
