@@ -4,7 +4,6 @@ import { gzipSync } from "zlib"
 import type { OptimizationConfig, OptimizationResult } from "../types/build"
 
 export interface OptimizerConfig {
-  minify: boolean
   treeshake: boolean
   compress: boolean
   removeUnusedCSS: boolean
@@ -36,10 +35,7 @@ export class Optimizer {
       // Get original size
       results.originalSize = await this.calculateDirectorySize(buildPath)
 
-      // Apply optimizations
-      if (this.config.minify) {
-        await this.minifyAssets(buildPath, results)
-      }
+      // Apply optimizations (minification removed for compatibility)
 
       if (this.config.compress) {
         await this.compressAssets(buildPath, results)
@@ -80,55 +76,7 @@ export class Optimizer {
     }
   }
 
-  private async minifyAssets(buildPath: string, results: OptimizationResult): Promise<void> {
-    console.log("🗜️ Minifying assets...")
-    
-    const files = this.getFilesRecursively(buildPath)
-    let minifiedCount = 0
-
-    for (const file of files) {
-      const ext = extname(file).toLowerCase()
-      
-      if (ext === '.js' || ext === '.css') {
-        try {
-          const content = readFileSync(file, 'utf-8')
-          const minified = await this.minifyContent(content, ext)
-          
-          if (minified !== content) {
-            writeFileSync(file, minified)
-            minifiedCount++
-          }
-        } catch (error) {
-          console.warn(`⚠️ Failed to minify ${file}:`, error)
-        }
-      }
-    }
-
-    results.optimizations.push({
-      type: 'minification',
-      description: `Minified ${minifiedCount} files`,
-      sizeSaved: 0 // Would calculate actual size saved
-    })
-  }
-
-  private async minifyContent(content: string, type: string): Promise<string> {
-    // Basic minification - in a real implementation, you'd use proper minifiers
-    if (type === '.js') {
-      return content
-        .replace(/\/\*[\s\S]*?\*\//g, '') // Remove comments
-        .replace(/\/\/.*$/gm, '') // Remove single-line comments
-        .replace(/\s+/g, ' ') // Collapse whitespace
-        .trim()
-    } else if (type === '.css') {
-      return content
-        .replace(/\/\*[\s\S]*?\*\//g, '') // Remove comments
-        .replace(/\s+/g, ' ') // Collapse whitespace
-        .replace(/;\s*}/g, '}') // Remove unnecessary semicolons
-        .trim()
-    }
-    
-    return content
-  }
+  // Minification methods removed for compatibility with Bun bundler
 
   private async compressAssets(buildPath: string, results: OptimizationResult): Promise<void> {
     console.log("📦 Compressing assets...")

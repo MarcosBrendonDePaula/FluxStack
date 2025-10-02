@@ -104,8 +104,8 @@ export const staticPlugin: Plugin = {
       compression: config.compression.enabled
     })
     
-    // Setup static file handling in Elysia
-    context.app.get("/*", async ({ request, set }: { request: Request, set: any }) => {
+    // Helper function for handling both GET and HEAD requests
+    const handleStaticRequest = async ({ request, set }: { request: Request, set: any }) => {
       const url = new URL(request.url)
       
       // Skip API routes
@@ -123,7 +123,7 @@ export const staticPlugin: Plugin = {
         // This plugin only handles static files serving in production or fallback
         
         // Serve static files
-        return await serveStaticFile(url.pathname, config, context, set)
+        return await serveStaticFile(url.pathname, config, context, set, request.method === 'HEAD')
         
       } catch (error) {
         context.logger.error("Error serving static file", { 
@@ -134,7 +134,11 @@ export const staticPlugin: Plugin = {
         set.status = 500
         return "Internal Server Error"
       }
-    })
+    }
+
+    // Setup static file handling in Elysia - handle both GET and HEAD
+    context.app.get("/*", handleStaticRequest)
+    context.app.head("/*", handleStaticRequest)
   },
 
   onServerStart: async (context: PluginContext) => {
@@ -162,7 +166,8 @@ async function serveStaticFile(
   pathname: string, 
   config: any, 
   context: PluginContext,
-  set: any
+  set: any,
+  isHead: boolean = false
 ): Promise<any> {
   const isDev = context.utils.isDevelopment()
   
@@ -209,7 +214,7 @@ async function serveStaticFile(
     if (config.spa.enabled && !pathname.includes('.')) {
       const indexPath = join(process.cwd(), baseDir, config.spa.fallback)
       if (existsSync(indexPath)) {
-        return serveFile(indexPath, config, set, context)
+        return serveFile(indexPath, config, set, context, isHead)
       }
     }
     
@@ -222,18 +227,18 @@ async function serveStaticFile(
   if (stats.isDirectory()) {
     const indexPath = join(filePath, config.indexFile)
     if (existsSync(indexPath)) {
-      return serveFile(indexPath, config, set, context)
+      return serveFile(indexPath, config, set, context, isHead)
     }
     
     set.status = 404
     return "Not Found"
   }
   
-  return serveFile(filePath, config, set, context)
+  return serveFile(filePath, config, set, context, isHead)
 }
 
 // Serve individual file
-function serveFile(filePath: string, config: any, set: any, context: PluginContext) {
+function serveFile(filePath: string, config: any, set: any, context: PluginContext, isHead: boolean = false) {
   const ext = extname(filePath)
   const file = Bun.file(filePath)
   
@@ -258,6 +263,9 @@ function serveFile(filePath: string, config: any, set: any, context: PluginConte
   const contentType = mimeTypes[ext] || 'application/octet-stream'
   set.headers['Content-Type'] = contentType
   
+  // Set content-length for both GET and HEAD requests
+  set.headers['Content-Length'] = file.size.toString()
+  
   // Set cache headers
   if (config.cacheControl.enabled) {
     if (ext === '.html') {
@@ -280,8 +288,14 @@ function serveFile(filePath: string, config: any, set: any, context: PluginConte
   
   context.logger.debug(`Serving static file: ${filePath}`, {
     contentType,
-    size: file.size
+    size: file.size,
+    method: isHead ? 'HEAD' : 'GET'
   })
+  
+  // For HEAD requests, return empty body but keep all headers
+  if (isHead) {
+    return ""
+  }
   
   return file
 }

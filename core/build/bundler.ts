@@ -9,7 +9,6 @@ export interface BundlerConfig {
   outDir: string
   sourceMaps: boolean
   external?: string[]
-  minify?: boolean
 }
 
 export class Bundler {
@@ -102,9 +101,7 @@ export class Bundler {
         buildArgs.push("--sourcemap")
       }
 
-      if (this.config.minify) {
-        buildArgs.push("--minify")
-      }
+      // Bun bundling only - no minification for better compatibility
 
       const buildProcess = spawn({
         cmd: buildArgs,

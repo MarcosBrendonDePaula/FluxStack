@@ -23,6 +23,22 @@ export default defineConfig({
       },
     })
   ],
+  define: {
+    __DEFINES__: JSON.stringify({}),
+    global: 'globalThis',
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
+    __HMR_CONFIG_NAME__: JSON.stringify('vite.config.ts'),
+    __BASE__: JSON.stringify('/'),
+    __SERVER_HOST__: JSON.stringify('localhost'),
+    __HMR_PROTOCOL__: JSON.stringify('ws'),
+    __HMR_PORT__: JSON.stringify(5173),
+    __HMR_HOSTNAME__: JSON.stringify('localhost'),
+    __HMR_BASE__: JSON.stringify('/'),
+    __HMR_DIRECT_TARGET__: JSON.stringify('localhost:5173'),
+    __HMR_ENABLE_OVERLAY__: JSON.stringify(true),
+    __HMR_TIMEOUT__: JSON.stringify(30000),
+    __WS_TOKEN__: JSON.stringify(''),
+  },
   root: 'app/client',
   server: {
     port: 5173,

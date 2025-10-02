@@ -42,7 +42,6 @@ export const config: FluxStackConfig = {
     },
     build: {
       sourceMaps: env.get('CLIENT_SOURCEMAPS', helpers.isDevelopment()),
-      minify: env.get('CLIENT_MINIFY', helpers.isProduction()),
       target: env.get('CLIENT_TARGET', 'esnext'),
       outDir: env.get('CLIENT_OUTDIR', 'dist/client')
     }
@@ -53,7 +52,6 @@ export const config: FluxStackConfig = {
     target: env.get('BUILD_TARGET', 'bun'),   // string casting
     outDir: env.get('BUILD_OUTDIR', 'dist'),  // string
     optimization: {
-      minify: env.get('BUILD_MINIFY', helpers.isProduction()),
       treeshake: env.get('BUILD_TREESHAKE', helpers.isProduction()),
       compress: env.get('BUILD_COMPRESS', helpers.isProduction()),
       splitChunks: env.get('BUILD_SPLIT_CHUNKS', true),
@@ -193,7 +191,6 @@ export const config: FluxStackConfig = {
         port: 5173,
         proxy: { target: 'http://localhost:3000' },
         build: {
-          minify: false,
           sourceMaps: true,
           target: 'es2020',
           outDir: 'dist'
@@ -203,7 +200,6 @@ export const config: FluxStackConfig = {
         target: 'bun',
         outDir: 'dist',
         optimization: {
-          minify: false,
           compress: false,
           treeshake: false,
           splitChunks: false,
@@ -246,7 +242,6 @@ export const config: FluxStackConfig = {
         port: 5173,
         proxy: { target: 'http://localhost:3000' },
         build: {
-          minify: true,
           sourceMaps: false,
           target: 'es2020',
           outDir: 'dist'
@@ -256,10 +251,9 @@ export const config: FluxStackConfig = {
         target: 'bun',
         outDir: 'dist',
         optimization: {
-          minify: true,
-          treeshake: true,
-          compress: true,
-          splitChunks: true,
+          treeshake: false,
+          compress: false,
+          splitChunks: false,
           bundleAnalyzer: false
         },
         sourceMaps: false,
@@ -306,7 +300,7 @@ export const config: FluxStackConfig = {
       client: {
         port: 0, // Use random available port
         proxy: { target: 'http://localhost:3000' },
-        build: { sourceMaps: true, minify: false, target: 'es2020', outDir: 'dist' }
+        build: { sourceMaps: true, target: 'es2020', outDir: 'dist' }
       },
       monitoring: {
         enabled: false,

@@ -95,6 +95,7 @@ export class FluxStackFramework {
     })
 
     this.setupCors()
+    this.setupHeadHandler()
     this.setupHooks()
     this.setupErrorHandling()
 
@@ -139,6 +140,37 @@ export class FluxStackFramework {
         set.status = 200
         return ""
       })
+  }
+
+  private setupHeadHandler() {
+    // Global HEAD handler to prevent Elysia's automatic HEAD conversion bug
+    this.app.head("*", ({ request, set }) => {
+      const url = new URL(request.url)
+      
+      // Handle API routes
+      if (url.pathname.startsWith(this.context.config.server.apiPrefix)) {
+        set.status = 200
+        set.headers['Content-Type'] = 'application/json'
+        set.headers['Content-Length'] = '0'
+        return ""
+      }
+      
+      // Handle static files (assume they're HTML if no extension)
+      const isStatic = url.pathname === '/' || !url.pathname.includes('.')
+      if (isStatic) {
+        set.status = 200
+        set.headers['Content-Type'] = 'text/html'
+        set.headers['Content-Length'] = '478' // approximate size of index.html
+        set.headers['Cache-Control'] = 'no-cache'
+        return ""
+      }
+      
+      // Handle other file types
+      set.status = 200
+      set.headers['Content-Type'] = 'application/octet-stream'
+      set.headers['Content-Length'] = '0'
+      return ""
+    })
   }
 
   private setupHooks() {

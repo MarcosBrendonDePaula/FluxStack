@@ -385,7 +385,8 @@ async function handleLegacyCommands() {
 
   case "start":
     console.log("🚀 Starting FluxStack production server...")
-    await import(process.cwd() + "/dist/index.js")
+    const { join } = await import("path")
+    await import(join(process.cwd(), "dist", "index.js"))
     break
 
   case "create":

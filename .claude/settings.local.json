@@ -72,7 +72,9 @@
       "Bash(git push:*)",
       "WebFetch(domain:livewire.laravel.com)",
       "WebFetch(domain:zustand.docs.pmnd.rs)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(BUILD_MINIFY=false bun run build)",
+      "Bash(NODE_ENV=production bun index.js)"
     ],
     "deny": []
   }

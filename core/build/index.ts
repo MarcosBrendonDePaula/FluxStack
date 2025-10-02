@@ -18,13 +18,11 @@ export class FluxStackBuilder {
       target: config.build.target,
       outDir: config.build.outDir,
       sourceMaps: config.build.sourceMaps,
-      minify: config.build.minify,
       external: config.build.external
     })
     
     // Initialize optimizer with configuration
     this.optimizer = new Optimizer({
-      minify: config.build.minify,
       treeshake: config.build.treeshake,
       compress: config.build.compress || false,
       removeUnusedCSS: config.build.removeUnusedCSS || false,
@@ -37,7 +35,6 @@ export class FluxStackBuilder {
     return await this.bundler.bundleClient({
       env: {
         VITE_BUILD_OUTDIR: this.config.client.build.outDir,
-        VITE_BUILD_MINIFY: this.config.client.build.minify.toString(),
         VITE_BUILD_SOURCEMAPS: this.config.client.build.sourceMaps.toString()
       }
     })
@@ -228,6 +225,7 @@ MONITORING_ENABLED=true
     
     console.log("✅ Docker files created in dist/")
   }
+
 
   async build(): Promise<BuildResult> {
     console.log("⚡ FluxStack Framework - Building...")
