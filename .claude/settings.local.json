@@ -75,7 +75,10 @@
       "Bash(node:*)",
       "Bash(BUILD_MINIFY=false bun run build)",
       "Bash(NODE_ENV=production bun index.js)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(git tag:*)",
+      "Read(/C:\\Users\\Marcos\\Documents\\GitHub\\aviso-projeto\\test-temporal-bridge/**)",
+      "Read(/C:\\Users\\Marcos\\Documents\\GitHub\\aviso-projeto\\test-temporal-bridge/**)"
     ],
     "deny": []
   }
