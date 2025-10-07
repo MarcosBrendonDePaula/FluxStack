@@ -60,27 +60,27 @@ export class PluginManager extends EventEmitter {
       return
     }
 
-    this.logger.info('Initializing plugin manager')
+    this.logger.debug('Initializing plugin manager')
 
     try {
       // Discover and load plugins
       this.logger.debug('Starting plugin discovery...')
       await this.discoverPlugins()
       this.logger.debug('Plugin discovery completed')
-      
+
       // Setup plugin contexts
       this.logger.debug('Setting up plugin contexts...')
       this.setupPluginContexts()
       this.logger.debug('Plugin contexts setup completed')
-      
+
       // Execute setup hooks
       this.logger.debug('Executing setup hooks...')
       await this.executeHook('setup')
       this.logger.debug('Setup hooks execution completed')
-      
+
       this.initialized = true
       const stats = this.registry.getStats()
-      this.logger.info('Plugin manager initialized successfully', {
+      this.logger.debug('Plugin manager initialized successfully', {
         totalPlugins: stats.totalPlugins,
         enabledPlugins: stats.enabledPlugins,
         loadOrder: stats.loadOrder
@@ -412,19 +412,19 @@ export class PluginManager extends EventEmitter {
   private async discoverPlugins(): Promise<void> {
     try {
       // Load built-in plugins first (handled by core system)
-      this.logger.info('Loading built-in plugins...')
+      this.logger.debug('Loading built-in plugins...')
       const builtInResults = await this.registry.discoverPlugins({
         directories: [],
         includeBuiltIn: true,
         includeExternal: false
       })
-      
+
       // Try to use auto-generated registry for external plugins (if available from build)
       let externalResults: any[] = []
       try {
         const autoRegistryModule = await import('./auto-registry')
         if (autoRegistryModule.discoveredPlugins && autoRegistryModule.registerDiscoveredPlugins) {
-          this.logger.info('🚀 Using auto-generated external plugins registry')
+          this.logger.debug('🚀 Using auto-generated external plugins registry')
           await autoRegistryModule.registerDiscoveredPlugins(this.registry)
           externalResults = autoRegistryModule.discoveredPlugins.map((plugin: any) => ({
             success: true,
@@ -433,16 +433,16 @@ export class PluginManager extends EventEmitter {
         }
       } catch (error) {
         this.logger.debug('Auto-generated external plugins registry not found, falling back to discovery', { error: error.message })
-        
+
         // Fallback to runtime discovery for external plugins
-        this.logger.info('Discovering external plugins in directory: plugins')
+        this.logger.debug('Discovering external plugins in directory: plugins')
         externalResults = await this.registry.discoverPlugins({
           directories: ['plugins'],
           includeBuiltIn: false,
           includeExternal: true
         })
       }
-      
+
       // Combine results
       const results = [...builtInResults, ...externalResults]
 
@@ -463,7 +463,7 @@ export class PluginManager extends EventEmitter {
         }
       }
 
-      this.logger.info('Plugin discovery completed', { loaded, failed })
+      this.logger.debug('Plugin discovery completed', { loaded, failed })
     } catch (error) {
       this.logger.error('Plugin discovery failed', { error })
       throw error

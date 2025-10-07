@@ -1,17 +1,18 @@
 // User application entry point
 import { FluxStackFramework, vitePlugin, swaggerPlugin, staticPlugin, liveComponentsPlugin, staticFilesPlugin } from "@/core/server"
 import { isDevelopment } from "@/core/utils/helpers"
-import { LOG } from "@/core/utils/logger"
+import { DEBUG } from "@/core/utils/logger"
 import { apiRoutes } from "./routes"
 // Import sistema de env dinâmico simplificado
 import { env, helpers } from "@/core/utils/env-runtime-v2"
 // Import live components registration
 import "./live/register-components"
 
-LOG('🔧 Loading dynamic environment configuration...')
-LOG(`📊 Environment: ${env.NODE_ENV}`)
-LOG(`🚀 Port: ${env.PORT}`)
-LOG(`🌐 Host: ${env.HOST}`)
+// Startup info moved to DEBUG level (set LOG_LEVEL=debug to see details)
+DEBUG('🔧 Loading dynamic environment configuration...')
+DEBUG(`📊 Environment: ${env.NODE_ENV}`)
+DEBUG(`🚀 Port: ${env.PORT}`)
+DEBUG(`🌐 Host: ${env.HOST}`)
 
 // Criar aplicação com configuração dinâmica simplificada
 const app = new FluxStackFramework({

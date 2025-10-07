@@ -74,14 +74,14 @@ export const vitePlugin: Plugin = {
     const config = getPluginConfig(context)
 
     if (!config.enabled || !context.config.client) {
-      context.logger.info('Vite plugin disabled or no client configuration found')
+      context.logger.debug('Vite plugin disabled or no client configuration found')
       return
     }
 
     const vitePort = config.port || context.config.client.port || 5173
     const viteHost = config.host || "localhost"
 
-    context.logger.info(`🎨 Starting Vite dev server programmatically on ${viteHost}:${vitePort}`)
+    context.logger.debug(`🎨 Starting Vite dev server programmatically on ${viteHost}:${vitePort}`)
 
     try {
       // Start Vite dev server programmatically
@@ -97,8 +97,8 @@ export const vitePlugin: Plugin = {
       await viteServer.listen()
       viteServer.printUrls()
 
-      context.logger.info(`✅ Vite server started successfully on ${viteHost}:${vitePort}`)
-      context.logger.info('🔄 Hot reload coordination active - Zero órfãos!')
+      context.logger.debug(`✅ Vite server started successfully on ${viteHost}:${vitePort}`)
+      context.logger.debug('🔄 Hot reload coordination active - Zero órfãos!')
 
         // Store Vite config in context for later use
         ; (context as any).viteConfig = {
@@ -111,7 +111,7 @@ export const vitePlugin: Plugin = {
       // Setup cleanup on process exit
       const cleanup = async () => {
         if (viteServer) {
-          context.logger.info('🛑 Stopping Vite server...')
+          context.logger.debug('🛑 Stopping Vite server...')
           await viteServer.close()
           viteServer = null
         }
@@ -123,7 +123,7 @@ export const vitePlugin: Plugin = {
 
     } catch (error) {
       context.logger.error('❌ Failed to start Vite server programmatically:', error)
-      context.logger.info('⚠️ Falling back to monitoring mode...')
+      context.logger.debug('⚠️ Falling back to monitoring mode...')
 
         // Fallback to monitoring if programmatic start fails
         ; (context as any).viteConfig = {
@@ -140,7 +140,7 @@ export const vitePlugin: Plugin = {
     const viteConfig = (context as any).viteConfig
 
     if (config.enabled && viteConfig) {
-      context.logger.info(`Vite integration active - monitoring ${viteConfig.host}:${viteConfig.port}`)
+      context.logger.debug(`Vite integration active - monitoring ${viteConfig.host}:${viteConfig.port}`)
     }
   },
 
@@ -270,11 +270,11 @@ async function monitorVite(
         isConnected = true
         retries = 0
         if (actualPort !== initialPort) {
-          context.logger.info(`✓ Vite server detected on ${host}:${actualPort} (auto-detected from port ${initialPort})`)
+          context.logger.debug(`✓ Vite server detected on ${host}:${actualPort} (auto-detected from port ${initialPort})`)
         } else {
-          context.logger.info(`✓ Vite server detected on ${host}:${actualPort}`)
+          context.logger.debug(`✓ Vite server detected on ${host}:${actualPort}`)
         }
-        context.logger.info("Hot reload coordination active")
+        context.logger.debug("Hot reload coordination active")
       } else if (!isRunning && isConnected) {
         isConnected = false
         context.logger.warn(`✗ Vite server disconnected from ${host}:${actualPort}`)

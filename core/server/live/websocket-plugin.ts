@@ -19,12 +19,12 @@ export const liveComponentsPlugin: Plugin = {
   tags: ['websocket', 'real-time', 'live-components'],
   
   setup: async (context: PluginContext) => {
-    context.logger.info('🔌 Setting up Live Components plugin with Elysia WebSocket...')
+    context.logger.debug('🔌 Setting up Live Components plugin with Elysia WebSocket...')
     
     // Auto-discover components from app/server/live directory
     const componentsPath = path.join(process.cwd(), 'app', 'server', 'live')
     await componentRegistry.autoDiscoverComponents(componentsPath)
-    context.logger.info('🔍 Component auto-discovery completed')
+    context.logger.debug('🔍 Component auto-discovery completed')
     
     // Add WebSocket route for Live Components
     context.app
@@ -256,7 +256,7 @@ export const liveComponentsPlugin: Plugin = {
   },
 
   onServerStart: async (context: PluginContext) => {
-    context.logger.info('🔌 Live Components WebSocket ready on /api/live/ws')
+    context.logger.debug('🔌 Live Components WebSocket ready on /api/live/ws')
   }
 }
 

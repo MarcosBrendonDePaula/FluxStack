@@ -225,7 +225,7 @@ export class PluginRegistry {
 
     // Descobrir plugins
     for (const directory of directories) {
-      this.logger?.info(`Scanning directory: ${directory}`)
+      this.logger?.debug(`Scanning directory: ${directory}`)
       if (!existsSync(directory)) {
         this.logger?.warn(`Directory does not exist: ${directory}`)
         continue
@@ -233,7 +233,7 @@ export class PluginRegistry {
 
       try {
         const pluginResults = await this.discoverPluginsInDirectory(directory, _patterns)
-        this.logger?.info(`Found ${pluginResults.length} plugins in ${directory}`)
+        this.logger?.debug(`Found ${pluginResults.length} plugins in ${directory}`)
         results.push(...pluginResults)
       } catch (error) {
         this.logger?.warn(`Failed to discover plugins in directory '${directory}'`, { error })
@@ -487,7 +487,7 @@ export class PluginRegistry {
                                existsSync(join(pluginDir, 'plugin.js'))
           
           if (hasPluginFile) {
-            this.logger?.info(`Loading plugin from: ${pluginDir}`)
+            this.logger?.debug(`Loading plugin from: ${pluginDir}`)
             const result = await this.loadPlugin(pluginDir)
             results.push(result)
           }

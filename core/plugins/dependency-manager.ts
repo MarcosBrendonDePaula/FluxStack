@@ -139,7 +139,7 @@ export class PluginDependencyManager {
    */
   async installPluginDependencies(resolutions: DependencyResolution[]): Promise<void> {
     if (!this.config.autoInstall) {
-      this.logger?.info('Auto-instalação desabilitada, pulando instalação de dependências')
+      this.logger?.debug('Auto-instalação desabilitada, pulando instalação de dependências')
       return
     }
 
@@ -164,17 +164,17 @@ export class PluginDependencyManager {
     })
 
     if (needsInstallation.length === 0) {
-      this.logger?.info('Todas as dependências de plugins já estão instaladas')
+      this.logger?.debug('Todas as dependências de plugins já estão instaladas')
       return
     }
 
-    this.logger?.info(`Instalando ${needsInstallation.length} dependências de plugins`, {
+    this.logger?.debug(`Instalando ${needsInstallation.length} dependências de plugins`, {
       dependencies: needsInstallation.map(d => `${d.name}@${d.version}`)
     })
 
     try {
       await this.installDependencies(needsInstallation)
-      this.logger?.info('Dependências de plugins instaladas com sucesso')
+      this.logger?.debug('Dependências de plugins instaladas com sucesso')
     } catch (error) {
       this.logger?.error('Erro ao instalar dependências de plugins', { error })
       throw error
@@ -239,7 +239,7 @@ export class PluginDependencyManager {
       const resolution = sortedVersions[0].version
       conflict.resolution = resolution
 
-      this.logger?.info(`Conflito resolvido para '${conflict.package}': usando versão ${resolution}`, {
+      this.logger?.debug(`Conflito resolvido para '${conflict.package}': usando versão ${resolution}`, {
         package: conflict.package,
         resolution,
         conflictingVersions: conflict.versions

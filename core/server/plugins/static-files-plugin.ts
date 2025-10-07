@@ -24,7 +24,7 @@ export const staticFilesPlugin: Plugin = {
   tags: ['static', 'files', 'uploads', 'public'],
   
   setup: async (context: PluginContext) => {
-    context.logger.info('📁 Setting up Static Files plugin...')
+    context.logger.debug('📁 Setting up Static Files plugin...')
     
     const config: StaticFilesConfig = {
       publicDir: 'public',
@@ -150,7 +150,7 @@ export const staticFilesPlugin: Plugin = {
         return serveFile(fullPath, set)
       })
       
-      context.logger.info(`📁 Public files route enabled: ${publicRoutePattern} → ${config.publicDir}`)
+      context.logger.debug(`📁 Public files route enabled: ${publicRoutePattern} → ${config.publicDir}`)
     }
     
     if (config.enableUploads) {
@@ -167,7 +167,7 @@ export const staticFilesPlugin: Plugin = {
         return serveFile(fullPath, set)
       })
       
-      context.logger.info(`📁 Uploads route enabled: ${uploadsRoutePattern} → ${config.uploadsDir}`)
+      context.logger.debug(`📁 Uploads route enabled: ${uploadsRoutePattern} → ${config.uploadsDir}`)
     }
     
     // Static files info endpoint
@@ -196,16 +196,16 @@ export const staticFilesPlugin: Plugin = {
     
     if (config.enablePublic && !existsSync(publicPath)) {
       await mkdir(publicPath, { recursive: true })
-      context.logger.info(`📁 Created public directory: ${publicPath}`)
+      context.logger.debug(`📁 Created public directory: ${publicPath}`)
     }
     
     if (config.enableUploads && !existsSync(uploadsPath)) {
       await mkdir(uploadsPath, { recursive: true })
       await mkdir(join(uploadsPath, 'avatars'), { recursive: true })
-      context.logger.info(`📁 Created uploads directory: ${uploadsPath}`)
+      context.logger.debug(`📁 Created uploads directory: ${uploadsPath}`)
     }
     
-    context.logger.info('📁 Static Files plugin setup complete', {
+    context.logger.debug('📁 Static Files plugin setup complete', {
       publicEnabled: config.enablePublic,
       uploadsEnabled: config.enableUploads,
       publicPath: config.enablePublic ? publicPath : 'disabled',
@@ -221,7 +221,7 @@ export const staticFilesPlugin: Plugin = {
       uploadsRoute: '/api/uploads',
       ...context.config.staticFiles
     }
-    context.logger.info('📁 Static Files plugin ready', {
+    context.logger.debug('📁 Static Files plugin ready', {
       routes: [
         config.enablePublic ? `${config.publicRoute}/*` : null,
         config.enableUploads ? `${config.uploadsRoute}/*` : null,

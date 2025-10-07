@@ -104,7 +104,7 @@ export const swaggerPlugin: Plugin = {
     const config = getPluginConfig(context)
     
     if (!config.enabled) {
-      context.logger.info('Swagger plugin disabled by configuration')
+      context.logger.debug('Swagger plugin disabled by configuration')
       return
     }
 
@@ -160,7 +160,7 @@ export const swaggerPlugin: Plugin = {
 
       context.app.use(swagger(swaggerConfig))
       
-      context.logger.info(`Swagger documentation enabled at ${config.path}`, {
+      context.logger.debug(`Swagger documentation enabled at ${config.path}`, {
         title: swaggerConfig.documentation.info.title,
         version: swaggerConfig.documentation.info.version,
         servers: servers.length
@@ -176,7 +176,7 @@ export const swaggerPlugin: Plugin = {
     
     if (config.enabled) {
       const swaggerUrl = `http://${context.config.server.host}:${context.config.server.port}${config.path}`
-      context.logger.info(`Swagger documentation available at: ${swaggerUrl}`)
+      context.logger.debug(`Swagger documentation available at: ${swaggerUrl}`)
     }
   }
 }

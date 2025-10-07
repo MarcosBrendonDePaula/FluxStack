@@ -5,6 +5,7 @@ import { PluginRegistry } from "../plugins/registry"
 import { PluginManager } from "../plugins/manager"
 import { getConfigSync, getEnvironmentInfo } from "../config"
 import { logger } from "../utils/logger"
+import { displayStartupBanner, type StartupInfo } from "../utils/logger/startup-banner"
 import { createErrorHandler } from "../utils/errors/handlers"
 import { createTimer, formatBytes, isProduction, isDevelopment } from "../utils/helpers"
 
@@ -99,7 +100,7 @@ export class FluxStackFramework {
     this.setupHooks()
     this.setupErrorHandling()
 
-    logger.framework('FluxStack framework initialized', {
+    logger.debug('FluxStack framework initialized', {
       environment: envInfo.name,
       port: fullConfig.server.port
     })
@@ -114,7 +115,7 @@ export class FluxStackFramework {
     try {
       await this.pluginManager.initialize()
       const stats = this.pluginManager.getRegistry().getStats()
-      logger.framework('Automatic plugins loaded successfully', {
+      logger.debug('Automatic plugins loaded successfully', {
         pluginCount: stats.totalPlugins,
         enabledPlugins: stats.enabledPlugins,
         disabledPlugins: stats.disabledPlugins
@@ -420,7 +421,7 @@ export class FluxStackFramework {
         ;(this.pluginRegistry as any).loadOrder = loadOrder
       }
       
-      logger.framework(`Plugin '${plugin.name}' registered`, {
+      logger.debug(`Plugin '${plugin.name}' registered`, {
         version: plugin.version,
         dependencies: plugin.dependencies
       })
@@ -478,7 +479,7 @@ export class FluxStackFramework {
       }
 
       this.isStarted = true
-      logger.framework('All plugins loaded successfully', {
+      logger.debug('All plugins loaded successfully', {
         pluginCount: loadOrder.length
       })
 
@@ -535,15 +536,17 @@ export class FluxStackFramework {
     const apiPrefix = this.context.config.server.apiPrefix
 
     this.app.listen(port, () => {
-      logger.framework(`Server started on port ${port}`, {
+      // Display clean startup banner
+      const startupInfo: StartupInfo = {
+        port,
         apiPrefix,
         environment: this.context.environment,
-        pluginCount: this.pluginRegistry.getAll().length
-      })
+        pluginCount: this.pluginRegistry.getAll().length,
+        vitePort: this.context.config.client?.port,
+        swaggerPath: '/swagger' // TODO: Get from swagger plugin config
+      }
 
-      console.log(`🚀 API ready at http://localhost:${port}${apiPrefix}`)
-      console.log(`📋 Health check: http://localhost:${port}${apiPrefix}/health`)
-      console.log()
+      displayStartupBanner(startupInfo)
       callback?.()
     })
 
