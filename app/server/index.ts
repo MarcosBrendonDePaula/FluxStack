@@ -94,18 +94,8 @@ app.routes(apiRoutes)
 // Swagger por último para descobrir todas as rotas
 app.use(swaggerPlugin)
 
-// Iniciar servidor
-app.listen(() => {
-  console.log('\n✅ FluxStack com Environment Variables Simplificado!')
-  console.log(`🔗 Server: ${helpers.getServerUrl()}`)
-  console.log(`🔗 Teste dinâmico: ${helpers.getServerUrl()}/api/env-test`)
-  
-  if (env.ENABLE_SWAGGER) {
-    console.log(`📋 Swagger: ${helpers.getServerUrl()}/swagger`)
-  }
-  
-  console.log('💡 Mude as env vars e reinicie para ver a diferença!')
-})
+// Iniciar servidor (banner displayed by framework)
+app.listen()
 
 
 

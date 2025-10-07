@@ -537,12 +537,14 @@ export class FluxStackFramework {
 
     this.app.listen(port, () => {
       // Display clean startup banner
+      const vitePluginActive = this.pluginRegistry.has('vite')
       const startupInfo: StartupInfo = {
         port,
         apiPrefix,
         environment: this.context.environment,
         pluginCount: this.pluginRegistry.getAll().length,
         vitePort: this.context.config.client?.port,
+        viteEmbedded: vitePluginActive, // Vite is embedded when plugin is active
         swaggerPath: '/swagger' // TODO: Get from swagger plugin config
       }
 

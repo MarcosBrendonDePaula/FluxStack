@@ -12,6 +12,7 @@ export interface StartupInfo {
   environment: string
   pluginCount?: number
   vitePort?: number
+  viteEmbedded?: boolean // true when Vite runs programmatically with backend
   swaggerPath?: string
 }
 
@@ -25,6 +26,7 @@ export function displayStartupBanner(info: StartupInfo): void {
     environment,
     pluginCount = 0,
     vitePort,
+    viteEmbedded = false,
     swaggerPath
   } = info
 
@@ -36,8 +38,8 @@ export function displayStartupBanner(info: StartupInfo): void {
   console.log(`   ${chalk.gray('→')} API: http://localhost:${port}${apiPrefix}`)
   console.log(`   ${chalk.gray('→')} Health: http://localhost:${port}${apiPrefix}/health`)
 
-  // Frontend info (if Vite is running)
-  if (vitePort) {
+  // Frontend info (only if Vite is running standalone, NOT embedded)
+  if (vitePort && !viteEmbedded) {
     console.log('')
     console.log(chalk.bold('⚛️  Frontend'))
     console.log(`   ${chalk.gray('→')} http://localhost:${vitePort}`)
@@ -47,7 +49,7 @@ export function displayStartupBanner(info: StartupInfo): void {
   if (swaggerPath) {
     console.log('')
     console.log(chalk.bold('📋 Documentation'))
-    console.log(`   ${chalk.gray('→')} http://localhost:${port}${swaggerPath}`)
+    console.log(`   ${chalk.gray('→')} Swagger: http://localhost:${port}${swaggerPath}`)
   }
 
   // Environment and plugins
@@ -55,6 +57,11 @@ export function displayStartupBanner(info: StartupInfo): void {
   console.log(chalk.bold('ℹ️  Info'))
   console.log(`   ${chalk.gray('→')} Environment: ${chalk.green(environment)}`)
   console.log(`   ${chalk.gray('→')} Plugins: ${chalk.yellow(pluginCount)}`)
+
+  // Show Vite embedded status when applicable
+  if (viteEmbedded && vitePort) {
+    console.log(`   ${chalk.gray('→')} Vite: ${chalk.magenta('embedded')} ${chalk.gray(`(port ${vitePort})`)}`)
+  }
 
   console.log('\n' + chalk.green('✨ Ready!') + chalk.gray(' Press Ctrl+C to stop\n'))
 }
