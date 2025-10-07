@@ -1,16 +1,17 @@
 // User application entry point
-import { FluxStackFramework, loggerPlugin, vitePlugin, swaggerPlugin, staticPlugin, liveComponentsPlugin, staticFilesPlugin } from "@/core/server"
+import { FluxStackFramework, vitePlugin, swaggerPlugin, staticPlugin, liveComponentsPlugin, staticFilesPlugin } from "@/core/server"
 import { isDevelopment } from "@/core/utils/helpers"
+import { LOG } from "@/core/utils/logger"
 import { apiRoutes } from "./routes"
 // Import sistema de env dinâmico simplificado
 import { env, helpers } from "@/core/utils/env-runtime-v2"
 // Import live components registration
 import "./live/register-components"
 
-console.log('🔧 Loading dynamic environment configuration...')
-console.log(`📊 Environment: ${env.NODE_ENV}`)           // Direto!
-console.log(`🚀 Port: ${env.PORT}`)                      // Direto!
-console.log(`🌐 Host: ${env.HOST}`)                      // Direto!
+LOG('🔧 Loading dynamic environment configuration...')
+LOG(`📊 Environment: ${env.NODE_ENV}`)
+LOG(`🚀 Port: ${env.PORT}`)
+LOG(`🌐 Host: ${env.HOST}`)
 
 // Criar aplicação com configuração dinâmica simplificada
 const app = new FluxStackFramework({
@@ -45,8 +46,7 @@ const app = new FluxStackFramework({
 })
 
 
-// Usar plugins de infraestrutura primeiro (mas NÃO o Swagger ainda)
-app.use(loggerPlugin)
+// Usar plugins de infraestrutura primeiro (Logger é core, não é plugin)
 
 // Usar plugins condicionalmente baseado no ambiente
 if (isDevelopment()) {

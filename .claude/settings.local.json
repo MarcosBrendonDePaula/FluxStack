@@ -78,7 +78,9 @@
       "Bash(git log:*)",
       "Bash(git tag:*)",
       "Read(/C:\\Users\\Marcos\\Documents\\GitHub\\aviso-projeto\\test-temporal-bridge/**)",
-      "Read(/C:\\Users\\Marcos\\Documents\\GitHub\\aviso-projeto\\test-temporal-bridge/**)"
+      "Read(/C:\\Users\\Marcos\\Documents\\GitHub\\aviso-projeto\\test-temporal-bridge/**)",
+      "Read(//c/Users/Marcos/Documents/GitHub/PROJETO-OHANA/BackEnd/src/utils/**)",
+      "Bash(bunx tsc:*)"
     ],
     "deny": []
   }
