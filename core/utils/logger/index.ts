@@ -23,6 +23,9 @@ export { clearColorCache } from './colors'
 export { clearCallerCache } from './stack-trace'
 export { clearLoggerCache } from './winston-logger'
 
+// Re-export banner utilities for custom banners
+export { displayStartupBanner, type StartupInfo } from './startup-banner'
+
 /**
  * Core log function that handles all log levels
  */

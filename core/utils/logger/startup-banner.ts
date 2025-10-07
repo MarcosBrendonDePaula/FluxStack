@@ -1,6 +1,11 @@
 /**
  * FluxStack Logger - Startup Banner
  * Clean and beautiful startup display
+ *
+ * Developers can customize the banner by:
+ * 1. Setting showBanner: false in server config
+ * 2. Using displayStartupBanner() in app.listen() callback
+ * 3. Creating completely custom banners with chalk
  */
 
 import chalk from 'chalk'

@@ -536,8 +536,10 @@ export class FluxStackFramework {
     const apiPrefix = this.context.config.server.apiPrefix
 
     this.app.listen(port, () => {
-      // Display clean startup banner
+      const showBanner = this.context.config.server.showBanner !== false // default: true
       const vitePluginActive = this.pluginRegistry.has('vite')
+
+      // Prepare startup info for banner or callback
       const startupInfo: StartupInfo = {
         port,
         apiPrefix,
@@ -548,7 +550,12 @@ export class FluxStackFramework {
         swaggerPath: '/swagger' // TODO: Get from swagger plugin config
       }
 
-      displayStartupBanner(startupInfo)
+      // Display banner if enabled
+      if (showBanner) {
+        displayStartupBanner(startupInfo)
+      }
+
+      // Call user callback with startup info
       callback?.()
     })
 

@@ -35,6 +35,7 @@ export interface ServerConfig {
   apiPrefix: string
   cors: CorsConfig
   middleware: MiddlewareConfig[]
+  showBanner?: boolean // Show startup banner (default: true)
 }
 
 export interface ProxyConfig {
