@@ -6,6 +6,7 @@ import { getConfigSync } from "../config"
 import { cliRegistry } from "./command-registry"
 import { pluginDiscovery } from "./plugin-discovery"
 import { generateCommand, interactiveGenerateCommand } from "./generators/index.js"
+import { startGroup, endGroup, logBox, logInGroup } from "../utils/logger/group-logger"
 
 const command = process.argv[2]
 const args = process.argv.slice(3)
@@ -134,11 +135,19 @@ Examples:
       }
     ],
     handler: async (args, options, context) => {
-      console.log("⚡ FluxStack Full-Stack Development")
-      console.log(`🌐 Frontend: http://localhost:${options['frontend-port']}`)  
-      console.log(`🚀 Backend: http://localhost:${options.port}`)
-      console.log("🔄 Backend inicia Vite programaticamente - Zero órfãos!")
-      console.log("📦 Starting backend server...")
+      // Grouped startup messages
+      startGroup({
+        title: 'FluxStack Development Server',
+        icon: '⚡',
+        color: 'cyan'
+      })
+
+      logInGroup(`Frontend: http://localhost:${options['frontend-port']}`, '🌐')
+      logInGroup(`Backend: http://localhost:${options.port}`, '🚀')
+      logInGroup('Backend inicia Vite programaticamente - Zero órfãos!', '🔄')
+      logInGroup('Starting backend server...', '📦')
+
+      endGroup()
       console.log()
       
       const { spawn } = await import("child_process")
@@ -293,11 +302,19 @@ async function main() {
 async function handleLegacyCommands() {
   switch (command) {
   case "dev":
-    console.log("⚡ FluxStack Full-Stack Development")
-    console.log("🌐 Frontend: http://localhost:5173")  
-    console.log("🚀 Backend: http://localhost:3000")
-    console.log("🔄 Backend inicia Vite programaticamente - Zero órfãos!")
-    console.log("📦 Starting backend server...")
+    // Grouped startup messages
+    startGroup({
+      title: 'FluxStack Development Server',
+      icon: '⚡',
+      color: 'cyan'
+    })
+
+    logInGroup('Frontend: http://localhost:5173', '🌐')
+    logInGroup('Backend: http://localhost:3000', '🚀')
+    logInGroup('Backend inicia Vite programaticamente - Zero órfãos!', '🔄')
+    logInGroup('Starting backend server...', '📦')
+
+    endGroup()
     console.log()
     
     // Start only backend - it will start Vite programmatically

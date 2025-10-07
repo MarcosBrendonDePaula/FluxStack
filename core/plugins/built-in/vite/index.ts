@@ -81,9 +81,18 @@ export const vitePlugin: Plugin = {
     const vitePort = config.port || context.config.client.port || 5173
     const viteHost = config.host || "localhost"
 
-    context.logger.debug(`🎨 Starting Vite dev server programmatically on ${viteHost}:${vitePort}`)
-
     try {
+      const { startGroup, endGroup, logInGroup } = await import('../../../utils/logger/group-logger')
+
+      startGroup({
+        title: 'Vite Development Server',
+        icon: '🎨',
+        color: 'magenta',
+        collapsed: true
+      })
+
+      logInGroup(`Starting on ${viteHost}:${vitePort}`)
+
       // Start Vite dev server programmatically
       viteServer = await createServer({
         configFile: './vite.config.ts',
@@ -97,8 +106,10 @@ export const vitePlugin: Plugin = {
       await viteServer.listen()
       viteServer.printUrls()
 
-      context.logger.debug(`✅ Vite server started successfully on ${viteHost}:${vitePort}`)
-      context.logger.debug('🔄 Hot reload coordination active - Zero órfãos!')
+      logInGroup(`Server started successfully on ${viteHost}:${vitePort}`, '✅')
+      logInGroup('Hot reload coordination active - Zero órfãos!', '🔄')
+
+      endGroup()
 
         // Store Vite config in context for later use
         ; (context as any).viteConfig = {

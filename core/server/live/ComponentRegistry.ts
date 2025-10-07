@@ -143,7 +143,7 @@ export class ComponentRegistry {
   // Register component class dynamically
   registerComponentClass(name: string, componentClass: any) {
     this.autoDiscoveredComponents.set(name, componentClass)
-    console.log(`🔍 Auto-discovered component: ${name}`)
+    // Logging is handled by autoDiscoverComponents
   }
 
   // Auto-discover components from directory
@@ -151,36 +151,53 @@ export class ComponentRegistry {
     try {
       const fs = await import('fs')
       const path = await import('path')
-      
+      const { startGroup, endGroup, logInGroup, groupSummary } = await import('../../utils/logger/group-logger')
+
       if (!fs.existsSync(componentsPath)) {
         console.log(`⚠️ Components path not found: ${componentsPath}`)
         return
       }
 
       const files = fs.readdirSync(componentsPath)
-      
+      let discoveredCount = 0
+
+      startGroup({
+        title: 'Live Components Auto-Discovery',
+        icon: '🔍',
+        color: 'blue',
+        collapsed: true
+      })
+
       for (const file of files) {
         if (file.endsWith('.ts') || file.endsWith('.js')) {
           try {
             const fullPath = path.join(componentsPath, file)
             const module = await import(/* @vite-ignore */ fullPath)
-            
+
             // Look for exported classes that extend LiveComponent
             Object.keys(module).forEach(exportName => {
               const exportedItem = module[exportName]
-              if (typeof exportedItem === 'function' && 
-                  exportedItem.prototype && 
+              if (typeof exportedItem === 'function' &&
+                  exportedItem.prototype &&
                   this.isLiveComponentClass(exportedItem)) {
-                
+
                 const componentName = exportName.replace(/Component$/, '')
                 this.registerComponentClass(componentName, exportedItem)
+                logInGroup(`${componentName} (from ${file})`)
+                discoveredCount++
               }
             })
           } catch (error) {
-            console.warn(`⚠️ Failed to load component from ${file}:`, error)
+            logInGroup(`Failed to load ${file}`, '⚠️')
           }
         }
       }
+
+      if (discoveredCount > 0) {
+        groupSummary(discoveredCount, 'component', '✓')
+      }
+
+      endGroup()
     } catch (error) {
       console.error('❌ Auto-discovery failed:', error)
     }
