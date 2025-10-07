@@ -32,9 +32,10 @@ export function formatMessage(message: unknown, args: unknown[] = []): string {
     formattedMessage = String(message)
   }
 
-  // Format additional arguments
+  // Format additional arguments (skip undefined values)
   if (args.length > 0) {
     const formattedArgs = args
+      .filter(arg => arg !== undefined) // Skip undefined values
       .map(arg => {
         if (typeof arg === 'object' && arg !== null) {
           return inspect(arg, inspectOptions)
@@ -43,7 +44,10 @@ export function formatMessage(message: unknown, args: unknown[] = []): string {
       })
       .join(' ')
 
-    return `${formattedMessage} ${formattedArgs}`
+    // Only add formatted args if there are any after filtering
+    if (formattedArgs.length > 0) {
+      return `${formattedMessage} ${formattedArgs}`
+    }
   }
 
   return formattedMessage

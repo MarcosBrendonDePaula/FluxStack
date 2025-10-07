@@ -80,7 +80,8 @@
       "Read(/C:\\Users\\Marcos\\Documents\\GitHub\\aviso-projeto\\test-temporal-bridge/**)",
       "Read(/C:\\Users\\Marcos\\Documents\\GitHub\\aviso-projeto\\test-temporal-bridge/**)",
       "Read(//c/Users/Marcos/Documents/GitHub/PROJETO-OHANA/BackEnd/src/utils/**)",
-      "Bash(bunx tsc:*)"
+      "Bash(bunx tsc:*)",
+      "Bash(echo:*)"
     ],
     "deny": []
   }
