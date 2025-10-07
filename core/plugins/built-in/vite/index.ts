@@ -91,7 +91,7 @@ export const vitePlugin: Plugin = {
         collapsed: true
       })
 
-      logInGroup(`Starting on ${viteHost}:${vitePort}`)
+      logInGroup(`Starting on ${viteHost}:${vitePort}`, '📍')
 
       // Start Vite dev server programmatically
       viteServer = await createServer({
@@ -99,17 +99,20 @@ export const vitePlugin: Plugin = {
         // Don't override root - let vite.config.ts handle it
         server: {
           port: vitePort,
-          host: viteHost
-        }
+          host: viteHost,
+          strictPort: true
+        },
+        logLevel: 'warn' // Suppress Vite's verbose logs
       })
 
       await viteServer.listen()
-      viteServer.printUrls()
 
-      logInGroup(`Server started successfully on ${viteHost}:${vitePort}`, '✅')
-      logInGroup('Hot reload coordination active - Zero órfãos!', '🔄')
+      // Custom URL display instead of viteServer.printUrls()
+      logInGroup(`Local: http://${viteHost}:${vitePort}/`, '✅')
+      logInGroup('Hot reload coordination active', '🔄')
 
       endGroup()
+      console.log('') // Separator line
 
         // Store Vite config in context for later use
         ; (context as any).viteConfig = {

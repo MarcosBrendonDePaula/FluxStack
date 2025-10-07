@@ -75,10 +75,8 @@ export async function withGroup<T>(
  * Helper: Create a summary line for groups
  */
 export function groupSummary(count: number, itemName: string, icon: string = '✓'): void {
-  const message = count === 1
-    ? `${icon} ${count} ${itemName}`
-    : `${icon} ${count} ${itemName}s`
-
+  // itemName should already include proper pluralization
+  const message = `${icon} ${count} ${itemName}`
   console.log(chalk.green.bold(message))
 }
 

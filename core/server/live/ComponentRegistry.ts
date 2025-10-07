@@ -183,10 +183,15 @@ export class ComponentRegistry {
 
                 const componentName = exportName.replace(/Component$/, '')
                 this.registerComponentClass(componentName, exportedItem)
-                logInGroup(`${componentName} (from ${file})`)
+                logInGroup(`${componentName} (from ${file})`, '📦')
                 discoveredCount++
               }
             })
+
+            // Check for integration hooks (like SystemMonitorIntegration)
+            if (module.default && typeof module.default === 'object' && module.default.setupIntegration) {
+              logInGroup('Integration hooks found', '🔗')
+            }
           } catch (error) {
             logInGroup(`Failed to load ${file}`, '⚠️')
           }
@@ -194,10 +199,14 @@ export class ComponentRegistry {
       }
 
       if (discoveredCount > 0) {
-        groupSummary(discoveredCount, 'component', '✓')
+        const label = discoveredCount === 1 ? 'component discovered' : 'components discovered'
+        groupSummary(discoveredCount, label, '✓')
+      } else {
+        logInGroup('No components found', '⚠️')
       }
 
       endGroup()
+      console.log('') // Separator line
     } catch (error) {
       console.error('❌ Auto-discovery failed:', error)
     }

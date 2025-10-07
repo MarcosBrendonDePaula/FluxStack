@@ -87,8 +87,8 @@ export class SystemMonitorIntegration {
         this.recordMessage(action, componentId, success, responseTime)
       }
     }
-    
-    console.log('🔗 SystemMonitor integration hooks setup completed')
+
+    // Setup completed - logged in auto-discovery group
   }
   
   // Record a connection event

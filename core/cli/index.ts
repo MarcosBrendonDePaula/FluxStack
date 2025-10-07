@@ -144,11 +144,11 @@ Examples:
 
       logInGroup(`Frontend: http://localhost:${options['frontend-port']}`, '🌐')
       logInGroup(`Backend: http://localhost:${options.port}`, '🚀')
-      logInGroup('Backend inicia Vite programaticamente - Zero órfãos!', '🔄')
+      logInGroup('Backend inicia Vite programaticamente', '🔄')
       logInGroup('Starting backend server...', '📦')
 
       endGroup()
-      console.log()
+      console.log('') // Separator line
       
       const { spawn } = await import("child_process")
       const devProcess = spawn("bun", ["--watch", "app/server/index.ts"], {
@@ -311,11 +311,11 @@ async function handleLegacyCommands() {
 
     logInGroup('Frontend: http://localhost:5173', '🌐')
     logInGroup('Backend: http://localhost:3000', '🚀')
-    logInGroup('Backend inicia Vite programaticamente - Zero órfãos!', '🔄')
+    logInGroup('Backend inicia Vite programaticamente', '🔄')
     logInGroup('Starting backend server...', '📦')
 
     endGroup()
-    console.log()
+    console.log('') // Separator line
     
     // Start only backend - it will start Vite programmatically
     const { spawn } = await import("child_process")

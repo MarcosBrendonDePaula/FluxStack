@@ -180,7 +180,7 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
       })
       
       this.performanceObserver.observe({ entryTypes: ['measure', 'mark'] })
-      console.log('📊 Performance observer initialized')
+      // Performance observer ready (logged at DEBUG level to keep startup clean)
     } catch (error) {
       console.warn('⚠️ Performance observer not available:', error)
     }
