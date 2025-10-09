@@ -185,15 +185,43 @@ export class PluginDependencyManager {
     const allDeps = [...regularDeps, ...peerDeps]
     if (allDeps.length === 0) return
 
-    const packages = allDeps.map(d => `${d.name}@${d.version}`).join(' ')
+    // Verificar quais dependências já estão instaladas localmente
+    const toInstall = allDeps.filter(dep => {
+      const depPath = join(pluginPath, 'node_modules', dep.name, 'package.json')
+      if (!existsSync(depPath)) {
+        return true // Precisa instalar
+      }
+
+      try {
+        const installedPkg = JSON.parse(readFileSync(depPath, 'utf-8'))
+        const installedVersion = installedPkg.version
+
+        // Verificar se a versão é compatível
+        if (!this.isVersionCompatible(installedVersion, dep.version)) {
+          this.logger?.debug(`📦 Dependência '${dep.name}' está desatualizada (${installedVersion} → ${dep.version})`)
+          return true // Precisa atualizar
+        }
+
+        return false // Já está instalado corretamente
+      } catch (error) {
+        return true // Erro ao ler, melhor reinstalar
+      }
+    })
+
+    if (toInstall.length === 0) {
+      this.logger?.debug(`✅ Todas as dependências do plugin já estão instaladas`)
+      return
+    }
+
+    const packages = toInstall.map(d => `${d.name}@${d.version}`).join(' ')
     const command = this.getInstallCommand(packages, false)
 
-    this.logger?.debug(`🔧 Executando instalação local: ${command}`, { cwd: pluginPath })
+    this.logger?.debug(`🔧 Instalando ${toInstall.length} dependência(s): ${command}`, { cwd: pluginPath })
 
     try {
       execSync(command, {
         cwd: pluginPath,
-        stdio: 'inherit' // Mostrar output para debug
+        stdio: 'inherit'
       })
       this.logger?.debug(`✅ Pacotes instalados localmente em ${pluginPath}`)
     } catch (error) {
