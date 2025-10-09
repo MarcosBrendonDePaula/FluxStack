@@ -5,16 +5,17 @@ import { resolve, join } from 'path'
 import { existsSync, mkdirSync, cpSync, writeFileSync, readFileSync } from 'fs'
 import chalk from 'chalk'
 import ora from 'ora'
+import { FLUXSTACK_VERSION } from './core/utils/version'
 
 const logo = `
-⚡ ███████ ██      ██    ██ ██   ██ ███████ ████████  █████   ██████ ██   ██ 
-   ██      ██      ██    ██  ██ ██  ██         ██    ██   ██ ██      ██  ██  
-   █████   ██      ██    ██   ███   ███████    ██    ███████ ██      █████   
-   ██      ██      ██    ██  ██ ██       ██    ██    ██   ██ ██      ██  ██  
-   ██      ███████  ██████  ██   ██ ███████    ██    ██   ██  ██████ ██   ██ 
+⚡ ███████ ██      ██    ██ ██   ██ ███████ ████████  █████   ██████ ██   ██
+   ██      ██      ██    ██  ██ ██  ██         ██    ██   ██ ██      ██  ██
+   █████   ██      ██    ██   ███   ███████    ██    ███████ ██      █████
+   ██      ██      ██    ██  ██ ██       ██    ██    ██   ██ ██      ██  ██
+   ██      ███████  ██████  ██   ██ ███████    ██    ██   ██  ██████ ██   ██
 
 ${chalk.cyan('💫 Powered by Bun - The Divine Runtime ⚡')}
-${chalk.gray('Creates FluxStack apps by copying the working framework')}
+${chalk.gray(`FluxStack v${FLUXSTACK_VERSION} - Creates full-stack TypeScript apps`)}
 `
 
 program
@@ -58,6 +59,7 @@ program
         'core',
         'app',
         'config',         // ✅ CRITICAL: Copy config folder with declarative configs
+        // 'plugins',     // TODO: Copy when crypto-auth plugin is complete
         'ai-context',     // ✅ CRITICAL: Copy AI documentation for users
         'bun.lock',       // ✅ CRITICAL: Copy lockfile to maintain working versions
         'package.json',   // ✅ Copy real package.json from framework
@@ -67,15 +69,122 @@ program
         'CLAUDE.md',      // ✅ Project instructions for AI assistants
         'README.md'
       ]
-      
+
       for (const file of filesToCopy) {
         const sourcePath = join(frameworkDir, file)
         const destPath = join(projectPath, file)
-        
+
         if (existsSync(sourcePath)) {
           cpSync(sourcePath, destPath, { recursive: true })
         }
       }
+
+      // Create empty plugins directory for user plugins
+      const pluginsDir = join(projectPath, 'plugins')
+      mkdirSync(pluginsDir, { recursive: true })
+
+      // Create a README in plugins folder
+      const pluginsReadme = `# Plugins
+
+This folder is for your custom FluxStack plugins.
+
+## 📖 Documentation
+
+For complete plugin development guide, see:
+- \`ai-context/development/plugins-guide.md\` - Full plugin documentation
+- \`ai-context/examples/\` - Plugin examples
+
+## 📦 Available CLI Commands
+
+\`\`\`bash
+# Create a new plugin
+bun run cli make:plugin my-plugin                    # Basic plugin
+bun run cli make:plugin my-plugin --template full    # Full plugin (server + client)
+bun run cli make:plugin my-plugin --template server  # Server-only plugin
+
+# Manage plugin dependencies
+bun run cli plugin:deps install    # Install plugin dependencies
+bun run cli plugin:deps list       # List plugin dependencies
+bun run cli plugin:deps check      # Check for conflicts
+bun run cli plugin:deps clean      # Clean unused dependencies
+\`\`\`
+
+## 🔌 Plugin Structure
+
+\`\`\`
+plugins/
+├── my-plugin/
+│   ├── plugin.json       # Plugin metadata (name, version, dependencies)
+│   ├── index.ts          # Plugin entry point (server-side hooks)
+│   ├── server/           # Server-side code (optional)
+│   └── client/           # Client-side code (optional)
+\`\`\`
+
+## ⚡ Quick Start
+
+1. Create your plugin folder: \`plugins/my-plugin/\`
+2. Create \`plugin.json\` with metadata
+3. Create \`index.ts\` with your plugin logic
+4. Use \`bun run cli plugin:deps install\` if you need extra dependencies
+
+## 🔌 Intercepting Requests
+
+Plugins can intercept and modify requests using hooks:
+
+\`\`\`typescript
+// plugins/my-plugin/index.ts
+import type { FluxStackPlugin, PluginContext } from '@/core/types/plugin'
+
+export class MyPlugin implements FluxStackPlugin {
+  name = 'my-plugin'
+  version = '1.0.0'
+
+  // Intercept every request
+  async onRequest(context: PluginContext, request: Request): Promise<void> {
+    // Example: Add custom headers
+    const url = new URL(request.url)
+    console.log(\`[\${this.name}] Request to: \${url.pathname}\`)
+
+    // Example: Validate authentication
+    const token = request.headers.get('Authorization')
+    if (!token && url.pathname.startsWith('/api/protected')) {
+      throw new Error('Unauthorized')
+    }
+  }
+
+  // Intercept every response
+  async onResponse(context: PluginContext, response: Response): Promise<void> {
+    console.log(\`[\${this.name}] Response status: \${response.status}\`)
+  }
+
+  // Handle errors
+  async onError(context: PluginContext, error: Error): Promise<void> {
+    console.error(\`[\${this.name}] Error:\`, error.message)
+    // Example: Send to error tracking service
+  }
+}
+\`\`\`
+
+## 📋 Available Hooks
+
+- **\`setup\`**: Initialize plugin resources (called once at startup)
+- **\`onServerStart\`**: Run when server starts
+- **\`onRequest\`**: Intercept incoming requests (before route handlers)
+- **\`onResponse\`**: Intercept outgoing responses (after route handlers)
+- **\`onError\`**: Handle errors globally
+
+## 💡 Common Use Cases
+
+- **Authentication**: Validate tokens in \`onRequest\`
+- **Logging**: Log requests/responses for analytics
+- **Rate Limiting**: Track request counts per IP
+- **CORS**: Add headers in \`onResponse\`
+- **Request Transformation**: Modify request body/headers
+- **Response Transformation**: Add custom headers, compress responses
+
+See the documentation for detailed examples and best practices.
+`
+      writeFileSync(join(pluginsDir, 'README.md'), pluginsReadme)
       
       // Generate .gitignore using template (instead of copying)
       const gitignoreContent = `# Dependencies

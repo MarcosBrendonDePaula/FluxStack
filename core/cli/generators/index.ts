@@ -3,6 +3,7 @@ import { ControllerGenerator } from "./controller.js"
 import { RouteGenerator } from "./route.js"
 import { ComponentGenerator } from "./component.js"
 import { ServiceGenerator } from "./service.js"
+import { PluginGenerator } from "./plugin.js"
 import type { GeneratorContext, GeneratorOptions } from "./types.js"
 
 export interface Generator {
@@ -23,6 +24,7 @@ export class GeneratorRegistry {
     this.register(new RouteGenerator())
     this.register(new ComponentGenerator())
     this.register(new ServiceGenerator())
+    this.register(new PluginGenerator())
   }
 
   register(generator: Generator): void {
@@ -58,7 +60,8 @@ export const generateCommand: CliCommand = {
     'flux generate controller user',
     'flux generate component UserCard',
     'flux generate service auth',
-    'flux generate route api/users'
+    'flux generate route api/users',
+    'flux generate plugin my-plugin'
   ],
   arguments: [
     {
@@ -66,7 +69,7 @@ export const generateCommand: CliCommand = {
       description: 'Type of code to generate',
       required: true,
       type: 'string',
-      choices: ['controller', 'route', 'component', 'service']
+      choices: ['controller', 'route', 'component', 'service', 'plugin']
     },
     {
       name: 'name',
