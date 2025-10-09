@@ -57,6 +57,7 @@ program
       const filesToCopy = [
         'core',
         'app',
+        'config',         // ✅ CRITICAL: Copy config folder with declarative configs
         'ai-context',     // ✅ CRITICAL: Copy AI documentation for users
         'bun.lock',       // ✅ CRITICAL: Copy lockfile to maintain working versions
         'package.json',   // ✅ Copy real package.json from framework
