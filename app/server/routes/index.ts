@@ -1,6 +1,7 @@
 import { Elysia, t } from "elysia"
 import { usersRoutes } from "./users.routes"
 import { uploadRoutes } from "./upload"
+import { configRoutes } from "./config"
 
 export const apiRoutes = new Elysia({ prefix: "/api" })
   .get("/", () => ({ message: "🔥 Hot Reload funcionando! FluxStack API v1.4.0 ⚡" }), {
@@ -13,8 +14,8 @@ export const apiRoutes = new Elysia({ prefix: "/api" })
       description: 'Returns a welcome message from the FluxStack API'
     }
   })
-  .get("/health", () => ({ 
-    status: "🚀 Hot Reload ativo!", 
+  .get("/health", () => ({
+    status: "🚀 Hot Reload ativo!",
     timestamp: new Date().toISOString(),
     uptime: `${Math.floor(process.uptime())}s`,
     version: "1.4.0",
@@ -35,3 +36,4 @@ export const apiRoutes = new Elysia({ prefix: "/api" })
   })
   .use(usersRoutes)
   .use(uploadRoutes)
+  .use(configRoutes)

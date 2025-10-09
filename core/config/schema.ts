@@ -46,6 +46,7 @@ export interface ProxyConfig {
 
 export interface ClientBuildConfig {
   sourceMaps: boolean
+  minify: boolean
   target: string
   outDir: string
 }
@@ -57,6 +58,7 @@ export interface ClientConfig {
 }
 
 export interface OptimizationConfig {
+  minify: boolean
   treeshake: boolean
   compress: boolean
   splitChunks: boolean
@@ -69,6 +71,7 @@ export interface BuildConfig {
   outDir: string
   optimization: OptimizationConfig
   sourceMaps: boolean
+  minify: boolean
   treeshake: boolean
   compress?: boolean
   removeUnusedCSS?: boolean

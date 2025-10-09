@@ -1,11 +1,11 @@
 /**
  * FluxStack Configuration
  * Enhanced configuration with comprehensive settings and environment support
- * Updated to use dynamic environment variables
+ * Uses unified environment loader
  */
 
 import type { FluxStackConfig } from './core/config/schema'
-import { env, helpers } from './core/utils/env-runtime-v2'
+import { env, helpers } from './core/utils/env'
 
 console.log(`🔧 Loading FluxStack config for ${env.NODE_ENV} environment`)
 

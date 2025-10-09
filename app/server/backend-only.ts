@@ -1,15 +1,15 @@
 // Backend standalone entry point
 import { startBackendOnly } from "@/core/server/standalone"
 import { apiRoutes } from "./routes"
-import { env } from "@/core/utils/env-runtime"
+import { serverConfig } from "@/config/server.config"
 
-// Configuração para backend standalone com env dinâmico
+// Configuração para backend standalone usando config declarativo
 const backendConfig = {
-  port: env.get('BACKEND_PORT', 3001),  // Casting automático para number
-  apiPrefix: env.API_PREFIX             // Direto! (string)
+  port: serverConfig.backendPort,
+  apiPrefix: serverConfig.apiPrefix
 }
 
-console.log(`🚀 Backend standalone: ${env.HOST}:${backendConfig.port}`)
+console.log(`🚀 Backend standalone: ${serverConfig.host}:${backendConfig.port}`)
 
 // Iniciar apenas o backend
 startBackendOnly(apiRoutes, backendConfig)

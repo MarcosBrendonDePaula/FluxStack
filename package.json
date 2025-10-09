@@ -1,7 +1,7 @@
 {
   "name": "create-fluxstack",
-  "version": "1.1.0",
-  "description": "⚡ Revolutionary full-stack TypeScript framework with Temporal Bridge Auto-Discovery, Elysia + React + Bun",
+  "version": "1.2.0",
+  "description": "⚡ Revolutionary full-stack TypeScript framework with Declarative Config System, Elysia + React + Bun",
   "keywords": [
     "framework",
     "full-stack",

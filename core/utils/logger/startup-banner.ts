@@ -10,6 +10,7 @@
 
 import chalk from 'chalk'
 import { LOG } from './index'
+import { FLUXSTACK_VERSION } from '../version'
 
 export interface StartupInfo {
   port: number
@@ -35,7 +36,7 @@ export function displayStartupBanner(info: StartupInfo): void {
     swaggerPath
   } = info
 
-  console.log('\n' + chalk.cyan.bold('⚡ FluxStack') + chalk.gray(` v1.1.0\n`))
+  console.log('\n' + chalk.cyan.bold('⚡ FluxStack') + chalk.gray(` v${FLUXSTACK_VERSION}\n`))
 
   // Server info
   console.log(chalk.bold('🚀 Server'))

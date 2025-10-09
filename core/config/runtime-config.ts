@@ -1,18 +1,14 @@
 /**
  * Runtime Configuration System for FluxStack
- * Uses dynamic environment loading to solve Bun build issues
- * Drop-in replacement for process.env based configuration
+ * Uses declarative configuration system
  */
 
-import { env, createEnvNamespace, envValidation } from '../utils/env-runtime'
-import { 
-  dynamicEnvironmentProcessor, 
-  createDynamicConfig, 
-  validateProductionEnv,
-  getDynamicEnvironmentInfo 
-} from './env-dynamic'
+import { env, createNamespace } from '../utils/env'
 import type { FluxStackConfig } from './schema'
 import { defaultFluxStackConfig } from './schema'
+import { loggerConfig } from '../../config/logger.config'
+import { buildConfig } from '../../config/build.config'
+import { appConfig } from '../../config/app.config'
 
 /**
  * Runtime Configuration Builder
@@ -35,11 +31,21 @@ export class RuntimeConfigBuilder {
   }
 
   /**
-   * Load from dynamic environment variables
+   * Load from environment variables
    */
   private loadFromDynamicEnv(): this {
-    const envConfig = createDynamicConfig()
-    this.config = this.deepMerge(this.config, envConfig)
+    // Environment vars are loaded automatically by env loader
+    // Just merge common overrides here
+    const envOverrides: Partial<FluxStackConfig> = {}
+
+    if (env.has('PORT')) {
+      envOverrides.server = { ...this.config.server, port: env.PORT }
+    }
+    if (env.has('LOG_LEVEL')) {
+      envOverrides.logging = { ...this.config.logging, level: env.LOG_LEVEL }
+    }
+
+    this.config = this.deepMerge(this.config, envOverrides)
     return this
   }
 
@@ -64,8 +70,8 @@ export class RuntimeConfigBuilder {
    */
   build(): FluxStackConfig {
     // Validate production environment if needed
-    if (env.get('NODE_ENV') === 'production') {
-      validateProductionEnv()
+    if (env.NODE_ENV === 'production') {
+      env.require(['NODE_ENV'])
     }
 
     return this.config as FluxStackConfig
@@ -140,8 +146,8 @@ export const runtimeConfig = {
    */
   development(): FluxStackConfig {
     return new RuntimeConfigBuilder()
-      .override('logging.level', env.get('LOG_LEVEL', 'debug'))
-      .override('logging.format', env.get('LOG_FORMAT', 'pretty'))
+      .override('logging.level', loggerConfig.level)
+      .override('logging.format', 'pretty')
       .override('build.optimization.minify', false)
       .override('build.sourceMaps', true)
       .override('monitoring.enabled', false)
@@ -153,11 +159,11 @@ export const runtimeConfig = {
    */
   production(): FluxStackConfig {
     return new RuntimeConfigBuilder()
-      .override('logging.level', env.get('LOG_LEVEL', 'warn'))
-      .override('logging.format', env.get('LOG_FORMAT', 'json'))
+      .override('logging.level', loggerConfig.level)
+      .override('logging.format', 'json')
       .override('build.optimization.minify', true)
       .override('build.sourceMaps', false)
-      .override('monitoring.enabled', env.bool('MONITORING_ENABLED', true))
+      .override('monitoring.enabled', buildConfig.monitoringEnabled)
       .build()
   },
 
@@ -166,7 +172,7 @@ export const runtimeConfig = {
    */
   test(): FluxStackConfig {
     return new RuntimeConfigBuilder()
-      .override('logging.level', env.get('LOG_LEVEL', 'error'))
+      .override('logging.level', loggerConfig.level)
       .override('server.port', 0) // Random port for tests
       .override('client.port', 0)
       .override('monitoring.enabled', false)
@@ -177,7 +183,7 @@ export const runtimeConfig = {
    * Auto-detect environment and create appropriate config
    */
   auto(overrides?: Partial<FluxStackConfig>): FluxStackConfig {
-    const environment = env.get('NODE_ENV', 'development') as 'development' | 'production' | 'test'
+    const environment = appConfig.env
     
     let config: FluxStackConfig
     
@@ -214,27 +220,27 @@ export const envLoaders = {
   /**
    * Database environment loader
    */
-  database: createEnvNamespace('DATABASE_'),
-  
+  database: createNamespace('DATABASE_'),
+
   /**
    * JWT environment loader
    */
-  jwt: createEnvNamespace('JWT_'),
-  
+  jwt: createNamespace('JWT_'),
+
   /**
    * SMTP environment loader
    */
-  smtp: createEnvNamespace('SMTP_'),
-  
+  smtp: createNamespace('SMTP_'),
+
   /**
    * CORS environment loader
    */
-  cors: createEnvNamespace('CORS_'),
-  
+  cors: createNamespace('CORS_'),
+
   /**
    * FluxStack specific environment loader
    */
-  fluxstack: createEnvNamespace('FLUXSTACK_')
+  fluxstack: createNamespace('FLUXSTACK_')
 }
 
 /**
@@ -245,15 +251,12 @@ export const configHelpers = {
    * Get database URL with validation
    */
   getDatabaseUrl(): string | null {
-    const url = env.get('DATABASE_URL') as string | undefined
-    
-    if (url) {
-      envValidation.validate('DATABASE_URL', 
-        (value) => value.includes('://'),
-        'Must be a valid URL'
-      )
+    const url = env.DATABASE_URL
+
+    if (url && !url.includes('://')) {
+      throw new Error('DATABASE_URL must be a valid URL')
     }
-    
+
     return url || null
   },
 
@@ -261,18 +264,18 @@ export const configHelpers = {
    * Get CORS origins with proper defaults
    */
   getCorsOrigins(): string[] {
-    const origins = env.array('CORS_ORIGINS')
-    
-    if (origins.length === 0) {
-      const environment = env.get('NODE_ENV', 'development') as 'development' | 'production' | 'test'
-      
+    const origins = env.CORS_ORIGINS
+
+    if (origins.length === 0 || (origins.length === 1 && origins[0] === '*')) {
+      const environment = env.NODE_ENV
+
       if (environment === 'development') {
         return ['http://localhost:3000', 'http://localhost:5173']
       } else if (environment === 'production') {
         return [] // Must be explicitly configured in production
       }
     }
-    
+
     return origins
   },
 
@@ -281,15 +284,15 @@ export const configHelpers = {
    */
   getServerConfig() {
     return {
-      port: env.num('PORT', 3000),
-      host: env.get('HOST', 'localhost'),
-      apiPrefix: env.get('API_PREFIX', '/api'),
+      port: env.PORT,
+      host: env.HOST,
+      apiPrefix: env.API_PREFIX,
       cors: {
         origins: this.getCorsOrigins(),
-        methods: env.array('CORS_METHODS', ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']),
-        headers: env.array('CORS_HEADERS', ['Content-Type', 'Authorization']),
-        credentials: env.bool('CORS_CREDENTIALS', false),
-        maxAge: env.num('CORS_MAX_AGE', 86400)
+        methods: env.CORS_METHODS,
+        headers: env.CORS_HEADERS,
+        credentials: env.CORS_CREDENTIALS,
+        maxAge: env.CORS_MAX_AGE
       }
     }
   },
@@ -299,16 +302,16 @@ export const configHelpers = {
    */
   getClientConfig() {
     return {
-      port: env.num('VITE_PORT', 5173),
+      port: env.VITE_PORT,
       proxy: {
-        target: env.get('API_URL', 'http://localhost:3000'),
-        changeOrigin: env.bool('PROXY_CHANGE_ORIGIN', true)
+        target: buildConfig.apiUrl,
+        changeOrigin: buildConfig.proxyChangeOrigin
       },
       build: {
-        outDir: env.get('CLIENT_BUILD_DIR', 'dist/client'),
-        sourceMaps: env.bool('CLIENT_SOURCEMAPS', env.get('NODE_ENV') === 'development'),
-        minify: env.bool('CLIENT_MINIFY', env.get('NODE_ENV') === 'production'),
-        target: env.get('CLIENT_TARGET', 'es2020')
+        outDir: buildConfig.clientBuildDir,
+        sourceMaps: buildConfig.clientSourceMaps,
+        minify: buildConfig.clientMinify,
+        target: buildConfig.clientTarget
       }
     }
   }
