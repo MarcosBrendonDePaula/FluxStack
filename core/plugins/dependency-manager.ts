@@ -136,6 +136,8 @@ export class PluginDependencyManager {
 
   /**
    * Instalar dependências de plugins
+   * NOVA ESTRATÉGIA: Instala no node_modules local do plugin primeiro,
+   * com fallback para o projeto principal
    */
   async installPluginDependencies(resolutions: DependencyResolution[]): Promise<void> {
     if (!this.config.autoInstall) {
@@ -143,42 +145,79 @@ export class PluginDependencyManager {
       return
     }
 
-    const toInstall: PluginDependency[] = []
-    const conflicts: DependencyConflict[] = []
-
-    // Coletar todas as dependências e conflitos
+    // Instalar dependências para cada plugin individualmente
     for (const resolution of resolutions) {
-      toInstall.push(...resolution.dependencies)
-      conflicts.push(...resolution.conflicts)
+      if (resolution.dependencies.length === 0) continue
+
+      const pluginPath = this.findPluginDirectory(resolution.plugin)
+      if (!pluginPath) {
+        this.logger?.warn(`Não foi possível encontrar diretório do plugin '${resolution.plugin}'`)
+        continue
+      }
+
+      this.logger?.debug(`📦 Instalando dependências localmente para plugin '${resolution.plugin}'`, {
+        plugin: resolution.plugin,
+        path: pluginPath,
+        dependencies: resolution.dependencies.length
+      })
+
+      try {
+        // Instalar APENAS no node_modules local do plugin
+        await this.installPluginDependenciesLocally(pluginPath, resolution.dependencies)
+
+        this.logger?.debug(`✅ Dependências do plugin '${resolution.plugin}' instaladas localmente`)
+      } catch (error) {
+        this.logger?.error(`❌ Erro ao instalar dependências do plugin '${resolution.plugin}'`, { error })
+        // Continuar com outros plugins
+      }
     }
+  }
 
-    // Resolver conflitos primeiro
-    if (conflicts.length > 0) {
-      await this.resolveConflicts(conflicts)
-    }
+  /**
+   * Instalar dependências no diretório local do plugin
+   */
+  private async installPluginDependenciesLocally(pluginPath: string, dependencies: PluginDependency[]): Promise<void> {
+    if (dependencies.length === 0) return
 
-    // Filtrar dependências que já estão instaladas
-    const needsInstallation = toInstall.filter(dep => {
-      const installed = this.installedDependencies.get(dep.name)
-      return !installed || !this.isVersionCompatible(installed, dep.version)
-    })
+    const regularDeps = dependencies.filter(d => d.type === 'dependency')
+    const peerDeps = dependencies.filter(d => d.type === 'peerDependency' && !d.optional)
 
-    if (needsInstallation.length === 0) {
-      this.logger?.debug('Todas as dependências de plugins já estão instaladas')
-      return
-    }
+    const allDeps = [...regularDeps, ...peerDeps]
+    if (allDeps.length === 0) return
 
-    this.logger?.debug(`Instalando ${needsInstallation.length} dependências de plugins`, {
-      dependencies: needsInstallation.map(d => `${d.name}@${d.version}`)
-    })
+    const packages = allDeps.map(d => `${d.name}@${d.version}`).join(' ')
+    const command = this.getInstallCommand(packages, false)
+
+    this.logger?.debug(`🔧 Executando instalação local: ${command}`, { cwd: pluginPath })
 
     try {
-      await this.installDependencies(needsInstallation)
-      this.logger?.debug('Dependências de plugins instaladas com sucesso')
+      execSync(command, {
+        cwd: pluginPath,
+        stdio: 'inherit' // Mostrar output para debug
+      })
+      this.logger?.debug(`✅ Pacotes instalados localmente em ${pluginPath}`)
     } catch (error) {
-      this.logger?.error('Erro ao instalar dependências de plugins', { error })
+      this.logger?.error(`❌ Falha ao instalar dependências localmente`, { error, pluginPath })
       throw error
     }
+  }
+
+  /**
+   * Encontrar diretório de um plugin pelo nome
+   */
+  private findPluginDirectory(pluginName: string): string | null {
+    const possiblePaths = [
+      `plugins/${pluginName}`,
+      `core/plugins/built-in/${pluginName}`
+    ]
+
+    for (const path of possiblePaths) {
+      if (existsSync(path)) {
+        return resolve(path)
+      }
+    }
+
+    return null
   }
 
   /**
