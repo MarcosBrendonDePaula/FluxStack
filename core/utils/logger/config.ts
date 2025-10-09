@@ -1,7 +1,9 @@
 /**
  * FluxStack Logger Configuration
- * Centralized configuration for the logging system
+ * Re-export from declarative config
  */
+
+import { loggerConfig } from '@/config/logger.config'
 
 export interface LoggerConfig {
   level: 'debug' | 'info' | 'warn' | 'error'
@@ -15,18 +17,18 @@ export interface LoggerConfig {
 }
 
 /**
- * Get logger configuration from environment variables
+ * Get logger configuration from declarative config
  */
 export function getLoggerConfig(): LoggerConfig {
   return {
-    level: (process.env.LOG_LEVEL as LoggerConfig['level']) || 'info',
-    dateFormat: process.env.LOG_DATE_FORMAT || 'YYYY-MM-DD HH:mm:ss',
-    logToFile: process.env.LOG_TO_FILE === 'true',
-    maxSize: process.env.LOG_MAX_SIZE || '20m',
-    maxFiles: process.env.LOG_MAX_FILES || '14d',
-    objectDepth: parseInt(process.env.LOG_OBJECT_DEPTH || '4'),
-    enableColors: process.env.LOG_COLORS !== 'false',
-    enableStackTrace: process.env.LOG_STACK_TRACE !== 'false'
+    level: loggerConfig.level,
+    dateFormat: loggerConfig.dateFormat,
+    logToFile: loggerConfig.logToFile,
+    maxSize: loggerConfig.maxSize,
+    maxFiles: loggerConfig.maxFiles,
+    objectDepth: loggerConfig.objectDepth,
+    enableColors: loggerConfig.enableColors,
+    enableStackTrace: loggerConfig.enableStackTrace
   }
 }
 

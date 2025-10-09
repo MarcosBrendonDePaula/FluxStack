@@ -3,6 +3,7 @@
  * Handles environment variable processing and precedence
  */
 
+import { env, helpers } from '../utils/env'
 import type { FluxStackConfig, LogLevel, BuildTarget, LogFormat } from './schema'
 
 export interface EnvironmentInfo {
@@ -24,8 +25,6 @@ export interface ConfigPrecedence {
  * Get current environment information
  */
 export function getEnvironmentInfo(): EnvironmentInfo {
-  // Import here to avoid circular dependency
-  const { env } = require('../utils/env-runtime-v2')
   const nodeEnv = env.NODE_ENV
 
   return {
@@ -99,117 +98,60 @@ export class EnvironmentProcessor {
     const config: any = {}
 
     // App configuration
-    this.setConfigValue(config, 'app.name',
-      process.env.FLUXSTACK_APP_NAME || process.env.APP_NAME, 'string')
-    this.setConfigValue(config, 'app.version',
-      process.env.FLUXSTACK_APP_VERSION || process.env.APP_VERSION, 'string')
-    this.setConfigValue(config, 'app.description',
-      process.env.FLUXSTACK_APP_DESCRIPTION || process.env.APP_DESCRIPTION, 'string')
+    this.setConfigValue(config, 'app.name', env.FLUXSTACK_APP_NAME, 'string')
+    this.setConfigValue(config, 'app.version', env.FLUXSTACK_APP_VERSION, 'string')
 
     // Server configuration
-    this.setConfigValue(config, 'server.port',
-      process.env.PORT || process.env.FLUXSTACK_PORT, 'number')
-    this.setConfigValue(config, 'server.host',
-      process.env.HOST || process.env.FLUXSTACK_HOST, 'string')
-    this.setConfigValue(config, 'server.apiPrefix',
-      process.env.FLUXSTACK_API_PREFIX || process.env.API_PREFIX, 'string')
+    this.setConfigValue(config, 'server.port', env.PORT?.toString(), 'number')
+    this.setConfigValue(config, 'server.host', env.HOST, 'string')
+    this.setConfigValue(config, 'server.apiPrefix', env.API_PREFIX, 'string')
 
     // CORS configuration
-    this.setConfigValue(config, 'server.cors.origins',
-      process.env.CORS_ORIGINS || process.env.FLUXSTACK_CORS_ORIGINS, 'array')
-    this.setConfigValue(config, 'server.cors.methods',
-      process.env.CORS_METHODS || process.env.FLUXSTACK_CORS_METHODS, 'array')
-    this.setConfigValue(config, 'server.cors.headers',
-      process.env.CORS_HEADERS || process.env.FLUXSTACK_CORS_HEADERS, 'array')
-    this.setConfigValue(config, 'server.cors.credentials',
-      process.env.CORS_CREDENTIALS || process.env.FLUXSTACK_CORS_CREDENTIALS, 'boolean')
-    this.setConfigValue(config, 'server.cors.maxAge',
-      process.env.CORS_MAX_AGE || process.env.FLUXSTACK_CORS_MAX_AGE, 'number')
+    const corsOriginsStr = env.has('CORS_ORIGINS') ? env.all().CORS_ORIGINS : undefined
+    const corsMethodsStr = env.has('CORS_METHODS') ? env.all().CORS_METHODS : undefined
+    const corsHeadersStr = env.has('CORS_HEADERS') ? env.all().CORS_HEADERS : undefined
+
+    this.setConfigValue(config, 'server.cors.origins', corsOriginsStr, 'array')
+    this.setConfigValue(config, 'server.cors.methods', corsMethodsStr, 'array')
+    this.setConfigValue(config, 'server.cors.headers', corsHeadersStr, 'array')
+    this.setConfigValue(config, 'server.cors.credentials', env.CORS_CREDENTIALS?.toString(), 'boolean')
+    this.setConfigValue(config, 'server.cors.maxAge', env.CORS_MAX_AGE?.toString(), 'number')
 
     // Client configuration
-    this.setConfigValue(config, 'client.port',
-      process.env.VITE_PORT || process.env.CLIENT_PORT || process.env.FLUXSTACK_CLIENT_PORT, 'number')
-    this.setConfigValue(config, 'client.proxy.target',
-      process.env.VITE_API_URL || process.env.API_URL || process.env.FLUXSTACK_PROXY_TARGET, 'string')
-    this.setConfigValue(config, 'client.build.sourceMaps',
-      process.env.FLUXSTACK_CLIENT_SOURCEMAPS, 'boolean')
-    this.setConfigValue(config, 'client.build.minify',
-      process.env.FLUXSTACK_CLIENT_MINIFY, 'boolean')
+    this.setConfigValue(config, 'client.port', env.VITE_PORT?.toString(), 'number')
 
     // Build configuration
-    this.setConfigValue(config, 'build.target',
-      process.env.BUILD_TARGET || process.env.FLUXSTACK_BUILD_TARGET, 'buildTarget')
-    this.setConfigValue(config, 'build.outDir',
-      process.env.BUILD_OUTDIR || process.env.FLUXSTACK_BUILD_OUTDIR, 'string')
-    this.setConfigValue(config, 'build.sourceMaps',
-      process.env.BUILD_SOURCEMAPS || process.env.FLUXSTACK_BUILD_SOURCEMAPS, 'boolean')
-    this.setConfigValue(config, 'build.clean',
-      process.env.BUILD_CLEAN || process.env.FLUXSTACK_BUILD_CLEAN, 'boolean')
-
-    // Build optimization
-    this.setConfigValue(config, 'build.optimization.minify',
-      process.env.BUILD_MINIFY || process.env.FLUXSTACK_BUILD_MINIFY, 'boolean')
-    this.setConfigValue(config, 'build.optimization.treeshake',
-      process.env.BUILD_TREESHAKE || process.env.FLUXSTACK_BUILD_TREESHAKE, 'boolean')
-    this.setConfigValue(config, 'build.optimization.compress',
-      process.env.BUILD_COMPRESS || process.env.FLUXSTACK_BUILD_COMPRESS, 'boolean')
-    this.setConfigValue(config, 'build.optimization.splitChunks',
-      process.env.BUILD_SPLIT_CHUNKS || process.env.FLUXSTACK_BUILD_SPLIT_CHUNKS, 'boolean')
-    this.setConfigValue(config, 'build.optimization.bundleAnalyzer',
-      process.env.BUILD_ANALYZER || process.env.FLUXSTACK_BUILD_ANALYZER, 'boolean')
+    const buildMinify = env.has('BUILD_MINIFY') ? env.all().BUILD_MINIFY : undefined
+    this.setConfigValue(config, 'build.optimization.minify', buildMinify, 'boolean')
 
     // Logging configuration
-    this.setConfigValue(config, 'logging.level',
-      process.env.LOG_LEVEL || process.env.FLUXSTACK_LOG_LEVEL, 'logLevel')
-    this.setConfigValue(config, 'logging.format',
-      process.env.LOG_FORMAT || process.env.FLUXSTACK_LOG_FORMAT, 'logFormat')
+    this.setConfigValue(config, 'logging.level', env.LOG_LEVEL, 'logLevel')
+    this.setConfigValue(config, 'logging.format', env.LOG_FORMAT, 'logFormat')
 
     // Monitoring configuration
-    this.setConfigValue(config, 'monitoring.enabled',
-      process.env.MONITORING_ENABLED || process.env.FLUXSTACK_MONITORING_ENABLED, 'boolean')
-    this.setConfigValue(config, 'monitoring.metrics.enabled',
-      process.env.METRICS_ENABLED || process.env.FLUXSTACK_METRICS_ENABLED, 'boolean')
-    this.setConfigValue(config, 'monitoring.metrics.collectInterval',
-      process.env.METRICS_INTERVAL || process.env.FLUXSTACK_METRICS_INTERVAL, 'number')
-    this.setConfigValue(config, 'monitoring.profiling.enabled',
-      process.env.PROFILING_ENABLED || process.env.FLUXSTACK_PROFILING_ENABLED, 'boolean')
-    this.setConfigValue(config, 'monitoring.profiling.sampleRate',
-      process.env.PROFILING_SAMPLE_RATE || process.env.FLUXSTACK_PROFILING_SAMPLE_RATE, 'number')
+    this.setConfigValue(config, 'monitoring.enabled', env.ENABLE_MONITORING?.toString(), 'boolean')
+    this.setConfigValue(config, 'monitoring.metrics.enabled', env.ENABLE_METRICS?.toString(), 'boolean')
 
     // Database configuration
-    this.setConfigValue(config, 'database.url', process.env.DATABASE_URL, 'string')
-    this.setConfigValue(config, 'database.host', process.env.DATABASE_HOST, 'string')
-    this.setConfigValue(config, 'database.port', process.env.DATABASE_PORT, 'number')
-    this.setConfigValue(config, 'database.database', process.env.DATABASE_NAME, 'string')
-    this.setConfigValue(config, 'database.user', process.env.DATABASE_USER, 'string')
-    this.setConfigValue(config, 'database.password', process.env.DATABASE_PASSWORD, 'string')
-    this.setConfigValue(config, 'database.ssl', process.env.DATABASE_SSL, 'boolean')
-    this.setConfigValue(config, 'database.poolSize', process.env.DATABASE_POOL_SIZE, 'number')
+    this.setConfigValue(config, 'database.url', env.DATABASE_URL, 'string')
+    this.setConfigValue(config, 'database.host', env.DB_HOST, 'string')
+    this.setConfigValue(config, 'database.port', env.DB_PORT?.toString(), 'number')
+    this.setConfigValue(config, 'database.database', env.DB_NAME, 'string')
+    this.setConfigValue(config, 'database.user', env.DB_USER, 'string')
+    this.setConfigValue(config, 'database.password', env.DB_PASSWORD, 'string')
+    this.setConfigValue(config, 'database.ssl', env.DB_SSL?.toString(), 'boolean')
 
     // Auth configuration
-    this.setConfigValue(config, 'auth.secret', process.env.JWT_SECRET, 'string')
-    this.setConfigValue(config, 'auth.expiresIn', process.env.JWT_EXPIRES_IN, 'string')
-    this.setConfigValue(config, 'auth.algorithm', process.env.JWT_ALGORITHM, 'string')
-    this.setConfigValue(config, 'auth.issuer', process.env.JWT_ISSUER, 'string')
+    this.setConfigValue(config, 'auth.secret', env.JWT_SECRET, 'string')
+    this.setConfigValue(config, 'auth.expiresIn', env.JWT_EXPIRES_IN, 'string')
+    this.setConfigValue(config, 'auth.algorithm', env.JWT_ALGORITHM, 'string')
 
     // Email configuration
-    this.setConfigValue(config, 'email.host', process.env.SMTP_HOST, 'string')
-    this.setConfigValue(config, 'email.port', process.env.SMTP_PORT, 'number')
-    this.setConfigValue(config, 'email.user', process.env.SMTP_USER, 'string')
-    this.setConfigValue(config, 'email.password', process.env.SMTP_PASSWORD, 'string')
-    this.setConfigValue(config, 'email.secure', process.env.SMTP_SECURE, 'boolean')
-    this.setConfigValue(config, 'email.from', process.env.SMTP_FROM, 'string')
-
-    // Storage configuration
-    this.setConfigValue(config, 'storage.uploadPath', process.env.UPLOAD_PATH, 'string')
-    this.setConfigValue(config, 'storage.maxFileSize', process.env.MAX_FILE_SIZE, 'number')
-    this.setConfigValue(config, 'storage.provider', process.env.STORAGE_PROVIDER, 'string')
-
-    // Plugin configuration
-    this.setConfigValue(config, 'plugins.enabled',
-      process.env.FLUXSTACK_PLUGINS_ENABLED, 'array')
-    this.setConfigValue(config, 'plugins.disabled',
-      process.env.FLUXSTACK_PLUGINS_DISABLED, 'array')
+    this.setConfigValue(config, 'email.host', env.SMTP_HOST, 'string')
+    this.setConfigValue(config, 'email.port', env.SMTP_PORT?.toString(), 'number')
+    this.setConfigValue(config, 'email.user', env.SMTP_USER, 'string')
+    this.setConfigValue(config, 'email.password', env.SMTP_PASSWORD, 'string')
+    this.setConfigValue(config, 'email.secure', env.SMTP_SECURE?.toString(), 'boolean')
 
     return this.cleanEmptyObjects(config)
   }

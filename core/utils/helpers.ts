@@ -87,20 +87,20 @@ export const throttle = <T extends (...args: any[]) => any>(
 }
 
 export const isProduction = (): boolean => {
-  // Import here to avoid circular dependency  
-  const { env } = require('./env-runtime-v2')
+  // Import here to avoid circular dependency
+  const { env } = require('./env')
   return env.NODE_ENV === 'production'
 }
 
 export const isDevelopment = (): boolean => {
   // Import here to avoid circular dependency
-  const { env } = require('./env-runtime-v2')
+  const { env } = require('./env')
   return env.NODE_ENV === 'development' || !env.NODE_ENV
 }
 
 export const isTest = (): boolean => {
   // Import here to avoid circular dependency
-  const { env } = require('./env-runtime-v2')
+  const { env } = require('./env')
   return env.NODE_ENV === 'test'
 }
 

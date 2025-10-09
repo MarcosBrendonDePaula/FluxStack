@@ -3,45 +3,45 @@ import { FluxStackFramework, vitePlugin, swaggerPlugin, staticPlugin, liveCompon
 import { isDevelopment } from "@/core/utils/helpers"
 import { DEBUG } from "@/core/utils/logger"
 import { apiRoutes } from "./routes"
-// Import sistema de env dinâmico simplificado
-import { env, helpers } from "@/core/utils/env-runtime-v2"
-// Import live components registration
+import { helpers } from "@/core/utils/env"
+import { serverConfig } from "@/config/server.config"
+import { appConfig } from "@/config/app.config"
+import { loggerConfig } from "@/config/logger.config"
 import "./live/register-components"
 
 // Startup info moved to DEBUG level (set LOG_LEVEL=debug to see details)
-DEBUG('🔧 Loading dynamic environment configuration...')
-DEBUG(`📊 Environment: ${env.NODE_ENV}`)
-DEBUG(`🚀 Port: ${env.PORT}`)
-DEBUG(`🌐 Host: ${env.HOST}`)
+DEBUG('🔧 Loading declarative configuration...')
+DEBUG(`📊 Environment: ${appConfig.env}`)
+DEBUG(`🚀 Port: ${serverConfig.port}`)
+DEBUG(`🌐 Host: ${serverConfig.host}`)
 
-// Criar aplicação com configuração dinâmica simplificada
+// Criar aplicação com configuração declarativa
 const app = new FluxStackFramework({
   server: {
-    port: env.PORT,                      // Direto! (number)
-    host: env.HOST,                      // Direto! (string)
-    apiPrefix: env.API_PREFIX,           // Direto! (string)
+    port: serverConfig.port,
+    host: serverConfig.host,
+    apiPrefix: serverConfig.apiPrefix,
     cors: {
-      origins: env.CORS_ORIGINS,         // Direto! (string[])
-      methods: env.get('CORS_METHODS', ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']),
-      headers: env.get('CORS_HEADERS', ['*']),
-      credentials: env.get('CORS_CREDENTIALS', false)
+      origins: serverConfig.corsOrigins,
+      methods: serverConfig.corsMethods,
+      headers: serverConfig.corsHeaders,
+      credentials: serverConfig.corsCredentials
     },
     middleware: []
   },
   app: {
-    name: env.FLUXSTACK_APP_NAME,        // Direto! (string)
-    version: env.FLUXSTACK_APP_VERSION   // Direto! (string)
+    name: serverConfig.appName,
+    version: serverConfig.appVersion
   },
   client: {
-    port: env.VITE_PORT,                 // Direto! (number)
+    port: serverConfig.clientPort,
     proxy: {
-      target: helpers.getServerUrl()     // Helper inteligente
+      target: helpers.getServerUrl()
     },
     build: {
-      sourceMaps: env.get('CLIENT_SOURCEMAPS', env.NODE_ENV !== 'production'),
-      minify: env.get('CLIENT_MINIFY', env.NODE_ENV === 'production'),
-      target: env.get('CLIENT_TARGET', 'es2020'),
-      outDir: env.get('CLIENT_OUTDIR', 'dist')
+      sourceMaps: serverConfig.clientSourceMaps,
+      target: serverConfig.clientTarget as any,
+      outDir: serverConfig.clientOutDir
     }
   }
 })
@@ -61,30 +61,47 @@ app.use(staticFilesPlugin) // Add Static Files support
 app.use(liveComponentsPlugin) // Add Live Components support
   
 
-// Adicionar rota de teste para mostrar env dinâmico (antes das rotas)
+// Adicionar rota de teste para mostrar config declarativo (antes das rotas)
 app.getApp().get('/api/env-test', () => {
   return {
-    message: '🔥 Environment Variables Simplificado!',
+    message: '⚡ Declarative Config System!',
     timestamp: new Date().toISOString(),
+    serverConfig: {
+      port: serverConfig.port,
+      host: serverConfig.host,
+      apiPrefix: serverConfig.apiPrefix,
+      appName: serverConfig.appName,
+      appVersion: serverConfig.appVersion,
+      cors: {
+        origins: serverConfig.corsOrigins,
+        methods: serverConfig.corsMethods,
+        credentials: serverConfig.corsCredentials
+      },
+      client: {
+        port: serverConfig.clientPort,
+        target: serverConfig.clientTarget,
+        sourceMaps: serverConfig.clientSourceMaps
+      },
+      features: {
+        enableSwagger: serverConfig.enableSwagger,
+        enableMetrics: serverConfig.enableMetrics,
+        enableMonitoring: serverConfig.enableMonitoring
+      }
+    },
     environment: {
-      NODE_ENV: env.NODE_ENV,             // Direto!
-      PORT: env.PORT,                     // Direto!
-      HOST: env.HOST,                     // Direto!
-      DEBUG: env.DEBUG,                   // Direto!
-      CORS_ORIGINS: env.CORS_ORIGINS,     // Direto!
-      ENABLE_SWAGGER: env.ENABLE_SWAGGER, // Direto!
-      
-      // Vars customizadas com casting automático
-      CUSTOM_VAR: env.get('CUSTOM_VAR', 'not-set'),
-      MAX_RETRIES: env.get('MAX_RETRIES', 3),        // number
-      ENABLE_CACHE: env.get('ENABLE_CACHE', false),  // boolean
-      ALLOWED_IPS: env.get('ALLOWED_IPS', [])        // string[]
+      NODE_ENV: appConfig.env,
+      DEBUG: appConfig.debug,
+      LOG_LEVEL: loggerConfig.level
     },
     urls: {
-      server: helpers.getServerUrl(),     // Helper!
+      server: helpers.getServerUrl(),
+      client: helpers.getClientUrl(),
       swagger: `${helpers.getServerUrl()}/swagger`
     },
-    note: 'API simplificada com casting automático! 🚀'
+    system: {
+      version: 'declarative-config',
+      features: ['type-safe', 'validated', 'declarative', 'runtime-reload']
+    }
   }
 })
 

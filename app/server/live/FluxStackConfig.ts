@@ -1,6 +1,10 @@
 // 🔥 FluxStack Configuration Live Component
 
 import { LiveComponent } from '@/core/types/types'
+import { appConfig } from '@/config/app.config'
+import { serverConfig } from '@/config/server.config'
+import { loggerConfig } from '@/config/logger.config'
+import { systemConfig, systemRuntimeInfo } from '@/config/system.config'
 
 export interface FluxStackConfigState {
   // Environment Configuration
@@ -154,10 +158,10 @@ export class FluxStackConfig extends LiveComponent<FluxStackConfigState> {
     
     // Set default state with real configuration
     this.state = {
-      environment: (process.env.NODE_ENV as any) || 'development',
-      port: parseInt(process.env.PORT || '3000'),
-      host: process.env.HOST || 'localhost',
-      apiPrefix: '/api',
+      environment: appConfig.env,
+      port: serverConfig.port,
+      host: serverConfig.host,
+      apiPrefix: serverConfig.apiPrefix,
       
       framework: {
         name: 'FluxStack',
@@ -195,7 +199,7 @@ export class FluxStackConfig extends LiveComponent<FluxStackConfigState> {
         enabled: true,
         dependencies: [],
         config: {
-          level: process.env.LOG_LEVEL || 'info',
+          level: loggerConfig.level,
           format: 'pretty'
         }
       },
@@ -244,17 +248,15 @@ export class FluxStackConfig extends LiveComponent<FluxStackConfigState> {
 
   // Get runtime configuration
   private getRuntimeConfiguration() {
-    const os = require('os')
-    
     return {
-      nodeVersion: process.version,
-      bunVersion: process.versions.bun || 'N/A',
-      platform: process.platform,
-      architecture: process.arch,
-      cpuCount: os.cpus().length,
-      totalMemory: Math.round(os.totalmem() / 1024 / 1024 / 1024 * 100) / 100, // GB
-      workingDirectory: process.cwd(),
-      executablePath: process.execPath
+      nodeVersion: systemRuntimeInfo.nodeVersion,
+      bunVersion: systemRuntimeInfo.bunVersion,
+      platform: systemRuntimeInfo.platform,
+      architecture: systemRuntimeInfo.architecture,
+      cpuCount: systemRuntimeInfo.cpuCount,
+      totalMemory: systemRuntimeInfo.totalMemory,
+      workingDirectory: systemRuntimeInfo.workingDirectory,
+      executablePath: systemRuntimeInfo.executablePath
     }
   }
 
@@ -355,17 +357,17 @@ export class FluxStackConfig extends LiveComponent<FluxStackConfigState> {
   // Get Logging configuration
   private getLoggingConfiguration() {
     return {
-      level: (process.env.LOG_LEVEL as any) || 'info',
-      format: 'pretty',
+      level: loggerConfig.level as 'debug' | 'info' | 'warn' | 'error',
+      format: 'pretty' as 'json' | 'pretty' | 'compact',
       file: {
-        enabled: false,
-        path: undefined,
-        maxSize: undefined,
-        maxFiles: undefined
+        enabled: loggerConfig.logToFile,
+        path: loggerConfig.logToFile ? 'logs/app.log' : undefined,
+        maxSize: loggerConfig.maxSize,
+        maxFiles: parseInt(loggerConfig.maxFiles) || undefined
       },
       console: {
         enabled: true,
-        colors: true
+        colors: loggerConfig.enableColors
       }
     }
   }
@@ -408,16 +410,18 @@ export class FluxStackConfig extends LiveComponent<FluxStackConfigState> {
   // Update specific configuration section
   async updateConfiguration(data: { section: string; config: Record<string, any> }) {
     const { section, config } = data
-    
+
     if (!this.state[section as keyof FluxStackConfigState]) {
       throw new Error(`Invalid configuration section: ${section}`)
     }
-    
+
+    const currentSection = this.state[section as keyof FluxStackConfigState]
+    const updatedSection = typeof currentSection === 'object' && currentSection !== null
+      ? { ...currentSection as object, ...config }
+      : config
+
     this.setState({
-      [section]: {
-        ...this.state[section as keyof FluxStackConfigState],
-        ...config
-      },
+      [section]: updatedSection,
       lastUpdated: Date.now()
     } as Partial<FluxStackConfigState>)
     
@@ -433,22 +437,22 @@ export class FluxStackConfig extends LiveComponent<FluxStackConfigState> {
   // Get environment variables
   async getEnvironmentVariables() {
     const envVars = {
-      NODE_ENV: process.env.NODE_ENV,
-      PORT: process.env.PORT,
-      HOST: process.env.HOST,
-      LOG_LEVEL: process.env.LOG_LEVEL,
-      // Add other non-sensitive env vars
-      PWD: process.env.PWD,
-      PATH: process.env.PATH ? '***truncated***' : undefined,
-      USER: process.env.USER || process.env.USERNAME,
-      HOME: process.env.HOME || process.env.USERPROFILE
+      NODE_ENV: appConfig.env,
+      PORT: serverConfig.port.toString(),
+      HOST: serverConfig.host,
+      LOG_LEVEL: loggerConfig.level,
+      // Add other non-sensitive env vars from system config
+      PWD: systemConfig.pwd || undefined,
+      PATH: systemConfig.path ? '***truncated***' : undefined,
+      USER: systemConfig.currentUser,
+      HOME: systemConfig.homeDirectory || undefined
     }
-    
+
     this.emit('ENVIRONMENT_VARIABLES_REQUESTED', {
       count: Object.keys(envVars).length,
       timestamp: Date.now()
     })
-    
+
     return envVars
   }
 

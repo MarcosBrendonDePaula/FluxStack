@@ -4,6 +4,7 @@
  */
 
 import type { Context } from 'elysia'
+import { appConfig } from '@/config/app.config'
 
 export interface ErrorResponse {
   error: string
@@ -139,14 +140,15 @@ export const errorHandlingMiddleware = {
     }
 
     // Default to internal server error
+    const isProduction = appConfig.env === 'production'
     return createErrorResponse(
       500,
-      process.env.NODE_ENV === 'production' 
-        ? 'Internal server error' 
+      isProduction
+        ? 'Internal server error'
         : error.message,
       'INTERNAL_ERROR',
-      process.env.NODE_ENV === 'production' 
-        ? undefined 
+      isProduction
+        ? undefined
         : { stack: error.stack },
       requestId
     )

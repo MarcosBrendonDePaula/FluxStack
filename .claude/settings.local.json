@@ -81,7 +81,13 @@
       "Read(/C:\\Users\\Marcos\\Documents\\GitHub\\aviso-projeto\\test-temporal-bridge/**)",
       "Read(//c/Users/Marcos/Documents/GitHub/PROJETO-OHANA/BackEnd/src/utils/**)",
       "Bash(bunx tsc:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(PORT=3000 DEBUG=false bun build test-build-inlining.ts --outfile=test-output.js --minify)",
+      "Bash(PORT=3000 DEBUG=false node test-output.js)",
+      "Bash(PORT=9999 DEBUG=true node test-output.js)",
+      "Bash(PORT=5555 DEBUG=false TEST_NEW_VAR=hello node test-output.js)",
+      "Bash(bunx prettier:*)",
+      "Read(//c/c/Users/Marcos/Documents/GitHub/aviso-projeto/FluxStack/**)"
     ],
     "deny": []
   }
