@@ -23,6 +23,10 @@ export { clearColorCache } from './colors'
 export { clearCallerCache } from './stack-trace'
 export { clearLoggerCache } from './winston-logger'
 
+// Export Logger type from winston
+import type winston from 'winston'
+export type Logger = winston.Logger
+
 // Re-export banner utilities for custom banners
 export { displayStartupBanner, type StartupInfo } from './startup-banner'
 

@@ -4,7 +4,7 @@
  */
 
 import { existsSync } from 'fs'
-import { join, resolve, dirname } from 'path'
+import { join, resolve } from 'path'
 import type { Logger } from '../utils/logger'
 
 export interface ModuleResolverConfig {
