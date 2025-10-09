@@ -40,6 +40,7 @@ const app = new FluxStackFramework({
     },
     build: {
       sourceMaps: serverConfig.clientSourceMaps,
+      minify: false,
       target: serverConfig.clientTarget as any,
       outDir: serverConfig.clientOutDir
     }
