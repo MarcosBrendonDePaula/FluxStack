@@ -50,9 +50,17 @@
 FluxStack/
 ├── core/                    # 🔒 FRAMEWORK (read-only)
 │   ├── server/             # Framework Elysia + plugins
-│   ├── config/             # Sistema de configuração
+│   ├── config/             # Sistema base de configuração
+│   ├── utils/              # Utilitários (env.ts, config-schema.ts)
 │   ├── types/              # Types do framework
 │   └── build/              # Sistema de build
+├── config/                  # ⚙️ CONFIGURAÇÕES DA APLICAÇÃO
+│   ├── app.config.ts       # Configuração principal
+│   ├── server.config.ts    # Servidor e CORS
+│   ├── logger.config.ts    # Sistema de logs
+│   ├── database.config.ts  # Banco de dados
+│   ├── system.config.ts    # Informações do sistema
+│   └── index.ts            # Exports centralizados
 ├── app/                     # 👨‍💻 CÓDIGO DA APLICAÇÃO
 │   ├── server/             # Backend (controllers, routes)
 │   │   ├── controllers/    # Lógica de negócio
@@ -108,10 +116,99 @@ bun run dev:clean    # ✅ Output limpo (sem logs HEAD do Elysia)
 - **Users CRUD**: `GET|POST|PUT|DELETE /api/users` ✅
 - **Swagger Docs**: `GET /swagger` ✅
 
-### ✅ **4. Environment Variables Dinâmicas**
-- **Sistema robusto**: Precedência clara
-- **Testing endpoint**: `/api/env-test`
-- **Validação automática**: Environment vars
+### ✅ **4. Sistema de Configuração Declarativa (Laravel-inspired)**
+
+FluxStack usa um sistema de configuração declarativa com validação automática e inferência de tipos completa.
+
+#### 📁 **Estrutura de Configuração**
+```
+config/
+├── app.config.ts       # Configuração da aplicação
+├── server.config.ts    # Configuração do servidor
+├── logger.config.ts    # Configuração de logs
+├── database.config.ts  # Configuração do banco de dados
+├── system.config.ts    # Informações do sistema
+└── index.ts           # Exports centralizados
+```
+
+#### 🎯 **Como Usar**
+
+**1. Definir Schema de Configuração:**
+```typescript
+// config/app.config.ts
+import { defineConfig, config } from '@/core/utils/config-schema'
+
+const appConfigSchema = {
+  name: config.string('APP_NAME', 'FluxStack', true),
+  port: config.number('PORT', 3000, true),
+  env: config.enum('NODE_ENV', ['development', 'production', 'test'] as const, 'development', true),
+  debug: config.boolean('DEBUG', false),
+} as const
+
+export const appConfig = defineConfig(appConfigSchema)
+```
+
+**2. Usar Configuração com Type Safety:**
+```typescript
+import { appConfig } from '@/config/app.config'
+
+// ✅ Type inference automática
+const port = appConfig.port        // number
+const env = appConfig.env          // "development" | "production" | "test"
+const debug = appConfig.debug      // boolean
+
+// ✅ Validação em tempo de boot
+if (appConfig.env === 'production') {
+  // TypeScript sabe que env é exatamente 'production'
+}
+```
+
+**3. Validação e Transformação:**
+```typescript
+const schema = {
+  port: {
+    type: 'number' as const,
+    env: 'PORT',
+    default: 3000,
+    required: true,
+    validate: (value: number) => {
+      if (value < 1 || value > 65535) {
+        return 'Port must be between 1 and 65535'
+      }
+      return true
+    }
+  }
+}
+```
+
+#### ⚡ **Benefícios**
+- ✅ **Type Safety Total**: Inferência automática de tipos literais
+- ✅ **Validação em Boot**: Falha rápida com mensagens claras
+- ✅ **Zero Tipos `any`**: TypeScript infere tudo corretamente
+- ✅ **Hot Reload Seguro**: Configs podem ser recarregadas em runtime
+- ✅ **Documentação Automática**: Schema serve como documentação
+
+#### 🔧 **Helpers Disponíveis**
+```typescript
+import { config } from '@/core/utils/config-schema'
+
+config.string(envVar, defaultValue, required)
+config.number(envVar, defaultValue, required)
+config.boolean(envVar, defaultValue, required)
+config.array(envVar, defaultValue, required)
+config.enum(envVar, values, defaultValue, required)
+```
+
+#### 🚫 **Não Fazer**
+- ❌ Usar `process.env` diretamente no código da aplicação
+- ❌ Acessar variáveis de ambiente sem validação
+- ❌ Criar configs sem schema
+
+#### ✅ **Sempre Fazer**
+- ✅ Usar configs declarativos de `config/`
+- ✅ Definir schemas com validação
+- ✅ Usar helpers `config.*` para type safety
+- ✅ Adicionar `as const` nos schemas para preservar tipos literais
 
 ## 🚨 **Regras Críticas (Atualizadas)**
 
@@ -171,6 +268,19 @@ curl http://localhost:3000/api/health  # ✅ Health check
 - **Uma instalação**: `bun install` para todo o projeto
 - **Hot reload independente**: Backend e frontend separados
 - **Build otimizado**: Sistema unificado
+
+### **✅ Sistema de Configuração Declarativa (Janeiro 2025)**
+- **Problema resolvido**: Uso direto de `process.env` sem validação
+- **Solução implementada**: Sistema Laravel-inspired com schemas
+- **Arquitetura**: 3 camadas (env loader → config schema → app configs)
+- **Benefícios**:
+  - ✅ Type inference completa com tipos literais
+  - ✅ Validação em boot time com mensagens claras
+  - ✅ Zero tipos `any` em configurações
+  - ✅ Hot reload seguro de configs
+  - ✅ Pasta `config/` centralizada e organizada
+- **Build**: Pasta `config/` copiada automaticamente para produção
+- **CLI**: `create-fluxstack` inclui configs automaticamente
 
 ## 🎯 **Próximos Passos Sugeridos**
 
