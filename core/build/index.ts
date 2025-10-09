@@ -1,4 +1,4 @@
-import { copyFileSync, writeFileSync, existsSync, mkdirSync } from "fs"
+import { copyFileSync, writeFileSync, existsSync, mkdirSync, readFileSync } from "fs"
 import { join } from "path"
 import type { FluxStackConfig } from "../config"
 import type { BuildResult, BuildManifest } from "../types/build"
@@ -177,9 +177,15 @@ coverage
     console.log(`  - target path: ${distEnvPath}`)
     
     if (existsSync(envPath)) {
-      console.log(`📄 Copying .env file...`)
-      copyFileSync(envPath, distEnvPath)
-      console.log("📄 Environment file copied to dist/")
+      console.log(`📄 Copying .env file and setting production mode...`)
+      // Read .env content
+      let envContent = readFileSync(envPath, 'utf-8')
+      // Replace development with production
+      envContent = envContent.replace(/NODE_ENV=development/g, 'NODE_ENV=production')
+      envContent = envContent.replace(/VITE_NODE_ENV=development/g, 'VITE_NODE_ENV=production')
+      // Write to dist
+      writeFileSync(distEnvPath, envContent)
+      console.log("📄 Environment file copied to dist/ (NODE_ENV=production)")
     } else if (existsSync(envExamplePath)) {
       console.log(`📄 Copying .env.example file...`)
       copyFileSync(envExamplePath, distEnvPath)
