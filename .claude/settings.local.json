@@ -87,7 +87,8 @@
       "Bash(PORT=9999 DEBUG=true node test-output.js)",
       "Bash(PORT=5555 DEBUG=false TEST_NEW_VAR=hello node test-output.js)",
       "Bash(bunx prettier:*)",
-      "Read(//c/c/Users/Marcos/Documents/GitHub/aviso-projeto/FluxStack/**)"
+      "Read(//c/c/Users/Marcos/Documents/GitHub/aviso-projeto/FluxStack/**)",
+      "Read(//c/**)"
     ],
     "deny": []
   }
