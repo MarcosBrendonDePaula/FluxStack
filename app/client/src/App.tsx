@@ -15,6 +15,7 @@ import { OverviewPage } from './pages/Overview'
 import { DemoPage } from './pages/Demo'
 import { HybridLivePage } from './pages/HybridLive'
 import { ApiDocsPage } from './pages/ApiDocs'
+import { CryptoAuthPage } from './pages/CryptoAuthPage'
 import { MainLayout } from './components/MainLayout'
 import { LiveClock } from './components/LiveClock'
 
@@ -166,6 +167,7 @@ function AppContent() {
                       {[
                         { id: 'overview', label: 'Visão Geral', icon: <FaClipboardList />, path: '/' },
                         { id: 'demo', label: 'Demo', icon: <FaRocket />, path: '/demo' },
+                        { id: 'crypto-auth', label: 'Crypto Auth', icon: <FaShieldAlt />, path: '/crypto-auth' },
                         { id: 'hybrid-live', label: 'Hybrid Live', icon: <FaBolt />, path: '/hybrid-live' },
                         { id: 'live-app', label: 'Live App', icon: <FaFire />, path: '/live-app' },
                         { id: 'api-docs', label: 'API Docs', icon: <FaBook />, path: '/api-docs' },
@@ -208,8 +210,8 @@ function AppContent() {
                     {[
                       { id: 'overview', label: 'Visão', icon: <FaClipboardList />, path: '/' },
                       { id: 'demo', label: 'Demo', icon: <FaRocket />, path: '/demo' },
+                      { id: 'crypto-auth', label: 'Crypto', icon: <FaShieldAlt />, path: '/crypto-auth' },
                       { id: 'hybrid-live', label: 'Hybrid', icon: <FaBolt />, path: '/hybrid-live' },
-                      { id: 'live-app', label: 'Live', icon: <FaFire />, path: '/live-app' },
                       { id: 'api-docs', label: 'Docs', icon: <FaBook />, path: '/api-docs' },
                       { id: 'tests', label: 'Testes', icon: <FaTest />, path: '/tests' }
                     ].map(tab => (
@@ -256,6 +258,7 @@ function AppContent() {
                     />
                   }
                 />
+                <Route path="/crypto-auth" element={<CryptoAuthPage />} />
                 <Route path="/hybrid-live" element={<HybridLivePage />} />
                 <Route path="/api-docs" element={<ApiDocsPage />} />
                 <Route path="/tests" element={

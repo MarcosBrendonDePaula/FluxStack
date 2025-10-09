@@ -2,6 +2,7 @@ import { Elysia, t } from "elysia"
 import { usersRoutes } from "./users.routes"
 import { uploadRoutes } from "./upload"
 import { configRoutes } from "./config"
+import { cryptoAuthDemoRoutes } from "./crypto-auth-demo.routes"
 
 export const apiRoutes = new Elysia({ prefix: "/api" })
   .get("/", () => ({ message: "🔥 Hot Reload funcionando! FluxStack API v1.4.0 ⚡" }), {
@@ -37,3 +38,4 @@ export const apiRoutes = new Elysia({ prefix: "/api" })
   .use(usersRoutes)
   .use(uploadRoutes)
   .use(configRoutes)
+  .use(cryptoAuthDemoRoutes)

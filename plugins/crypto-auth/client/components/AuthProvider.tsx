@@ -4,7 +4,7 @@
  */
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { CryptoAuthClient, SessionInfo, AuthConfig } from '../CryptoAuthClient'
+import { CryptoAuthClient, type SessionInfo, type AuthConfig } from '../CryptoAuthClient'
 
 export interface AuthContextValue {
   client: CryptoAuthClient
