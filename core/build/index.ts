@@ -1,4 +1,4 @@
-import { copyFileSync, writeFileSync, existsSync, mkdirSync } from "fs"
+import { copyFileSync, writeFileSync, existsSync, mkdirSync, cpSync } from "fs"
 import { join } from "path"
 import type { FluxStackConfig } from "../config"
 import type { BuildResult, BuildManifest } from "../types/build"
@@ -222,7 +222,21 @@ MONITORING_ENABLED=true
       }
       writeFileSync(distPackageJsonPath, JSON.stringify(minimalPackageJson, null, 2))
     }
-    
+
+    // Copy config folder (required for runtime)
+    const configPath = join(process.cwd(), 'config')
+    const distConfigPath = join(distDir, 'config')
+
+    if (existsSync(configPath)) {
+      console.log(`📦 Copying config/ folder...`)
+      console.log(`  - source: ${configPath}`)
+      console.log(`  - target: ${distConfigPath}`)
+      cpSync(configPath, distConfigPath, { recursive: true })
+      console.log("✅ Config folder copied successfully")
+    } else {
+      console.warn("⚠️ config/ folder not found")
+    }
+
     console.log("✅ Docker files created in dist/")
   }
 
