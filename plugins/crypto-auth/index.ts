@@ -8,6 +8,7 @@ import type { FluxStack, PluginContext, RequestContext, ResponseContext } from "
 type Plugin = FluxStack.Plugin
 import { Elysia, t } from "elysia"
 import { CryptoAuthService, AuthMiddleware } from "./server"
+import { makeProtectedRouteCommand } from "./cli/make-protected-route.command"
 
 // Store config globally for hooks to access
 let pluginConfig: any = null
@@ -53,6 +54,11 @@ export const cryptoAuthPlugin: Plugin = {
     adminKeys: [],
     enableMetrics: true
   },
+
+  // CLI Commands
+  commands: [
+    makeProtectedRouteCommand
+  ],
 
   setup: async (context: PluginContext) => {
     const config = getPluginConfig(context)

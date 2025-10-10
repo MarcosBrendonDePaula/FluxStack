@@ -2,7 +2,41 @@
 
 ## 🎯 Como Criar uma Rota Protegida
 
-### 1️⃣ Criar Arquivo de Rotas
+### 🚀 Opção 1: CLI (Recomendado)
+
+Use o comando `make:protected-route` para gerar rotas automaticamente:
+
+```bash
+# Rota com autenticação obrigatória (padrão)
+bun flux make:protected-route users
+
+# Rota apenas para admins
+bun flux make:protected-route admin-panel --auth admin
+
+# Rota com autenticação opcional
+bun flux make:protected-route blog --auth optional
+
+# Rota pública (sem auth)
+bun flux make:protected-route public-api --auth public
+```
+
+O comando cria automaticamente:
+- ✅ Arquivo de rotas em `app/server/routes/[nome].routes.ts`
+- ✅ Middlewares de autenticação configurados
+- ✅ Templates de CRUD completos
+- ✅ Exemplos de uso de `getCryptoAuthUser()`
+
+**Tipos de `--auth` disponíveis:**
+- `required` - Autenticação obrigatória (padrão)
+- `admin` - Apenas administradores
+- `optional` - Auth opcional (rota pública com conteúdo extra para autenticados)
+- `public` - Completamente pública (sem middleware)
+
+---
+
+### ⚙️ Opção 2: Manual
+
+#### 1️⃣ Criar Arquivo de Rotas
 
 ```typescript
 // app/server/routes/minhas-rotas.routes.ts
@@ -27,7 +61,7 @@ export const minhasRotas = new Elysia({ prefix: '/minhas-rotas' })
   )
 ```
 
-### 2️⃣ Registrar no Router
+#### 2️⃣ Registrar no Router
 
 ```typescript
 // app/server/routes/index.ts
@@ -37,7 +71,7 @@ export const apiRoutes = new Elysia({ prefix: '/api' })
   .use(minhasRotas)  // ✅ Adicionar aqui
 ```
 
-### 3️⃣ Testar
+#### 3️⃣ Testar
 
 ```bash
 # Pública (funciona)
