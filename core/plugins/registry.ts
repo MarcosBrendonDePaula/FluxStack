@@ -262,6 +262,33 @@ export class PluginRegistry {
       if (existsSync(manifestPath)) {
         const manifestContent = await readFile(manifestPath, 'utf-8')
         manifest = JSON.parse(manifestContent)
+      } else {
+        // Try package.json for npm plugins
+        const packagePath = join(pluginPath, 'package.json')
+        if (existsSync(packagePath)) {
+          try {
+            const packageContent = await readFile(packagePath, 'utf-8')
+            const packageJson = JSON.parse(packageContent)
+
+            if (packageJson.fluxstack) {
+              manifest = {
+                name: packageJson.name,
+                version: packageJson.version,
+                description: packageJson.description || '',
+                author: packageJson.author || '',
+                license: packageJson.license || '',
+                homepage: packageJson.homepage,
+                repository: packageJson.repository,
+                keywords: packageJson.keywords || [],
+                dependencies: packageJson.dependencies || {},
+                peerDependencies: packageJson.peerDependencies,
+                fluxstack: packageJson.fluxstack
+              }
+            }
+          } catch (error) {
+            this.logger?.warn(`Failed to parse package.json in '${pluginPath}'`, { error })
+          }
+        }
       }
 
       // Try to import the plugin

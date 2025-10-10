@@ -47,6 +47,7 @@
     "typescript": "^5.0.0"
   },
   "fluxstack": {
+    "plugin": true,
     "version": "^1.0.0",
     "hooks": [
       "setup",
