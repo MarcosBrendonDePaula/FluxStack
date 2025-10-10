@@ -10,8 +10,8 @@ import { Elysia, t } from "elysia"
 import { CryptoAuthService, AuthMiddleware } from "./server"
 import { makeProtectedRouteCommand } from "./cli/make-protected-route.command"
 
-// ✅ Plugin carrega sua própria configuração
-import { cryptoAuthConfig } from "../../config/crypto-auth.config"
+// ✅ Plugin carrega sua própria configuração (da pasta config/ do plugin)
+import { cryptoAuthConfig } from "./config"
 
 // Store config globally for hooks to access
 let pluginConfig: any = cryptoAuthConfig
