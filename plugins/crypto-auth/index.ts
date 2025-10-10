@@ -61,7 +61,9 @@ export const cryptoAuthPlugin: Plugin = {
   ],
 
   setup: async (context: PluginContext) => {
-    const config = getPluginConfig(context)
+    // ✅ Usar config declarativo do FluxStack
+    const { cryptoAuthConfig } = await import('@/config')
+    const config = cryptoAuthConfig
 
     // Store config globally for hooks
     pluginConfig = config
@@ -149,23 +151,17 @@ export const cryptoAuthPlugin: Plugin = {
   },
 
   onServerStart: async (context: PluginContext) => {
-    const config = getPluginConfig(context)
+    const { cryptoAuthConfig } = await import('@/config')
 
-    if (config.enabled) {
+    if (cryptoAuthConfig.enabled) {
       context.logger.info("✅ Crypto Auth plugin ativo", {
         mode: 'middleware-based',
-        adminKeys: config.adminKeys.length,
-        maxTimeDrift: `${config.maxTimeDrift}ms`,
+        adminKeys: cryptoAuthConfig.adminKeys.length,
+        maxTimeDrift: `${cryptoAuthConfig.maxTimeDrift}ms`,
         usage: 'Use cryptoAuthRequired(), cryptoAuthAdmin() nas rotas'
       })
     }
   }
-}
-
-// Helper function para obter configuração do plugin
-function getPluginConfig(context: PluginContext) {
-  const pluginConfig = context.config.plugins.config?.['crypto-auth'] || {}
-  return { ...cryptoAuthPlugin.defaultConfig, ...pluginConfig }
 }
 
 export default cryptoAuthPlugin
