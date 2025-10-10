@@ -159,6 +159,53 @@ export class CryptoAuthClient {
   }
 
   /**
+   * Importar chave privada existente
+   * @param privateKeyHex - Chave privada em formato hexadecimal (64 caracteres)
+   * @returns KeyPair com as chaves importadas
+   * @throws Error se a chave privada for inválida
+   */
+  importPrivateKey(privateKeyHex: string): KeyPair {
+    // Validar formato
+    if (!/^[a-fA-F0-9]{64}$/.test(privateKeyHex)) {
+      throw new Error('Chave privada inválida. Deve ter 64 caracteres hexadecimais.')
+    }
+
+    try {
+      // Converter hex para bytes
+      const privateKeyBytes = hexToBytes(privateKeyHex)
+
+      // Derivar chave pública da privada
+      const publicKeyBytes = ed25519.getPublicKey(privateKeyBytes)
+
+      const keys: KeyPair = {
+        publicKey: bytesToHex(publicKeyBytes),
+        privateKey: privateKeyHex.toLowerCase(),
+        createdAt: new Date()
+      }
+
+      this.keys = keys
+      this.saveKeys(keys)
+
+      return keys
+    } catch (error) {
+      throw new Error('Erro ao importar chave privada: ' + (error as Error).message)
+    }
+  }
+
+  /**
+   * Exportar chave privada (para backup)
+   * @returns Chave privada em formato hexadecimal
+   * @throws Error se não houver chaves inicializadas
+   */
+  exportPrivateKey(): string {
+    if (!this.keys) {
+      throw new Error('Nenhuma chave inicializada para exportar')
+    }
+
+    return this.keys.privateKey
+  }
+
+  /**
    * Assinar mensagem
    */
   private signMessage(message: string, timestamp: number, nonce: string): string {

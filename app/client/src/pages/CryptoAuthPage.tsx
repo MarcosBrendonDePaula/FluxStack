@@ -1,16 +1,20 @@
 import { useState, useEffect } from 'react'
-import { FaKey, FaLock, FaUnlock, FaCheckCircle, FaTimesCircle, FaSync, FaShieldAlt, FaCopy } from 'react-icons/fa'
+import { FaKey, FaLock, FaUnlock, FaCheckCircle, FaTimesCircle, FaSync, FaShieldAlt, FaCopy, FaFileImport, FaExclamationTriangle } from 'react-icons/fa'
 import { CryptoAuthClient, type KeyPair } from '../../../../plugins/crypto-auth/client'
 
 export function CryptoAuthPage() {
   const [authClient] = useState(() => new CryptoAuthClient({
-    autoInit: false
+    storage: 'sessionStorage', // Usar sessionStorage ao invés de localStorage
+    autoInit: true // Gerar automaticamente ao inicializar
   }))
   const [keys, setKeys] = useState<KeyPair | null>(null)
   const [loading, setLoading] = useState(false)
   const [publicDataResult, setPublicDataResult] = useState<any>(null)
   const [protectedDataResult, setProtectedDataResult] = useState<any>(null)
   const [copiedKey, setCopiedKey] = useState('')
+  const [showImportModal, setShowImportModal] = useState(false)
+  const [importKey, setImportKey] = useState('')
+  const [importError, setImportError] = useState('')
 
   useEffect(() => {
     const existingKeys = authClient.getKeys()
@@ -44,6 +48,29 @@ export function CryptoAuthPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleImportKey = () => {
+    setImportError('')
+    setLoading(true)
+    try {
+      const trimmedKey = importKey.trim()
+      const importedKeys = authClient.importPrivateKey(trimmedKey)
+      setKeys(importedKeys)
+      setShowImportModal(false)
+      setImportKey('')
+    } catch (error) {
+      console.error('Erro ao importar chave:', error)
+      setImportError((error as Error).message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const openImportModal = () => {
+    setShowImportModal(true)
+    setImportKey('')
+    setImportError('')
   }
 
   const handlePublicRequest = async () => {
@@ -104,14 +131,24 @@ export function CryptoAuthPage() {
           <div className="text-center py-8">
             <FaUnlock className="text-6xl text-gray-300 mx-auto mb-4" />
             <p className="text-gray-600 mb-4">Nenhum par de chaves gerado</p>
-            <button
-              onClick={handleCreateKeys}
-              disabled={loading}
-              className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 disabled:opacity-50 flex items-center mx-auto"
-            >
-              {loading ? <FaSync className="animate-spin mr-2" /> : <FaKey className="mr-2" />}
-              Gerar Novo Par de Chaves
-            </button>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={handleCreateKeys}
+                disabled={loading}
+                className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 disabled:opacity-50 flex items-center"
+              >
+                {loading ? <FaSync className="animate-spin mr-2" /> : <FaKey className="mr-2" />}
+                Gerar Novo Par de Chaves
+              </button>
+              <button
+                onClick={openImportModal}
+                disabled={loading}
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center"
+              >
+                <FaFileImport className="mr-2" />
+                Importar Chave Privada
+              </button>
+            </div>
           </div>
         ) : (
           <div className="space-y-4">
@@ -119,19 +156,34 @@ export function CryptoAuthPage() {
               <div className="flex items-center">
                 <FaLock className="text-green-600 text-2xl mr-3" />
                 <div>
-                  <p className="font-semibold text-green-800">Chaves Ativas</p>
+                  <p className="font-semibold text-green-800 flex items-center gap-2">
+                    Chaves Ativas
+                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                      sessionStorage
+                    </span>
+                  </p>
                   <p className="text-sm text-green-600">
                     Criadas em: {keys.createdAt.toLocaleString()}
                   </p>
                 </div>
               </div>
-              <button
-                onClick={handleClearKeys}
-                disabled={loading}
-                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 disabled:opacity-50"
-              >
-                Limpar Chaves
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={openImportModal}
+                  disabled={loading}
+                  className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50 flex items-center text-sm"
+                >
+                  <FaFileImport className="mr-2" />
+                  Importar
+                </button>
+                <button
+                  onClick={handleClearKeys}
+                  disabled={loading}
+                  className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 disabled:opacity-50"
+                >
+                  Limpar Chaves
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 gap-4">
@@ -228,7 +280,7 @@ export function CryptoAuthPage() {
           <div className="flex items-start">
             <FaCheckCircle className="text-blue-600 mt-1 mr-2 flex-shrink-0" />
             <div>
-              <strong>2. Chave Privada:</strong> NUNCA sai do navegador, armazenada em localStorage
+              <strong>2. Chave Privada:</strong> NUNCA sai do navegador, armazenada em sessionStorage (válida apenas durante a sessão)
             </div>
           </div>
           <div className="flex items-start">
@@ -257,6 +309,86 @@ export function CryptoAuthPage() {
           </div>
         </div>
       </div>
+
+      {/* Import Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-2xl p-6 max-w-lg w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-800 flex items-center">
+                <FaFileImport className="mr-2 text-blue-600" />
+                Importar Chave Privada
+              </h3>
+              <button
+                onClick={() => setShowImportModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Chave Privada (64 caracteres hexadecimais)
+              </label>
+              <textarea
+                value={importKey}
+                onChange={(e) => setImportKey(e.target.value)}
+                placeholder="Digite ou cole sua chave privada aqui..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm resize-none"
+                rows={4}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                {importKey.trim().length}/64 caracteres
+              </p>
+            </div>
+
+            {importError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start">
+                <FaExclamationTriangle className="text-red-600 mt-0.5 mr-2 flex-shrink-0" />
+                <p className="text-sm text-red-700">{importError}</p>
+              </div>
+            )}
+
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+              <div className="flex items-start">
+                <FaExclamationTriangle className="text-yellow-600 mt-0.5 mr-2 flex-shrink-0" />
+                <div className="text-sm text-yellow-800">
+                  <strong>⚠️ Atenção:</strong> Importar uma chave privada substituirá suas chaves atuais.
+                  A chave pública será derivada automaticamente da chave privada.
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleImportKey}
+                disabled={loading || importKey.trim().length !== 64}
+                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                {loading ? (
+                  <>
+                    <FaSync className="animate-spin mr-2" />
+                    Importando...
+                  </>
+                ) : (
+                  <>
+                    <FaFileImport className="mr-2" />
+                    Importar Chave
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => setShowImportModal(false)}
+                disabled={loading}
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
