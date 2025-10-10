@@ -48,11 +48,13 @@ export const protectedRoutes = new Elysia()
 
   .post('/posts', ({ request, body }) => {
     const user = getCryptoAuthUser(request)!
+    const { title, content } = body as { title: string; content: string }
 
     return {
       success: true,
       post: {
-        ...body,
+        title,
+        content,
         author: user.publicKey,
         createdAt: new Date()
       }

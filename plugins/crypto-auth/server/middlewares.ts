@@ -1,6 +1,6 @@
 /**
  * Crypto Auth Middlewares
- * Middlewares Elysia para autenticação criptográfica
+ * Middlewares Elysia para autenticação criptográfica usando FluxStack helpers
  *
  * Uso:
  * ```typescript
@@ -15,7 +15,7 @@
  * ```
  */
 
-import { Elysia } from 'elysia'
+import { createGuard, createDerive, composeMiddleware } from '@/core/server/middleware/elysia-helpers'
 import type { Logger } from '@/core/utils/logger'
 
 export interface CryptoAuthUser {
@@ -85,6 +85,30 @@ async function validateAuth(request: Request, logger?: Logger): Promise<{
 }
 
 /**
+ * Middleware que adiciona user ao contexto se autenticado (não bloqueia)
+ * Usado internamente por outros middlewares
+ */
+const addCryptoAuthUser = (options: CryptoAuthMiddlewareOptions = {}) => {
+  return createDerive({
+    name: 'crypto-auth-user',
+    derive: async ({ request }) => {
+      try {
+        const result = await validateAuth(request as Request, options.logger)
+
+        if (result.success && result.user) {
+          // Add user to request
+          ;(request as any).user = result.user
+        }
+      } catch (error) {
+        options.logger?.error('Error validating crypto auth', { error })
+      }
+
+      return {}
+    }
+  })
+}
+
+/**
  * Middleware que REQUER autenticação
  *
  * @example
@@ -92,32 +116,34 @@ async function validateAuth(request: Request, logger?: Logger): Promise<{
  * export const protectedRoutes = new Elysia()
  *   .use(cryptoAuthRequired())
  *   .get('/users', ({ request }) => {
- *     const user = (request as any).user
+ *     const user = getCryptoAuthUser(request)!
  *     return { publicKey: user.publicKey }
  *   })
  * ```
  */
 export const cryptoAuthRequired = (options: CryptoAuthMiddlewareOptions = {}) => {
-  return new Elysia({ name: 'crypto-auth-required' })
-    .derive(async ({ request, set }) => {
-      const result = await validateAuth(request, options.logger)
-
-      if (!result.success) {
-        set.status = 401
-        return {
-          error: {
-            message: result.error || 'Authentication required',
-            code: 'CRYPTO_AUTH_REQUIRED',
-            statusCode: 401
+  return composeMiddleware({
+    name: 'crypto-auth-required',
+    middlewares: [
+      addCryptoAuthUser(options),
+      createGuard({
+        name: 'crypto-auth-required-check',
+        check: ({ request }) => {
+          return !!(request as any).user
+        },
+        onFail: (set) => {
+          set.status = 401
+          return {
+            error: {
+              message: 'Authentication required',
+              code: 'CRYPTO_AUTH_REQUIRED',
+              statusCode: 401
+            }
           }
         }
-      }
-
-      // Add user to request
-      ;(request as any).user = result.user
-
-      return {}
-    })
+      })
+    ]
+  })
 }
 
 /**
@@ -133,43 +159,48 @@ export const cryptoAuthRequired = (options: CryptoAuthMiddlewareOptions = {}) =>
  * ```
  */
 export const cryptoAuthAdmin = (options: CryptoAuthMiddlewareOptions = {}) => {
-  return new Elysia({ name: 'crypto-auth-admin' })
-    .derive(async ({ request, set }) => {
-      const result = await validateAuth(request, options.logger)
+  return composeMiddleware({
+    name: 'crypto-auth-admin',
+    middlewares: [
+      addCryptoAuthUser(options),
+      createGuard({
+        name: 'crypto-auth-admin-check',
+        check: ({ request }) => {
+          const user = (request as any).user as CryptoAuthUser | undefined
+          return user?.isAdmin === true
+        },
+        onFail: (set, { request }) => {
+          const user = (request as any).user as CryptoAuthUser | undefined
 
-      if (!result.success) {
-        set.status = 401
-        return {
-          error: {
-            message: result.error || 'Authentication required',
-            code: 'CRYPTO_AUTH_REQUIRED',
-            statusCode: 401
+          if (!user) {
+            set.status = 401
+            return {
+              error: {
+                message: 'Authentication required',
+                code: 'CRYPTO_AUTH_REQUIRED',
+                statusCode: 401
+              }
+            }
+          }
+
+          set.status = 403
+          options.logger?.warn('Admin access denied', {
+            publicKey: user.publicKey.substring(0, 8) + '...',
+            permissions: user.permissions
+          })
+
+          return {
+            error: {
+              message: 'Admin privileges required',
+              code: 'ADMIN_REQUIRED',
+              statusCode: 403,
+              yourPermissions: user.permissions
+            }
           }
         }
-      }
-
-      // Check if user is admin
-      if (!result.user?.isAdmin) {
-        set.status = 403
-        options.logger?.warn('Admin access denied', {
-          publicKey: result.user?.publicKey.substring(0, 8) + '...',
-          permissions: result.user?.permissions
-        })
-        return {
-          error: {
-            message: 'Admin privileges required',
-            code: 'ADMIN_REQUIRED',
-            statusCode: 403,
-            yourPermissions: result.user?.permissions || []
-          }
-        }
-      }
-
-      // Add user to request
-      ;(request as any).user = result.user
-
-      return {}
-    })
+      })
+    ]
+  })
 }
 
 /**
@@ -188,50 +219,55 @@ export const cryptoAuthPermissions = (
   requiredPermissions: string[],
   options: CryptoAuthMiddlewareOptions = {}
 ) => {
-  return new Elysia({ name: 'crypto-auth-permissions' })
-    .derive(async ({ request, set }) => {
-      const result = await validateAuth(request, options.logger)
+  return composeMiddleware({
+    name: 'crypto-auth-permissions',
+    middlewares: [
+      addCryptoAuthUser(options),
+      createGuard({
+        name: 'crypto-auth-permissions-check',
+        check: ({ request }) => {
+          const user = (request as any).user as CryptoAuthUser | undefined
+          if (!user) return false
 
-      if (!result.success) {
-        set.status = 401
-        return {
-          error: {
-            message: result.error || 'Authentication required',
-            code: 'CRYPTO_AUTH_REQUIRED',
-            statusCode: 401
+          const userPermissions = user.permissions
+          return requiredPermissions.every(
+            perm => userPermissions.includes(perm) || userPermissions.includes('admin')
+          )
+        },
+        onFail: (set, { request }) => {
+          const user = (request as any).user as CryptoAuthUser | undefined
+
+          if (!user) {
+            set.status = 401
+            return {
+              error: {
+                message: 'Authentication required',
+                code: 'CRYPTO_AUTH_REQUIRED',
+                statusCode: 401
+              }
+            }
           }
-        }
-      }
 
-      // Check permissions
-      const userPermissions = result.user?.permissions || []
-      const hasAllPermissions = requiredPermissions.every(
-        perm => userPermissions.includes(perm) || userPermissions.includes('admin')
-      )
-
-      if (!hasAllPermissions) {
-        set.status = 403
-        options.logger?.warn('Permission denied', {
-          publicKey: result.user?.publicKey.substring(0, 8) + '...',
-          required: requiredPermissions,
-          has: userPermissions
-        })
-        return {
-          error: {
-            message: 'Insufficient permissions',
-            code: 'PERMISSION_DENIED',
-            statusCode: 403,
+          set.status = 403
+          options.logger?.warn('Permission denied', {
+            publicKey: user.publicKey.substring(0, 8) + '...',
             required: requiredPermissions,
-            yours: userPermissions
+            has: user.permissions
+          })
+
+          return {
+            error: {
+              message: 'Insufficient permissions',
+              code: 'PERMISSION_DENIED',
+              statusCode: 403,
+              required: requiredPermissions,
+              yours: user.permissions
+            }
           }
         }
-      }
-
-      // Add user to request
-      ;(request as any).user = result.user
-
-      return {}
-    })
+      })
+    ]
+  })
 }
 
 /**
@@ -243,7 +279,7 @@ export const cryptoAuthPermissions = (
  * export const mixedRoutes = new Elysia()
  *   .use(cryptoAuthOptional())
  *   .get('/posts/:id', ({ request, params }) => {
- *     const user = (request as any).user
+ *     const user = getCryptoAuthUser(request)
  *     return {
  *       post: { id: params.id },
  *       canEdit: user?.isAdmin || false
@@ -252,23 +288,7 @@ export const cryptoAuthPermissions = (
  * ```
  */
 export const cryptoAuthOptional = (options: CryptoAuthMiddlewareOptions = {}) => {
-  return new Elysia({ name: 'crypto-auth-optional' })
-    .derive(async ({ request }) => {
-      try {
-        const result = await validateAuth(request, options.logger)
-
-        if (result.success && result.user) {
-          // Add user to request if authentication succeeded
-          ;(request as any).user = result.user
-        }
-        // If authentication failed, just continue without user
-      } catch (error) {
-        // Silently fail - this is optional auth
-        options.logger?.debug('Optional auth failed (expected)', { error })
-      }
-
-      return {}
-    })
+  return addCryptoAuthUser(options)
 }
 
 /**

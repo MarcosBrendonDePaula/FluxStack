@@ -1,236 +1,245 @@
 # 🔐 Como Usar Crypto Auth no Servidor
 
 ## 📋 Índice
-1. [Configuração Inicial](#configuração-inicial)
-2. [Rotas Protegidas Automáticas](#rotas-protegidas-automáticas)
+1. [Middlewares Disponíveis](#middlewares-disponíveis)
+2. [Uso Básico](#uso-básico)
 3. [Acessar Dados do Usuário](#acessar-dados-do-usuário)
-4. [Verificar Permissões Admin](#verificar-permissões-admin)
-5. [Rotas Públicas](#rotas-públicas)
-6. [Exemplos Completos](#exemplos-completos)
+4. [Verificar Permissões](#verificar-permissões)
+5. [Exemplos Completos](#exemplos-completos)
+6. [Helper Functions](#helper-functions)
 
 ---
 
-## 1️⃣ Configuração Inicial
+## 🚀 Middlewares Disponíveis
 
-### Adicionar suas rotas à configuração do plugin
+### 1️⃣ `cryptoAuthRequired()` - Requer Autenticação
 
-**Arquivo**: `config/app.config.ts` (ou onde você configura plugins)
+Valida assinatura e **bloqueia** acesso se não autenticado.
 
 ```typescript
-export const appConfig = defineConfig({
-  // ... outras configs
+import { cryptoAuthRequired, getCryptoAuthUser } from '@/plugins/crypto-auth/server'
 
-  plugins: {
-    config: {
-      'crypto-auth': {
-        // Rotas que REQUEREM autenticação
-        protectedRoutes: [
-          "/api/users/*",        // Todas as rotas de usuários
-          "/api/admin/*",        // Todas as rotas admin
-          "/api/posts/create",   // Criar post
-          "/api/posts/*/edit",   // Editar post
-          "/api/profile/*"       // Perfil do usuário
-        ],
+export const protectedRoutes = new Elysia()
+  .use(cryptoAuthRequired())  // ✅ Todas as rotas protegidas
 
-        // Rotas PÚBLICAS (não requerem autenticação)
-        publicRoutes: [
-          "/api/health",
-          "/api/posts",          // Listar posts (público)
-          "/api/posts/*/view",   // Ver post (público)
-          "/api/crypto-auth/public"
-        ],
-
-        // Chaves públicas de administradores
-        adminKeys: [
-          "7443b54b3c8e2f1a9d5c6e4b2f8a1d3c9e5b7a2f4d8c1e6b3a9d5c7e2f4b8a1d"
-          // Adicione mais chaves de admin aqui
-        ]
-      }
+  .get('/profile', ({ request }) => {
+    const user = getCryptoAuthUser(request)!
+    return {
+      publicKey: user.publicKey,
+      isAdmin: user.isAdmin,
+      permissions: user.permissions
     }
-  }
-})
+  })
+```
+
+**Retorno se não autenticado**: `401 Unauthorized`
+
+---
+
+### 2️⃣ `cryptoAuthAdmin()` - Requer Admin
+
+Valida autenticação E verifica se usuário é admin.
+
+```typescript
+import { cryptoAuthAdmin } from '@/plugins/crypto-auth/server'
+
+export const adminRoutes = new Elysia()
+  .use(cryptoAuthAdmin())  // ✅ Apenas admins
+
+  .get('/admin/stats', () => ({
+    totalUsers: 100,
+    systemHealth: 'optimal'
+  }))
+
+  .delete('/admin/users/:id', ({ params }) => ({
+    deleted: params.id
+  }))
+```
+
+**Retorno se não for admin**: `403 Forbidden`
+
+---
+
+### 3️⃣ `cryptoAuthPermissions(permissions)` - Requer Permissões
+
+Valida autenticação E verifica permissões específicas.
+
+```typescript
+import { cryptoAuthPermissions } from '@/plugins/crypto-auth/server'
+
+export const writeRoutes = new Elysia()
+  .use(cryptoAuthPermissions(['write']))  // ✅ Requer permissão 'write'
+
+  .put('/posts/:id', ({ params, body }) => ({
+    updated: params.id,
+    data: body
+  }))
+```
+
+**Múltiplas permissões**:
+```typescript
+.use(cryptoAuthPermissions(['write', 'publish']))
 ```
 
 ---
 
-## 2️⃣ Rotas Protegidas Automáticas
+### 4️⃣ `cryptoAuthOptional()` - Autenticação Opcional
 
-### ✅ Middleware Automático
-
-Quando você adiciona uma rota em `protectedRoutes`, o middleware **valida automaticamente** a assinatura antes de executar sua rota.
-
-**Se a assinatura for inválida**: Retorna `401 Unauthorized` automático
-**Se a assinatura for válida**: Sua rota é executada normalmente
+Adiciona `user` se autenticado, mas **NÃO bloqueia** se não autenticado.
 
 ```typescript
-// app/server/routes/users.routes.ts
-import { Elysia } from 'elysia'
+import { cryptoAuthOptional, getCryptoAuthUser } from '@/plugins/crypto-auth/server'
 
-export const usersRoutes = new Elysia()
-  // ✅ Esta rota está protegida automaticamente
-  // Configurada em: protectedRoutes: ["/api/users/*"]
-  .get('/users', ({ request }) => {
-    // Se chegou aqui, a assinatura já foi validada!
-    const user = (request as any).user
+export const mixedRoutes = new Elysia()
+  .use(cryptoAuthOptional())  // ✅ Opcional
+
+  .get('/posts/:id', ({ request, params }) => {
+    const user = getCryptoAuthUser(request)
 
     return {
-      success: true,
-      message: 'Usuário autenticado',
-      user: {
+      post: {
+        id: params.id,
+        title: 'Post Title',
+        // Conteúdo completo apenas se autenticado
+        content: user ? 'Full content...' : 'Preview...'
+      },
+      viewer: user ? {
         publicKey: user.publicKey,
-        isAdmin: user.isAdmin,
-        permissions: user.permissions
-      }
+        canEdit: user.isAdmin
+      } : null
     }
   })
 ```
 
 ---
 
-## 3️⃣ Acessar Dados do Usuário
+## 🛠️ Uso Básico
 
-### 📦 Object `user` disponível no request
-
-Após a validação automática, você tem acesso a:
+### Aplicar Middleware a Todas as Rotas
 
 ```typescript
-interface User {
-  publicKey: string      // Chave pública do usuário (identificador único)
-  isAdmin: boolean       // Se é admin (baseado em adminKeys config)
-  permissions: string[]  // ["read"] ou ["admin", "read", "write", "delete"]
+import { Elysia } from 'elysia'
+import { cryptoAuthRequired } from '@/plugins/crypto-auth/server'
+
+export const myRoutes = new Elysia()
+  // ✅ Aplica autenticação a todas as rotas
+  .use(cryptoAuthRequired())
+
+  .get('/users', ({ request }) => {
+    const user = (request as any).user
+    return { users: [], requestedBy: user.publicKey }
+  })
+
+  .post('/users', ({ request, body }) => {
+    const user = (request as any).user
+    return { created: body, by: user.publicKey }
+  })
+```
+
+---
+
+### Aplicar a Grupos Específicos
+
+```typescript
+export const apiRoutes = new Elysia()
+  // Rotas públicas
+  .get('/health', () => ({ status: 'ok' }))
+  .get('/posts', () => ({ posts: [] }))
+
+  // Grupo protegido
+  .group('/users', (app) => app
+    .use(cryptoAuthRequired())
+    .get('/', () => ({ users: [] }))
+    .post('/', ({ body }) => ({ created: body }))
+  )
+
+  // Grupo admin
+  .group('/admin', (app) => app
+    .use(cryptoAuthAdmin())
+    .get('/stats', () => ({ stats: {} }))
+  )
+```
+
+---
+
+## 📦 Acessar Dados do Usuário
+
+### Interface `CryptoAuthUser`
+
+```typescript
+interface CryptoAuthUser {
+  publicKey: string      // Chave pública (ID único)
+  isAdmin: boolean       // Se é admin
+  permissions: string[]  // [\"read\"] ou [\"admin\", \"read\", \"write\", \"delete\"]
 }
 ```
 
-### Exemplo Prático:
+### Acessar no Handler
 
 ```typescript
-.get('/users/me', ({ request }) => {
-  const user = (request as any).user
+import { getCryptoAuthUser } from '@/plugins/crypto-auth/server'
+
+.get('/me', ({ request }) => {
+  const user = getCryptoAuthUser(request)!  // ! porque já passou pelo middleware
 
   return {
     id: user.publicKey,
     isAdmin: user.isAdmin,
-    permissions: user.permissions,
-    authenticatedAt: new Date()
-  }
-})
-
-.post('/users', ({ request, body }) => {
-  const user = (request as any).user
-
-  // Criar usuário
-  const newUser = {
-    ...body,
-    createdBy: user.publicKey,
-    createdAt: new Date()
-  }
-
-  return {
-    success: true,
-    user: newUser
+    permissions: user.permissions
   }
 })
 ```
 
 ---
 
-## 4️⃣ Verificar Permissões Admin
+## 🔒 Verificar Permissões
 
-### 🔒 Rotas que requerem privilégios de administrador
+### Verificar se é Admin
 
 ```typescript
-.delete('/users/:id', ({ request, params, set }) => {
-  const user = (request as any).user
+import { isCryptoAuthAdmin } from '@/plugins/crypto-auth/server'
 
-  // ❌ Verificar se é admin
-  if (!user.isAdmin) {
+.delete('/posts/:id', ({ request, params, set }) => {
+  if (!isCryptoAuthAdmin(request)) {
     set.status = 403
-    return {
-      success: false,
-      error: 'Acesso negado',
-      message: 'Você precisa ser administrador para deletar usuários',
-      yourPermissions: user.permissions
-    }
+    return { error: 'Admin only' }
   }
 
-  // ✅ É admin, pode deletar
-  const userId = params.id
-  // ... lógica de deleção
-
-  return {
-    success: true,
-    message: `Usuário ${userId} deletado`,
-    deletedBy: user.publicKey
-  }
+  return { deleted: params.id }
 })
 ```
 
-### 🎯 Verificar Permissão Específica
+---
+
+### Verificar Permissão Específica
 
 ```typescript
-.put('/posts/:id', ({ request, params, body, set }) => {
-  const user = (request as any).user
+import { hasCryptoAuthPermission } from '@/plugins/crypto-auth/server'
 
-  // Verificar se tem permissão de escrita
-  const canWrite = user.permissions.includes('write') ||
-                   user.permissions.includes('admin')
-
-  if (!canWrite) {
+.put('/posts/:id', ({ request, params, set }) => {
+  if (!hasCryptoAuthPermission(request, 'write')) {
     set.status = 403
-    return {
-      success: false,
-      error: 'Permissão negada',
-      required: ['write'],
-      yours: user.permissions
-    }
+    return { error: 'Write permission required' }
   }
 
-  // Atualizar post
-  return {
-    success: true,
-    message: 'Post atualizado'
-  }
+  return { updated: params.id }
 })
 ```
 
 ---
 
-## 5️⃣ Rotas Públicas
-
-### 🌐 Rotas que NÃO requerem autenticação
-
-Adicione em `publicRoutes` na configuração:
-
-```typescript
-.get('/posts', () => {
-  // Esta rota é PÚBLICA
-  // Qualquer um pode acessar sem autenticação
-  return {
-    success: true,
-    posts: [/* ... */]
-  }
-})
-
-.get('/posts/:id/view', ({ params }) => {
-  // Esta rota também é PÚBLICA
-  return {
-    post: {
-      id: params.id,
-      title: "Post público"
-    }
-  }
-})
-```
-
----
-
-## 6️⃣ Exemplos Completos
+## 🎯 Exemplos Completos
 
 ### Exemplo 1: CRUD de Posts
 
 ```typescript
-// app/server/routes/posts.routes.ts
 import { Elysia, t } from 'elysia'
+import {
+  cryptoAuthRequired,
+  cryptoAuthAdmin,
+  cryptoAuthOptional,
+  getCryptoAuthUser
+} from '@/plugins/crypto-auth/server'
 
 export const postsRoutes = new Elysia()
 
@@ -242,23 +251,16 @@ export const postsRoutes = new Elysia()
     ]
   }))
 
-  // ✅ PÚBLICO - Ver post específico
-  .get('/posts/:id', ({ params }) => ({
-    post: {
-      id: params.id,
-      title: `Post ${params.id}`,
-      content: 'Conteúdo do post...'
-    }
-  }))
-
-  // 🔒 PROTEGIDO - Criar post (requer autenticação)
+  // 🔒 PROTEGIDO - Criar post
   .post('/posts', ({ request, body }) => {
-    const user = (request as any).user
+    const user = getCryptoAuthUser(request)!
+    const { title, content } = body as { title: string; content: string }
 
     return {
       success: true,
       post: {
-        ...body,
+        title,
+        content,
         author: user.publicKey,
         createdAt: new Date()
       }
@@ -269,139 +271,26 @@ export const postsRoutes = new Elysia()
       content: t.String()
     })
   })
-
-  // 🔒 PROTEGIDO - Editar post
-  .put('/posts/:id', ({ request, params, body }) => {
-    const user = (request as any).user
-
-    return {
-      success: true,
-      message: `Post ${params.id} atualizado por ${user.publicKey.substring(0, 8)}...`
-    }
-  }, {
-    body: t.Object({
-      title: t.Optional(t.String()),
-      content: t.Optional(t.String())
-    })
-  })
+  .use(cryptoAuthRequired())  // Aplica apenas ao .post acima
 
   // 🔒 ADMIN - Deletar post
-  .delete('/posts/:id', ({ request, params, set }) => {
-    const user = (request as any).user
-
-    if (!user.isAdmin) {
-      set.status = 403
-      return {
-        success: false,
-        error: 'Apenas administradores podem deletar posts'
-      }
-    }
-
-    return {
-      success: true,
-      message: `Post ${params.id} deletado`
-    }
-  })
-```
-
-### Configuração correspondente:
-
-```typescript
-// config/app.config.ts
-plugins: {
-  config: {
-    'crypto-auth': {
-      protectedRoutes: [
-        "/api/posts",      // POST /api/posts (criar)
-        "/api/posts/*"     // PUT/DELETE /api/posts/:id
-      ],
-      publicRoutes: [
-        "/api/posts",      // GET /api/posts (listar)
-        "/api/posts/*"     // GET /api/posts/:id (ver)
-      ]
-    }
-  }
-}
+  .delete('/posts/:id', ({ params }) => ({
+    success: true,
+    message: `Post ${params.id} deletado`
+  }))
+  .use(cryptoAuthAdmin())  // Aplica apenas ao .delete acima
 ```
 
 ---
 
-### Exemplo 2: API de Perfil de Usuário
+### Exemplo 2: Rotas Condicionais
 
 ```typescript
-// app/server/routes/profile.routes.ts
-import { Elysia, t } from 'elysia'
-
-export const profileRoutes = new Elysia()
-
-  // 🔒 Ver próprio perfil
-  .get('/profile/me', ({ request }) => {
-    const user = (request as any).user
-
-    return {
-      profile: {
-        id: user.publicKey,
-        publicKey: user.publicKey.substring(0, 16) + '...',
-        isAdmin: user.isAdmin,
-        permissions: user.permissions,
-        memberSince: new Date('2025-01-01') // Buscar do DB
-      }
-    }
-  })
-
-  // 🔒 Atualizar perfil
-  .put('/profile/me', ({ request, body }) => {
-    const user = (request as any).user
-
-    return {
-      success: true,
-      message: 'Perfil atualizado',
-      profile: {
-        id: user.publicKey,
-        ...body
-      }
-    }
-  }, {
-    body: t.Object({
-      name: t.Optional(t.String()),
-      bio: t.Optional(t.String()),
-      avatar: t.Optional(t.String())
-    })
-  })
-
-  // 🔒 ADMIN - Ver perfil de outro usuário
-  .get('/profile/:publicKey', ({ request, params, set }) => {
-    const user = (request as any).user
-
-    if (!user.isAdmin) {
-      set.status = 403
-      return {
-        error: 'Apenas admins podem ver perfis de outros usuários'
-      }
-    }
-
-    return {
-      profile: {
-        id: params.publicKey,
-        // ... buscar dados do DB
-      }
-    }
-  })
-```
-
----
-
-### Exemplo 3: Verificação Condicional
-
-```typescript
-// app/server/routes/mixed.routes.ts
-import { Elysia } from 'elysia'
-
 export const mixedRoutes = new Elysia()
+  .use(cryptoAuthOptional())
 
-  // Rota com comportamento diferente se autenticado
-  .get('/posts/:id/view', ({ request, params }) => {
-    const user = (request as any).user
+  .get('/posts/:id', ({ request, params }) => {
+    const user = getCryptoAuthUser(request)
 
     // Post básico (público)
     const post = {
@@ -430,74 +319,172 @@ export const mixedRoutes = new Elysia()
 
 ---
 
-## 🎯 Resumo Rápido
+### Exemplo 3: Middleware Cascata
 
-### 1. Configurar rotas protegidas:
 ```typescript
-protectedRoutes: ["/api/users/*", "/api/admin/*"]
-```
+export const routes = new Elysia()
+  // Aplica a todas as rotas
+  .use(cryptoAuthRequired())
 
-### 2. Acessar usuário nas rotas:
-```typescript
-const user = (request as any).user
-```
+  .get('/profile', () => ({ profile: {} }))
 
-### 3. Verificar se é admin:
-```typescript
-if (!user.isAdmin) {
-  set.status = 403
-  return { error: 'Admin required' }
-}
-```
-
-### 4. Verificar permissões:
-```typescript
-if (!user.permissions.includes('write')) {
-  set.status = 403
-  return { error: 'Permission denied' }
-}
+  // Sub-grupo com restrição adicional
+  .group('/admin', (app) => app
+    .use(cryptoAuthAdmin())  // Admin adicional ao required
+    .get('/users', () => ({ users: [] }))
+  )
 ```
 
 ---
 
-## 🔍 Debugging
+## 🛠️ Helper Functions
 
-### Ver logs de autenticação:
+### `getCryptoAuthUser(request)` - Obter Usuário
 
 ```typescript
-.get('/debug/auth', ({ request }) => {
-  const user = (request as any).user
+import { getCryptoAuthUser } from '@/plugins/crypto-auth/server'
+
+.get('/me', ({ request }) => {
+  const user = getCryptoAuthUser(request)
+
+  if (!user) {
+    return { error: 'Not authenticated' }
+  }
+
+  return { user }
+})
+```
+
+---
+
+### `isCryptoAuthAuthenticated(request)` - Verificar se Autenticado
+
+```typescript
+import { isCryptoAuthAuthenticated } from '@/plugins/crypto-auth/server'
+
+.get('/posts/:id', ({ request, params }) => {
+  const isAuth = isCryptoAuthAuthenticated(request)
 
   return {
-    authenticated: !!user,
-    user: user || null,
-    headers: {
-      publicKey: request.headers.get('x-public-key'),
-      timestamp: request.headers.get('x-timestamp'),
-      nonce: request.headers.get('x-nonce'),
-      signature: request.headers.get('x-signature')
-    }
+    post: { id: params.id },
+    canComment: isAuth
   }
 })
 ```
 
 ---
 
+### `isCryptoAuthAdmin(request)` - Verificar se é Admin
+
+```typescript
+import { isCryptoAuthAdmin } from '@/plugins/crypto-auth/server'
+
+.get('/posts/:id', ({ request, params, set }) => {
+  if (!isCryptoAuthAdmin(request)) {
+    set.status = 403
+    return { error: 'Admin only' }
+  }
+
+  return { post: params.id }
+})
+```
+
+---
+
+### `hasCryptoAuthPermission(request, permission)` - Verificar Permissão
+
+```typescript
+import { hasCryptoAuthPermission } from '@/plugins/crypto-auth/server'
+
+.put('/posts/:id', ({ request, params, set }) => {
+  if (!hasCryptoAuthPermission(request, 'write')) {
+    set.status = 403
+    return { error: 'Write permission required' }
+  }
+
+  return { updated: params.id }
+})
+```
+
+---
+
+## 🔍 Debugging
+
+### Log de Autenticação
+
+```typescript
+import { cryptoAuthRequired } from '@/plugins/crypto-auth/server'
+
+export const routes = new Elysia()
+  .use(cryptoAuthRequired({
+    logger: yourLogger  // ✅ Passar logger para debug
+  }))
+
+  .get('/users', ({ request }) => {
+    const user = (request as any).user
+    console.log('User:', user)
+    return { users: [] }
+  })
+```
+
+---
+
+### Rota de Debug
+
+```typescript
+export const debugRoutes = new Elysia()
+  .use(cryptoAuthOptional())
+
+  .get('/debug/auth', ({ request }) => {
+    const user = getCryptoAuthUser(request)
+
+    return {
+      authenticated: !!user,
+      user: user || null,
+      headers: {
+        publicKey: request.headers.get('x-public-key'),
+        timestamp: request.headers.get('x-timestamp'),
+        nonce: request.headers.get('x-nonce'),
+        signature: request.headers.get('x-signature')?.substring(0, 16) + '...'
+      }
+    }
+  })
+```
+
+---
+
 ## ⚠️ Importante
 
-1. **Middleware valida automaticamente**: Se a rota está em `protectedRoutes`, você não precisa validar manualmente
-2. **User sempre está disponível**: Em rotas protegidas, `(request as any).user` sempre existe
-3. **Rotas públicas**: Não têm `user` object (verifique com `if (user)`)
-4. **isAdmin é automático**: Baseado na lista `adminKeys` da configuração
-5. **Permissions padrão**: Users normais têm `["read"]`, admins têm `["admin", "read", "write", "delete"]`
+1. **Ordem importa**: Aplique middlewares antes de definir rotas
+   ```typescript
+   .use(cryptoAuthRequired())  // ✅ Primeiro
+   .get('/users', ...)         // ✅ Depois
+   ```
+
+2. **Grupos herdam middlewares**:
+   ```typescript
+   .use(cryptoAuthRequired())
+   .group('/api', ...)  // ✅ Herda cryptoAuthRequired
+   ```
+
+3. **User object sempre disponível**: Em rotas com `cryptoAuthRequired`, `cryptoAuthAdmin` ou `cryptoAuthPermissions`
+
+4. **Null check necessário**: Em rotas com `cryptoAuthOptional`:
+   ```typescript
+   const user = getCryptoAuthUser(request)
+   if (user) {  // ✅ Verificar antes de usar
+     ...
+   }
+   ```
 
 ---
 
 ## 📚 Ver Mais
 
-- **Documentação completa**: `plugins/crypto-auth/ai-context.md`
-- **Exemplo demo**: `app/server/routes/crypto-auth-demo.routes.ts`
-- **Testes**: `test-crypto-auth.ts`
+- **Documentação completa de middlewares**: `CRYPTO-AUTH-MIDDLEWARES.md`
+- **Exemplo completo**: `app/server/routes/example-with-crypto-auth.routes.ts`
+- **Documentação AI**: `plugins/crypto-auth/ai-context.md`
+- **Demo rotas**: `app/server/routes/crypto-auth-demo.routes.ts`
 
 ---
 
