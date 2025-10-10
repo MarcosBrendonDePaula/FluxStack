@@ -1,74 +1,261 @@
 /**
  * FluxStack Configuration
- * Enhanced configuration with comprehensive settings and environment support
- * Uses unified environment loader
+ * ✅ Using declarative config system with schema validation and type inference
+ * Laravel-inspired declarative configuration with full type safety
  */
 
 import type { FluxStackConfig } from './core/config/schema'
+import { defineConfig, config as configHelpers } from './core/utils/config-schema'
 import { env, helpers } from './core/utils/env'
 
 console.log(`🔧 Loading FluxStack config for ${env.NODE_ENV} environment`)
 
-// Main FluxStack configuration with dynamic env vars
+// ============================================================================
+// 📋 DECLARATIVE CONFIG SCHEMAS
+// ============================================================================
+
+/**
+ * Application Configuration Schema
+ */
+const appConfigSchema = {
+  name: configHelpers.string('FLUXSTACK_APP_NAME', 'FluxStack', true),
+  version: configHelpers.string('FLUXSTACK_APP_VERSION', '1.0.0', true),
+  description: configHelpers.string('FLUXSTACK_APP_DESCRIPTION', 'A FluxStack application')
+} as const
+
+/**
+ * CORS Configuration Schema
+ */
+const corsConfigSchema = {
+  origins: configHelpers.array('CORS_ORIGINS', ['http://localhost:3000', 'http://localhost:5173']),
+  methods: configHelpers.array('CORS_METHODS', ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']),
+  headers: configHelpers.array('CORS_HEADERS', ['Content-Type', 'Authorization']),
+  credentials: configHelpers.boolean('CORS_CREDENTIALS', false),
+  maxAge: configHelpers.number('CORS_MAX_AGE', 86400)
+} as const
+
+/**
+ * Server Configuration Schema
+ */
+const serverConfigSchema = {
+  port: configHelpers.number('PORT', 3000, true),
+  host: configHelpers.string('HOST', 'localhost', true),
+  apiPrefix: configHelpers.string('API_PREFIX', '/api', true)
+} as const
+
+/**
+ * Client Proxy Configuration Schema
+ */
+const clientProxyConfigSchema = {
+  target: {
+    type: 'string' as const,
+    env: 'PROXY_TARGET',
+    default: helpers.getServerUrl(),
+    required: false
+  },
+  changeOrigin: configHelpers.boolean('PROXY_CHANGE_ORIGIN', true)
+} as const
+
+/**
+ * Client Build Configuration Schema
+ */
+const clientBuildConfigSchema = {
+  sourceMaps: configHelpers.boolean('CLIENT_SOURCEMAPS', helpers.isDevelopment()),
+  minify: configHelpers.boolean('CLIENT_MINIFY', helpers.isProduction()),
+  target: configHelpers.string('CLIENT_TARGET', 'esnext'),
+  outDir: configHelpers.string('CLIENT_OUTDIR', 'dist/client')
+} as const
+
+/**
+ * Client Configuration Schema
+ */
+const clientConfigSchema = {
+  port: configHelpers.number('VITE_PORT', 5173, true)
+} as const
+
+/**
+ * Build Optimization Configuration Schema
+ */
+const buildOptimizationConfigSchema = {
+  minify: configHelpers.boolean('BUILD_MINIFY', helpers.isProduction()),
+  treeshake: configHelpers.boolean('BUILD_TREESHAKE', helpers.isProduction()),
+  compress: configHelpers.boolean('BUILD_COMPRESS', helpers.isProduction()),
+  splitChunks: configHelpers.boolean('BUILD_SPLIT_CHUNKS', true),
+  bundleAnalyzer: configHelpers.boolean('BUILD_ANALYZER', helpers.isDevelopment())
+} as const
+
+/**
+ * Build Configuration Schema
+ */
+const buildConfigSchema = {
+  target: configHelpers.enum('BUILD_TARGET', ['bun', 'node', 'docker'] as const, 'bun'),
+  outDir: configHelpers.string('BUILD_OUTDIR', 'dist'),
+  sourceMaps: configHelpers.boolean('BUILD_SOURCEMAPS', !helpers.isProduction()),
+  minify: configHelpers.boolean('BUILD_MINIFY', helpers.isProduction()),
+  treeshake: configHelpers.boolean('BUILD_TREESHAKE', helpers.isProduction()),
+  clean: configHelpers.boolean('BUILD_CLEAN', true)
+} as const
+
+/**
+ * Plugins Configuration Schema
+ */
+const pluginsConfigSchema = {
+  enabled: configHelpers.array('FLUXSTACK_PLUGINS_ENABLED', ['logger', 'swagger', 'vite', 'cors', 'static-files', 'crypto-auth']),
+  disabled: configHelpers.array('FLUXSTACK_PLUGINS_DISABLED', [])
+} as const
+
+/**
+ * Logging Configuration Schema
+ */
+const loggingConfigSchema = {
+  level: configHelpers.enum('LOG_LEVEL', ['debug', 'info', 'warn', 'error'] as const, helpers.isDevelopment() ? 'debug' : 'info'),
+  format: configHelpers.enum('LOG_FORMAT', ['json', 'pretty'] as const, helpers.isDevelopment() ? 'pretty' : 'json')
+} as const
+
+/**
+ * Monitoring Metrics Configuration Schema
+ */
+const monitoringMetricsConfigSchema = {
+  enabled: configHelpers.boolean('ENABLE_METRICS', false),
+  collectInterval: configHelpers.number('METRICS_INTERVAL', 5000),
+  httpMetrics: configHelpers.boolean('HTTP_METRICS', true),
+  systemMetrics: configHelpers.boolean('SYSTEM_METRICS', true),
+  customMetrics: configHelpers.boolean('CUSTOM_METRICS', false)
+} as const
+
+/**
+ * Monitoring Profiling Configuration Schema
+ */
+const monitoringProfilingConfigSchema = {
+  enabled: configHelpers.boolean('PROFILING_ENABLED', false),
+  sampleRate: configHelpers.number('PROFILING_SAMPLE_RATE', 0.1),
+  memoryProfiling: configHelpers.boolean('MEMORY_PROFILING', false),
+  cpuProfiling: configHelpers.boolean('CPU_PROFILING', false)
+} as const
+
+/**
+ * Monitoring Configuration Schema
+ */
+const monitoringConfigSchema = {
+  enabled: configHelpers.boolean('ENABLE_MONITORING', false),
+  exporters: configHelpers.array('MONITORING_EXPORTERS', [])
+} as const
+
+/**
+ * Database Configuration Schema (Optional)
+ */
+const databaseConfigSchema = {
+  url: configHelpers.string('DATABASE_URL', ''),
+  host: configHelpers.string('DB_HOST', ''),
+  port: configHelpers.number('DB_PORT', 5432),
+  database: configHelpers.string('DB_NAME', ''),
+  user: configHelpers.string('DB_USER', ''),
+  password: configHelpers.string('DB_PASSWORD', ''),
+  ssl: configHelpers.boolean('DB_SSL', false),
+  poolSize: configHelpers.number('DB_POOL_SIZE', 10)
+} as const
+
+/**
+ * Auth Configuration Schema (Optional)
+ */
+const authConfigSchema = {
+  secret: configHelpers.string('JWT_SECRET', ''),
+  expiresIn: configHelpers.string('JWT_EXPIRES_IN', '24h'),
+  algorithm: configHelpers.string('JWT_ALGORITHM', 'HS256'),
+  issuer: configHelpers.string('JWT_ISSUER', '')
+} as const
+
+/**
+ * Email Configuration Schema (Optional)
+ */
+const emailConfigSchema = {
+  host: configHelpers.string('SMTP_HOST', ''),
+  port: configHelpers.number('SMTP_PORT', 587),
+  user: configHelpers.string('SMTP_USER', ''),
+  password: configHelpers.string('SMTP_PASSWORD', ''),
+  secure: configHelpers.boolean('SMTP_SECURE', false),
+  from: configHelpers.string('SMTP_FROM', '')
+} as const
+
+/**
+ * Storage Configuration Schema (Optional)
+ */
+const storageConfigSchema = {
+  uploadPath: configHelpers.string('UPLOAD_PATH', ''),
+  maxFileSize: configHelpers.number('MAX_FILE_SIZE', 10485760), // 10MB
+  allowedTypes: configHelpers.array('ALLOWED_FILE_TYPES', []),
+  provider: configHelpers.enum('STORAGE_PROVIDER', ['local', 's3', 'gcs'] as const, 'local')
+} as const
+
+// ============================================================================
+// ⚡ LOAD CONFIGURATIONS USING DECLARATIVE SYSTEM
+// ============================================================================
+
+const appConfig = defineConfig(appConfigSchema)
+const corsConfig = defineConfig(corsConfigSchema)
+const serverConfig = defineConfig(serverConfigSchema)
+const clientProxyConfig = defineConfig(clientProxyConfigSchema)
+const clientBuildConfig = defineConfig(clientBuildConfigSchema)
+const clientConfig = defineConfig(clientConfigSchema)
+const buildOptimizationConfig = defineConfig(buildOptimizationConfigSchema)
+const buildConfig = defineConfig(buildConfigSchema)
+const pluginsConfig = defineConfig(pluginsConfigSchema)
+const loggingConfig = defineConfig(loggingConfigSchema)
+const monitoringMetricsConfig = defineConfig(monitoringMetricsConfigSchema)
+const monitoringProfilingConfig = defineConfig(monitoringProfilingConfigSchema)
+const monitoringConfig = defineConfig(monitoringConfigSchema)
+
+// Optional configs (only load if env vars are present)
+const databaseConfig = (env.has('DATABASE_URL') || env.has('DATABASE_HOST'))
+  ? defineConfig(databaseConfigSchema)
+  : undefined
+
+const authConfig = env.has('JWT_SECRET')
+  ? defineConfig(authConfigSchema)
+  : undefined
+
+const emailConfig = env.has('SMTP_HOST')
+  ? defineConfig(emailConfigSchema)
+  : undefined
+
+const storageConfig = (env.has('UPLOAD_PATH') || env.has('STORAGE_PROVIDER'))
+  ? defineConfig(storageConfigSchema)
+  : undefined
+
+// ============================================================================
+// 🚀 MAIN FLUXSTACK CONFIGURATION
+// ============================================================================
+
 export const config: FluxStackConfig = {
   // Application metadata
-  app: {
-    name: env.FLUXSTACK_APP_NAME,        // Direto! (string)
-    version: env.FLUXSTACK_APP_VERSION,  // Direto! (string)
-    description: env.get('FLUXSTACK_APP_DESCRIPTION', 'A FluxStack application')
-  },
+  app: appConfig,
 
   // Server configuration
   server: {
-    port: env.PORT,                      // Direto! (number)
-    host: env.HOST,                      // Direto! (string)
-    apiPrefix: env.API_PREFIX,           // Direto! (string)
-    cors: {
-      origins: env.CORS_ORIGINS,           // Direto! (string[])
-      methods: env.get('CORS_METHODS', ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']),
-      headers: env.get('CORS_HEADERS', ['Content-Type', 'Authorization']),
-      credentials: env.get('CORS_CREDENTIALS', false),  // boolean casting
-      maxAge: env.get('CORS_MAX_AGE', 86400)           // number casting
-    },
+    ...serverConfig,
+    cors: corsConfig,
     middleware: []
   },
 
   // Client configuration
   client: {
-    port: env.VITE_PORT,                 // Direto! (number)
-    proxy: {
-      target: helpers.getServerUrl(),    // Helper inteligente
-      changeOrigin: env.get('PROXY_CHANGE_ORIGIN', true)
-    },
-    build: {
-      sourceMaps: env.get('CLIENT_SOURCEMAPS', helpers.isDevelopment()),
-      target: env.get('CLIENT_TARGET', 'esnext'),
-      outDir: env.get('CLIENT_OUTDIR', 'dist/client')
-    }
+    ...clientConfig,
+    proxy: clientProxyConfig,
+    build: clientBuildConfig
   },
 
   // Build configuration
   build: {
-    target: env.get('BUILD_TARGET', 'bun'),   // string casting
-    outDir: env.get('BUILD_OUTDIR', 'dist'),  // string
-    optimization: {
-      treeshake: env.get('BUILD_TREESHAKE', helpers.isProduction()),
-      compress: env.get('BUILD_COMPRESS', helpers.isProduction()),
-      splitChunks: env.get('BUILD_SPLIT_CHUNKS', true),
-      bundleAnalyzer: env.get('BUILD_ANALYZER', helpers.isDevelopment())
-    },
-    sourceMaps: env.get('BUILD_SOURCEMAPS', !helpers.isProduction()),
-    clean: env.get('BUILD_CLEAN', true)
+    ...buildConfig,
+    optimization: buildOptimizationConfig
   },
 
   // Plugin configuration
   plugins: {
-    enabled: env.get('FLUXSTACK_PLUGINS_ENABLED', ['logger', 'swagger', 'vite', 'cors', 'static-files', 'crypto-auth']),
-    disabled: env.get('FLUXSTACK_PLUGINS_DISABLED', []),
+    ...pluginsConfig,
     config: {
-      // Plugin-specific configurations can be added here
       logger: {
-        // Logger plugin config will be handled by logging section
+        // Logger plugin config handled by logging section
       },
       swagger: {
         title: env.get('SWAGGER_TITLE', 'FluxStack API'),
@@ -82,87 +269,38 @@ export const config: FluxStackConfig = {
         enableUploads: env.get('STATIC_ENABLE_UPLOADS', true),
         enablePublic: env.get('STATIC_ENABLE_PUBLIC', true)
       }
-      // ✅ crypto-auth agora gerencia sua própria configuração
-      // Ver: config/crypto-auth.config.ts
+      // ✅ crypto-auth manages its own configuration
+      // See: plugins/crypto-auth/config/index.ts
     }
   },
 
   // Logging configuration
   logging: {
-    level: env.LOG_LEVEL as any,         // Direto! (com smart default)
-    format: env.get('LOG_FORMAT', helpers.isDevelopment() ? 'pretty' : 'json'),
+    ...loggingConfig,
     transports: [
       {
         type: 'console' as const,
-        level: env.LOG_LEVEL as any,     // Direto! (com smart default)
-        format: env.get('LOG_FORMAT', helpers.isDevelopment() ? 'pretty' : 'json')
+        level: loggingConfig.level,
+        format: loggingConfig.format
       }
     ]
   },
 
   // Monitoring configuration
   monitoring: {
-    enabled: env.ENABLE_MONITORING,      // Direto! (boolean)
-    metrics: {
-      enabled: env.ENABLE_METRICS,       // Direto! (boolean)
-      collectInterval: env.get('METRICS_INTERVAL', 5000),  // number casting
-      httpMetrics: env.get('HTTP_METRICS', true),
-      systemMetrics: env.get('SYSTEM_METRICS', true),
-      customMetrics: env.get('CUSTOM_METRICS', false)
-    },
-    profiling: {
-      enabled: env.get('PROFILING_ENABLED', false),
-      sampleRate: env.get('PROFILING_SAMPLE_RATE', 0.1),   // number casting
-      memoryProfiling: env.get('MEMORY_PROFILING', false),
-      cpuProfiling: env.get('CPU_PROFILING', false)
-    },
-    exporters: env.get('MONITORING_EXPORTERS', [])         // array casting
+    ...monitoringConfig,
+    metrics: monitoringMetricsConfig,
+    profiling: monitoringProfilingConfig
   },
 
-  // Optional database configuration
-  ...(env.has('DATABASE_URL') || env.has('DATABASE_HOST') ? {
-    database: {
-      url: env.DATABASE_URL,               // Direto! (string)
-      host: env.DB_HOST,                   // Direto! (string)
-      port: env.DB_PORT,                   // Direto! (number)
-      database: env.DB_NAME,               // Direto! (string)
-      user: env.DB_USER,                   // Direto! (string)
-      password: env.DB_PASSWORD,           // Direto! (string)
-      ssl: env.DB_SSL,                     // Direto! (boolean)
-      poolSize: env.get('DB_POOL_SIZE', 10)  // number casting
-    }
-  } : {}),
-
-  // Optional authentication configuration
-  ...(env.has('JWT_SECRET') ? {
-    auth: {
-      secret: env.JWT_SECRET,              // Direto! (string)
-      expiresIn: env.get('JWT_EXPIRES_IN', '24h'),
-      algorithm: env.get('JWT_ALGORITHM', 'HS256'),
-      issuer: env.get('JWT_ISSUER')
-    }
-  } : {}),
-
-  // Optional email configuration
-  ...(env.has('SMTP_HOST') ? {
-    email: {
-      host: env.SMTP_HOST,                 // Direto! (string)
-      port: env.SMTP_PORT,                 // Direto! (number)
-      user: env.SMTP_USER,                 // Direto! (string)
-      password: env.SMTP_PASSWORD,         // Direto! (string)
-      secure: env.SMTP_SECURE,             // Direto! (boolean)
-      from: env.get('SMTP_FROM')
-    }
-  } : {}),
-
-  // Optional storage configuration
-  ...(env.has('UPLOAD_PATH') || env.has('STORAGE_PROVIDER') ? {
+  // Optional configurations (only included if env vars are set)
+  ...(databaseConfig ? { database: databaseConfig } : {}),
+  ...(authConfig ? { auth: authConfig } : {}),
+  ...(emailConfig ? { email: emailConfig } : {}),
+  ...(storageConfig ? {
     storage: {
-      uploadPath: env.get('UPLOAD_PATH'),
-      maxFileSize: env.get('MAX_FILE_SIZE', 10485760),  // 10MB default
-      allowedTypes: env.get('ALLOWED_FILE_TYPES', []),  // array casting
-      provider: env.get('STORAGE_PROVIDER', 'local'),
-      config: env.get('STORAGE_CONFIG', {})             // object casting
+      ...storageConfig,
+      config: env.get('STORAGE_CONFIG', {})
     }
   } : {}),
 
@@ -185,6 +323,7 @@ export const config: FluxStackConfig = {
         proxy: { target: 'http://localhost:3000' },
         build: {
           sourceMaps: true,
+          minify: false,
           target: 'es2020',
           outDir: 'dist'
         }
@@ -193,12 +332,15 @@ export const config: FluxStackConfig = {
         target: 'bun',
         outDir: 'dist',
         optimization: {
+          minify: false,
           compress: false,
           treeshake: false,
           splitChunks: false,
           bundleAnalyzer: false
         },
         sourceMaps: true,
+        minify: false,
+        treeshake: false,
         clean: true
       },
       monitoring: {
@@ -236,6 +378,7 @@ export const config: FluxStackConfig = {
         proxy: { target: 'http://localhost:3000' },
         build: {
           sourceMaps: false,
+          minify: true,
           target: 'es2020',
           outDir: 'dist'
         }
@@ -244,12 +387,15 @@ export const config: FluxStackConfig = {
         target: 'bun',
         outDir: 'dist',
         optimization: {
+          minify: true,
           treeshake: false,
           compress: false,
           splitChunks: false,
           bundleAnalyzer: false
         },
         sourceMaps: false,
+        minify: true,
+        treeshake: false,
         clean: true
       },
       monitoring: {
@@ -293,7 +439,7 @@ export const config: FluxStackConfig = {
       client: {
         port: 0, // Use random available port
         proxy: { target: 'http://localhost:3000' },
-        build: { sourceMaps: true, target: 'es2020', outDir: 'dist' }
+        build: { sourceMaps: true, minify: false, target: 'es2020', outDir: 'dist' }
       },
       monitoring: {
         enabled: false,
