@@ -88,7 +88,8 @@
       "Bash(PORT=5555 DEBUG=false TEST_NEW_VAR=hello node test-output.js)",
       "Bash(bunx prettier:*)",
       "Read(//c/c/Users/Marcos/Documents/GitHub/aviso-projeto/FluxStack/**)",
-      "Read(//c/**)"
+      "Read(//c/**)",
+      "Bash(LOG_LEVEL=debug timeout 5 bun run dev)"
     ],
     "deny": []
   }

@@ -104,6 +104,7 @@ export const cryptoAuthPlugin: Plugin = {
   },
 
   // Rotas removidas - autenticação é feita via middleware em cada requisição
+  // @ts-ignore - plugin property não está no tipo oficial mas é suportada
   plugin: new Elysia({ prefix: "/api/auth" })
     .get("/info", () => ({
       name: "FluxStack Crypto Auth",
