@@ -19,7 +19,7 @@ import type {
 
 type Plugin = FluxStack.Plugin
 import type { FluxStackConfig } from "../config/schema"
-import type { Logger } from "../utils/logger/index"
+import type { Logger } from "../utils/logger"
 import { PluginRegistry } from "./registry"
 import { createPluginUtils } from "./config"
 import { FluxStackError } from "../utils/errors"
@@ -422,6 +422,7 @@ export class PluginManager extends EventEmitter {
       // Try to use auto-generated registry for external plugins (if available from build)
       let externalResults: any[] = []
       try {
+        // @ts-expect-error - auto-registry is generated during build, may not exist in dev
         const autoRegistryModule = await import('./auto-registry')
         if (autoRegistryModule.discoveredPlugins && autoRegistryModule.registerDiscoveredPlugins) {
           this.logger.debug('🚀 Using auto-generated external plugins registry')
@@ -432,7 +433,7 @@ export class PluginManager extends EventEmitter {
           }))
         }
       } catch (error) {
-        this.logger.debug('Auto-generated external plugins registry not found, falling back to discovery', { error: error.message })
+        this.logger.debug('Auto-generated external plugins registry not found, falling back to discovery', { error: (error as Error).message })
 
         // Fallback to runtime discovery for external plugins
         this.logger.debug('Discovering external plugins in directory: plugins')

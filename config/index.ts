@@ -27,6 +27,9 @@ export { buildConfig } from './build.config'
 export { appRuntimeConfig } from './runtime.config'
 export { systemConfig, systemRuntimeInfo } from './system.config'
 
+// Plugin configs (re-exported for convenience)
+export { cryptoAuthConfig } from '../plugins/crypto-auth/config'
+
 // Re-export types
 export type { AppConfig } from './app.config'
 export type { DatabaseConfig } from './database.config'
@@ -41,6 +44,9 @@ export type {
   RedisConfig
 } from './services.config'
 
+// Plugin types
+export type { CryptoAuthConfig } from '../plugins/crypto-auth/config'
+
 /**
  * All configs in one object
  */
@@ -52,6 +58,7 @@ import { loggerConfig } from './logger.config'
 import { buildConfig } from './build.config'
 import { appRuntimeConfig } from './runtime.config'
 import { systemConfig, systemRuntimeInfo } from './system.config'
+import { cryptoAuthConfig } from '../plugins/crypto-auth/config'
 
 export const config = {
   app: appConfig,
@@ -62,7 +69,8 @@ export const config = {
   build: buildConfig,
   runtime: appRuntimeConfig,
   system: systemConfig,
-  systemRuntime: systemRuntimeInfo
+  systemRuntime: systemRuntimeInfo,
+  cryptoAuth: cryptoAuthConfig
 }
 
 export default config

@@ -136,6 +136,8 @@ export class PluginDependencyManager {
 
   /**
    * Instalar dependências de plugins
+   * NOVA ESTRATÉGIA: Instala no node_modules local do plugin primeiro,
+   * com fallback para o projeto principal
    */
   async installPluginDependencies(resolutions: DependencyResolution[]): Promise<void> {
     if (!this.config.autoInstall) {
@@ -143,42 +145,107 @@ export class PluginDependencyManager {
       return
     }
 
-    const toInstall: PluginDependency[] = []
-    const conflicts: DependencyConflict[] = []
-
-    // Coletar todas as dependências e conflitos
+    // Instalar dependências para cada plugin individualmente
     for (const resolution of resolutions) {
-      toInstall.push(...resolution.dependencies)
-      conflicts.push(...resolution.conflicts)
-    }
+      if (resolution.dependencies.length === 0) continue
 
-    // Resolver conflitos primeiro
-    if (conflicts.length > 0) {
-      await this.resolveConflicts(conflicts)
-    }
+      const pluginPath = this.findPluginDirectory(resolution.plugin)
+      if (!pluginPath) {
+        this.logger?.warn(`Não foi possível encontrar diretório do plugin '${resolution.plugin}'`)
+        continue
+      }
 
-    // Filtrar dependências que já estão instaladas
-    const needsInstallation = toInstall.filter(dep => {
-      const installed = this.installedDependencies.get(dep.name)
-      return !installed || !this.isVersionCompatible(installed, dep.version)
+      this.logger?.debug(`📦 Instalando dependências localmente para plugin '${resolution.plugin}'`, {
+        plugin: resolution.plugin,
+        path: pluginPath,
+        dependencies: resolution.dependencies.length
+      })
+
+      try {
+        // Instalar APENAS no node_modules local do plugin
+        await this.installPluginDependenciesLocally(pluginPath, resolution.dependencies)
+
+        this.logger?.debug(`✅ Dependências do plugin '${resolution.plugin}' instaladas localmente`)
+      } catch (error) {
+        this.logger?.error(`❌ Erro ao instalar dependências do plugin '${resolution.plugin}'`, { error })
+        // Continuar com outros plugins
+      }
+    }
+  }
+
+  /**
+   * Instalar dependências no diretório local do plugin
+   */
+  private async installPluginDependenciesLocally(pluginPath: string, dependencies: PluginDependency[]): Promise<void> {
+    if (dependencies.length === 0) return
+
+    const regularDeps = dependencies.filter(d => d.type === 'dependency')
+    const peerDeps = dependencies.filter(d => d.type === 'peerDependency' && !d.optional)
+
+    const allDeps = [...regularDeps, ...peerDeps]
+    if (allDeps.length === 0) return
+
+    // Verificar quais dependências já estão instaladas localmente
+    const toInstall = allDeps.filter(dep => {
+      const depPath = join(pluginPath, 'node_modules', dep.name, 'package.json')
+      if (!existsSync(depPath)) {
+        return true // Precisa instalar
+      }
+
+      try {
+        const installedPkg = JSON.parse(readFileSync(depPath, 'utf-8'))
+        const installedVersion = installedPkg.version
+
+        // Verificar se a versão é compatível
+        if (!this.isVersionCompatible(installedVersion, dep.version)) {
+          this.logger?.debug(`📦 Dependência '${dep.name}' está desatualizada (${installedVersion} → ${dep.version})`)
+          return true // Precisa atualizar
+        }
+
+        return false // Já está instalado corretamente
+      } catch (error) {
+        return true // Erro ao ler, melhor reinstalar
+      }
     })
 
-    if (needsInstallation.length === 0) {
-      this.logger?.debug('Todas as dependências de plugins já estão instaladas')
+    if (toInstall.length === 0) {
+      this.logger?.debug(`✅ Todas as dependências do plugin já estão instaladas`)
       return
     }
 
-    this.logger?.debug(`Instalando ${needsInstallation.length} dependências de plugins`, {
-      dependencies: needsInstallation.map(d => `${d.name}@${d.version}`)
-    })
+    const packages = toInstall.map(d => `${d.name}@${d.version}`).join(' ')
+    const command = this.getInstallCommand(packages, false)
+
+    this.logger?.debug(`🔧 Instalando ${toInstall.length} dependência(s): ${command}`, { cwd: pluginPath })
 
     try {
-      await this.installDependencies(needsInstallation)
-      this.logger?.debug('Dependências de plugins instaladas com sucesso')
+      execSync(command, {
+        cwd: pluginPath,
+        stdio: 'inherit'
+      })
+      this.logger?.debug(`✅ Pacotes instalados localmente em ${pluginPath}`)
     } catch (error) {
-      this.logger?.error('Erro ao instalar dependências de plugins', { error })
+      this.logger?.error(`❌ Falha ao instalar dependências localmente`, { error, pluginPath })
       throw error
     }
+  }
+
+  /**
+   * Encontrar diretório de um plugin pelo nome
+   */
+  private findPluginDirectory(pluginName: string): string | null {
+    const possiblePaths = [
+      `plugins/${pluginName}`,
+      `core/plugins/built-in/${pluginName}`
+    ]
+
+    for (const path of possiblePaths) {
+      if (existsSync(path)) {
+        return resolve(path)
+      }
+    }
+
+    return null
   }
 
   /**

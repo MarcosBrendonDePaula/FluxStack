@@ -10,6 +10,3 @@ export type { AuthProviderProps, AuthContextValue } from './AuthProvider'
 
 export { ProtectedRoute, withAuth } from './ProtectedRoute'
 export type { ProtectedRouteProps } from './ProtectedRoute'
-
-export { SessionInfo } from './SessionInfo'
-export type { SessionInfoProps } from './SessionInfo'

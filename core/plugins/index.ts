@@ -54,6 +54,10 @@ export {
 } from './manager'
 export type { PluginManagerConfig } from './manager'
 
+// Module resolver for plugins
+export { PluginModuleResolver } from './module-resolver'
+export type { ModuleResolverConfig } from './module-resolver'
+
 // Plugin executor
 export {
     PluginExecutor,

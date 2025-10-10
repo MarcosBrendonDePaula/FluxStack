@@ -1,11 +1,13 @@
 /**
  * Serviço de Autenticação Criptográfica
- * Implementa autenticação baseada em Ed25519
+ * Implementa autenticação baseada em Ed25519 - SEM SESSÕES
+ * Cada requisição é validada pela assinatura da chave pública
  */
 
 import { ed25519 } from '@noble/curves/ed25519'
 import { sha256 } from '@noble/hashes/sha256'
-import { bytesToHex, hexToBytes } from '@noble/hashes/utils'
+import { hexToBytes } from '@noble/hashes/utils'
+
 export interface Logger {
   debug(message: string, meta?: any): void
   info(message: string, meta?: any): void
@@ -13,219 +15,126 @@ export interface Logger {
   error(message: string, meta?: any): void
 }
 
-export interface SessionData {
-  sessionId: string
-  publicKey: string
-  createdAt: Date
-  lastUsed: Date
-  isAdmin: boolean
-  permissions: string[]
-}
-
 export interface AuthResult {
   success: boolean
-  sessionId?: string
   error?: string
   user?: {
-    sessionId: string
+    publicKey: string
     isAdmin: boolean
-    isSuperAdmin: boolean
     permissions: string[]
   }
 }
 
 export interface CryptoAuthConfig {
-  sessionTimeout: number
   maxTimeDrift: number
   adminKeys: string[]
   logger?: Logger
 }
 
 export class CryptoAuthService {
-  private sessions: Map<string, SessionData> = new Map()
   private config: CryptoAuthConfig
   private logger?: Logger
+  private usedNonces: Map<string, number> = new Map() // Para prevenir replay attacks
 
   constructor(config: CryptoAuthConfig) {
     this.config = config
     this.logger = config.logger
 
-    // Limpar sessões expiradas a cada 5 minutos
+    // Limpar nonces antigos a cada 5 minutos
     setInterval(() => {
-      this.cleanupExpiredSessions()
+      this.cleanupOldNonces()
     }, 5 * 60 * 1000)
   }
 
   /**
-   * Inicializar uma nova sessão
+   * Validar assinatura de requisição
+   * PRINCIPAL: Valida se assinatura é válida para a chave pública fornecida
    */
-  async initializeSession(data: { publicKey?: string }): Promise<AuthResult> {
-    try {
-      let publicKey: string
-
-      if (data.publicKey) {
-        // Validar chave pública fornecida
-        if (!this.isValidPublicKey(data.publicKey)) {
-          return {
-            success: false,
-            error: "Chave pública inválida"
-          }
-        }
-        publicKey = data.publicKey
-      } else {
-        // Gerar novo par de chaves
-        const privateKey = ed25519.utils.randomPrivateKey()
-        publicKey = bytesToHex(ed25519.getPublicKey(privateKey))
-      }
-
-      const sessionId = publicKey
-      const isAdmin = this.config.adminKeys.includes(publicKey)
-
-      const sessionData: SessionData = {
-        sessionId,
-        publicKey,
-        createdAt: new Date(),
-        lastUsed: new Date(),
-        isAdmin,
-        permissions: isAdmin ? ['admin', 'read', 'write'] : ['read']
-      }
-
-      this.sessions.set(sessionId, sessionData)
-
-      this.logger?.info("Nova sessão inicializada", {
-        sessionId: sessionId.substring(0, 8) + "...",
-        isAdmin,
-        permissions: sessionData.permissions
-      })
-
-      return {
-        success: true,
-        sessionId,
-        user: {
-          sessionId,
-          isAdmin,
-          isSuperAdmin: isAdmin,
-          permissions: sessionData.permissions
-        }
-      }
-    } catch (error) {
-      this.logger?.error("Erro ao inicializar sessão", { error })
-      return {
-        success: false,
-        error: "Erro interno ao inicializar sessão"
-      }
-    }
-  }
-
-  /**
-   * Validar uma sessão com assinatura
-   */
-  async validateSession(data: {
-    sessionId: string
+  async validateRequest(data: {
+    publicKey: string
     timestamp: number
     nonce: string
     signature: string
     message?: string
   }): Promise<AuthResult> {
     try {
-      const { sessionId, timestamp, nonce, signature, message = "" } = data
+      const { publicKey, timestamp, nonce, signature, message = "" } = data
 
-      // Verificar se a sessão existe
-      const session = this.sessions.get(sessionId)
-      if (!session) {
+      // Validar chave pública
+      if (!this.isValidPublicKey(publicKey)) {
         return {
           success: false,
-          error: "Sessão não encontrada"
+          error: "Chave pública inválida"
         }
       }
 
-      // Verificar se a sessão não expirou
+      // Verificar drift de tempo (previne replay de requisições antigas)
       const now = Date.now()
-      const sessionAge = now - session.lastUsed.getTime()
-      if (sessionAge > this.config.sessionTimeout) {
-        this.sessions.delete(sessionId)
-        return {
-          success: false,
-          error: "Sessão expirada"
-        }
-      }
-
-      // Verificar drift de tempo
       const timeDrift = Math.abs(now - timestamp)
       if (timeDrift > this.config.maxTimeDrift) {
         return {
           success: false,
-          error: "Timestamp inválido"
+          error: "Timestamp inválido ou expirado"
+        }
+      }
+
+      // Verificar nonce (previne replay attacks)
+      const nonceKey = `${publicKey}:${nonce}`
+      if (this.usedNonces.has(nonceKey)) {
+        return {
+          success: false,
+          error: "Nonce já utilizado (possível replay attack)"
         }
       }
 
       // Construir mensagem para verificação
-      const messageToVerify = `${sessionId}:${timestamp}:${nonce}:${message}`
+      const messageToVerify = `${publicKey}:${timestamp}:${nonce}:${message}`
       const messageHash = sha256(new TextEncoder().encode(messageToVerify))
 
-      // Verificar assinatura
-      const publicKeyBytes = hexToBytes(session.publicKey)
+      // Verificar assinatura usando chave pública
+      const publicKeyBytes = hexToBytes(publicKey)
       const signatureBytes = hexToBytes(signature)
-      
+
       const isValidSignature = ed25519.verify(signatureBytes, messageHash, publicKeyBytes)
-      
+
       if (!isValidSignature) {
+        this.logger?.warn("Assinatura inválida", {
+          publicKey: publicKey.substring(0, 8) + "..."
+        })
         return {
           success: false,
           error: "Assinatura inválida"
         }
       }
 
-      // Atualizar último uso da sessão
-      session.lastUsed = new Date()
+      // Marcar nonce como usado
+      this.usedNonces.set(nonceKey, timestamp)
+
+      // Verificar se é admin
+      const isAdmin = this.config.adminKeys.includes(publicKey)
+      const permissions = isAdmin ? ['admin', 'read', 'write', 'delete'] : ['read']
+
+      this.logger?.debug("Requisição autenticada", {
+        publicKey: publicKey.substring(0, 8) + "...",
+        isAdmin,
+        permissions
+      })
 
       return {
         success: true,
-        sessionId,
         user: {
-          sessionId,
-          isAdmin: session.isAdmin,
-          isSuperAdmin: session.isAdmin,
-          permissions: session.permissions
+          publicKey,
+          isAdmin,
+          permissions
         }
       }
     } catch (error) {
-      this.logger?.error("Erro ao validar sessão", { error })
+      this.logger?.error("Erro ao validar requisição", { error })
       return {
         success: false,
-        error: "Erro interno ao validar sessão"
+        error: "Erro interno ao validar requisição"
       }
     }
-  }
-
-  /**
-   * Obter informações da sessão
-   */
-  async getSessionInfo(sessionId: string): Promise<SessionData | null> {
-    const session = this.sessions.get(sessionId)
-    if (!session) {
-      return null
-    }
-
-    // Verificar se não expirou
-    const now = Date.now()
-    const sessionAge = now - session.lastUsed.getTime()
-    if (sessionAge > this.config.sessionTimeout) {
-      this.sessions.delete(sessionId)
-      return null
-    }
-
-    return { ...session }
-  }
-
-  /**
-   * Destruir uma sessão
-   */
-  async destroySession(sessionId: string): Promise<void> {
-    this.sessions.delete(sessionId)
-    this.logger?.info("Sessão destruída", {
-      sessionId: sessionId.substring(0, 8) + "..."
-    })
   }
 
   /**
@@ -245,49 +154,33 @@ export class CryptoAuthService {
   }
 
   /**
-   * Limpar sessões expiradas
+   * Limpar nonces antigos (previne crescimento infinito da memória)
    */
-  private cleanupExpiredSessions(): void {
+  private cleanupOldNonces(): void {
     const now = Date.now()
+    const maxAge = this.config.maxTimeDrift * 2 // Dobro do tempo máximo permitido
     let cleanedCount = 0
 
-    for (const [sessionId, session] of this.sessions.entries()) {
-      const sessionAge = now - session.lastUsed.getTime()
-      if (sessionAge > this.config.sessionTimeout) {
-        this.sessions.delete(sessionId)
+    for (const [nonceKey, timestamp] of this.usedNonces.entries()) {
+      if (now - timestamp > maxAge) {
+        this.usedNonces.delete(nonceKey)
         cleanedCount++
       }
     }
 
     if (cleanedCount > 0) {
-      this.logger?.debug(`Limpeza de sessões: ${cleanedCount} sessões expiradas removidas`)
+      this.logger?.debug(`Limpeza de nonces: ${cleanedCount} nonces antigos removidos`)
     }
   }
 
   /**
-   * Obter estatísticas das sessões
+   * Obter estatísticas do serviço
    */
   getStats() {
-    const now = Date.now()
-    let activeSessions = 0
-    let adminSessions = 0
-
-    for (const session of this.sessions.values()) {
-      const sessionAge = now - session.lastUsed.getTime()
-      if (sessionAge <= this.config.sessionTimeout) {
-        activeSessions++
-        if (session.isAdmin) {
-          adminSessions++
-        }
-      }
-    }
-
     return {
-      totalSessions: this.sessions.size,
-      activeSessions,
-      adminSessions,
-      sessionTimeout: this.config.sessionTimeout,
-      adminKeys: this.config.adminKeys.length
+      usedNoncesCount: this.usedNonces.size,
+      adminKeys: this.config.adminKeys.length,
+      maxTimeDrift: this.config.maxTimeDrift
     }
   }
 }

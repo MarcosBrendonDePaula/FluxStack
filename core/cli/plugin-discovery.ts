@@ -10,14 +10,14 @@ export class CliPluginDiscovery {
   async discoverAndRegisterCommands(): Promise<void> {
     // 1. Load built-in plugins with CLI commands
     await this.loadBuiltInPlugins()
-    
+
     // 2. Load local plugins from project
     await this.loadLocalPlugins()
   }
 
   private async loadBuiltInPlugins(): Promise<void> {
     const builtInPluginsDir = join(__dirname, '../plugins/built-in')
-    
+
     if (!existsSync(builtInPluginsDir)) {
       return
     }
@@ -33,7 +33,7 @@ export class CliPluginDiscovery {
           const pluginPath = join(builtInPluginsDir, pluginName, 'index.ts')
           if (existsSync(pluginPath)) {
             const pluginModule = await import(pluginPath)
-            
+
             if (pluginModule.commands) {
               for (const command of pluginModule.commands) {
                 cliRegistry.register(command)
@@ -57,7 +57,7 @@ export class CliPluginDiscovery {
 
   private async loadLocalPlugins(): Promise<void> {
     const localPluginsDir = join(process.cwd(), 'plugins')
-    
+
     if (!existsSync(localPluginsDir)) {
       return
     }
@@ -65,22 +65,43 @@ export class CliPluginDiscovery {
     try {
       const fs = await import('fs')
       const entries = fs.readdirSync(localPluginsDir, { withFileTypes: true })
-      
+
       for (const entry of entries) {
+        // Buscar arquivos .ts/.js diretamente
         if (entry.isFile() && (entry.name.endsWith('.ts') || entry.name.endsWith('.js'))) {
           const pluginPath = join(localPluginsDir, entry.name)
-          
+
           try {
             const pluginModule = await import(pluginPath)
             const plugin = pluginModule.default || Object.values(pluginModule).find(
               (exp: any) => exp && typeof exp === 'object' && exp.name && exp.commands
             ) as Plugin
-            
+
             if (plugin && plugin.commands) {
               this.registerPluginCommands(plugin)
             }
           } catch (error) {
             logger.debug(`Failed to load local plugin ${entry.name}:`, error)
+          }
+        }
+
+        // ✅ Buscar em subdiretórios (plugins/nome-plugin/index.ts)
+        if (entry.isDirectory()) {
+          const pluginIndexPath = join(localPluginsDir, entry.name, 'index.ts')
+
+          if (existsSync(pluginIndexPath)) {
+            try {
+              const pluginModule = await import(pluginIndexPath)
+              const plugin = pluginModule.default || Object.values(pluginModule).find(
+                (exp: any) => exp && typeof exp === 'object' && exp.name && exp.commands
+              ) as Plugin
+
+              if (plugin && plugin.commands) {
+                this.registerPluginCommands(plugin)
+              }
+            } catch (error) {
+              logger.debug(`Failed to load local plugin ${entry.name}:`, error)
+            }
           }
         }
       }
@@ -103,9 +124,9 @@ export class CliPluginDiscovery {
           category: command.category || `Plugin: ${plugin.name}`,
           aliases: command.aliases?.map(alias => `${plugin.name}:${alias}`)
         }
-        
+
         cliRegistry.register(prefixedCommand)
-        
+
         // Also register without prefix if no conflict exists
         if (!cliRegistry.has(command.name)) {
           cliRegistry.register({
@@ -114,10 +135,10 @@ export class CliPluginDiscovery {
           })
         }
       }
-      
+
       this.loadedPlugins.add(plugin.name)
       logger.debug(`Registered ${plugin.commands.length} CLI commands from plugin: ${plugin.name}`)
-      
+
     } catch (error) {
       logger.error(`Failed to register CLI commands for plugin ${plugin.name}:`, error)
     }

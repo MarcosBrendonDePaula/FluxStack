@@ -85,6 +85,7 @@ export class TemplateEngine {
       camelName: this.toCamelCase(options.name),
       pascalName: this.toPascalCase(options.name),
       snakeName: this.toSnakeCase(options.name),
+      constantName: this.toConstantCase(options.name), // SCREAMING_SNAKE_CASE
       timestamp: new Date().toISOString(),
       date: new Date().toLocaleDateString(),
       year: new Date().getFullYear(),
@@ -148,6 +149,10 @@ export class TemplateEngine {
       .replace(/([a-z])([A-Z])/g, '$1_$2')
       .replace(/[\s-]+/g, '_')
       .toLowerCase()
+  }
+
+  private toConstantCase(str: string): string {
+    return this.toSnakeCase(str).toUpperCase()
   }
 }
 

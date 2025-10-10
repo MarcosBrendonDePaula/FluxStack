@@ -1,6 +1,6 @@
 /**
- * Middleware de Autenticação
- * Intercepta requisições e valida autenticação
+ * Middleware de Autenticação Simplificado
+ * Apenas valida autenticação - routing é feito pelos middlewares Elysia
  */
 
 import type { RequestContext } from '../../../core/plugins/types'
@@ -14,56 +14,34 @@ export interface Logger {
 }
 
 export interface AuthMiddlewareConfig {
-    protectedRoutes: string[]
-    publicRoutes: string[]
     logger?: Logger
 }
 
 export interface AuthMiddlewareResult {
     success: boolean
-    required: boolean
     error?: string
     user?: {
-        sessionId: string
+        publicKey: string
         isAdmin: boolean
-        isSuperAdmin: boolean
         permissions: string[]
     }
 }
 
 export class AuthMiddleware {
     private authService: CryptoAuthService
-    private config: AuthMiddlewareConfig
     private logger?: Logger
 
-    constructor(authService: CryptoAuthService, config: AuthMiddlewareConfig) {
+    constructor(authService: CryptoAuthService, config: AuthMiddlewareConfig = {}) {
         this.authService = authService
-        this.config = config
         this.logger = config.logger
     }
 
     /**
-     * Autenticar requisição
+     * Autenticar requisição (sem path matching - é responsabilidade dos middlewares Elysia)
      */
     async authenticate(context: RequestContext): Promise<AuthMiddlewareResult> {
         const path = context.path
         const method = context.method
-
-        // Verificar se a rota é pública
-        if (this.isPublicRoute(path)) {
-            return {
-                success: true,
-                required: false
-            }
-        }
-
-        // Verificar se a rota requer autenticação
-        if (!this.isProtectedRoute(path)) {
-            return {
-                success: true,
-                required: false
-            }
-        }
 
         // Extrair headers de autenticação
         const authHeaders = this.extractAuthHeaders(context.headers)
@@ -76,15 +54,14 @@ export class AuthMiddleware {
 
             return {
                 success: false,
-                required: true,
                 error: "Headers de autenticação obrigatórios"
             }
         }
 
-        // Validar sessão
+        // Validar assinatura da requisição
         try {
-            const validationResult = await this.authService.validateSession({
-                sessionId: authHeaders.sessionId,
+            const validationResult = await this.authService.validateRequest({
+                publicKey: authHeaders.publicKey,
                 timestamp: authHeaders.timestamp,
                 nonce: authHeaders.nonce,
                 signature: authHeaders.signature,
@@ -92,16 +69,15 @@ export class AuthMiddleware {
             })
 
             if (!validationResult.success) {
-                this.logger?.warn("Falha na validação da sessão", {
+                this.logger?.warn("Falha na validação da assinatura", {
                     path,
                     method,
-                    sessionId: authHeaders.sessionId.substring(0, 8) + "...",
+                    publicKey: authHeaders.publicKey.substring(0, 8) + "...",
                     error: validationResult.error
                 })
 
                 return {
                     success: false,
-                    required: true,
                     error: validationResult.error
                 }
             }
@@ -109,13 +85,12 @@ export class AuthMiddleware {
             this.logger?.debug("Requisição autenticada com sucesso", {
                 path,
                 method,
-                sessionId: authHeaders.sessionId.substring(0, 8) + "...",
+                publicKey: authHeaders.publicKey.substring(0, 8) + "...",
                 isAdmin: validationResult.user?.isAdmin
             })
 
             return {
                 success: true,
-                required: true,
                 user: validationResult.user
             }
         } catch (error) {
@@ -127,53 +102,26 @@ export class AuthMiddleware {
 
             return {
                 success: false,
-                required: true,
                 error: "Erro interno de autenticação"
             }
         }
     }
 
     /**
-     * Verificar se a rota é pública
-     */
-    private isPublicRoute(path: string): boolean {
-        return this.config.publicRoutes.some(route => {
-            if (route.endsWith('/*')) {
-                const prefix = route.slice(0, -2)
-                return path.startsWith(prefix)
-            }
-            return path === route
-        })
-    }
-
-    /**
-     * Verificar se a rota é protegida
-     */
-    private isProtectedRoute(path: string): boolean {
-        return this.config.protectedRoutes.some(route => {
-            if (route.endsWith('/*')) {
-                const prefix = route.slice(0, -2)
-                return path.startsWith(prefix)
-            }
-            return path === route
-        })
-    }
-
-    /**
      * Extrair headers de autenticação
      */
     private extractAuthHeaders(headers: Record<string, string>): {
-        sessionId: string
+        publicKey: string
         timestamp: number
         nonce: string
         signature: string
     } | null {
-        const sessionId = headers['x-session-id']
+        const publicKey = headers['x-public-key']
         const timestampStr = headers['x-timestamp']
         const nonce = headers['x-nonce']
         const signature = headers['x-signature']
 
-        if (!sessionId || !timestampStr || !nonce || !signature) {
+        if (!publicKey || !timestampStr || !nonce || !signature) {
             return null
         }
 
@@ -183,7 +131,7 @@ export class AuthMiddleware {
         }
 
         return {
-            sessionId,
+            publicKey,
             timestamp,
             nonce,
             signature
@@ -207,7 +155,7 @@ export class AuthMiddleware {
     }
 
     /**
-     * Verificar se usuário tem permissão para acessar rota
+     * Verificar se usuário tem permissão
      */
     hasPermission(user: any, requiredPermission: string): boolean {
         if (!user || !user.permissions) {
@@ -225,13 +173,9 @@ export class AuthMiddleware {
     }
 
     /**
-     * Obter estatísticas do middleware
+     * Obter estatísticas do serviço de autenticação
      */
     getStats() {
-        return {
-            protectedRoutes: this.config.protectedRoutes.length,
-            publicRoutes: this.config.publicRoutes.length,
-            authService: this.authService.getStats()
-        }
+        return this.authService.getStats()
     }
 }
