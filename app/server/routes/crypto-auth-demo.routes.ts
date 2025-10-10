@@ -1,65 +1,70 @@
 /**
  * Rotas de demonstração do Crypto Auth Plugin
  * Exemplos de rotas protegidas e públicas
+ *
+ * IMPORTANTE: O middleware crypto-auth já validou a assinatura
+ * As rotas protegidas são automaticamente protegidas pela configuração
  */
 
 import { Elysia, t } from 'elysia'
 
-export const cryptoAuthDemoRoutes = new Elysia({ prefix: '/api' })
+export const cryptoAuthDemoRoutes = new Elysia()
   // Rota pública - não requer autenticação
   .get('/crypto-auth/public', () => ({
     success: true,
     message: 'Esta é uma rota pública, acessível sem autenticação',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    note: 'Esta rota está na lista de publicRoutes do plugin crypto-auth'
   }))
 
-  // Rota protegida - requer autenticação
-  .get('/crypto-auth/protected', ({ headers, set }) => {
-    const sessionId = headers['x-session-id']
-
-    if (!sessionId) {
-      set.status = 401
-      return {
-        success: false,
-        error: 'Autenticação necessária',
-        message: 'Esta rota requer autenticação via assinatura criptográfica'
-      }
-    }
+  // Rota protegida - MIDDLEWARE JÁ VALIDOU
+  // Se chegou aqui, a assinatura foi validada com sucesso
+  .get('/crypto-auth/protected', ({ request }) => {
+    // O middleware já validou e colocou user no contexto
+    const user = (request as any).user
 
     return {
       success: true,
-      message: 'Acesso autorizado! Você está autenticado.',
-      sessionId: sessionId.substring(0, 16) + '...',
+      message: 'Acesso autorizado! Assinatura validada com sucesso.',
+      user: {
+        publicKey: user?.publicKey ? user.publicKey.substring(0, 16) + '...' : 'unknown',
+        isAdmin: user?.isAdmin || false,
+        permissions: user?.permissions || []
+      },
       data: {
-        secretInfo: 'Este é um dado protegido',
+        secretInfo: 'Este é um dado protegido - só acessível com assinatura válida',
         userLevel: 'authenticated',
         timestamp: new Date().toISOString()
       }
     }
   })
 
-  // Rota admin - requer autenticação de admin
-  .get('/crypto-auth/admin', ({ headers, set }) => {
-    const sessionId = headers['x-session-id']
+  // Rota admin - requer autenticação E ser admin
+  .get('/crypto-auth/admin', ({ request, set }) => {
+    const user = (request as any).user
 
-    if (!sessionId) {
-      set.status = 401
+    // Verificar se é admin
+    if (!user?.isAdmin) {
+      set.status = 403
       return {
         success: false,
-        error: 'Autenticação necessária'
+        error: 'Permissão negada',
+        message: 'Esta rota requer privilégios de administrador',
+        yourPermissions: user?.permissions || []
       }
     }
 
-    // TODO: Verificar se é admin usando authService
-    // Por enquanto, retorna dados de exemplo
     return {
       success: true,
       message: 'Acesso admin autorizado',
-      sessionId: sessionId.substring(0, 16) + '...',
+      user: {
+        publicKey: user.publicKey.substring(0, 16) + '...',
+        isAdmin: true,
+        permissions: user.permissions
+      },
       adminData: {
-        totalSessions: 42,
-        activeUsers: 12,
-        systemHealth: 'optimal'
+        systemHealth: 'optimal',
+        message: 'Dados sensíveis de administração'
       }
     }
   })

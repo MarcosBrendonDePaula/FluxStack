@@ -24,9 +24,8 @@ export interface AuthMiddlewareResult {
     required: boolean
     error?: string
     user?: {
-        sessionId: string
+        publicKey: string
         isAdmin: boolean
-        isSuperAdmin: boolean
         permissions: string[]
     }
 }
@@ -81,10 +80,10 @@ export class AuthMiddleware {
             }
         }
 
-        // Validar sessão
+        // Validar assinatura da requisição
         try {
-            const validationResult = await this.authService.validateSession({
-                sessionId: authHeaders.sessionId,
+            const validationResult = await this.authService.validateRequest({
+                publicKey: authHeaders.publicKey,
                 timestamp: authHeaders.timestamp,
                 nonce: authHeaders.nonce,
                 signature: authHeaders.signature,
@@ -92,10 +91,10 @@ export class AuthMiddleware {
             })
 
             if (!validationResult.success) {
-                this.logger?.warn("Falha na validação da sessão", {
+                this.logger?.warn("Falha na validação da assinatura", {
                     path,
                     method,
-                    sessionId: authHeaders.sessionId.substring(0, 8) + "...",
+                    publicKey: authHeaders.publicKey.substring(0, 8) + "...",
                     error: validationResult.error
                 })
 
@@ -109,7 +108,7 @@ export class AuthMiddleware {
             this.logger?.debug("Requisição autenticada com sucesso", {
                 path,
                 method,
-                sessionId: authHeaders.sessionId.substring(0, 8) + "...",
+                publicKey: authHeaders.publicKey.substring(0, 8) + "...",
                 isAdmin: validationResult.user?.isAdmin
             })
 
@@ -163,17 +162,17 @@ export class AuthMiddleware {
      * Extrair headers de autenticação
      */
     private extractAuthHeaders(headers: Record<string, string>): {
-        sessionId: string
+        publicKey: string
         timestamp: number
         nonce: string
         signature: string
     } | null {
-        const sessionId = headers['x-session-id']
+        const publicKey = headers['x-public-key']
         const timestampStr = headers['x-timestamp']
         const nonce = headers['x-nonce']
         const signature = headers['x-signature']
 
-        if (!sessionId || !timestampStr || !nonce || !signature) {
+        if (!publicKey || !timestampStr || !nonce || !signature) {
             return null
         }
 
@@ -183,7 +182,7 @@ export class AuthMiddleware {
         }
 
         return {
-            sessionId,
+            publicKey,
             timestamp,
             nonce,
             signature

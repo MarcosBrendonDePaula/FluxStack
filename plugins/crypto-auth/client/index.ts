@@ -3,7 +3,7 @@
  */
 
 export { CryptoAuthClient } from './CryptoAuthClient'
-export type { SessionInfo, AuthConfig, SignedRequestOptions } from './CryptoAuthClient'
+export type { KeyPair, AuthConfig, SignedRequestOptions } from './CryptoAuthClient'
 
 // Componentes React
 export * from './components'

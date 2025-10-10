@@ -1,60 +1,46 @@
 import { useState, useEffect } from 'react'
 import { FaKey, FaLock, FaUnlock, FaCheckCircle, FaTimesCircle, FaSync, FaShieldAlt, FaCopy } from 'react-icons/fa'
-import { CryptoAuthClient } from '../../../../plugins/crypto-auth/client'
-
-interface SessionInfo {
-  sessionId: string
-  publicKey: string
-  isAdmin: boolean
-  permissions: string[]
-  createdAt: Date
-  lastUsed: Date
-}
+import { CryptoAuthClient, type KeyPair } from '../../../../plugins/crypto-auth/client'
 
 export function CryptoAuthPage() {
   const [authClient] = useState(() => new CryptoAuthClient({
-    apiBaseUrl: '',
     autoInit: false
   }))
-  const [session, setSession] = useState<SessionInfo | null>(null)
+  const [keys, setKeys] = useState<KeyPair | null>(null)
   const [loading, setLoading] = useState(false)
   const [publicDataResult, setPublicDataResult] = useState<any>(null)
   const [protectedDataResult, setProtectedDataResult] = useState<any>(null)
-  const [secureDataResult, setSecureDataResult] = useState<any>(null)
-  const [statusResult, setStatusResult] = useState<any>(null)
   const [copiedKey, setCopiedKey] = useState('')
 
   useEffect(() => {
-    const existingSession = authClient.getSession()
-    if (existingSession) {
-      setSession(existingSession)
+    const existingKeys = authClient.getKeys()
+    if (existingKeys) {
+      setKeys(existingKeys)
     }
   }, [authClient])
 
-  const handleCreateSession = async () => {
+  const handleCreateKeys = () => {
     setLoading(true)
     try {
-      const newSession = await authClient.initialize()
-      setSession(newSession)
+      const newKeys = authClient.createNewKeys()
+      setKeys(newKeys)
     } catch (error) {
-      console.error('Erro ao criar sessão:', error)
-      alert('Erro ao criar sessão: ' + (error as Error).message)
+      console.error('Erro ao criar chaves:', error)
+      alert('Erro ao criar chaves: ' + (error as Error).message)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleLogout = async () => {
+  const handleClearKeys = () => {
     setLoading(true)
     try {
-      await authClient.logout()
-      setSession(null)
+      authClient.clearKeys()
+      setKeys(null)
       setPublicDataResult(null)
       setProtectedDataResult(null)
-      setSecureDataResult(null)
-      setStatusResult(null)
     } catch (error) {
-      console.error('Erro ao fazer logout:', error)
+      console.error('Erro ao limpar chaves:', error)
     } finally {
       setLoading(false)
     }
@@ -88,43 +74,6 @@ export function CryptoAuthPage() {
     }
   }
 
-  const handleSecureDataRequest = async () => {
-    setLoading(true)
-    try {
-      const response = await authClient.fetch('/api/crypto-auth/secure-data', {
-        method: 'POST',
-        body: JSON.stringify({
-          query: 'SELECT * FROM secure_table',
-          filters: {
-            startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-            endDate: new Date().toISOString()
-          }
-        })
-      })
-      const data = await response.json()
-      setSecureDataResult(data)
-    } catch (error) {
-      console.error('Erro na requisição segura:', error)
-      setSecureDataResult({ error: (error as Error).message })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleStatusCheck = async () => {
-    setLoading(true)
-    try {
-      const response = await authClient.fetch('/api/crypto-auth/status')
-      const data = await response.json()
-      setStatusResult(data)
-    } catch (error) {
-      console.error('Erro ao verificar status:', error)
-      setStatusResult({ error: (error as Error).message })
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const copyToClipboard = (text: string, type: string) => {
     navigator.clipboard.writeText(text)
     setCopiedKey(type)
@@ -140,28 +89,28 @@ export function CryptoAuthPage() {
           <h1 className="text-3xl font-bold">🔐 Crypto Auth Demo</h1>
         </div>
         <p className="text-purple-100">
-          Demonstração de autenticação criptográfica usando Ed25519
+          Autenticação criptográfica usando Ed25519 - SEM sessões no servidor
         </p>
       </div>
 
-      {/* Session Status */}
+      {/* Keys Status */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
           <FaKey className="mr-2 text-purple-600" />
-          Status da Sessão
+          Suas Chaves Criptográficas
         </h2>
 
-        {!session ? (
+        {!keys ? (
           <div className="text-center py-8">
             <FaUnlock className="text-6xl text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-600 mb-4">Nenhuma sessão ativa</p>
+            <p className="text-gray-600 mb-4">Nenhum par de chaves gerado</p>
             <button
-              onClick={handleCreateSession}
+              onClick={handleCreateKeys}
               disabled={loading}
               className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 disabled:opacity-50 flex items-center mx-auto"
             >
               {loading ? <FaSync className="animate-spin mr-2" /> : <FaKey className="mr-2" />}
-              Criar Nova Sessão
+              Gerar Novo Par de Chaves
             </button>
           </div>
         ) : (
@@ -170,51 +119,53 @@ export function CryptoAuthPage() {
               <div className="flex items-center">
                 <FaLock className="text-green-600 text-2xl mr-3" />
                 <div>
-                  <p className="font-semibold text-green-800">Sessão Ativa</p>
+                  <p className="font-semibold text-green-800">Chaves Ativas</p>
                   <p className="text-sm text-green-600">
-                    Criada em: {session.createdAt.toLocaleString()}
+                    Criadas em: {keys.createdAt.toLocaleString()}
                   </p>
                 </div>
               </div>
               <button
-                onClick={handleLogout}
+                onClick={handleClearKeys}
                 disabled={loading}
                 className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 disabled:opacity-50"
               >
-                Logout
+                Limpar Chaves
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div className="p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600 mb-1">Session ID (Public Key)</p>
+                <p className="text-sm text-gray-600 mb-1">Chave Pública (enviada ao servidor)</p>
                 <div className="flex items-center space-x-2">
-                  <code className="text-xs bg-white px-2 py-1 rounded border flex-1 truncate">
-                    {session.sessionId}
+                  <code className="text-xs bg-white px-2 py-1 rounded border flex-1 break-all">
+                    {keys.publicKey}
                   </code>
                   <button
-                    onClick={() => copyToClipboard(session.sessionId, 'public')}
-                    className="text-purple-600 hover:text-purple-700"
+                    onClick={() => copyToClipboard(keys.publicKey, 'public')}
+                    className="text-purple-600 hover:text-purple-700 flex-shrink-0"
                   >
                     {copiedKey === 'public' ? <FaCheckCircle /> : <FaCopy />}
                   </button>
                 </div>
               </div>
 
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600 mb-1">Permissões</p>
-                <div className="flex flex-wrap gap-1">
-                  {session.permissions.map(perm => (
-                    <span key={perm} className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">
-                      {perm}
-                    </span>
-                  ))}
-                  {session.isAdmin && (
-                    <span className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">
-                      admin
-                    </span>
-                  )}
+              <div className="p-4 bg-red-50 rounded-lg border-2 border-red-200">
+                <p className="text-sm text-red-600 mb-1 font-bold">⚠️ Chave Privada (NUNCA compartilhar!)</p>
+                <div className="flex items-center space-x-2">
+                  <code className="text-xs bg-white px-2 py-1 rounded border flex-1 break-all blur-sm hover:blur-none transition">
+                    {keys.privateKey}
+                  </code>
+                  <button
+                    onClick={() => copyToClipboard(keys.privateKey, 'private')}
+                    className="text-red-600 hover:text-red-700 flex-shrink-0"
+                  >
+                    {copiedKey === 'private' ? <FaCheckCircle /> : <FaCopy />}
+                  </button>
                 </div>
+                <p className="text-xs text-red-500 mt-2">
+                  Esta chave fica APENAS no seu navegador e nunca é enviada ao servidor
+                </p>
               </div>
             </div>
           </div>
@@ -247,10 +198,10 @@ export function CryptoAuthPage() {
           {/* Protected Request */}
           <div className="border border-gray-200 rounded-lg p-4">
             <h3 className="font-semibold text-gray-800 mb-2">Rota Protegida</h3>
-            <p className="text-sm text-gray-600 mb-3">Requer autenticação</p>
+            <p className="text-sm text-gray-600 mb-3">Requer assinatura criptográfica</p>
             <button
               onClick={handleProtectedRequest}
-              disabled={loading || !session}
+              disabled={loading || !keys}
               className="w-full bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 disabled:opacity-50 mb-3"
             >
               GET /api/crypto-auth/protected
@@ -261,77 +212,47 @@ export function CryptoAuthPage() {
               </pre>
             )}
           </div>
-
-          {/* Secure Data Request */}
-          <div className="border border-gray-200 rounded-lg p-4">
-            <h3 className="font-semibold text-gray-800 mb-2">Dados Seguros (POST)</h3>
-            <p className="text-sm text-gray-600 mb-3">Requisição assinada com body</p>
-            <button
-              onClick={handleSecureDataRequest}
-              disabled={loading || !session}
-              className="w-full bg-indigo-500 text-white px-4 py-2 rounded-lg hover:bg-indigo-600 disabled:opacity-50 mb-3"
-            >
-              POST /api/crypto-auth/secure-data
-            </button>
-            {secureDataResult && (
-              <pre className="text-xs bg-gray-900 text-green-400 p-3 rounded overflow-auto max-h-40">
-                {JSON.stringify(secureDataResult, null, 2)}
-              </pre>
-            )}
-          </div>
-
-          {/* Status Check */}
-          <div className="border border-gray-200 rounded-lg p-4">
-            <h3 className="font-semibold text-gray-800 mb-2">Status de Auth</h3>
-            <p className="text-sm text-gray-600 mb-3">Verifica headers enviados</p>
-            <button
-              onClick={handleStatusCheck}
-              disabled={loading || !session}
-              className="w-full bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 disabled:opacity-50 mb-3"
-            >
-              GET /api/crypto-auth/status
-            </button>
-            {statusResult && (
-              <pre className="text-xs bg-gray-900 text-green-400 p-3 rounded overflow-auto max-h-40">
-                {JSON.stringify(statusResult, null, 2)}
-              </pre>
-            )}
-          </div>
         </div>
       </div>
 
       {/* How it Works */}
       <div className="bg-blue-50 rounded-xl p-6">
-        <h2 className="text-xl font-bold text-blue-900 mb-4">🔍 Como Funciona</h2>
+        <h2 className="text-xl font-bold text-blue-900 mb-4">🔍 Como Funciona (SEM Sessões)</h2>
         <div className="space-y-3 text-sm text-blue-800">
           <div className="flex items-start">
             <FaCheckCircle className="text-blue-600 mt-1 mr-2 flex-shrink-0" />
             <div>
-              <strong>1. Geração de Chaves:</strong> Par de chaves Ed25519 gerado no cliente (pública + privada)
+              <strong>1. Geração de Chaves:</strong> Par de chaves Ed25519 gerado LOCALMENTE no navegador
             </div>
           </div>
           <div className="flex items-start">
             <FaCheckCircle className="text-blue-600 mt-1 mr-2 flex-shrink-0" />
             <div>
-              <strong>2. Registro de Sessão:</strong> Chave pública enviada ao servidor via POST /api/auth/session/init
+              <strong>2. Chave Privada:</strong> NUNCA sai do navegador, armazenada em localStorage
             </div>
           </div>
           <div className="flex items-start">
             <FaCheckCircle className="text-blue-600 mt-1 mr-2 flex-shrink-0" />
             <div>
-              <strong>3. Assinatura:</strong> Cada requisição é assinada com: sessionId + timestamp + nonce + mensagem
+              <strong>3. Assinatura:</strong> Cada requisição é assinada: publicKey + timestamp + nonce + mensagem
             </div>
           </div>
           <div className="flex items-start">
             <FaCheckCircle className="text-blue-600 mt-1 mr-2 flex-shrink-0" />
             <div>
-              <strong>4. Validação:</strong> Servidor verifica assinatura usando chave pública armazenada
+              <strong>4. Validação:</strong> Servidor valida assinatura usando a chave pública recebida
             </div>
           </div>
           <div className="flex items-start">
             <FaCheckCircle className="text-blue-600 mt-1 mr-2 flex-shrink-0" />
             <div>
-              <strong>5. Headers Enviados:</strong> x-session-id, x-timestamp, x-nonce, x-signature
+              <strong>5. Headers Enviados:</strong> x-public-key, x-timestamp, x-nonce, x-signature
+            </div>
+          </div>
+          <div className="flex items-start">
+            <FaCheckCircle className="text-blue-600 mt-1 mr-2 flex-shrink-0" />
+            <div>
+              <strong>6. Sem Sessões:</strong> Servidor NÃO armazena nada, apenas valida assinaturas
             </div>
           </div>
         </div>

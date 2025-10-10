@@ -1,27 +1,27 @@
 /**
  * Cliente de Autenticação Criptográfica
- * Gerencia autenticação no lado do cliente
+ * Sistema baseado em assinatura Ed25519 SEM sessões no servidor
+ *
+ * Funcionamento:
+ * 1. Cliente gera par de chaves Ed25519 localmente
+ * 2. Chave privada NUNCA sai do navegador
+ * 3. Cada requisição é assinada automaticamente
+ * 4. Servidor valida assinatura usando chave pública recebida
  */
 
 import { ed25519 } from '@noble/curves/ed25519'
 import { sha256 } from '@noble/hashes/sha256'
 import { bytesToHex, hexToBytes } from '@noble/hashes/utils'
 
-export interface SessionInfo {
-  sessionId: string
+export interface KeyPair {
   publicKey: string
   privateKey: string
-  isAdmin: boolean
-  permissions: string[]
   createdAt: Date
-  lastUsed: Date
 }
 
 export interface AuthConfig {
-  apiBaseUrl?: string
   storage?: 'localStorage' | 'sessionStorage' | 'memory'
   autoInit?: boolean
-  sessionTimeout?: number
 }
 
 export interface SignedRequestOptions extends RequestInit {
@@ -29,16 +29,15 @@ export interface SignedRequestOptions extends RequestInit {
 }
 
 export class CryptoAuthClient {
-  private session: SessionInfo | null = null
+  private keys: KeyPair | null = null
   private config: AuthConfig
   private storage: Storage | Map<string, string>
+  private readonly STORAGE_KEY = 'fluxstack_crypto_keys'
 
   constructor(config: AuthConfig = {}) {
     this.config = {
-      apiBaseUrl: '',
       storage: 'localStorage',
       autoInit: true,
-      sessionTimeout: 1800000, // 30 minutos
       ...config
     }
 
@@ -58,75 +57,43 @@ export class CryptoAuthClient {
   }
 
   /**
-   * Inicializar sessão
+   * Inicializar (gerar ou carregar chaves)
    */
-  async initialize(): Promise<SessionInfo> {
-    // Tentar carregar sessão existente
-    const existingSession = this.loadSession()
-    if (existingSession && this.isSessionValid(existingSession)) {
-      this.session = existingSession
-      return existingSession
+  initialize(): KeyPair {
+    // Tentar carregar chaves existentes
+    const existingKeys = this.loadKeys()
+    if (existingKeys) {
+      this.keys = existingKeys
+      return existingKeys
     }
 
-    // Criar nova sessão
-    return this.createNewSession()
+    // Criar novo par de chaves
+    return this.createNewKeys()
   }
 
   /**
-   * Criar nova sessão
+   * Criar novo par de chaves
+   * NUNCA envia chave privada ao servidor!
    */
-  async createNewSession(): Promise<SessionInfo> {
-    try {
-      // Gerar par de chaves
-      const privateKey = ed25519.utils.randomPrivateKey()
-      const publicKey = ed25519.getPublicKey(privateKey)
-      
-      const sessionId = bytesToHex(publicKey)
-      const privateKeyHex = bytesToHex(privateKey)
+  createNewKeys(): KeyPair {
+    // Gerar par de chaves Ed25519
+    const privateKey = ed25519.utils.randomPrivateKey()
+    const publicKey = ed25519.getPublicKey(privateKey)
 
-      // Registrar sessão no servidor
-      const response = await fetch(`${this.config.apiBaseUrl}/api/auth/session/init`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          publicKey: sessionId
-        })
-      })
-
-      if (!response.ok) {
-        throw new Error(`Erro ao inicializar sessão: ${response.statusText}`)
-      }
-
-      const result = await response.json()
-      if (!result.success) {
-        throw new Error(result.error || 'Erro desconhecido ao inicializar sessão')
-      }
-
-      // Criar objeto de sessão
-      const session: SessionInfo = {
-        sessionId,
-        publicKey: sessionId,
-        privateKey: privateKeyHex,
-        isAdmin: result.user?.isAdmin || false,
-        permissions: result.user?.permissions || ['read'],
-        createdAt: new Date(),
-        lastUsed: new Date()
-      }
-
-      this.session = session
-      this.saveSession(session)
-
-      return session
-    } catch (error) {
-      console.error('Erro ao criar nova sessão:', error)
-      throw error
+    const keys: KeyPair = {
+      publicKey: bytesToHex(publicKey),
+      privateKey: bytesToHex(privateKey),
+      createdAt: new Date()
     }
+
+    this.keys = keys
+    this.saveKeys(keys)
+
+    return keys
   }
 
   /**
-   * Fazer requisição autenticada
+   * Fazer requisição autenticada com assinatura
    */
   async fetch(url: string, options: SignedRequestOptions = {}): Promise<Response> {
     const { skipAuth = false, ...fetchOptions } = options
@@ -135,32 +102,29 @@ export class CryptoAuthClient {
       return fetch(url, fetchOptions)
     }
 
-    if (!this.session) {
-      await this.initialize()
+    if (!this.keys) {
+      this.initialize()
     }
 
-    if (!this.session) {
-      throw new Error('Sessão não inicializada')
+    if (!this.keys) {
+      throw new Error('Chaves não inicializadas')
     }
 
-    // Preparar headers de autenticação
+    // Preparar dados de autenticação
     const timestamp = Date.now()
     const nonce = this.generateNonce()
     const message = this.buildMessage(fetchOptions.method || 'GET', url, fetchOptions.body)
     const signature = this.signMessage(message, timestamp, nonce)
 
+    // Adicionar headers de autenticação
     const headers = {
       'Content-Type': 'application/json',
       ...fetchOptions.headers,
-      'x-session-id': this.session.sessionId,
+      'x-public-key': this.keys.publicKey,
       'x-timestamp': timestamp.toString(),
       'x-nonce': nonce,
       'x-signature': signature
     }
-
-    // Atualizar último uso
-    this.session.lastUsed = new Date()
-    this.saveSession(this.session)
 
     return fetch(url, {
       ...fetchOptions,
@@ -169,48 +133,28 @@ export class CryptoAuthClient {
   }
 
   /**
-   * Obter informações da sessão atual
+   * Obter chaves atuais
    */
-  getSession(): SessionInfo | null {
-    return this.session
+  getKeys(): KeyPair | null {
+    return this.keys
   }
 
   /**
-   * Verificar se está autenticado
+   * Verificar se tem chaves
    */
-  isAuthenticated(): boolean {
-    return this.session !== null && this.isSessionValid(this.session)
+  isInitialized(): boolean {
+    return this.keys !== null
   }
 
   /**
-   * Verificar se é admin
+   * Limpar chaves (logout)
    */
-  isAdmin(): boolean {
-    return this.session?.isAdmin || false
-  }
-
-  /**
-   * Obter permissões
-   */
-  getPermissions(): string[] {
-    return this.session?.permissions || []
-  }
-
-  /**
-   * Fazer logout
-   */
-  async logout(): Promise<void> {
-    if (this.session) {
-      try {
-        await this.fetch(`${this.config.apiBaseUrl}/api/auth/session/logout`, {
-          method: 'POST'
-        })
-      } catch (error) {
-        console.warn('Erro ao fazer logout no servidor:', error)
-      }
-
-      this.session = null
-      this.clearSession()
+  clearKeys(): void {
+    this.keys = null
+    if (this.storage instanceof Map) {
+      this.storage.delete(this.STORAGE_KEY)
+    } else {
+      this.storage.removeItem(this.STORAGE_KEY)
     }
   }
 
@@ -218,25 +162,26 @@ export class CryptoAuthClient {
    * Assinar mensagem
    */
   private signMessage(message: string, timestamp: number, nonce: string): string {
-    if (!this.session) {
-      throw new Error('Sessão não inicializada')
+    if (!this.keys) {
+      throw new Error('Chaves não inicializadas')
     }
 
-    const fullMessage = `${this.session.sessionId}:${timestamp}:${nonce}:${message}`
+    // Construir mensagem completa: publicKey:timestamp:nonce:message
+    const fullMessage = `${this.keys.publicKey}:${timestamp}:${nonce}:${message}`
     const messageHash = sha256(new TextEncoder().encode(fullMessage))
-    const privateKeyBytes = hexToBytes(this.session.privateKey)
+
+    const privateKeyBytes = hexToBytes(this.keys.privateKey)
     const signature = ed25519.sign(messageHash, privateKeyBytes)
-    
+
     return bytesToHex(signature)
   }
 
   /**
    * Construir mensagem para assinatura
    */
-  private buildMessage(method: string, url: string, body?: any): string {
-    const urlObj = new URL(url, window.location.origin)
-    let message = `${method}:${urlObj.pathname}`
-    
+  private buildMessage(method: string, url: string, body?: BodyInit | null): string {
+    let message = `${method}:${url}`
+
     if (body) {
       if (typeof body === 'string') {
         message += `:${body}`
@@ -252,74 +197,59 @@ export class CryptoAuthClient {
    * Gerar nonce aleatório
    */
   private generateNonce(): string {
-    const array = new Uint8Array(16)
-    crypto.getRandomValues(array)
-    return bytesToHex(array)
+    const bytes = new Uint8Array(16)
+    crypto.getRandomValues(bytes)
+    return bytesToHex(bytes)
   }
 
   /**
-   * Verificar se sessão é válida
+   * Carregar chaves do storage
    */
-  private isSessionValid(session: SessionInfo): boolean {
-    const now = Date.now()
-    const sessionAge = now - session.lastUsed.getTime()
-    return sessionAge < (this.config.sessionTimeout || 1800000)
-  }
-
-  /**
-   * Salvar sessão no storage
-   */
-  private saveSession(session: SessionInfo): void {
-    const sessionData = JSON.stringify({
-      ...session,
-      createdAt: session.createdAt.toISOString(),
-      lastUsed: session.lastUsed.toISOString()
-    })
-
-    if (this.storage instanceof Map) {
-      this.storage.set('crypto-auth-session', sessionData)
-    } else {
-      this.storage.setItem('crypto-auth-session', sessionData)
-    }
-  }
-
-  /**
-   * Carregar sessão do storage
-   */
-  private loadSession(): SessionInfo | null {
+  private loadKeys(): KeyPair | null {
     try {
-      let sessionData: string | null
+      let data: string | null
 
       if (this.storage instanceof Map) {
-        sessionData = this.storage.get('crypto-auth-session') || null
+        data = this.storage.get(this.STORAGE_KEY) || null
       } else {
-        sessionData = this.storage.getItem('crypto-auth-session')
+        data = this.storage.getItem(this.STORAGE_KEY)
       }
 
-      if (!sessionData) {
+      if (!data) {
         return null
       }
 
-      const parsed = JSON.parse(sessionData)
+      const parsed = JSON.parse(data)
+
       return {
-        ...parsed,
-        createdAt: new Date(parsed.createdAt),
-        lastUsed: new Date(parsed.lastUsed)
+        publicKey: parsed.publicKey,
+        privateKey: parsed.privateKey,
+        createdAt: new Date(parsed.createdAt)
       }
     } catch (error) {
-      console.warn('Erro ao carregar sessão:', error)
+      console.error('Erro ao carregar chaves:', error)
       return null
     }
   }
 
   /**
-   * Limpar sessão do storage
+   * Salvar chaves no storage
    */
-  private clearSession(): void {
-    if (this.storage instanceof Map) {
-      this.storage.delete('crypto-auth-session')
-    } else {
-      this.storage.removeItem('crypto-auth-session')
+  private saveKeys(keys: KeyPair): void {
+    try {
+      const data = JSON.stringify({
+        publicKey: keys.publicKey,
+        privateKey: keys.privateKey,
+        createdAt: keys.createdAt.toISOString()
+      })
+
+      if (this.storage instanceof Map) {
+        this.storage.set(this.STORAGE_KEY, data)
+      } else {
+        this.storage.setItem(this.STORAGE_KEY, data)
+      }
+    } catch (error) {
+      console.error('Erro ao salvar chaves:', error)
     }
   }
 }

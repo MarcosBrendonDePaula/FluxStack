@@ -7,6 +7,7 @@ import { helpers } from "@/core/utils/env"
 import { serverConfig } from "@/config/server.config"
 import { appConfig } from "@/config/app.config"
 import { loggerConfig } from "@/config/logger.config"
+import cryptoAuthPlugin from "@/plugins/crypto-auth"
 import "./live/register-components"
 
 // Startup info moved to DEBUG level (set LOG_LEVEL=debug to see details)
@@ -49,6 +50,9 @@ const app = new FluxStackFramework({
 
 
 // Usar plugins de infraestrutura primeiro (Logger é core, não é plugin)
+
+// Registrar plugin de autenticação ANTES dos outros plugins
+app.use(cryptoAuthPlugin)
 
 // Usar plugins condicionalmente baseado no ambiente
 if (isDevelopment()) {

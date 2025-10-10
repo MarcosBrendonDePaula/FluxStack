@@ -469,6 +469,16 @@ export class FluxStackFramework {
         }
       }
 
+      // Mount plugin routes if they have a plugin property
+      for (const pluginName of loadOrder) {
+        const plugin = this.pluginRegistry.get(pluginName)!
+
+        if ((plugin as any).plugin) {
+          this.app.use((plugin as any).plugin)
+          logger.debug(`Plugin '${pluginName}' routes mounted`)
+        }
+      }
+
       // Call onServerStart hooks
       for (const pluginName of loadOrder) {
         const plugin = this.pluginRegistry.get(pluginName)!
