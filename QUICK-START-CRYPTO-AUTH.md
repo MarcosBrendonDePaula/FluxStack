@@ -4,20 +4,20 @@
 
 ### 🚀 Opção 1: CLI (Recomendado)
 
-Use o comando `make:protected-route` para gerar rotas automaticamente:
+Use o comando `crypto-auth:make:route` para gerar rotas automaticamente:
 
 ```bash
 # Rota com autenticação obrigatória (padrão)
-bun flux make:protected-route users
+bun flux crypto-auth:make:route users
 
 # Rota apenas para admins
-bun flux make:protected-route admin-panel --auth admin
+bun flux crypto-auth:make:route admin-panel --auth admin
 
 # Rota com autenticação opcional
-bun flux make:protected-route blog --auth optional
+bun flux crypto-auth:make:route blog --auth optional
 
 # Rota pública (sem auth)
-bun flux make:protected-route public-api --auth public
+bun flux crypto-auth:make:route public-api --auth public
 ```
 
 O comando cria automaticamente:

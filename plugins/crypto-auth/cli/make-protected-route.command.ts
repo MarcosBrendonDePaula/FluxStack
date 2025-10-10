@@ -11,7 +11,7 @@ const ROUTE_TEMPLATES = {
   required: (name: string, pascalName: string) => `/**
  * ${pascalName} Routes
  * 🔒 Autenticação obrigatória
- * Auto-gerado pelo comando: flux make:protected-route ${name} --auth required
+ * Auto-gerado pelo comando: flux crypto-auth:make:route ${name} --auth required
  */
 
 import { Elysia, t } from 'elysia'
@@ -105,7 +105,7 @@ export const ${name}Routes = new Elysia({ prefix: '/${name}' })
   admin: (name: string, pascalName: string) => `/**
  * ${pascalName} Routes
  * 👑 Apenas administradores
- * Auto-gerado pelo comando: flux make:protected-route ${name} --auth admin
+ * Auto-gerado pelo comando: flux crypto-auth:make:route ${name} --auth admin
  */
 
 import { Elysia, t } from 'elysia'
@@ -165,7 +165,7 @@ export const ${name}Routes = new Elysia({ prefix: '/${name}' })
   optional: (name: string, pascalName: string) => `/**
  * ${pascalName} Routes
  * 🌓 Autenticação opcional
- * Auto-gerado pelo comando: flux make:protected-route ${name} --auth optional
+ * Auto-gerado pelo comando: flux crypto-auth:make:route ${name} --auth optional
  */
 
 import { Elysia } from 'elysia'
@@ -212,7 +212,7 @@ export const ${name}Routes = new Elysia({ prefix: '/${name}' })
   public: (name: string, pascalName: string) => `/**
  * ${pascalName} Routes
  * 🌐 Totalmente público
- * Auto-gerado pelo comando: flux make:protected-route ${name} --auth public
+ * Auto-gerado pelo comando: flux crypto-auth:make:route ${name} --auth public
  */
 
 import { Elysia } from 'elysia'
@@ -247,10 +247,10 @@ function toPascalCase(str: string): string {
 }
 
 export const makeProtectedRouteCommand: CliCommand = {
-  name: 'make:protected-route',
+  name: 'crypto-auth:make:route',
   description: 'Gera um arquivo de rotas com proteção crypto-auth',
   category: 'Crypto Auth',
-  aliases: ['make:route', 'generate:route'],
+  aliases: ['crypto-auth:generate:route'],
 
   arguments: [
     {
@@ -287,10 +287,10 @@ export const makeProtectedRouteCommand: CliCommand = {
   ],
 
   examples: [
-    'flux make:protected-route posts',
-    'flux make:protected-route admin --auth admin',
-    'flux make:protected-route feed --auth optional',
-    'flux make:protected-route articles --auth required --force'
+    'flux crypto-auth:make:route posts',
+    'flux crypto-auth:make:route admin --auth admin',
+    'flux crypto-auth:make:route feed --auth optional',
+    'flux crypto-auth:make:route articles --auth required --force'
   ],
 
   handler: async (args, options, context) => {
