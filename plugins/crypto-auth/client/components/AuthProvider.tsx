@@ -3,7 +3,7 @@
  * Context Provider React para gerenciar chaves criptográficas
  */
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import React, { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { CryptoAuthClient, type KeyPair, type AuthConfig } from '../CryptoAuthClient'
 
 export interface AuthContextValue {
