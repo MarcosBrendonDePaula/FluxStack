@@ -1,6 +1,6 @@
 /**
- * Middleware de Autenticação
- * Intercepta requisições e valida autenticação
+ * Middleware de Autenticação Simplificado
+ * Apenas valida autenticação - routing é feito pelos middlewares Elysia
  */
 
 import type { RequestContext } from '../../../core/plugins/types'
@@ -14,14 +14,11 @@ export interface Logger {
 }
 
 export interface AuthMiddlewareConfig {
-    protectedRoutes: string[]
-    publicRoutes: string[]
     logger?: Logger
 }
 
 export interface AuthMiddlewareResult {
     success: boolean
-    required: boolean
     error?: string
     user?: {
         publicKey: string
@@ -32,37 +29,19 @@ export interface AuthMiddlewareResult {
 
 export class AuthMiddleware {
     private authService: CryptoAuthService
-    private config: AuthMiddlewareConfig
     private logger?: Logger
 
-    constructor(authService: CryptoAuthService, config: AuthMiddlewareConfig) {
+    constructor(authService: CryptoAuthService, config: AuthMiddlewareConfig = {}) {
         this.authService = authService
-        this.config = config
         this.logger = config.logger
     }
 
     /**
-     * Autenticar requisição
+     * Autenticar requisição (sem path matching - é responsabilidade dos middlewares Elysia)
      */
     async authenticate(context: RequestContext): Promise<AuthMiddlewareResult> {
         const path = context.path
         const method = context.method
-
-        // Verificar se a rota é pública
-        if (this.isPublicRoute(path)) {
-            return {
-                success: true,
-                required: false
-            }
-        }
-
-        // Verificar se a rota requer autenticação
-        if (!this.isProtectedRoute(path)) {
-            return {
-                success: true,
-                required: false
-            }
-        }
 
         // Extrair headers de autenticação
         const authHeaders = this.extractAuthHeaders(context.headers)
@@ -75,7 +54,6 @@ export class AuthMiddleware {
 
             return {
                 success: false,
-                required: true,
                 error: "Headers de autenticação obrigatórios"
             }
         }
@@ -100,7 +78,6 @@ export class AuthMiddleware {
 
                 return {
                     success: false,
-                    required: true,
                     error: validationResult.error
                 }
             }
@@ -114,7 +91,6 @@ export class AuthMiddleware {
 
             return {
                 success: true,
-                required: true,
                 user: validationResult.user
             }
         } catch (error) {
@@ -126,36 +102,9 @@ export class AuthMiddleware {
 
             return {
                 success: false,
-                required: true,
                 error: "Erro interno de autenticação"
             }
         }
-    }
-
-    /**
-     * Verificar se a rota é pública
-     */
-    private isPublicRoute(path: string): boolean {
-        return this.config.publicRoutes.some(route => {
-            if (route.endsWith('/*')) {
-                const prefix = route.slice(0, -2)
-                return path.startsWith(prefix)
-            }
-            return path === route
-        })
-    }
-
-    /**
-     * Verificar se a rota é protegida
-     */
-    private isProtectedRoute(path: string): boolean {
-        return this.config.protectedRoutes.some(route => {
-            if (route.endsWith('/*')) {
-                const prefix = route.slice(0, -2)
-                return path.startsWith(prefix)
-            }
-            return path === route
-        })
     }
 
     /**
@@ -206,7 +155,7 @@ export class AuthMiddleware {
     }
 
     /**
-     * Verificar se usuário tem permissão para acessar rota
+     * Verificar se usuário tem permissão
      */
     hasPermission(user: any, requiredPermission: string): boolean {
         if (!user || !user.permissions) {
@@ -224,13 +173,9 @@ export class AuthMiddleware {
     }
 
     /**
-     * Obter estatísticas do middleware
+     * Obter estatísticas do serviço de autenticação
      */
     getStats() {
-        return {
-            protectedRoutes: this.config.protectedRoutes.length,
-            publicRoutes: this.config.publicRoutes.length,
-            authService: this.authService.getStats()
-        }
+        return this.authService.getStats()
     }
 }

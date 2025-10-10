@@ -39,16 +39,6 @@ export const cryptoAuthPlugin: Plugin = {
         items: { type: "string" },
         description: "Chaves públicas dos administradores (hex 64 caracteres)"
       },
-      protectedRoutes: {
-        type: "array",
-        items: { type: "string" },
-        description: "Rotas que requerem autenticação via assinatura"
-      },
-      publicRoutes: {
-        type: "array",
-        items: { type: "string" },
-        description: "Rotas públicas (não requerem autenticação)"
-      },
       enableMetrics: {
         type: "boolean",
         description: "Habilitar métricas de autenticação"
@@ -61,8 +51,6 @@ export const cryptoAuthPlugin: Plugin = {
     enabled: true,
     maxTimeDrift: 300000, // 5 minutos
     adminKeys: [],
-    protectedRoutes: ["/api/admin/*", "/api/crypto-auth/protected", "/api/crypto-auth/admin"],
-    publicRoutes: ["/api/crypto-auth/public", "/api/health", "/api/docs", "/swagger"],
     enableMetrics: true
   },
 
@@ -84,10 +72,8 @@ export const cryptoAuthPlugin: Plugin = {
       logger: context.logger
     })
 
-    // Inicializar middleware de autenticação
+    // Inicializar middleware de autenticação (sem path matching)
     const authMiddleware = new AuthMiddleware(authService, {
-      protectedRoutes: config.protectedRoutes,
-      publicRoutes: config.publicRoutes,
       logger: context.logger
     })
 
@@ -95,21 +81,21 @@ export const cryptoAuthPlugin: Plugin = {
     ;(global as any).cryptoAuthService = authService
     ;(global as any).cryptoAuthMiddleware = authMiddleware
 
-    context.logger.info("Crypto Auth plugin inicializado com sucesso", {
+    context.logger.info("✅ Crypto Auth plugin inicializado", {
+      mode: 'middleware-based',
       maxTimeDrift: config.maxTimeDrift,
       adminKeys: config.adminKeys.length,
-      protectedRoutes: config.protectedRoutes.length,
-      publicRoutes: config.publicRoutes.length
+      usage: 'Use cryptoAuthRequired(), cryptoAuthAdmin(), cryptoAuthOptional() nas rotas'
     })
   },
 
-  // Rotas removidas - autenticação é feita via middleware em cada requisição
   // @ts-ignore - plugin property não está no tipo oficial mas é suportada
   plugin: new Elysia({ prefix: "/api/auth" })
     .get("/info", () => ({
       name: "FluxStack Crypto Auth",
       description: "Autenticação baseada em assinatura Ed25519",
       version: "1.0.0",
+      mode: "middleware-based",
       how_it_works: {
         step1: "Cliente gera par de chaves Ed25519 (pública + privada) localmente",
         step2: "Cliente armazena chave privada no navegador (NUNCA envia ao servidor)",
@@ -123,40 +109,14 @@ export const cryptoAuthPlugin: Plugin = {
         "x-nonce": "Nonce aleatório (previne replay)",
         "x-signature": "Assinatura Ed25519 da mensagem (hex)"
       },
-      admin_keys: (global as any).cryptoAuthService?.getStats().adminKeys || 0
+      admin_keys: (global as any).cryptoAuthService?.getStats().adminKeys || 0,
+      usage: {
+        required: "import { cryptoAuthRequired } from '@/plugins/crypto-auth/server'",
+        admin: "import { cryptoAuthAdmin } from '@/plugins/crypto-auth/server'",
+        optional: "import { cryptoAuthOptional } from '@/plugins/crypto-auth/server'",
+        permissions: "import { cryptoAuthPermissions } from '@/plugins/crypto-auth/server'"
+      }
     })),
-
-  onRequest: async (context: RequestContext) => {
-    const authMiddleware = (global as any).cryptoAuthMiddleware as AuthMiddleware
-    if (!authMiddleware) return
-
-    // Aplicar middleware de autenticação
-    const authResult = await authMiddleware.authenticate(context)
-
-    if (!authResult.success && authResult.required) {
-      // Marcar como handled e retornar erro
-      ;(context as any).handled = true
-      ;(context as any).authError = authResult.error
-      ;(context as any).response = new Response(
-        JSON.stringify({
-          success: false,
-          error: authResult.error,
-          code: 'AUTHENTICATION_FAILED'
-        }),
-        {
-          status: 401,
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        }
-      )
-    } else if (authResult.success && authResult.user) {
-      // Adicionar usuário ao request para acesso nas rotas
-      ;(context.request as any).user = authResult.user
-      // Também adicionar ao contexto para o onResponse hook
-      ;(context as any).user = authResult.user
-    }
-  },
 
   onResponse: async (context: ResponseContext) => {
     if (!pluginConfig || !pluginConfig.enableMetrics) return
@@ -184,12 +144,13 @@ export const cryptoAuthPlugin: Plugin = {
 
   onServerStart: async (context: PluginContext) => {
     const config = getPluginConfig(context)
-    
+
     if (config.enabled) {
-      context.logger.info("Crypto Auth plugin ativo", {
-        protectedRoutes: config.protectedRoutes.length,
-        publicRoutes: config.publicRoutes.length,
-        adminKeys: config.adminKeys.length
+      context.logger.info("✅ Crypto Auth plugin ativo", {
+        mode: 'middleware-based',
+        adminKeys: config.adminKeys.length,
+        maxTimeDrift: `${config.maxTimeDrift}ms`,
+        usage: 'Use cryptoAuthRequired(), cryptoAuthAdmin() nas rotas'
       })
     }
   }
