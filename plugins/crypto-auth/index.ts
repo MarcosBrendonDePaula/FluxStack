@@ -10,8 +10,11 @@ import { Elysia, t } from "elysia"
 import { CryptoAuthService, AuthMiddleware } from "./server"
 import { makeProtectedRouteCommand } from "./cli/make-protected-route.command"
 
+// ✅ Plugin carrega sua própria configuração
+import { cryptoAuthConfig } from "../../config/crypto-auth.config"
+
 // Store config globally for hooks to access
-let pluginConfig: any = null
+let pluginConfig: any = cryptoAuthConfig
 
 export const cryptoAuthPlugin: Plugin = {
   name: "crypto-auth",
@@ -61,22 +64,16 @@ export const cryptoAuthPlugin: Plugin = {
   ],
 
   setup: async (context: PluginContext) => {
-    // ✅ Usar config declarativo do FluxStack
-    const { cryptoAuthConfig } = await import('@/config')
-    const config = cryptoAuthConfig
-
-    // Store config globally for hooks
-    pluginConfig = config
-
-    if (!config.enabled) {
+    // ✅ Plugin usa sua própria configuração (já importada no topo)
+    if (!cryptoAuthConfig.enabled) {
       context.logger.info('Crypto Auth plugin desabilitado por configuração')
       return
     }
 
     // Inicializar serviço de autenticação (SEM SESSÕES)
     const authService = new CryptoAuthService({
-      maxTimeDrift: config.maxTimeDrift,
-      adminKeys: config.adminKeys,
+      maxTimeDrift: cryptoAuthConfig.maxTimeDrift,
+      adminKeys: cryptoAuthConfig.adminKeys,
       logger: context.logger
     })
 
@@ -91,8 +88,8 @@ export const cryptoAuthPlugin: Plugin = {
 
     context.logger.info("✅ Crypto Auth plugin inicializado", {
       mode: 'middleware-based',
-      maxTimeDrift: config.maxTimeDrift,
-      adminKeys: config.adminKeys.length,
+      maxTimeDrift: cryptoAuthConfig.maxTimeDrift,
+      adminKeys: cryptoAuthConfig.adminKeys.length,
       usage: 'Use cryptoAuthRequired(), cryptoAuthAdmin(), cryptoAuthOptional() nas rotas'
     })
   },
@@ -127,7 +124,7 @@ export const cryptoAuthPlugin: Plugin = {
     })),
 
   onResponse: async (context: ResponseContext) => {
-    if (!pluginConfig || !pluginConfig.enableMetrics) return
+    if (!cryptoAuthConfig.enableMetrics) return
 
     // Log métricas de autenticação
     const user = (context as any).user
@@ -151,8 +148,6 @@ export const cryptoAuthPlugin: Plugin = {
   },
 
   onServerStart: async (context: PluginContext) => {
-    const { cryptoAuthConfig } = await import('@/config')
-
     if (cryptoAuthConfig.enabled) {
       context.logger.info("✅ Crypto Auth plugin ativo", {
         mode: 'middleware-based',

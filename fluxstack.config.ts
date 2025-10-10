@@ -81,15 +81,9 @@ export const config: FluxStackConfig = {
         cacheMaxAge: env.get('STATIC_CACHE_MAX_AGE', 31536000), // 1 year
         enableUploads: env.get('STATIC_ENABLE_UPLOADS', true),
         enablePublic: env.get('STATIC_ENABLE_PUBLIC', true)
-      },
-      'crypto-auth': {
-        enabled: env.get('CRYPTO_AUTH_ENABLED', true),
-        maxTimeDrift: env.get('CRYPTO_AUTH_MAX_TIME_DRIFT', 300000), // 5 minutos
-        adminKeys: env.get('CRYPTO_AUTH_ADMIN_KEYS', []),
-        enableMetrics: env.get('CRYPTO_AUTH_ENABLE_METRICS', true)
-        // ✅ Não precisa mais de protectedRoutes/publicRoutes
-        // Use cryptoAuthRequired(), cryptoAuthAdmin() nas rotas!
       }
+      // ✅ crypto-auth agora gerencia sua própria configuração
+      // Ver: config/crypto-auth.config.ts
     }
   },
 
