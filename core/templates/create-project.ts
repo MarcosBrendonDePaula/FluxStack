@@ -88,6 +88,13 @@ export class ProjectCreator {
       join(rootDir, 'config'),
       join(this.targetDir, 'config')
     )
+
+    // Copy plugins
+    await this.copyDirectory(
+      join(rootDir, 'plugins'),
+      join(this.targetDir, 'plugins')
+    )
+
   }
 
   private async copyDirectory(src: string, dest: string, exclude: string[] = []) {
