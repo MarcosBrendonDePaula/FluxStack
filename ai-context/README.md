@@ -1,88 +1,81 @@
-# 🤖 AI Context - FluxStack Documentation
+# AI Context – FluxStack Documentation
 
-> **Documentação especializada para LLMs trabalharem eficientemente com FluxStack**
+Guia otimizado para assistentes compreenderem rapidamente o FluxStack, sua arquitetura e o fluxo de trabalho recomendado.
 
-## 🎯 **Início Rápido**
+## Entrada Rápida
 
-👉 **[00-QUICK-START.md](./00-QUICK-START.md)** - Entenda tudo em 2 minutos!
+- [00-QUICK-START.md](./00-QUICK-START.md): visão geral em poucos minutos com comandos, estrutura e regras essenciais.
 
-## 📚 **Estrutura da Documentação**
+## Estrutura Atual
 
-### ⚡ **[00-QUICK-START.md](./00-QUICK-START.md)**
-**Ponto de entrada ultra-rápido** - Comandos, estrutura, regras e navegação em 2 minutos
+### Projeto (`project/`)
+- [overview.md](./project/overview.md): estado atual, stack e componentes principais.
+- [architecture.md](./project/architecture.md): detalhes internos do framework.
+- [configuration.md](./project/configuration.md): sistema declarativo de configuração e variáveis.
+- [build-pipeline.md](./project/build-pipeline.md): bundler, optimizer, manifest e Docker.
 
-### 📊 **[project/](./project/)**
-**Visão geral e arquitetura do projeto**
-- [`overview.md`](./project/overview.md) - Estado atual, stack, funcionalidades
-- [`architecture.md`](./project/architecture.md) - Como o framework funciona
-- [`changelog.md`](./project/changelog.md) - Mudanças importantes v1.4→v1.5
+### Desenvolvimento (`development/`)
+- [patterns.md](./development/patterns.md): fluxo recomendado e boas práticas.
+- [eden-treaty-guide.md](./development/eden-treaty-guide.md): guia completo do Eden Treaty.
+- [plugins-guide.md](./development/plugins-guide.md): uso do sistema de plugins end-to-end.
+- [live-components.md](./development/live-components.md): arquitetura do WebSocket e componentes ao vivo.
+- [monitoring.md](./development/monitoring.md): plugin de métricas e observabilidade.
 
-### 👨‍💻 **[development/](./development/)**
-**Padrões e guias de desenvolvimento**
-- [`patterns.md`](./development/patterns.md) - Padrões fundamentais e boas práticas
-- [`api-creation.md`](./development/api-creation.md) - Como criar APIs step-by-step
-- [`frontend-patterns.md`](./development/frontend-patterns.md) - Padrões React específicos
-- [`eden-treaty-guide.md`](./development/eden-treaty-guide.md) - 🔥 Guia Eden Treaty completo
+### Referência (`reference/`)
+- [environment-vars.md](./reference/environment-vars.md): mapeamento das variáveis e helpers.
+- [cli-commands.md](./reference/cli-commands.md): comandos `flux` e opções.
+- [config-api.md](./reference/config-api.md): rotas REST de configuração em runtime.
+- [troubleshooting.md](./reference/troubleshooting.md): diagnóstico e soluções rápidas.
 
-### 📚 **[reference/](./reference/)**
-**Referência técnica completa**
-- [`api-reference.md`](./reference/api-reference.md) - APIs do framework
-- [`cli-commands.md`](./reference/cli-commands.md) - Todos os comandos disponíveis
-- [`environment-vars.md`](./reference/environment-vars.md) - Variáveis de ambiente
-- [`troubleshooting.md`](./reference/troubleshooting.md) - Solução de problemas
+### Exemplos (`examples/`)
+- [crud-complete.md](./examples/crud-complete.md): CRUD completo end-to-end com Eden Treaty.
 
-### 💡 **[examples/](./examples/)**
-**Exemplos práticos e código real**
-- [`crud-complete.md`](./examples/crud-complete.md) - CRUD completo com Eden Treaty
-- [`plugin-creation.md`](./examples/plugin-creation.md) - Como criar plugins
-- [`testing-patterns.md`](./examples/testing-patterns.md) - Padrões de teste
+### Mudanças Recentes (`recent-changes/`)
+- [eden-treaty-refactor.md](./recent-changes/eden-treaty-refactor.md): remoção do wrapper e retorno da inferência.
+- [type-inference-fix.md](./recent-changes/type-inference-fix.md): lições aprendidas com tipos `unknown`.
 
-### 🔥 **[recent-changes/](./recent-changes/)**
-**Mudanças importantes e contexto recente**
-- [`eden-treaty-refactor.md`](./recent-changes/eden-treaty-refactor.md) - Refatoração completa
-- [`type-inference-fix.md`](./recent-changes/type-inference-fix.md) - Fix de inferência
-- [`monorepo-updates.md`](./recent-changes/monorepo-updates.md) - Atualizações estruturais
+## Como Navegar
 
-## 🎯 **Cenários de Uso Comum**
+| Cenário                        | Caminho sugerido                                                                  |
+|-------------------------------|-----------------------------------------------------------------------------------|
+| Primeira vez no projeto       | `00-QUICK-START.md` → `project/overview.md`                                       |
+| Entender arquitetura/config   | `project/architecture.md` → `project/configuration.md`                            |
+| Criar nova funcionalidade     | `development/patterns.md` → `examples/crud-complete.md`                          |
+| Trabalhar com Eden Treaty     | `development/eden-treaty-guide.md` → `recent-changes/eden-treaty-refactor.md`     |
+| Ajustar configuração/ambiente | `project/configuration.md` → `reference/environment-vars.md`                      |
+| Resolver problemas            | `reference/troubleshooting.md`                                                    |
 
-| Cenário | Documentos Recomendados |
-|---------|------------------------|
-| **🆕 Primeira vez** | [`00-QUICK-START.md`](./00-QUICK-START.md) → [`project/overview.md`](./project/overview.md) |
-| **🛠️ Criar funcionalidade** | [`development/patterns.md`](./development/patterns.md) + [`examples/crud-complete.md`](./examples/crud-complete.md) |
-| **🔧 Eden Treaty** | [`development/eden-treaty-guide.md`](./development/eden-treaty-guide.md) + [`recent-changes/eden-treaty-refactor.md`](./recent-changes/eden-treaty-refactor.md) |
-| **🐛 Debugar erro** | [`reference/troubleshooting.md`](./reference/troubleshooting.md) |
-| **🏗️ Arquitetura** | [`project/architecture.md`](./project/architecture.md) |
-| **📖 Referência** | [`reference/api-reference.md`](./reference/api-reference.md) |
+## Regras Essenciais
 
-## 🚨 **Regras Críticas**
+**Nunca**
+- Alterar código em `core/` (framework é read-only).
+- Reintroduzir wrappers para Eden Treaty (`apiCall()` ou similares).
+- Ignorar `response` schemas nas rotas.
 
-### ❌ **NUNCA FAZER**
-- Editar arquivos em `core/` (framework read-only)
-- Usar `apiCall()` wrapper (quebra type inference)
-- Criar types manuais para Eden Treaty
-- Ignorar response schemas nas rotas
+**Sempre**
+- Trabalhar dentro de `app/`.
+- Usar Eden Treaty nativo: `const { data, error } = await api.users.get()`.
+- Centralizar tipos compartilhados em `app/shared/`.
+- Validar alterações com `bun run dev` e os testes disponíveis.
 
-### ✅ **SEMPRE FAZER**
-- Trabalhar em `app/` (código da aplicação)
-- Usar Eden Treaty nativo: `const { data, error } = await api.users.get()`
-- Manter types compartilhados em `app/shared/`
-- Testar com `bun run dev`
+## Estado Atual (v1.5+)
 
-## 📊 **Estado Atual (v1.5+)**
+- Eden Treaty nativo com inferência completa.
+- Sistema declarativo de configuração (`fluxstack.config.ts` + `config/*.config.ts`).
+- Plugins core revisados (Vite, Swagger, arquivos estáticos, Live Components) e plugin externo `crypto-auth`.
+- Documentação alinhada com o código em outubro/2025.
 
-- **✅ Eden Treaty Nativo**: Type inference automática
-- **✅ Zero Tipos Unknown**: Inferência funcionando perfeitamente
-- **✅ Monorepo Estável**: Hot reload independente
-- **✅ Response Schemas**: API documentada automaticamente
-- **✅ Type Safety**: End-to-end sem declarações manuais
+## Atalhos de Suporte
 
-## 🆘 **Suporte Rápido**
-
-1. **Erro específico?** → [`reference/troubleshooting.md`](./reference/troubleshooting.md)
-2. **Como fazer X?** → [`development/patterns.md`](./development/patterns.md)
-3. **Eden Treaty?** → [`development/eden-treaty-guide.md`](./development/eden-treaty-guide.md)
-4. **Não entendo nada?** → [`00-QUICK-START.md`](./00-QUICK-START.md)
+1. Erros pontuais → `reference/troubleshooting.md`
+2. Fluxo de desenvolvimento → `development/patterns.md`
+3. Eden Treaty e tipos → `development/eden-treaty-guide.md`
+4. Configuração e ambientes → `project/configuration.md`
+5. CLI e automações → `reference/cli-commands.md`
+6. Live components/tempo real → `development/live-components.md`
+7. Observabilidade → `development/monitoring.md`
+8. Exemplo completo → `examples/crud-complete.md`
 
 ---
 
-**🎯 Objetivo**: Capacitar LLMs a trabalhar eficientemente com FluxStack, seguindo padrões estabelecidos e garantindo código de alta qualidade.
+Objetivo: manter assistentes alinhados com o estado real do FluxStack, garantindo respostas corretas e código consistente com os padrões do projeto.

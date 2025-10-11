@@ -1,213 +1,85 @@
-# 🚀 FluxStack - Visão Geral do Projeto
+# FluxStack – Visão Geral do Projeto (Outubro/2025)
 
-## 📋 **Resumo Executivo**
+## Resumo Executivo
+FluxStack é um gerador e runtime full-stack sobre o ecossistema Bun, composto por:
+- **Backend**: Elysia 1.4.x + TypeScript 5.8, com plugins de descoberta automática e middlewares prontos.
+- **Frontend**: React 19.1 + Vite 7.1 e Tailwind 4, com componentes demonstrativos e hooks integrados ao Eden Treaty.
+- **Infra**: CLI própria, pipeline de build otimizado, suporte a Docker e sistema declarativo de configuração.
+- **Autenticação opcional**: plugin externo `plugins/crypto-auth` com CLI, client e server próprios.
 
-**FluxStack** é um framework full-stack moderno que combina **Bun**, **Elysia.js**, **React 19** e **TypeScript** numa arquitetura monorepo unificada com **type-safety end-to-end automática** via Eden Treaty.
+O repositório serve tanto como template quanto como referência de integração completa (API + SPA + documentação).
 
-### 🎯 **Diferenciais**
-- **⚡ Performance**: Bun runtime (3x mais rápido que Node.js)
-- **🔒 Type Safety**: Inferência automática client↔server sem declarações manuais
-- **🔥 Hot Reload**: Backend e frontend independentes
-- **📖 Auto-docs**: Swagger UI gerado automaticamente
-- **🧪 Testing**: Suite completa com Vitest
-- **🐳 Deploy**: Docker otimizado incluído
+## Destaques da Versão 1.5
+- Eden Treaty nativo (sem wrappers) com inferência 100% funcional.
+- Sistema declarativo de configuração (`fluxstack.config.ts` + `config/*.config.ts`).
+- Plugins core revisados: Vite (dev proxy), Swagger, arquivos estáticos, Live Components, Monitoring (opt-in).
+- Exemplo prático de autenticação assinada por chaves (`plugins/crypto-auth`).
+- Oficina de live components/monitoramento exibida no app de exemplo.
 
-## 📊 **Estado Atual (Janeiro 2025)**
+## Stack Atual
+| Camada          | Tecnologia                                     |
+|-----------------|------------------------------------------------|
+| Runtime         | Bun >= 1.2.0                                   |
+| Backend         | Elysia ^1.4.6, TypeScript ^5.8.3               |
+| Frontend        | React ^19.1.0, Vite ^7.1.7, Tailwind ^4.1.13   |
+| Tooling         | Vitest ^3.2.4, ESLint ^9.30, Eden Treaty ^1.3  |
+| Observabilidade | Winston 3 + logger integrado, Monitoring plugin opcional |
 
-### ✅ **Sistema Estável**
-- **Zero erros TypeScript** (vs 200+ anteriormente)
-- **100% type inference** Eden Treaty funcionando
-- **Hot reload independente** backend/frontend
-- **Monorepo unificado** com uma instalação
-- **Response schemas** completos para documentação automática
+As versões estão definidas em `package.json` e bloqueadas em `bun.lock`.
 
-### 📈 **Estatísticas**
-- **Runtime**: Bun 1.1.34+ 
-- **Frontend**: React 19.1.0 + Vite 7.0.4
-- **Backend**: Elysia.js 1.3.7 + TypeScript 5.8.3
-- **Testing**: Vitest 3.2.4 + 100% taxa de sucesso
-- **Build**: Docker multi-stage otimizado
+## Arquitetura em Camadas
+1. **Core (`core/`)** – framework imutável:
+   - `framework/server.ts`: orquestra Elysia, plugins, lifecycle (`start/stop/listen`).
+   - `plugins/*`: registro, discovery, dependency manager e plugins built-in.
+   - `build/`: bundler + optimizer + geração de manifest/Docker.
+   - `cli/`: comandos `flux` (dev/build/create, generators, plugin deps).
+2. **Aplicação (`app/`)** – código editável:
+   - `server/`: controllers, routes, services, middlewares, live components.
+   - `client/`: React SPA com páginas demo e integração Eden Treaty.
+   - `shared/`: tipos comuns (User etc.).
+3. **Configuração (`config/`)**:
+   - Arquivos especializados (`server.config.ts`, `logger.config.ts`...) que usam o schema declarativo.
+4. **Plugins externos (`plugins/`)**:
+   - Ex.: `crypto-auth` com CLI, client e server integrados.
 
-## 🏗️ **Arquitetura Tecnológica**
-
-### **Backend Stack**
-```typescript
-// Runtime & Framework
-Bun 1.1.34+              // Runtime ultrarrápido
-Elysia.js 1.3.7          // Framework web performático
-TypeScript 5.8.3         // Type safety total
-
-// APIs & Documentação  
-Eden Treaty              // Type-safe client generation
-Swagger UI               // Documentação automática
-TypeBox                  // Validação runtime + compile-time
-```
-
-### **Frontend Stack**
-```typescript
-// UI & Build
-React 19.1.0             // UI library com Concurrent Features
-Vite 7.0.4               // Build tool + HMR ultrarrápido
-TypeScript 5.8.3         // Type safety client
-
-// Styling & State
-CSS Moderno              // Custom properties + Grid/Flexbox
-React Hooks Nativos      // useState, useEffect, etc.
-```
-
-### **DevTools & Testing**
-```typescript
-// Testing & Quality
-Vitest 3.2.4             // Test runner rápido
-JSDOM                    // DOM testing environment
-ESLint 9.30.1            // Code quality
-TypeScript Compiler      // Type checking
-
-// CI/CD & Deploy
-GitHub Actions           // Continuous integration
-Docker                   // Containerização
-Multi-stage builds       // Otimização de imagem
-```
-
-## 📁 **Estrutura do Projeto**
-
+## Estrutura do Projeto
 ```
 FluxStack/
-├── core/                    # 🔒 FRAMEWORK (read-only)
-│   ├── server/             # Framework Elysia + plugins
-│   ├── config/             # Sistema de configuração
-│   ├── types/              # Types do framework
-│   └── build/              # Sistema de build
-├── app/                     # 👨‍💻 CÓDIGO DA APLICAÇÃO
-│   ├── server/             # Backend (controllers, routes)
-│   │   ├── controllers/    # Lógica de negócio
-│   │   ├── routes/         # Endpoints da API
-│   │   └── app.ts          # Export do tipo para Eden Treaty
-│   ├── client/             # Frontend (React + Vite)
-│   │   ├── src/components/ # Componentes React
-│   │   ├── src/lib/        # Cliente Eden Treaty
-│   │   └── src/App.tsx     # Interface principal
-│   └── shared/             # Types compartilhados
-├── tests/                   # Testes do framework
-├── docs/                    # Documentação técnica
-└── ai-context/              # 📖 Esta documentação
+├─ core/               # framework (não alterar)
+├─ app/                # aplicação exemplo
+│  ├─ server/          # API Elysia + live components
+│  ├─ client/          # React 19 + Vite
+│  └─ shared/          # tipos compartilhados
+├─ config/             # camadas declarativas
+├─ plugins/            # plugins opcionais (ex.: crypto-auth)
+├─ docs/               # documentação adicional
+├─ examples/           # exemplos externos
+├─ tests/              # unit/integration e scaffolds E2E
+└─ ai-context/         # documentação para LLMs
 ```
 
-## 🚀 **Funcionalidades Principais**
+## Funcionalidades-chave
+- **Type Safety end-to-end**: Eden Treaty exporta `api` com `{ data, error }` tipados automaticamente.
+- **Documentação automática**: rotas com `response` schema produzem Swagger em `/swagger`.
+- **Hot reload independente**: `bun run dev` aciona backend e proxy Vite coordenados.
+- **Sistema de plugins**: descoberta automática, hooks (`setup`, `onServerStart`, `onServerStop`, `onRequest`, etc.), resolução de dependências.
+- **Build pronto para produção**: `bun run build` gera artefatos no `dist/`, Dockerfile e manifest.
+- **Configuração declarativa**: presets para development/production/test, com override via `FLUXSTACK_*` ou `.env`.
 
-### ✨ **1. Type Safety End-to-End**
-```typescript
-// ✅ Eden Treaty infere automaticamente
-const { data: user, error } = await api.users.post({
-  name: "João",
-  email: "joao@example.com"
-})
+## Fluxo de Desenvolvimento
+1. Rodar `bun run dev` para iniciar backend (porta 3000) + frontend (porta 5173).
+2. Criar tipos em `app/shared/`, controllers/serviços em `app/server/`, rotas com schemas e componentes React consumindo `api`.
+3. Ajustar comportamento global em `config/` (porta, plugins, logging).
+4. Validar com `bun run test`, `bun run build` e (quando necessário) Docker commands (`bun run docker:*`).
 
-// TypeScript sabe que:
-// - user: UserResponse = { success: boolean; user?: User; message?: string }
-// - error: undefined (em caso de sucesso)
-```
+> O comando `bun run dev` (ou `flux dev`) habilita um proxy reverso no backend: o Vite é iniciado pelo `vitePlugin` e as rotas front-end são servidas por trás do mesmo host:porta (`http://localhost:3000`). Caso precise executar apenas um lado, use `bun run dev:frontend` ou `bun run dev:backend`; em produção, é possível empacotar e publicar cada parte separadamente (`flux build:frontend`, `flux build:backend`).***
 
-### ⚡ **2. Hot Reload Independente**
-```bash
-bun run dev    # Backend + Frontend juntos
-# Backend recarrega sem afetar frontend
-# Frontend HMR sem reiniciar backend
-```
-
-### 📖 **3. Documentação Automática**
-```typescript
-// ✅ Swagger gerado automaticamente das rotas
-.post("/users", handler, {
-  body: t.Object({
-    name: t.String(),
-    email: t.String({ format: "email" })
-  }),
-  response: t.Object({
-    success: t.Boolean(),
-    user: t.Optional(t.Object({...}))
-  })
-})
-// → Vira documentação automática
-```
-
-### 🧪 **4. Testing Integrado**
-```bash
-bun run test        # Todos os testes
-bun run test:ui     # Interface visual
-bun run test:coverage  # Relatório cobertura
-```
-
-## 🔄 **Fluxo de Desenvolvimento**
-
-### **1. Desenvolvimento Local**
-```bash
-bun install        # Uma instalação (monorepo)
-bun run dev        # Full-stack server
-# → Backend: http://localhost:3000
-# → Frontend: http://localhost:5173  
-# → Swagger: http://localhost:3000/swagger
-```
-
-### **2. Criação de Features**
-```typescript
-// 1. Types em app/shared/
-export interface Product { id: number; name: string }
-
-// 2. Controller em app/server/controllers/
-export class ProductsController { ... }
-
-// 3. Routes em app/server/routes/  
-export const productsRoutes = new Elysia()...
-
-// 4. Frontend em app/client/src/
-const { data, error } = await api.products.get()
-```
-
-### **3. Build & Deploy**
-```bash
-bun run build     # Build otimizado
-bun run start     # Servidor produção
-# ou
-docker build .    # Container Docker
-```
-
-## 🎯 **Casos de Uso Ideais**
-
-### ✅ **Excelente Para:**
-- **APIs REST modernas** com documentação automática
-- **SPAs React** com type safety total
-- **Protótipos rápidos** com hot reload
-- **Microserviços** com alta performance
-- **Apps corporativos** com qualidade enterprise
-
-### ⚠️ **Considere Alternativas Para:**
-- **Apps server-side rendering** complexos (use Next.js)
-- **Projetos que precisam de Node.js** específico
-- **Teams sem experiência TypeScript** (curva de aprendizado)
-
-## 📈 **Roadmap & Futuro**
-
-### 🎯 **Próximas Versões**
-- **Database layer**: Integração nativa com ORMs
-- **Authentication**: Sistema de auth built-in
-- **Real-time**: WebSockets + Server-Sent Events
-- **API versioning**: Versionamento automático
-- **Monitoring**: Métricas e observabilidade
-
-### 🔮 **Visão de Longo Prazo**
-- Framework **plug-and-play** para startups
-- **Marketplace de plugins** da comunidade  
-- **Templates** para domínios específicos
-- **CLI generator** para scaffolding
-
-## 🆘 **Suporte & Comunidade**
-
-- **📖 Documentação**: Esta pasta `ai-context/`
-- **🐛 Issues**: GitHub repository
-- **💬 Discussões**: GitHub Discussions
-- **📧 Email**: Para questões privadas
+## Roadmap Resumido
+- Integração nativa de banco (camada de dados).
+- Autenticação nativa além do plugin crypto-auth.
+- Melhorias em monitoring/metrics e exporters.
+- Adaptações para deploy serverless (handlers dedicados).
 
 ---
 
-**🎯 FluxStack é ideal para desenvolvedores que querem produtividade máxima com type safety garantida e performance de ponta.**
+Use esta visão geral em conjunto com `project/architecture.md` e `project/configuration.md` para detalhes profundos sobre cada camada.***
