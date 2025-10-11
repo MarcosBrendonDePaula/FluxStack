@@ -59,7 +59,7 @@ program
         'core',
         'app',
         'config',         // ✅ CRITICAL: Copy config folder with declarative configs
-        // 'plugins',     // TODO: Copy when crypto-auth plugin is complete
+        'plugins',     // TODO: Copy when crypto-auth plugin is complete
         'ai-context',     // ✅ CRITICAL: Copy AI documentation for users
         'bun.lock',       // ✅ CRITICAL: Copy lockfile to maintain working versions
         'package.json',   // ✅ Copy real package.json from framework

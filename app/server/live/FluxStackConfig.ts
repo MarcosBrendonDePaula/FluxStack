@@ -165,7 +165,7 @@ export class FluxStackConfig extends LiveComponent<FluxStackConfigState> {
       
       framework: {
         name: 'FluxStack',
-        version: '1.5.4',
+        version: '1.5.5',
         description: 'Modern Full-Stack TypeScript Framework with Live Components',
         author: 'FluxStack Team',
         license: 'MIT'
