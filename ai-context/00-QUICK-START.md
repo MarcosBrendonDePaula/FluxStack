@@ -1,86 +1,64 @@
-# ⚡ FluxStack - Quick Start para LLMs
+# FluxStack – Quick Start para Assistentes
 
-> **🎯 Objetivo**: Entender e usar FluxStack em < 2 minutos
+Objetivo: saber onde mexer, quais comandos usar e como manter a type safety em menos de dois minutos.
 
-## 🚀 **Comandos Essenciais** (30 segundos)
+## Comandos Essenciais
 
 ```bash
-# Desenvolvimento (escolha UM)
-bun run dev              # ✅ Full-stack (recomendado)
-bun run dev:clean        # ✅ Output limpo (sem logs HEAD do Elysia)
+# Desenvolvimento (escolha um)
+bun run dev          # backend + frontend com hot reload
+bun run dev:clean    # mesmo fluxo com logs reduzidos
 
-# Build e Deploy
-bun run build           # Build completo
-bun run start           # Produção
-
-# URLs Importantes
-http://localhost:3000   # Backend API
-http://localhost:5173   # Frontend React
-http://localhost:3000/swagger  # Documentação API
+# Build e produção
+bun run build        # build completo (frontend + backend)
+bun run start        # inicia servidor de produção a partir de dist/
 ```
 
-## 📁 **Estrutura Crítica** (30 segundos)
+Portas padrão:
+- Backend/API: `http://localhost:3000`
+- Frontend: `http://localhost:5173`
+- Swagger: `http://localhost:3000/swagger`
+
+## Estrutura Fundamental
 
 ```
 FluxStack/
-├── core/                    # 🔒 FRAMEWORK - NUNCA EDITAR!
-├── app/                     # 👨‍💻 SEU CÓDIGO AQUI
-│   ├── server/              # Backend (controllers, routes)
-│   ├── client/              # Frontend (components, pages)
-│   └── shared/              # Types compartilhados
-└── ai-context/              # 📖 Esta documentação
+├─ core/         # framework (não alterar)
+├─ app/          # código da aplicação
+│  ├─ server/    # controllers, routes, serviços
+│  ├─ client/    # React, pages, componentes
+│  └─ shared/    # tipos compartilhados
+├─ config/       # camadas declarativas consumidas pela app
+├─ plugins/      # plugins adicionais (ex.: crypto-auth)
+└─ ai-context/   # esta documentação
 ```
 
-## ⚡ **Regras de Ouro** (30 segundos)
+## Regras de Ouro
 
-### ❌ NUNCA FAZER:
-- Editar `core/` (framework read-only)
-- Usar `apiCall()` wrapper (quebra type inference)
-- Criar types manuais para Eden Treaty
+**Nunca**
+- editar arquivos em `core/`;
+- envolver Eden Treaty em wrappers (`apiCall()` etc.);
+- omitir `response` schemas nas rotas.
 
-### ✅ SEMPRE FAZER:
-- Trabalhar em `app/`
-- Usar Eden Treaty nativo: `const { data, error } = await api.users.get()`
-- Manter types em `app/shared/`
+**Sempre**
+- trabalhar dentro de `app/` e `config/`;
+- usar Eden Treaty nativo: `const { data, error } = await api.users.get();`;
+- manter tipos compartilhados em `app/shared/`;
+- rodar `bun run dev` (ou testes) após alterações críticas.
 
-## 🎯 **Navegação Rápida** (30 segundos)
+## Próximo Passo
 
-### Cenário 1: "Criar nova funcionalidade"
-→ [`development/patterns.md`](./development/patterns.md) + [`examples/crud-complete.md`](./examples/crud-complete.md)
-
-### Cenário 2: "Entender Eden Treaty"
-→ [`development/eden-treaty-guide.md`](./development/eden-treaty-guide.md) + [`recent-changes/eden-treaty-refactor.md`](./recent-changes/eden-treaty-refactor.md)
-
-### Cenário 3: "Corrigir erro"
-→ [`reference/troubleshooting.md`](./reference/troubleshooting.md)
-
-### Cenário 4: "Entender arquitetura"
-→ [`project/overview.md`](./project/overview.md) + [`project/architecture.md`](./project/architecture.md)
-
-### Cenário 5: "Ver mudanças recentes"
-→ [`recent-changes/`](./recent-changes/) (Eden Treaty, tipos, monorepo)
-
-## 🔥 **Estado Atual** (15 segundos)
-
-- **✅ Eden Treaty NATIVO**: Type inference automática funcionando
-- **✅ Monorepo estável**: Uma instalação, hot reload independente
-- **✅ Zero erros TypeScript**: Sistema 100% type-safe
-- **✅ Response schemas**: API com documentação automática
-
-## 📚 **Documentação Completa**
-
-```
-ai-context/
-├── 00-QUICK-START.md      # ⚡ Você está aqui
-├── project/               # 📊 Visão geral e arquitetura
-├── development/           # 👨‍💻 Padrões e guias
-├── reference/             # 📚 Referência técnica
-├── examples/              # 💡 Código prático
-└── recent-changes/        # 🔥 Mudanças importantes
-```
+Escolha o cenário:
+- Entender o estado atual -> `project/overview.md`
+- Conhecer a arquitetura/configuração -> `project/architecture.md` + `project/configuration.md`
+- Preparar build/deploy -> `project/build-pipeline.md`
+- Trabalhar com CLI/geradores -> `reference/cli-commands.md`
+- Criar novas features -> `development/patterns.md`
+- Trabalhar com Eden Treaty -> `development/eden-treaty-guide.md`
+- Live Components/tempo real -> `development/live-components.md`
+- Observabilidade -> `development/monitoring.md`
+- Resolver problemas -> `reference/troubleshooting.md`
 
 ---
 
-**🎯 Em 2 minutos você já sabe**: comandos, estrutura, regras e onde encontrar cada informação!
-
-**🚀 Próximo passo**: Escolha um dos cenários acima e vá direto ao arquivo relevante!
+Com estes pontos você já consegue navegar, configurar e alterar o FluxStack com segurança. Boa sessão!
