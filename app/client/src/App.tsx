@@ -10,8 +10,8 @@ import {
 } from 'react-icons/fa'
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
 
-// WebSocket Provider - Singleton Connection for All Live Components
-import { WebSocketProvider } from 'fluxstack'
+// Live Components Provider - Singleton WebSocket Connection for All Live Components
+import { LiveComponentsProvider } from 'fluxstack'
 
 // Import page components
 import { OverviewPage } from './pages/Overview'
@@ -300,10 +300,10 @@ function AppContent() {
   )
 }
 
-// Main App component - Wrapped with WebSocketProvider for single connection
+// Main App component - Wrapped with LiveComponentsProvider for single WebSocket connection
 function App() {
   return (
-    <WebSocketProvider
+    <LiveComponentsProvider
       autoConnect={true}
       reconnectInterval={1000}
       maxReconnectAttempts={5}
@@ -311,7 +311,7 @@ function App() {
       debug={false}
     >
       <AppContent />
-    </WebSocketProvider>
+    </LiveComponentsProvider>
   )
 }
 

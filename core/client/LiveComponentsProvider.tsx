@@ -1,10 +1,10 @@
-// 🔥 WebSocket Provider - Singleton Connection for All Live Components
-// Single WebSocket connection shared by all components in the app
+// 🔥 Live Components Provider - Singleton WebSocket Connection
+// Single WebSocket connection shared by all live components in the app
 
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react'
 import type { WebSocketMessage, WebSocketResponse } from '../types/types'
 
-export interface WebSocketContextValue {
+export interface LiveComponentsContextValue {
   connected: boolean
   connecting: boolean
   error: string | null
@@ -29,9 +29,9 @@ export interface WebSocketContextValue {
   getWebSocket: () => WebSocket | null
 }
 
-const WebSocketContext = createContext<WebSocketContextValue | null>(null)
+const LiveComponentsContext = createContext<LiveComponentsContextValue | null>(null)
 
-export interface WebSocketProviderProps {
+export interface LiveComponentsProviderProps {
   children: React.ReactNode
   url?: string
   autoConnect?: boolean
@@ -41,7 +41,7 @@ export interface WebSocketProviderProps {
   debug?: boolean
 }
 
-export function WebSocketProvider({
+export function LiveComponentsProvider({
   children,
   url,
   autoConnect = true,
@@ -374,7 +374,7 @@ export function WebSocketProvider({
     }
   }, [autoConnect, connect, disconnect])
 
-  const value: WebSocketContextValue = {
+  const value: LiveComponentsContextValue = {
     connected,
     connecting,
     error,
@@ -388,17 +388,27 @@ export function WebSocketProvider({
   }
 
   return (
-    <WebSocketContext.Provider value={value}>
+    <LiveComponentsContext.Provider value={value}>
       {children}
-    </WebSocketContext.Provider>
+    </LiveComponentsContext.Provider>
   )
 }
 
-// Hook to use WebSocket context
-export function useWebSocketContext(): WebSocketContextValue {
-  const context = useContext(WebSocketContext)
+// Hook to use Live Components context
+export function useLiveComponents(): LiveComponentsContextValue {
+  const context = useContext(LiveComponentsContext)
   if (!context) {
-    throw new Error('useWebSocketContext must be used within WebSocketProvider')
+    throw new Error('useLiveComponents must be used within LiveComponentsProvider')
   }
   return context
 }
+
+// ⚠️ DEPRECATED: Use useLiveComponents instead
+// Kept for backward compatibility
+export const useWebSocketContext = useLiveComponents
+
+// ⚠️ DEPRECATED: Use LiveComponentsProvider instead
+// Kept for backward compatibility
+export const WebSocketProvider = LiveComponentsProvider
+export type WebSocketProviderProps = LiveComponentsProviderProps
+export type WebSocketContextValue = LiveComponentsContextValue

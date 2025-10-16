@@ -1,10 +1,10 @@
 // 🔥 Hybrid Live Component Hook v2 - Uses Single WebSocket Connection
-// Refactored to use WebSocketProvider context instead of creating its own connection
+// Refactored to use LiveComponentsProvider context instead of creating its own connection
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
-import { useWebSocketContext } from '../WebSocketProvider'
+import { useLiveComponents } from '../LiveComponentsProvider'
 import { StateValidator } from './state-validator'
 import type {
   HybridState,
@@ -168,14 +168,14 @@ export function useHybridLiveComponent<T = any>(
     debug = false
   } = options
 
-  // Use WebSocket from context instead of creating own connection
+  // Use Live Components context (singleton WebSocket connection)
   const {
     connected,
     sendMessage: contextSendMessage,
     sendMessageAndWait: contextSendMessageAndWait,
     registerComponent,
     unregisterComponent
-  } = useWebSocketContext()
+  } = useLiveComponents()
 
   // Create unique instance ID
   const instanceId = useRef(`${componentName}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`)
