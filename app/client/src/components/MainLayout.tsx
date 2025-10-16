@@ -6,7 +6,6 @@ import { UserProfile } from './UserProfile'
 import { SystemMonitor } from './SystemMonitor'
 import { FluxStackConfig } from './FluxStackConfig'
 import { FaHome, FaCog, FaFolder, FaChartBar, FaRocket, FaServer } from 'react-icons/fa'
-import { Teste } from './Teste'
 
 // Temporary placeholder components for other pages
 function Dashboard() {
@@ -128,7 +127,6 @@ function Dashboard() {
           </ul>
         </div>
       </div>
-      <Teste></Teste>
     </div>
   )
 }
