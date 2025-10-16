@@ -134,7 +134,17 @@ export class WebSocketConnectionManager extends EventEmitter {
     if (!metrics) return
 
     // Handle incoming messages
-    ws.on('message', (data: any) => {
+    const addListener = (event: string, handler: (...args: any[]) => void) => {
+      if (typeof ws.on === 'function') {
+        ws.on(event, handler)
+      } else if (typeof ws.addEventListener === 'function') {
+        ws.addEventListener(event as any, handler as any)
+      } else if (typeof ws.addListener === 'function') {
+        ws.addListener(event, handler)
+      }
+    }
+
+    addListener('message', (data: any) => {
       metrics.messagesReceived++
       metrics.lastActivity = new Date()
       metrics.bytesTransferred += Buffer.byteLength(data)
@@ -143,20 +153,20 @@ export class WebSocketConnectionManager extends EventEmitter {
     })
 
     // Handle connection close
-    ws.on('close', () => {
+    addListener('close', () => {
       metrics.status = 'disconnected'
       this.handleConnectionClose(connectionId)
     })
 
     // Handle connection errors
-    ws.on('error', (error: Error) => {
+    addListener('error', (error: Error) => {
       metrics.errorCount++
       metrics.status = 'error'
       this.handleConnectionError(connectionId, error)
     })
 
     // Handle pong responses for latency measurement
-    ws.on('pong', () => {
+    addListener('pong', () => {
       const now = Date.now()
       const pingTime = (ws as any)._pingTime
       if (pingTime) {

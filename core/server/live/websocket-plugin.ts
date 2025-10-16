@@ -5,7 +5,7 @@ import { fileUploadManager } from './FileUploadManager'
 import { connectionManager } from './WebSocketConnectionManager'
 import { performanceMonitor } from './LiveComponentPerformanceMonitor'
 import type { LiveMessage, FileUploadStartMessage, FileUploadChunkMessage, FileUploadCompleteMessage } from '../../types/types'
-import type { Plugin, PluginContext } from '../../plugins/types'
+import type { Plugin, PluginContext } from '@/core/index'
 import { t } from 'elysia'
 import path from 'path'
 
