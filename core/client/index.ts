@@ -1,5 +1,21 @@
 // 🔥 FluxStack Client Core - Main Export
 
+// Live Components Provider (Singleton WebSocket Connection)
+export {
+  LiveComponentsProvider,
+  useLiveComponents,
+  // Deprecated exports for backward compatibility
+  WebSocketProvider,
+  useWebSocketContext
+} from './LiveComponentsProvider'
+export type {
+  LiveComponentsProviderProps,
+  LiveComponentsContextValue,
+  // Deprecated types for backward compatibility
+  WebSocketProviderProps,
+  WebSocketContextValue
+} from './LiveComponentsProvider'
+
 // Hooks
 export { useWebSocket } from './hooks/useWebSocket'
 export { useHybridLiveComponent } from './hooks/useHybridLiveComponent'

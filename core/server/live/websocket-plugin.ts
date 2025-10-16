@@ -110,6 +110,9 @@ export const liveComponentsPlugin: Plugin = {
               case 'PROPERTY_UPDATE':
                 await handlePropertyUpdate(ws, message)
                 break
+              case 'COMPONENT_PING':
+                await handleComponentPing(ws, message)
+                break
               case 'FILE_UPLOAD_START':
                 await handleFileUploadStart(ws, message as FileUploadStartMessage)
                 break
@@ -372,7 +375,7 @@ async function handleActionCall(ws: any, message: LiveMessage) {
 
 async function handlePropertyUpdate(ws: any, message: LiveMessage) {
   const result = await componentRegistry.handleMessage(ws, message)
-  
+
   if (result !== null) {
     const response = {
       type: 'PROPERTY_UPDATED',
@@ -385,6 +388,22 @@ async function handlePropertyUpdate(ws: any, message: LiveMessage) {
     }
     ws.send(JSON.stringify(response))
   }
+}
+
+async function handleComponentPing(ws: any, message: LiveMessage) {
+  // Update component's last activity timestamp
+  const updated = componentRegistry.updateComponentActivity(message.componentId)
+
+  // Send pong response
+  const response = {
+    type: 'COMPONENT_PONG',
+    componentId: message.componentId,
+    success: updated,
+    requestId: message.requestId,
+    timestamp: Date.now()
+  }
+
+  ws.send(JSON.stringify(response))
 }
 
 // File Upload Handler Functions
