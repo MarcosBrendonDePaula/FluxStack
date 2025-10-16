@@ -89,7 +89,8 @@
       "Bash(bunx prettier:*)",
       "Read(//c/c/Users/Marcos/Documents/GitHub/aviso-projeto/FluxStack/**)",
       "Read(//c/**)",
-      "Bash(LOG_LEVEL=debug timeout 5 bun run dev)"
+      "Bash(LOG_LEVEL=debug timeout 5 bun run dev)",
+      "Bash(LOG_LEVEL=debug timeout 10 bun run dev)"
     ],
     "deny": []
   }
