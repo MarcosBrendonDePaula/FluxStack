@@ -794,12 +794,14 @@ export class ComponentRegistry {
   }
 
   // Update component activity
-  updateComponentActivity(componentId: string): void {
+  updateComponentActivity(componentId: string): boolean {
     const metadata = this.metadata.get(componentId)
     if (metadata) {
       metadata.lastActivity = new Date()
       metadata.state = 'active'
+      return true
     }
+    return false
   }
 
   // Record component metrics

@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react'
 import { api, getErrorMessage } from './lib/eden-api'
-import { 
+import {
   FaRocket, FaReact, FaLink, FaDocker, FaFlask, FaPalette,
   FaCheckCircle, FaTimesCircle, FaSpinner, FaSync,
   FaUsers, FaTrash, FaPlus, FaBook, FaCode, FaCog,
   FaServer, FaDatabase, FaShieldAlt, FaBolt, FaLock,
   FaBullseye, FaGlobe,  FaFileAlt,
-  FaClipboardList, FaFire, FaFlask as FaTest, 
+  FaClipboardList, FaFire, FaFlask as FaTest,
 } from 'react-icons/fa'
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
+
+// WebSocket Provider - Singleton Connection for All Live Components
+import { WebSocketProvider } from 'fluxstack'
 
 // Import page components
 import { OverviewPage } from './pages/Overview'
@@ -297,9 +300,19 @@ function AppContent() {
   )
 }
 
-// Main App component - Zustand stores are available globally
+// Main App component - Wrapped with WebSocketProvider for single connection
 function App() {
-  return <AppContent />
+  return (
+    <WebSocketProvider
+      autoConnect={true}
+      reconnectInterval={1000}
+      maxReconnectAttempts={5}
+      heartbeatInterval={30000}
+      debug={false}
+    >
+      <AppContent />
+    </WebSocketProvider>
+  )
 }
 
 export default App

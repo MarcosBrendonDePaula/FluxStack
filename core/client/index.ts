@@ -1,5 +1,9 @@
 // 🔥 FluxStack Client Core - Main Export
 
+// WebSocket Provider (Singleton Connection)
+export { WebSocketProvider, useWebSocketContext } from './WebSocketProvider'
+export type { WebSocketProviderProps, WebSocketContextValue } from './WebSocketProvider'
+
 // Hooks
 export { useWebSocket } from './hooks/useWebSocket'
 export { useHybridLiveComponent } from './hooks/useHybridLiveComponent'
