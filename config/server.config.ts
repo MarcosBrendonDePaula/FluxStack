@@ -35,6 +35,7 @@ const serverConfigSchema = {
   enableSwagger: config.boolean('ENABLE_SWAGGER', true),
   enableMetrics: config.boolean('ENABLE_METRICS', false),
   enableMonitoring: config.boolean('ENABLE_MONITORING', false),
+  enableRequestLogging: config.boolean('ENABLE_REQUEST_LOGGING', true),
 
   // Vite/Development
   enableViteProxyLogs: config.boolean('ENABLE_VITE_PROXY_LOGS', false)

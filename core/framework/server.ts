@@ -16,6 +16,7 @@ export class FluxStackFramework {
   private pluginManager: PluginManager
   private pluginContext: PluginContext
   private isStarted: boolean = false
+  private requestTimings: Map<string, number> = new Map()
 
   constructor(config?: Partial<FluxStackConfig>) {
     // Load the full configuration
@@ -179,7 +180,14 @@ export class FluxStackFramework {
     this.app.onRequest(async ({ request, set }) => {
       const startTime = Date.now()
       const url = new URL(request.url)
-      
+
+      // Store start time for duration calculation (using request URL as key)
+      const requestKey = `${request.method}-${url.pathname}-${startTime}`
+      this.requestTimings.set(requestKey, startTime)
+
+      // Store key in set.headers for retrieval in onAfterHandle
+      set.headers['x-request-timing-key'] = requestKey
+
       const requestContext = {
         request,
         path: url.pathname,
@@ -197,24 +205,33 @@ export class FluxStackFramework {
         handled: false,
         response: undefined
       }
-      
+
       // Execute onRequest hooks for all plugins first (logging, auth, etc.)
       await this.executePluginHooks('onRequest', requestContext)
-      
+
       // Execute onBeforeRoute hooks - allow plugins to handle requests before routing
       const handledResponse = await this.executePluginBeforeRouteHooks(requestContext)
-      
+
       // If a plugin handled the request, return the response
       if (handledResponse) {
         return handledResponse
       }
     })
 
-    // Setup onResponse hook  
+    // Setup onResponse hook
     this.app.onAfterHandle(async ({ request, response, set }) => {
-      const startTime = Date.now()
       const url = new URL(request.url)
-      
+
+      // Retrieve start time using the timing key
+      const requestKey = set.headers['x-request-timing-key']
+      const startTime = requestKey ? this.requestTimings.get(requestKey) : undefined
+      const duration = startTime ? Date.now() - startTime : 0
+
+      // Clean up timing entry
+      if (requestKey) {
+        this.requestTimings.delete(requestKey)
+      }
+
       const responseContext = {
         request,
         path: url.pathname,
@@ -230,10 +247,20 @@ export class FluxStackFramework {
         params: {},
         response,
         statusCode: (response as any)?.status || set.status || 200,
-        duration: Date.now() - startTime,
+        duration,
         startTime
       }
-      
+
+      // Log the request automatically (if not disabled in config)
+      if (this.context.config.server.enableRequestLogging !== false) {
+        // Ensure status is always a number (HTTP status code)
+        const status = typeof responseContext.statusCode === 'number'
+          ? responseContext.statusCode
+          : set.status || 200
+
+        logger.request(request.method, url.pathname, status, duration)
+      }
+
       // Execute onResponse hooks for all plugins
       await this.executePluginHooks('onResponse', responseContext)
     })

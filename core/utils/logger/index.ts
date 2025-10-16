@@ -125,12 +125,45 @@ export function SECTION(sectionName: string, callback: () => void): void {
 }
 
 /**
- * HTTP request logging (compatibility with Elysia)
+ * HTTP request logging with colors and formatting
  */
 export function request(method: string, path: string, status?: number, duration?: number): void {
-  const statusStr = status ? ` ${status}` : ''
-  const durationStr = duration ? ` (${duration}ms)` : ''
-  LOG(`${method} ${path}${statusStr}${durationStr}`)
+  const { file: callerFile } = getCallerInfo()
+  const logger = getLoggerForModule(callerFile)
+
+  // Color based on HTTP status
+  let statusColor = chalk.gray
+  if (status) {
+    if (status >= 500) statusColor = chalk.red.bold        // Server errors
+    else if (status >= 400) statusColor = chalk.yellow     // Client errors
+    else if (status >= 300) statusColor = chalk.cyan       // Redirects
+    else if (status >= 200) statusColor = chalk.green      // Success
+  }
+
+  // Color for HTTP method
+  let methodColor = chalk.blue
+  if (method === 'POST') methodColor = chalk.green
+  else if (method === 'PUT') methodColor = chalk.yellow
+  else if (method === 'PATCH') methodColor = chalk.magenta
+  else if (method === 'DELETE') methodColor = chalk.red
+
+  // Format duration with color (warn if slow)
+  let durationStr = ''
+  if (duration !== undefined) {
+    const durationColor = duration > 1000 ? chalk.red : duration > 500 ? chalk.yellow : chalk.gray
+    durationStr = ` ${durationColor(`(${duration}ms)`)}`
+  }
+
+  // Build log message
+  const methodStr = methodColor(method.padEnd(7))
+  const pathStr = chalk.white(path.padEnd(30))
+  const statusStr = status ? `→ ${statusColor(status.toString())}` : ''
+
+  const message = `${methodStr} ${pathStr} ${statusStr}${durationStr}`
+
+  // Use appropriate log level based on status
+  const level = status && status >= 500 ? 'error' : status && status >= 400 ? 'warn' : 'info'
+  logger.log({ level, message })
 }
 
 /**
