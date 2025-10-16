@@ -1,14 +1,15 @@
 // 🔥 LiveClock - Real-time Clock Live Component
+// Automatically updates every second and broadcasts to all connected clients
 import { LiveComponent } from "@/core/types/types";
 
 interface LiveClockState {
-  currentTime: string;
-  timeZone: string;
-  format: '12h' | '24h';
-  showSeconds: boolean;
-  showDate: boolean;
-  lastSync: Date;
-  serverUptime: number;
+  currentTime: string; // Formatted time string
+  timeZone: string; // IANA timezone (e.g., 'America/Sao_Paulo')
+  format: '12h' | '24h'; // Time format preference
+  showSeconds: boolean; // Toggle seconds display
+  showDate: boolean; // Toggle date display
+  lastSync: Date; // Last sync timestamp
+  serverUptime: number; // Server uptime in seconds
 }
 
 export class LiveClockComponent extends LiveComponent<LiveClockState> {

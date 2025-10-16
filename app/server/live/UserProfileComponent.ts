@@ -1,3 +1,4 @@
+// 🔥 User Profile - Live Component
 import { LiveComponent } from "@/core/types/types";
 
 interface UserProfileState {
@@ -12,7 +13,7 @@ interface UserProfileState {
   following: number;
   posts: number;
   isEditing: boolean;
-  lastActivity: string;
+  lastUpdated: Date; // ✅ Padronizado para Date
   theme: 'light' | 'dark';
   notifications: number;
 }
@@ -21,7 +22,7 @@ export class UserProfileComponent extends LiveComponent<UserProfileState> {
   constructor(initialState: UserProfileState, ws: any, options?: { room?: string; userId?: string }) {
     const defaultState: UserProfileState = {
       name: "João Silva",
-      email: "joao.silva@example.com", 
+      email: "joao.silva@example.com",
       avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
       status: "online",
       bio: "Desenvolvedor Full-Stack apaixonado por tecnologia e inovação. Sempre em busca de novos desafios!",
@@ -31,7 +32,7 @@ export class UserProfileComponent extends LiveComponent<UserProfileState> {
       following: 567,
       posts: 89,
       isEditing: false,
-      lastActivity: new Date().toISOString(),
+      lastUpdated: new Date(),
       theme: "light",
       notifications: 5,
       ...initialState
@@ -43,7 +44,7 @@ export class UserProfileComponent extends LiveComponent<UserProfileState> {
 
   async updateProfile(payload: { name?: string; bio?: string; location?: string }) {
     const updates: Partial<UserProfileState> = {
-      lastActivity: new Date().toISOString()
+      lastUpdated: new Date()
     };
 
     if (payload.name) updates.name = payload.name;
@@ -59,53 +60,53 @@ export class UserProfileComponent extends LiveComponent<UserProfileState> {
     const statuses: UserProfileState['status'][] = ['online', 'away', 'busy', 'offline'];
     const currentIndex = statuses.indexOf(this.state.status);
     const nextStatus = statuses[(currentIndex + 1) % statuses.length];
-    
-    this.setState({ 
+
+    this.setState({
       status: nextStatus,
-      lastActivity: new Date().toISOString()
+      lastUpdated: new Date()
     });
-    
+
     console.log('👤 Status changed:', this.id, { from: this.state.status, to: nextStatus });
     return { success: true, newStatus: nextStatus };
   }
 
   async toggleTheme() {
     const newTheme = this.state.theme === 'light' ? 'dark' : 'light';
-    this.setState({ 
+    this.setState({
       theme: newTheme,
-      lastActivity: new Date().toISOString()
+      lastUpdated: new Date()
     });
-    
+
     console.log('👤 Theme changed:', this.id, { to: newTheme });
     return { success: true, theme: newTheme };
   }
 
   async followUser() {
-    this.setState({ 
+    this.setState({
       followers: this.state.followers + 1,
-      lastActivity: new Date().toISOString()
+      lastUpdated: new Date()
     });
-    
+
     console.log('👤 New follower:', this.id, { followers: this.state.followers + 1 });
     return { success: true, followers: this.state.followers };
   }
 
   async toggleEdit() {
-    this.setState({ 
+    this.setState({
       isEditing: !this.state.isEditing,
-      lastActivity: new Date().toISOString()
+      lastUpdated: new Date()
     });
-    
+
     console.log('👤 Edit mode toggled:', this.id, { isEditing: !this.state.isEditing });
     return { success: true, isEditing: this.state.isEditing };
   }
 
   async clearNotifications() {
-    this.setState({ 
+    this.setState({
       notifications: 0,
-      lastActivity: new Date().toISOString()
+      lastUpdated: new Date()
     });
-    
+
     console.log('👤 Notifications cleared:', this.id);
     return { success: true };
   }
@@ -115,21 +116,26 @@ export class UserProfileComponent extends LiveComponent<UserProfileState> {
       throw new Error('Invalid image URL');
     }
 
-    // Update avatar URL - in a real app, you might want to validate the URL format
-    this.setState({ 
+    this.setState({
       avatar: payload.imageUrl,
-      lastActivity: new Date().toISOString()
+      lastUpdated: new Date()
     });
-    
-    console.log('👤 Avatar updated:', this.id, { 
+
+    console.log('👤 Avatar updated:', this.id, {
       newAvatar: payload.imageUrl,
-      previousAvatar: this.state.avatar 
+      previousAvatar: this.state.avatar
     });
-    
-    return { 
-      success: true, 
+
+    return {
+      success: true,
       avatar: payload.imageUrl,
-      message: 'Avatar updated successfully!' 
+      message: 'Avatar updated successfully!'
     };
+  }
+
+  // Override destroy for cleanup
+  public destroy() {
+    console.log(`🗑️ UserProfile component ${this.id} destroyed`)
+    super.destroy()
   }
 }
