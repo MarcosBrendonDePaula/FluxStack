@@ -1,7 +1,7 @@
 // 🔥 System Monitor Dashboard Component
 
 import { useState } from 'react'
-import { useHybridLiveComponent } from 'fluxstack'
+import { useHybridLiveComponent } from '@/core/client'
 import { 
   FaServer, 
   FaHome, 
@@ -688,7 +688,9 @@ export function SystemMonitor() {
               gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
               gap: '1rem'
             }}>
-              {Object.entries(state.componentsByType).map(([type, count]) => (
+              {Object.entries(state.componentsByType).map(([type, count]) => {
+                const countNum = count as number
+                return (
                 <div key={type} style={{
                   padding: '1.5rem',
                   backgroundColor: '#f8fafc',
@@ -707,19 +709,20 @@ export function SystemMonitor() {
                     margin: 0,
                     fontSize: '2rem',
                     fontWeight: 'bold',
-                    color: count > 0 ? '#10b981' : '#6b7280'
+                    color: countNum > 0 ? '#10b981' : '#6b7280'
                   }}>
-                    {count}
+                    {countNum}
                   </p>
                   <p style={{
                     margin: 0,
                     fontSize: '0.9rem',
                     color: '#6b7280'
                   }}>
-                    {count === 1 ? 'instância' : 'instâncias'}
+                    {countNum === 1 ? 'instância' : 'instâncias'}
                   </p>
                 </div>
-              ))}
+                )
+              })}
             </div>
           </div>
 
@@ -747,7 +750,9 @@ export function SystemMonitor() {
                 gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
                 gap: '1rem'
               }}>
-                {Object.entries(state.roomDetails).map(([room, count]) => (
+                {Object.entries(state.roomDetails).map(([room, count]) => {
+                  const countNum = count as number
+                  return (
                   <div key={room} style={{
                     padding: '1.5rem',
                     backgroundColor: '#f0f9ff',
@@ -768,17 +773,18 @@ export function SystemMonitor() {
                       fontWeight: 'bold',
                       color: '#0284c7'
                     }}>
-                      {count}
+                      {countNum}
                     </p>
                     <p style={{
                       margin: 0,
                       fontSize: '0.9rem',
                       color: '#0369a1'
                     }}>
-                      {count === 1 ? 'componente' : 'componentes'}
+                      {countNum === 1 ? 'componente' : 'componentes'}
                     </p>
                   </div>
-                ))}
+                  )
+                })}
               </div>
             ) : (
               <div style={{

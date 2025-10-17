@@ -8,6 +8,7 @@ export * from './server/services/index.js'
 export * from './server/middleware/index.js'
 
 // Client exports  
+export * from './client/index.js'
 export * from './client/state/index.js'
 export * from './client/hooks/index.js'
 

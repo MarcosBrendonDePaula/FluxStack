@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useHybridLiveComponent, useChunkedUpload } from 'fluxstack';
+import { useHybridLiveComponent, useChunkedUpload } from '@/core/client';
 import { 
   FaUser, 
   FaEdit, 

@@ -1,17 +1,14 @@
 import { useState, useEffect } from 'react'
 import { api, getErrorMessage } from './lib/eden-api'
 import {
-  FaRocket, FaReact, FaLink, FaDocker, FaFlask, FaPalette,
-  FaCheckCircle, FaTimesCircle, FaSpinner, FaSync,
-  FaUsers, FaTrash, FaPlus, FaBook, FaCode, FaCog,
-  FaServer, FaDatabase, FaShieldAlt, FaBolt, FaLock,
-  FaBullseye, FaGlobe,  FaFileAlt,
+  FaRocket,
+  FaCheckCircle, FaTimesCircle, FaBook, FaShieldAlt, FaBolt,
   FaClipboardList, FaFire, FaFlask as FaTest,
 } from 'react-icons/fa'
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
+import { Routes, Route, Link } from 'react-router-dom'
 
 // Live Components Provider - Singleton WebSocket Connection for All Live Components
-import { LiveComponentsProvider } from 'fluxstack'
+import { LiveComponentsProvider } from '@/core/client'
 
 // Import page components
 import { OverviewPage } from './pages/Overview'
@@ -20,7 +17,6 @@ import { HybridLivePage } from './pages/HybridLive'
 import { ApiDocsPage } from './pages/ApiDocs'
 import { CryptoAuthPage } from './pages/CryptoAuthPage'
 import { MainLayout } from './components/MainLayout'
-import { LiveClock } from './components/LiveClock'
 
 // State management is now handled by Zustand stores directly
 
@@ -28,7 +24,22 @@ interface User {
   id: number
   name: string
   email: string
-  createdAt: string
+  createdAt: string | Date
+}
+
+interface UsersResponse {
+  users: User[]
+}
+
+interface UserCreateResponse {
+  success: boolean
+  user?: User
+  message?: string
+}
+
+interface UserDeleteResponse {
+  success: boolean
+  message?: string
 }
 
 function AppContent() {
@@ -47,7 +58,7 @@ function AppContent() {
 
   const checkApiStatus = async () => {
     try {
-      const { data, error } = await api.health.get()
+      const { error } = await api.health.get()
       if (error) {
         setApiStatus('offline')
       } else {
@@ -68,7 +79,7 @@ function AppContent() {
         return
       }
       
-      setUsers(data.users || [])
+      setUsers((data as UsersResponse).users || [])
     } catch (error) {
       showMessage('error', getErrorMessage(error))
     } finally {
@@ -92,13 +103,14 @@ function AppContent() {
         return
       }
       
-      if (result.success && result.user) {
-        setUsers(prev => [...prev, result.user])
+      const createResult = result as UserCreateResponse
+      if (createResult.success && createResult.user) {
+        setUsers(prev => [...prev, createResult.user!])
         setName('')
         setEmail('')
         showMessage('success', `Usuário ${name} adicionado com sucesso!`)
       } else {
-        showMessage('error', result.message || 'Erro ao criar usuário')
+        showMessage('error', createResult.message || 'Erro ao criar usuário')
       }
     } catch (error) {
       showMessage('error', getErrorMessage(error))
@@ -118,11 +130,12 @@ function AppContent() {
         return
       }
       
-      if (result.success) {
+      const deleteResult = result as UserDeleteResponse
+      if (deleteResult.success) {
         setUsers(prev => prev.filter(user => user.id !== userId))
         showMessage('success', `Usuário ${userName} removido com sucesso!`)
       } else {
-        showMessage('error', result.message || 'Erro ao deletar usuário')
+        showMessage('error', deleteResult.message || 'Erro ao deletar usuário')
       }
     } catch (error) {
       showMessage('error', getErrorMessage(error))

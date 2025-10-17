@@ -1,6 +1,6 @@
 // 🔥 LiveClock - Real-time Clock Client Component
 import React, { useState } from 'react';
-import { useHybridLiveComponent } from 'fluxstack';
+import { useHybridLiveComponent } from '@/core/client';
 import { 
   FaClock, 
   FaCog, 
