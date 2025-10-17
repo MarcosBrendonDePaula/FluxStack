@@ -239,6 +239,9 @@ MONITORING_ENABLED=true
     const startTime = Date.now()
     
     try {
+      // Pre-build checks (version sync, etc.)
+      await this.runPreBuildChecks()
+      
       // Validate configuration
       await this.validateConfig()
       
@@ -327,6 +330,21 @@ MONITORING_ENABLED=true
           dependencies: []
         }
       }
+    }
+  }
+
+  private async runPreBuildChecks(): Promise<void> {
+    console.log("🔄 Running pre-build checks...")
+    
+    try {
+      // Import and run version sync
+      const { syncVersion } = await import("../utils/sync-version")
+      syncVersion()
+      
+      console.log("✅ Pre-build checks completed")
+    } catch (error) {
+      console.warn("⚠️ Pre-build checks failed:", error instanceof Error ? error.message : String(error))
+      // Don't fail the build for pre-build check failures
     }
   }
 

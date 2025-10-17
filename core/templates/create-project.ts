@@ -95,12 +95,6 @@ export class ProjectCreator {
       join(this.targetDir, 'plugins')
     )
 
-    // Copy scripts directory
-    await this.copyDirectory(
-      join(rootDir, 'scripts'),
-      join(this.targetDir, 'scripts')
-    )
-
   }
 
   private async copyDirectory(src: string, dest: string, exclude: string[] = []) {
@@ -151,8 +145,7 @@ export class ProjectCreator {
         "dev:frontend": "bun run core/cli/index.ts frontend", 
         "dev:backend": "bun run core/cli/index.ts backend",
         "sync-version": "bun run core/utils/sync-version.ts",
-        prebuild: "bun run scripts/prebuild.ts",
-        build: "bun run prebuild && bun run core/cli/index.ts build",
+        build: "bun run core/cli/index.ts build",
         "build:frontend": "bun run core/cli/index.ts build:frontend",
         "build:backend": "bun run core/cli/index.ts build:backend",
         start: "bun run core/cli/index.ts start",
