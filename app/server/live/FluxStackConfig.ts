@@ -5,6 +5,7 @@ import { appConfig } from '@/config/app.config'
 import { serverConfig } from '@/config/server.config'
 import { loggerConfig } from '@/config/logger.config'
 import { systemConfig, systemRuntimeInfo } from '@/config/system.config'
+import { FLUXSTACK_VERSION } from '@/core/utils/version'
 
 export interface FluxStackConfigState {
   // Environment Configuration
@@ -165,7 +166,7 @@ export class FluxStackConfig extends LiveComponent<FluxStackConfigState> {
       
       framework: {
         name: 'FluxStack',
-        version: '1.6.0',
+        version: FLUXSTACK_VERSION,
         description: 'Modern Full-Stack TypeScript Framework with Live Components',
         author: 'FluxStack Team',
         license: 'MIT'

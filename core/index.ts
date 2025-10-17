@@ -23,4 +23,6 @@ export * from './framework/server.js'
 export * from './framework/client.js'
 export * from './plugins/index.js'
 export * from './utils/logger/index.js'
-export * from './utils/errors/index.js'
+export * from './utils/errors/index.js'// Ve
+rsion exports
+export { FLUXSTACK_VERSION, getVersion, getVersionInfo } from './utils/version.js'
