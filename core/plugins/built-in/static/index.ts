@@ -2,6 +2,8 @@ import { join, extname } from "path"
 import { existsSync, statSync } from "fs"
 import type { FluxStack, PluginContext } from "../../types"
 
+type Plugin = FluxStack.Plugin
+
 export const staticPlugin: Plugin = {
   name: "static",
   version: "1.0.0",

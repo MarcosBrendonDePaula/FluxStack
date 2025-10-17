@@ -7,6 +7,8 @@ import type { FluxStack, PluginConfigSchema, PluginValidationResult } from "./ty
 import type { FluxStackConfig } from "../config/schema"
 import type { Logger } from "../utils/logger/index"
 
+type Plugin = FluxStack.Plugin
+
 export interface PluginConfigManager {
   validatePluginConfig(plugin: Plugin, config: any): PluginValidationResult
   mergePluginConfig(plugin: Plugin, userConfig: any): any

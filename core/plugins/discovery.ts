@@ -9,6 +9,8 @@ import { readdir, readFile } from "fs/promises"
 import { join, resolve } from "path"
 import { existsSync } from "fs"
 
+type Plugin = FluxStack.Plugin
+
 export interface PluginDiscoveryConfig {
   logger?: Logger
   baseDir?: string

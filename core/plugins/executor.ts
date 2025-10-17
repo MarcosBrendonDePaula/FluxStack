@@ -28,6 +28,8 @@ export interface PluginExecutionStep {
   canExecuteInParallel: boolean
 }
 
+type Plugin = FluxStack.Plugin
+
 export class PluginExecutor {
   private logger: Logger
 

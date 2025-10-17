@@ -1,11 +1,14 @@
 import type { FluxStack, PluginContext, RequestContext } from "../../types"
 import { createServer, type ViteDevServer } from 'vite'
+import { FLUXSTACK_VERSION } from "../../../utils/version"
+
+type Plugin = FluxStack.Plugin
 
 let viteServer: ViteDevServer | null = null
 
 export const vitePlugin: Plugin = {
   name: "vite",
-  version: "1.0.0",
+  version: FLUXSTACK_VERSION,
   description: "Enhanced Vite integration plugin for FluxStack with improved error handling and monitoring",
   author: "FluxStack Team",
   priority: 800, // Should run early to setup proxying

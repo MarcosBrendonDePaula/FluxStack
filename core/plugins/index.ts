@@ -27,7 +27,6 @@ export type {
     BuildContext
 } from './types'
 
-export type { FluxStack }
 export type Plugin = FluxStack.Plugin
 
 // Plugin registry
@@ -200,5 +199,6 @@ import type {
     PluginPriority,
     RequestContext,
     ResponseContext,
-    ErrorContext
+    ErrorContext,
+    FluxStack
 } from './types'

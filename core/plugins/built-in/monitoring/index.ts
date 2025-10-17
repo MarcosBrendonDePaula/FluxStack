@@ -61,6 +61,8 @@ export interface AlertThreshold {
   message?: string
 }
 
+type Plugin = FluxStack.Plugin
+
 export const monitoringPlugin: Plugin = {
   name: "monitoring",
   version: "1.0.0",

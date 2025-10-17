@@ -13,7 +13,7 @@ export class FluxStackBuilder {
 
   constructor(config: FluxStackConfig) {
     this.config = config
-    
+
     // Initialize bundler with configuration
     this.bundler = new Bundler({
       target: config.build.target,
@@ -21,7 +21,7 @@ export class FluxStackBuilder {
       sourceMaps: config.build.sourceMaps,
       external: config.build.external
     })
-    
+
     // Initialize optimizer with configuration
     this.optimizer = new Optimizer({
       treeshake: config.build.treeshake,
@@ -47,10 +47,10 @@ export class FluxStackBuilder {
 
   async createDockerFiles() {
     console.log("🐳 Creating Docker files...")
-    
+
     const distDir = this.config.build.outDir
     console.log(`📁 Output directory: ${distDir}`)
-    
+
     // Ensure dist directory exists
     if (!existsSync(distDir)) {
       console.log(`📁 Creating directory: ${distDir}`)
@@ -59,7 +59,7 @@ export class FluxStackBuilder {
     } else {
       console.log(`✅ Directory already exists`)
     }
-    
+
     // Dockerfile optimizado para produção
     const dockerfile = `# FluxStack Production Docker Image
 FROM oven/bun:1.1-alpine AS production
@@ -166,17 +166,17 @@ coverage
       console.error(`❌ Error writing Docker files:`, error)
       throw error
     }
-    
+
     // Copiar .env ou criar um de exemplo
     const envPath = join(process.cwd(), '.env')
     const envExamplePath = join(process.cwd(), '.env.example')
     const distEnvPath = join(distDir, ".env")
-    
+
     console.log(`🔍 Checking for .env files...`)
     console.log(`  - .env path: ${envPath}`)
     console.log(`  - .env.example path: ${envExamplePath}`)
     console.log(`  - target path: ${distEnvPath}`)
-    
+
     if (existsSync(envPath)) {
       console.log(`📄 Copying .env file and setting production mode...`)
       // Read .env content
@@ -204,15 +204,15 @@ MONITORING_ENABLED=true
       writeFileSync(distEnvPath, defaultEnv)
       console.log("📄 Default environment file created for production")
     }
-    
+
     // Copy package.json for Docker build
     const packageJsonPath = join(process.cwd(), 'package.json')
     const distPackageJsonPath = join(distDir, 'package.json')
-    
+
     console.log(`📦 Copying package.json...`)
     console.log(`  - source: ${packageJsonPath}`)
     console.log(`  - target: ${distPackageJsonPath}`)
-    
+
     if (existsSync(packageJsonPath)) {
       copyFileSync(packageJsonPath, distPackageJsonPath)
       console.log("📦 Package.json copied successfully")
@@ -229,41 +229,44 @@ MONITORING_ENABLED=true
       }
       writeFileSync(distPackageJsonPath, JSON.stringify(minimalPackageJson, null, 2))
     }
-    
+
     console.log("✅ Docker files created in dist/")
   }
 
 
   async build(): Promise<BuildResult> {
     console.log("⚡ FluxStack Framework - Building...")
-    
+
     const startTime = Date.now()
-    
+
     try {
       // Pre-build checks (version sync, etc.)
       await this.runPreBuildChecks()
-      
+
       // Validate configuration
       await this.validateConfig()
-      
+
       // Clean output directory if requested
       if (this.config.build.clean) {
         await this.clean()
       }
-      
+
       // Build client and server
       const clientResult = await this.buildClient()
       const serverResult = await this.buildServer()
-      
+
       // Check if builds were successful
       if (!clientResult.success || !serverResult.success) {
+        const errorMessage = clientResult.error || serverResult.error || "Build failed"
         return {
           success: false,
           duration: Date.now() - startTime,
-          error: clientResult.error || serverResult.error || "Build failed",
           outputFiles: [],
           warnings: [],
-          errors: [],
+          errors: [{
+            message: errorMessage,
+            code: 'BUILD_FAILED'
+          }],
           stats: {
             totalSize: 0,
             gzippedSize: 0,
@@ -274,25 +277,25 @@ MONITORING_ENABLED=true
           }
         }
       }
-      
+
       // Optimize build if enabled
       let optimizationResult
       if (this.config.build.optimize) {
         optimizationResult = await this.optimizer.optimize(this.config.build.outDir)
       }
-      
+
       // Create Docker files
       await this.createDockerFiles()
-      
+
       // Generate build manifest
       const manifest = await this.generateManifest(clientResult, serverResult, optimizationResult)
-      
+
       const duration = Date.now() - startTime
-      
+
       console.log("🎉 Build completed successfully!")
       console.log(`⏱️ Build time: ${duration}ms`)
       console.log("🐳 Ready for Docker deployment from dist/ directory")
-      
+
       return {
         success: true,
         duration,
@@ -308,20 +311,23 @@ MONITORING_ENABLED=true
           dependencies: []
         }
       }
-      
+
     } catch (error) {
       const duration = Date.now() - startTime
       const errorMessage = error instanceof Error ? error.message : "Unknown build error"
-      
+
       console.error("❌ Build failed:", errorMessage)
-      
+
       return {
         success: false,
         duration,
-        error: errorMessage,
         outputFiles: [],
         warnings: [],
-        errors: [],
+        errors: [{
+          message: errorMessage,
+          code: 'BUILD_EXCEPTION',
+          stack: error instanceof Error ? error.stack : undefined
+        }],
         stats: {
           totalSize: 0,
           gzippedSize: 0,
@@ -350,7 +356,7 @@ MONITORING_ENABLED=true
     if (!this.config.build.outDir) {
       throw new Error("Build output directory not specified")
     }
-    
+
     if (!this.config.build.target) {
       throw new Error("Build target not specified")
     }
@@ -362,8 +368,8 @@ MONITORING_ENABLED=true
   }
 
   private async generateManifest(
-    clientResult: any, 
-    serverResult: any, 
+    clientResult: any,
+    serverResult: any,
     optimizationResult?: any
   ): Promise<BuildManifest> {
     return {
