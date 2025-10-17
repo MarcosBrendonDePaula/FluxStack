@@ -83,7 +83,7 @@ export const swaggerPlugin: Plugin = {
     path: '/swagger',
     title: 'FluxStack API',
     description: 'Modern full-stack TypeScript framework with type-safe API endpoints',
-    version: '1.0.0',
+    version: '1.7.4',
     tags: [
       { 
         name: 'Health', 
@@ -130,7 +130,7 @@ export const swaggerPlugin: Plugin = {
         documentation: {
           info: {
             title: config.title || context.config.app?.name || 'FluxStack API',
-            version: config.version || context.config.app?.version || '1.0.0',
+            version: config.version || context.config.app?.version || '1.7.4',
             description: config.description || context.config.app?.description || 'Modern full-stack TypeScript framework with type-safe API endpoints'
           },
           tags: config.tags,

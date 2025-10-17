@@ -9,7 +9,7 @@ export const swaggerPlugin: Plugin = {
       documentation: {
         info: {
           title: 'FluxStack API',
-          version: '1.0.0',
+          version: '1.7.4',
           description: 'Modern full-stack TypeScript framework with type-safe API endpoints'
         },
         tags: [

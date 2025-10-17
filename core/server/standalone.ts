@@ -17,7 +17,7 @@ export const createStandaloneServer = (userConfig: any = {}) => {
       },
       middleware: []
     },
-    app: { name: 'FluxStack Backend', version: '1.0.0' },
+    app: { name: 'FluxStack Backend', version: '1.7.4' },
     client: { port: 5173, proxy: { target: 'http://localhost:3000' }, build: { sourceMaps: true, minify: false, target: 'es2020', outDir: 'dist' } },
     ...userConfig
   })

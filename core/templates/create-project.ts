@@ -287,6 +287,9 @@ export default defineConfig({
 
     await Bun.write(join(this.targetDir, "vite.config.ts"), viteConfig)
 
+    // Get FluxStack version dynamically
+    const { FLUXSTACK_VERSION } = await import("../utils/version")
+    
     // Environment file
     const envContent = `# FluxStack Environment Variables
 
@@ -300,6 +303,12 @@ HOST=localhost
 # Frontend Configuration
 FRONTEND_PORT=5173
 VITE_API_URL=http://localhost:3000
+VITE_APP_NAME=FluxStack
+VITE_APP_VERSION=${FLUXSTACK_VERSION}
+VITE_NODE_ENV=development
+
+# FluxStack Framework Version
+FLUXSTACK_APP_VERSION=${FLUXSTACK_VERSION}
 
 # Backend Configuration
 BACKEND_PORT=3001

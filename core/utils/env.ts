@@ -220,7 +220,7 @@ export const env = {
 
   // App
   get FLUXSTACK_APP_NAME() { return this.get('FLUXSTACK_APP_NAME', 'FluxStack') },
-  get FLUXSTACK_APP_VERSION() { return this.get('FLUXSTACK_APP_VERSION', '1.0.0') },
+  get FLUXSTACK_APP_VERSION() { return this.get('FLUXSTACK_APP_VERSION', '1.7.4') },
 
   // Features
   get ENABLE_MONITORING() { return this.get('ENABLE_MONITORING', false) },

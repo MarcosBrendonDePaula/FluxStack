@@ -1,6 +1,6 @@
 {
   "name": "create-fluxstack",
-  "version": "1.7.3",
+  "version": "1.7.4",
   "description": "⚡ Revolutionary full-stack TypeScript framework with Declarative Config System, Elysia + React + Bun",
   "keywords": [
     "framework",
@@ -28,7 +28,6 @@
     "dev:frontend": "bun run core/cli/index.ts frontend",
     "dev:backend": "bun run core/cli/index.ts backend",
     "dev:coordinated": "concurrently --prefix {name} --names BACKEND,VITE --prefix-colors blue,green --kill-others-on-fail \"bun --watch app/server/index.ts\" \"vite --config vite.config.ts\"",
-
     "sync-version": "bun run core/utils/sync-version.ts",
     "build": "cross-env NODE_ENV=production bun run core/cli/index.ts build",
     "build:frontend": "vite build --config vite.config.ts --emptyOutDir",

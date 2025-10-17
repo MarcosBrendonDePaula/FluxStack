@@ -19,7 +19,7 @@ console.log(`🔧 Loading FluxStack config for ${env.NODE_ENV} environment`)
  */
 const appConfigSchema = {
   name: configHelpers.string('FLUXSTACK_APP_NAME', 'FluxStack', true),
-  version: configHelpers.string('FLUXSTACK_APP_VERSION', '1.0.0', true),
+  version: configHelpers.string('FLUXSTACK_APP_VERSION', '1.7.4', true),
   description: configHelpers.string('FLUXSTACK_APP_DESCRIPTION', 'A FluxStack application')
 } as const
 
@@ -259,7 +259,7 @@ export const config: FluxStackConfig = {
       },
       swagger: {
         title: env.get('SWAGGER_TITLE', 'FluxStack API'),
-        version: env.get('SWAGGER_VERSION', '1.0.0'),
+        version: env.get('SWAGGER_VERSION', '1.7.4'),
         description: env.get('SWAGGER_DESCRIPTION', 'API documentation for FluxStack application')
       },
       staticFiles: {

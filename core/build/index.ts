@@ -196,7 +196,7 @@ coverage
       const defaultEnv = `NODE_ENV=production
 PORT=3000
 FLUXSTACK_APP_NAME=fluxstack-app
-FLUXSTACK_APP_VERSION=1.0.0
+FLUXSTACK_APP_VERSION=1.7.4
 LOG_LEVEL=info
 MONITORING_ENABLED=true
 `

@@ -21,7 +21,7 @@ ${chalk.gray(`FluxStack v${FLUXSTACK_VERSION} - Creates full-stack TypeScript ap
 program
   .name('create-fluxstack')
   .description('⚡ Create FluxStack apps with zero configuration')
-  .version('1.0.0')
+  .version(FLUXSTACK_VERSION)
   .argument('[project-name]', 'Name of the project to create')
   .option('--no-install', 'Skip dependency installation')
   .option('--no-git', 'Skip git initialization')
