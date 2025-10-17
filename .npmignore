@@ -65,18 +65,13 @@ ai-context/
 .claude/
 .kiro/
 
-# Documentation (keep README.md)
-docs/
-studies/
+# Documentation (keep README.md and ai-context/)
 COMPONENTS.md
 CLAUDE.md
 TEST_RESULTS.md
 README-Docker.md
 
-# Docker files (not needed for npm package)
-Dockerfile*
-docker-compose*.yml
-nginx-lb.conf
+# Docker files are generated automatically in dist/ during build
 
 # Scripts and utilities
 scripts/

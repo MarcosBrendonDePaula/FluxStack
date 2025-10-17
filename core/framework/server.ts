@@ -33,7 +33,7 @@ export class FluxStackFramework {
 
     this.app = new Elysia()
     this.pluginRegistry = new PluginRegistry()
-    
+
 
 
     // Create plugin utilities
@@ -98,6 +98,7 @@ export class FluxStackFramework {
 
     this.setupCors()
     this.setupHeadHandler()
+    this.setupElysiaHeadBugFilter()
     this.setupHooks()
     this.setupErrorHandling()
 
@@ -105,7 +106,7 @@ export class FluxStackFramework {
       environment: envInfo.name,
       port: fullConfig.server.port
     })
-    
+
     // Initialize automatic plugin discovery in background
     this.initializeAutomaticPlugins().catch(error => {
       logger.error('Failed to initialize automatic plugins', { error })
@@ -148,7 +149,7 @@ export class FluxStackFramework {
     // Global HEAD handler to prevent Elysia's automatic HEAD conversion bug
     this.app.head("*", ({ request, set }) => {
       const url = new URL(request.url)
-      
+
       // Handle API routes
       if (url.pathname.startsWith(this.context.config.server.apiPrefix)) {
         set.status = 200
@@ -156,7 +157,7 @@ export class FluxStackFramework {
         set.headers['Content-Length'] = '0'
         return ""
       }
-      
+
       // Handle static files (assume they're HTML if no extension)
       const isStatic = url.pathname === '/' || !url.pathname.includes('.')
       if (isStatic) {
@@ -166,13 +167,43 @@ export class FluxStackFramework {
         set.headers['Cache-Control'] = 'no-cache'
         return ""
       }
-      
+
       // Handle other file types
       set.status = 200
       set.headers['Content-Type'] = 'application/octet-stream'
       set.headers['Content-Length'] = '0'
       return ""
     })
+  }
+
+  private setupElysiaHeadBugFilter() {
+    // Only filter in development mode to avoid affecting production logs
+    if (process.env.NODE_ENV !== 'development') {
+      return
+    }
+
+    // Store original stderr.write to restore if needed
+    const originalStderrWrite = process.stderr.write
+
+    // Override stderr.write to filter Elysia HEAD bug errors
+    process.stderr.write = function (chunk: any, encoding?: any, callback?: any) {
+      const str = chunk.toString()
+
+      // Filter out known Elysia HEAD bug error patterns
+      if (str.includes("TypeError: undefined is not an object (evaluating '_res.headers.set')") ||
+        str.includes("HEAD - / failed") ||
+        (str.includes("HEAD - ") && str.includes(" failed"))) {
+        // Silently ignore these specific errors
+        if (callback) callback()
+        return true
+      }
+
+      // Pass through all other stderr output
+      return originalStderrWrite.call(process.stderr, chunk, encoding, callback)
+    }
+
+      // Store reference to restore original behavior if needed
+      ; (this as any)._originalStderrWrite = originalStderrWrite
   }
 
   private setupHooks() {
@@ -275,7 +306,7 @@ export class FluxStackFramework {
     this.app.onError(async ({ error, request, path, set }) => {
       const startTime = Date.now()
       const url = new URL(request.url)
-      
+
       const errorContext = {
         request,
         path: url.pathname,
@@ -294,17 +325,17 @@ export class FluxStackFramework {
         handled: false,
         startTime
       }
-      
+
       // Execute onError hooks for all plugins - allow them to handle the error
       const handledResponse = await this.executePluginErrorHooks(errorContext)
-      
+
       // If a plugin handled the error, return the response
       if (handledResponse) {
         return handledResponse
       }
-      
+
       // Vite proxy logic is now handled by the Vite plugin via onBeforeRoute hook
-      
+
       // Convert Elysia error to standard Error if needed
       const standardError = error instanceof Error ? error : new Error(String(error))
       return errorHandler(standardError, request, path)
@@ -313,18 +344,18 @@ export class FluxStackFramework {
 
   private async executePluginHooks(hookName: string, context: any): Promise<void> {
     const loadOrder = this.pluginRegistry.getLoadOrder()
-    
+
     for (const pluginName of loadOrder) {
       const plugin = this.pluginRegistry.get(pluginName)
       if (!plugin) continue
-      
+
       const hookFn = (plugin as any)[hookName]
       if (typeof hookFn === 'function') {
         try {
           await hookFn(context)
         } catch (error) {
-          logger.error(`Plugin '${pluginName}' ${hookName} hook failed`, { 
-            error: (error as Error).message 
+          logger.error(`Plugin '${pluginName}' ${hookName} hook failed`, {
+            error: (error as Error).message
           })
         }
       }
@@ -333,86 +364,86 @@ export class FluxStackFramework {
 
   private async executePluginBeforeRouteHooks(requestContext: any): Promise<Response | null> {
     const loadOrder = this.pluginRegistry.getLoadOrder()
-    
+
     for (const pluginName of loadOrder) {
       const plugin = this.pluginRegistry.get(pluginName)
       if (!plugin) continue
-      
+
       const onBeforeRouteFn = (plugin as any).onBeforeRoute
       if (typeof onBeforeRouteFn === 'function') {
         try {
           await onBeforeRouteFn(requestContext)
-          
+
           // If this plugin handled the request, return the response
           if (requestContext.handled && requestContext.response) {
             return requestContext.response
           }
         } catch (error) {
-          logger.error(`Plugin '${pluginName}' onBeforeRoute hook failed`, { 
-            error: (error as Error).message 
+          logger.error(`Plugin '${pluginName}' onBeforeRoute hook failed`, {
+            error: (error as Error).message
           })
         }
       }
     }
-    
+
     return null
   }
 
   private async executePluginErrorHooks(errorContext: any): Promise<Response | null> {
     const loadOrder = this.pluginRegistry.getLoadOrder()
-    
+
     for (const pluginName of loadOrder) {
       const plugin = this.pluginRegistry.get(pluginName)
       if (!plugin) continue
-      
+
       const onErrorFn = (plugin as any).onError
       if (typeof onErrorFn === 'function') {
         try {
           await onErrorFn(errorContext)
-          
+
           // If this plugin handled the error, check if it provides a response
           if (errorContext.handled) {
             // For Vite plugin, we'll handle the proxy here
             if (pluginName === 'vite' && errorContext.error.constructor.name === 'NotFoundError') {
               return await this.handleViteProxy(errorContext)
             }
-            
+
             // For other plugins, return a basic success response
             return new Response('OK', { status: 200 })
           }
         } catch (error) {
-          logger.error(`Plugin '${pluginName}' onError hook failed`, { 
-            error: (error as Error).message 
+          logger.error(`Plugin '${pluginName}' onError hook failed`, {
+            error: (error as Error).message
           })
         }
       }
     }
-    
+
     return null
   }
 
   private async handleViteProxy(errorContext: any): Promise<Response> {
     const vitePort = this.context.config.client?.port || 5173
     const url = new URL(errorContext.request.url)
-    
+
     try {
       const viteUrl = `http://localhost:${vitePort}${url.pathname}${url.search}`
-      
+
       // Forward request to Vite
       const response = await fetch(viteUrl, {
         method: errorContext.method,
         headers: errorContext.headers
       })
-      
+
       // Return a proper Response object with all headers and status
       const body = await response.arrayBuffer()
-      
+
       return new Response(body, {
         status: response.status,
         statusText: response.statusText,
         headers: response.headers
       })
-      
+
     } catch (viteError) {
       // If Vite fails, return error response
       return new Response(`Vite server not ready on port ${vitePort}. Error: ${viteError}`, {
@@ -428,16 +459,16 @@ export class FluxStackFramework {
       if (this.pluginRegistry.has(plugin.name)) {
         throw new Error(`Plugin '${plugin.name}' is already registered`)
       }
-      
+
       // Store plugin without calling setup - setup will be called in start()
       // We need to manually set the plugin since register() is async but we need sync
       (this.pluginRegistry as any).plugins.set(plugin.name, plugin)
-      
+
       // Update dependencies tracking
       if (plugin.dependencies) {
         (this.pluginRegistry as any).dependencies.set(plugin.name, plugin.dependencies)
       }
-      
+
       // Update load order by calling the private method
       try {
         (this.pluginRegistry as any).updateLoadOrder()
@@ -445,9 +476,9 @@ export class FluxStackFramework {
         // Fallback: create basic load order
         const plugins = (this.pluginRegistry as any).plugins as Map<string, Plugin>
         const loadOrder = Array.from(plugins.keys())
-        ;(this.pluginRegistry as any).loadOrder = loadOrder
+          ; (this.pluginRegistry as any).loadOrder = loadOrder
       }
-      
+
       logger.debug(`Plugin '${plugin.name}' registered`, {
         version: plugin.version,
         dependencies: plugin.dependencies

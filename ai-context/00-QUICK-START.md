@@ -7,7 +7,7 @@ Objetivo: saber onde mexer, quais comandos usar e como manter a type safety em m
 ```bash
 # Desenvolvimento (escolha um)
 bun run dev          # backend + frontend com hot reload
-bun run dev:clean    # mesmo fluxo com logs reduzidos
+bun run dev          # logs automaticamente filtrados
 
 # Build e produção
 bun run build        # build completo (frontend + backend)

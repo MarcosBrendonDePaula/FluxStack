@@ -8,7 +8,7 @@ O comando `flux` (ou `bun run cli`) centraliza operações de desenvolvimento, b
 | `flux dev`              | Inicia backend e frontend com hot reload (porta 3000/5173).          |
 | `flux frontend`         | Apenas o Vite dev server.                                             |
 | `flux backend`          | Apenas o backend Elysia com `bun --watch`.                            |
-| `flux dev:clean`        | Variante do dev com logs enxutos (`run-clean.ts`).                    |
+| `flux dev`              | Logs automaticamente filtrados em desenvolvimento.                    |
 
 > `flux dev` executa o Vite atrás do backend via proxy reverso. Mesmo assim, você pode rodar cada parte isolada com `flux frontend` ou `flux backend` quando desejar separar os processos.***
 Opções comuns (quando aplicável):

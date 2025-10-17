@@ -96,7 +96,7 @@ FluxStack/
 ```bash
 # development
 bun run dev              # full stack with proxy + vite
-bun run dev:clean        # same as dev but with quieter logs
+bun run dev              # logs are automatically filtered in development
 bun run dev:frontend     # only the frontend (port 5173, no proxy)
 bun run dev:backend      # only the backend (port 3001)
 
@@ -193,7 +193,7 @@ export const auditPlugin = new Elysia({ name: 'audit' })
 - Full documentation lives in `ai-context/`.
 - Assistant guidelines: `CLAUDE.md`.
 - Quick start for AI agents: `ai-context/00-QUICK-START.md`.
-- Example apps and guides included in `examples/` and `docs/`.
+- Example apps and guides included in `examples/` and `ai-context/`.
 
 ---
 

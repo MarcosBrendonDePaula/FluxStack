@@ -292,8 +292,8 @@ describe('useProducts', () => {
 # Servidor completo (recomendado)
 bun run dev
 
-# Output limpo (sem logs HEAD do Elysia)
-bun run dev:clean
+# Logs automaticamente filtrados em desenvolvimento
+bun run dev
 
 # Apenas backend (porta 3001)
 bun run dev:backend

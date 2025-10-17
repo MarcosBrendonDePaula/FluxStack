@@ -41,7 +41,7 @@ FluxStack/
 │  └─ shared/               # Tipos comuns
 ├─ config/                  # Config files derivados do schema central
 ├─ plugins/                 # Plugins externos (ex.: crypto-auth)
-├─ docs/, examples/, tests/
+├─ examples/, tests/   # Exemplos e testes
 └─ ai-context/              # Documentação para assistentes
 ```
 
@@ -59,7 +59,7 @@ FluxStack/
 - Built-ins: `swagger`, `vite`, `static`, `monitoring`, além do plugin auxiliar `staticFilesPlugin` (arquivos públicos) e `liveComponentsPlugin`.
 
 ### CLI (`core/cli`)
-- Comandos principais: `flux dev`, `flux frontend`, `flux backend`, `flux dev:clean`, `flux build`, `flux build:frontend`, `flux build:backend`, `flux start`, `flux create`.
+- Comandos principais: `flux dev`, `flux frontend`, `flux backend`, `flux build`, `flux build:frontend`, `flux build:backend`, `flux start`, `flux create`.
 - Geradores e utilitários: `flux make:plugin`, `flux generate`, `flux plugin:deps {install|list|check|clean}`.
 
 ### Build (`core/build`)

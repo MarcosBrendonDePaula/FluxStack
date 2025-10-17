@@ -28,7 +28,7 @@
     "dev:frontend": "bun run core/cli/index.ts frontend",
     "dev:backend": "bun run core/cli/index.ts backend",
     "dev:coordinated": "concurrently --prefix {name} --names BACKEND,VITE --prefix-colors blue,green --kill-others-on-fail \"bun --watch app/server/index.ts\" \"vite --config vite.config.ts\"",
-    "dev:clean": "bun run run-clean.ts",
+
     "build": "cross-env NODE_ENV=production bun run core/cli/index.ts build",
     "build:frontend": "vite build --config vite.config.ts --emptyOutDir",
     "build:backend": "bun run core/cli/index.ts build:backend",

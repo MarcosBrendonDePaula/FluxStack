@@ -71,9 +71,17 @@ FluxStack/
 │   │   ├── src/lib/        # Cliente Eden Treaty
 │   │   └── src/App.tsx     # Interface principal
 │   └── shared/             # Types compartilhados
+├── plugins/                 # 🔌 PLUGINS EXTERNOS
+│   └── crypto-auth/        # Plugin de autenticação criptográfica
 ├── tests/                   # Testes do framework
-├── docs/                    # Documentação técnica
-└── ai-context/              # 📖 Esta documentação reorganizada
+└── ai-context/              # 📖 Documentação para LLMs
+    ├── 00-QUICK-START.md   # Início rápido
+    ├── README.md           # Navegação completa
+    ├── development/        # Padrões e guias de desenvolvimento
+    ├── examples/           # Exemplos práticos
+    ├── project/            # Arquitetura e configuração
+    ├── recent-changes/     # Mudanças recentes
+    └── reference/          # Referência técnica
 ```
 
 ## 🔄 **Estado Atual da Interface**
@@ -108,7 +116,7 @@ const { data: user, error } = await api.users.post({
 ### ✅ **2. Hot Reload Independente**
 ```bash
 bun run dev          # ✅ Backend (3000) + Frontend (5173)
-bun run dev:clean    # ✅ Output limpo (sem logs HEAD do Elysia)
+bun run dev          # ✅ Output automaticamente limpo em desenvolvimento
 ```
 
 ### ✅ **3. APIs Funcionais**
@@ -230,7 +238,7 @@ config.enum(envVar, values, defaultValue, required)
 ```bash
 # Desenvolvimento
 bun run dev              # ✅ Full-stack (recomendado)
-bun run dev:clean        # ✅ Output limpo
+bun run dev              # ✅ Output automaticamente limpo
 bun run dev:backend      # ✅ Backend apenas (porta 3001)
 bun run dev:frontend     # ✅ Frontend apenas (porta 5173)
 

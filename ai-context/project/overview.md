@@ -52,7 +52,7 @@ FluxStack/
 │  └─ shared/          # tipos compartilhados
 ├─ config/             # camadas declarativas
 ├─ plugins/            # plugins opcionais (ex.: crypto-auth)
-├─ docs/               # documentação adicional
+├─ ai-context/         # documentação para LLMs
 ├─ examples/           # exemplos externos
 ├─ tests/              # unit/integration e scaffolds E2E
 └─ ai-context/         # documentação para LLMs
