@@ -260,7 +260,22 @@ curl http://localhost:3000/api/health  # ✅ Health check
 - **🩺 Health Check**: http://localhost:3000/api/health
 - **👥 Users API**: http://localhost:3000/api/users
 
-## 🔥 **Mudanças Importantes v1.4→v1.5**
+## 🔥 **Mudanças Importantes v1.5→v1.6**
+
+### **✅ Limpeza e Organização do Projeto (Janeiro 2025)**
+- **Problema resolvido**: Arquivos markdown duplicados e desorganizados na raiz
+- **Solução implementada**: Consolidação em `ai-context/` e remoção de arquivos desnecessários
+- **Resultado**: Estrutura limpa com apenas README.md e CLAUDE.md na raiz
+
+### **✅ Integração do Filtro de Bug do Elysia (Janeiro 2025)**
+- **Problema resolvido**: Logs poluídos com erros HEAD do Elysia em desenvolvimento
+- **Solução implementada**: Filtro integrado no core do framework
+- **Resultado**: Logs limpos automaticamente, sem necessidade de scripts externos
+
+### **✅ Correção de Tipos TypeScript (Janeiro 2025)**
+- **Problema resolvido**: Uso inadequado de tipos `any` e erros de compilação
+- **Solução implementada**: Tipos específicos e interfaces apropriadas
+- **Resultado**: Type safety melhorada e código mais robusto
 
 ### **✅ Eden Treaty Refatoração (Setembro 2025)**
 - **Problema resolvido**: Wrapper `apiCall()` quebrava type inference

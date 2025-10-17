@@ -1,4 +1,4 @@
-# Guia de Plugins – FluxStack (v1.5)
+# Guia de Plugins – FluxStack (v1.6)
 
 ## 1. Panorama
 FluxStack executa um pipeline de plugins composto por `PluginRegistry` + `PluginManager`, inicializado automaticamente pelo `FluxStackFramework`. Há três origens principais:

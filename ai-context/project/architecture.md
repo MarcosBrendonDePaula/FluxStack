@@ -1,4 +1,4 @@
-﻿# Arquitetura do FluxStack (v1.5)
+﻿# Arquitetura do FluxStack (v1.6)
 
 ## Panorama
 FluxStack organiza-se como um monorepo onde o framework (`core/`) permanece estável e a aplicação (`app/`) concentra o código editável. A base oferece:
