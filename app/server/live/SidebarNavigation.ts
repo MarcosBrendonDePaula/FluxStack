@@ -132,7 +132,8 @@ export class SidebarNavigation extends LiveComponent<SidebarNavigationState> {
         profile: 0,
         settings: 0,
         files: 0,
-        analytics: 0
+        analytics: 0,
+        config: 0
       }
     })
 

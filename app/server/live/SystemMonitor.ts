@@ -63,6 +63,7 @@ export class SystemMonitor extends LiveComponent<SystemMonitorState> {
   private startTime = Date.now()
   private pushInterval = 1000 // Push every 1 second
   private isActive = true // Control flag for stopping all activities
+  private version = 1 // Component version
   
   constructor(initialState: SystemMonitorState, ws: any, options?: any) {
     super(initialState, ws, options)
