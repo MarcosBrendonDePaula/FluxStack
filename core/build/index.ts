@@ -334,16 +334,12 @@ MONITORING_ENABLED=true
   }
 
   private async runPreBuildChecks(): Promise<void> {
-    console.log("🔄 Running pre-build checks...")
-    
     try {
-      // Import and run version sync
+      // Import and run version sync silently
       const { syncVersion } = await import("../utils/sync-version")
-      syncVersion()
-      
-      console.log("✅ Pre-build checks completed")
+      syncVersion(true) // Pass true for silent mode
     } catch (error) {
-      console.warn("⚠️ Pre-build checks failed:", error instanceof Error ? error.message : String(error))
+      // Silently handle pre-build check failures
       // Don't fail the build for pre-build check failures
     }
   }

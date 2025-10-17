@@ -26,7 +26,7 @@ function getPackageVersion(): string {
 /**
  * Update version.ts with the version from package.json
  */
-function updateVersionFile(version: string): void {
+function updateVersionFile(version: string, silent = false): void {
   const versionPath = join(process.cwd(), 'core/utils/version.ts')
   const versionContent = `/**
  * FluxStack Framework Version
@@ -36,19 +36,25 @@ function updateVersionFile(version: string): void {
 export const FLUXSTACK_VERSION = '${version}'
 `
   writeFileSync(versionPath, versionContent)
-  console.log(`✅ Updated version.ts to v${version}`)
+  if (!silent) {
+    console.log(`✅ Updated version.ts to v${version}`)
+  }
 }
 
 /**
  * Main sync function
  */
-function syncVersion(): void {
+function syncVersion(silent = false): void {
   try {
     const packageVersion = getPackageVersion()
-    updateVersionFile(packageVersion)
-    console.log(`🔄 Version synchronized: v${packageVersion}`)
+    updateVersionFile(packageVersion, silent)
+    if (!silent) {
+      console.log(`🔄 Version synchronized: v${packageVersion}`)
+    }
   } catch (error) {
-    console.error('❌ Failed to sync version:', error)
+    if (!silent) {
+      console.error('❌ Failed to sync version:', error)
+    }
     process.exit(1)
   }
 }
