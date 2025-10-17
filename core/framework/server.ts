@@ -1,6 +1,6 @@
 import { Elysia } from "elysia"
 import type { FluxStackConfig, FluxStackContext } from "../types"
-import type { Plugin, PluginContext, PluginUtils } from "../plugins/types"
+import type { FluxStack, PluginContext, PluginUtils } from "../plugins/types"
 import { PluginRegistry } from "../plugins/registry"
 import { PluginManager } from "../plugins/manager"
 import { getConfigSync, getEnvironmentInfo } from "../config"
@@ -69,22 +69,33 @@ export class FluxStackFramework {
       }
     }
 
-    // Create a logger wrapper that implements the full Logger interface
-    const pluginLogger = {
-      debug: (message: string, meta?: any) => logger.debug(message, meta),
-      info: (message: string, meta?: any) => logger.info(message, meta),
-      warn: (message: string, meta?: any) => logger.warn(message, meta),
-      error: (message: string, meta?: any) => logger.error(message, meta),
-      child: (context: any) => (logger as any).child ? (logger as any).child(context) : logger,
-      time: (label: string) => (logger as any).time(label),
-      timeEnd: (label: string) => (logger as any).timeEnd(label),
+    // Create plugin-compatible logger interface
+    interface PluginLogger {
+      debug: (message: string, meta?: unknown) => void
+      info: (message: string, meta?: unknown) => void
+      warn: (message: string, meta?: unknown) => void
+      error: (message: string, meta?: unknown) => void
+      child: (context: Record<string, unknown>) => PluginLogger
+      time: (label: string) => void
+      timeEnd: (label: string) => void
+      request: (method: string, path: string, status?: number, duration?: number) => void
+    }
+
+    const pluginLogger: PluginLogger = {
+      debug: (message: string, meta?: unknown) => logger.debug(message, meta),
+      info: (message: string, meta?: unknown) => logger.info(message, meta),
+      warn: (message: string, meta?: unknown) => logger.warn(message, meta),
+      error: (message: string, meta?: unknown) => logger.error(message, meta),
+      child: (context: Record<string, unknown>) => pluginLogger,
+      time: (label: string) => logger.time(label),
+      timeEnd: (label: string) => logger.timeEnd(label),
       request: (method: string, path: string, status?: number, duration?: number) =>
         logger.request(method, path, status, duration)
     }
 
     this.pluginContext = {
       config: fullConfig,
-      logger: pluginLogger,
+      logger: pluginLogger as any,
       app: this.app,
       utils: pluginUtils
     }
@@ -186,7 +197,11 @@ export class FluxStackFramework {
     const originalStderrWrite = process.stderr.write
 
     // Override stderr.write to filter Elysia HEAD bug errors
-    process.stderr.write = function (chunk: any, encoding?: any, callback?: any) {
+    process.stderr.write = function (
+      chunk: string | Uint8Array, 
+      encoding?: BufferEncoding | ((error?: Error) => void), 
+      callback?: (error?: Error) => void
+    ): boolean {
       const str = chunk.toString()
 
       // Filter out known Elysia HEAD bug error patterns
@@ -194,12 +209,20 @@ export class FluxStackFramework {
         str.includes("HEAD - / failed") ||
         (str.includes("HEAD - ") && str.includes(" failed"))) {
         // Silently ignore these specific errors
-        if (callback) callback()
+        if (typeof encoding === 'function') {
+          encoding() // encoding is actually the callback
+        } else if (callback) {
+          callback()
+        }
         return true
       }
 
       // Pass through all other stderr output
-      return originalStderrWrite.call(process.stderr, chunk, encoding, callback)
+      if (typeof encoding === 'function') {
+        return originalStderrWrite.call(process.stderr, chunk, encoding)
+      } else {
+        return originalStderrWrite.call(process.stderr, chunk, encoding, callback)
+      }
     }
 
       // Store reference to restore original behavior if needed
@@ -255,12 +278,12 @@ export class FluxStackFramework {
 
       // Retrieve start time using the timing key
       const requestKey = set.headers['x-request-timing-key']
-      const startTime = requestKey ? this.requestTimings.get(requestKey) : undefined
+      const startTime = requestKey ? this.requestTimings.get(String(requestKey)) : undefined
       const duration = startTime ? Date.now() - startTime : 0
 
       // Clean up timing entry
       if (requestKey) {
-        this.requestTimings.delete(requestKey)
+        this.requestTimings.delete(String(requestKey))
       }
 
       const responseContext = {
@@ -277,7 +300,7 @@ export class FluxStackFramework {
         query: Object.fromEntries(url.searchParams.entries()),
         params: {},
         response,
-        statusCode: (response as any)?.status || set.status || 200,
+        statusCode: Number((response as any)?.status || set.status || 200),
         duration,
         startTime
       }
@@ -287,7 +310,7 @@ export class FluxStackFramework {
         // Ensure status is always a number (HTTP status code)
         const status = typeof responseContext.statusCode === 'number'
           ? responseContext.statusCode
-          : set.status || 200
+          : Number(set.status) || 200
 
         logger.request(request.method, url.pathname, status, duration)
       }
@@ -465,8 +488,8 @@ export class FluxStackFramework {
       (this.pluginRegistry as any).plugins.set(plugin.name, plugin)
 
       // Update dependencies tracking
-      if (plugin.dependencies) {
-        (this.pluginRegistry as any).dependencies.set(plugin.name, plugin.dependencies)
+      if ((plugin as FluxStack.Plugin).dependencies) {
+        (this.pluginRegistry as any).dependencies.set(plugin.name, (plugin as FluxStack.Plugin).dependencies)
       }
 
       // Update load order by calling the private method
@@ -480,8 +503,8 @@ export class FluxStackFramework {
       }
 
       logger.debug(`Plugin '${plugin.name}' registered`, {
-        version: plugin.version,
-        dependencies: plugin.dependencies
+        version: (plugin as FluxStack.Plugin).version,
+        dependencies: (plugin as FluxStack.Plugin).dependencies
       })
       return this
     } catch (error) {
@@ -503,7 +526,7 @@ export class FluxStackFramework {
 
     try {
       // Validate plugin dependencies before starting
-      const plugins = (this.pluginRegistry as any).plugins as Map<string, Plugin>
+      const plugins = (this.pluginRegistry as any).plugins as Map<string, FluxStack.Plugin>
       for (const [pluginName, plugin] of plugins) {
         if (plugin.dependencies) {
           for (const depName of plugin.dependencies) {
