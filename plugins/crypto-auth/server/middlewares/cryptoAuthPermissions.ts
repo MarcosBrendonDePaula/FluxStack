@@ -72,5 +72,5 @@ export const cryptoAuthPermissions = (
         }
       })
     )
-    .as('plugin')
+
 }

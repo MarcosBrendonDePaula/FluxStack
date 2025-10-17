@@ -52,7 +52,7 @@ const app = new FluxStackFramework({
 // Usar plugins de infraestrutura primeiro (Logger é core, não é plugin)
 
 // Registrar plugin de autenticação ANTES dos outros plugins
-app.use(cryptoAuthPlugin)
+app.use(cryptoAuthPlugin as any)
 
 // Usar plugins condicionalmente baseado no ambiente
 if (isDevelopment()) {

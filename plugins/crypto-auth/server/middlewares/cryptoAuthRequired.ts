@@ -41,5 +41,5 @@ export const cryptoAuthRequired = (options: CryptoAuthMiddlewareOptions = {}) =>
         }
       })
     )
-    .as('plugin')
+
 }

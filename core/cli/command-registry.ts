@@ -23,6 +23,7 @@ export class CliCommandRegistry {
         timeEnd: (label: string) => (logger as any).timeEnd(label),
         request: (method: string, path: string, status?: number, duration?: number) =>
           logger.request(method, path, status, duration)
+      } as any,
       },
       utils: {
         createTimer,

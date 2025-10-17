@@ -54,7 +54,7 @@ export function createMiddleware<TContext = any>(
     return new Elysia({ name }).derive(handler as any)
   } else {
     // Blocking: use onBeforeHandle() - can stop execution by returning a response
-    return new Elysia({ name }).onBeforeHandle(handler as any).as('plugin')
+    return new Elysia({ name }).onBeforeHandle(handler as any)
   }
 }
 
@@ -109,7 +109,6 @@ export function createGuard<TContext = any>(options: {
         return options.onFail((ctx as any).set, ctx as TContext)
       }
     })
-    .as('plugin')
 }
 
 /**
@@ -182,7 +181,6 @@ export function createRateLimit(options: {
         requests.set(key, { count: 1, resetTime: now + windowMs })
       }
     })
-    .as('plugin')
 }
 
 /**
@@ -208,7 +206,7 @@ export function composeMiddleware(options: {
     composed = composed.use(middleware)
   }
 
-  return composed.as('plugin')
+  return composed
 }
 
 /**

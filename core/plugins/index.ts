@@ -27,6 +27,7 @@ export type {
     BuildContext
 } from './types'
 
+export type { FluxStack }
 export type Plugin = FluxStack.Plugin
 
 // Plugin registry

@@ -33,7 +33,7 @@ function createConsoleFormat() {
 function createFileFormat() {
   return winston.format.printf(({ timestamp, level, message }) => {
     // Remove ANSI color codes
-    const cleanMessage = message.replace(/\u001b\[.*?m/g, '')
+    const cleanMessage = String(message).replace(/\u001b\[.*?m/g, '')
     return `[${timestamp}] [${level.toUpperCase()}]: ${cleanMessage}`
   })
 }

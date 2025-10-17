@@ -32,7 +32,7 @@ export type {
 
 // Re-export additional plugin types from core plugins
 export type {
-  Plugin as CorePlugin,
+  FluxStack as CorePlugin,
   PluginContext as CorePluginContext,
   PluginUtils as CorePluginUtils,
   RequestContext as CoreRequestContext,

@@ -2,7 +2,7 @@
 
 import { existsSync, statSync } from 'fs'
 import { join, extname, resolve } from 'path'
-import type { Plugin, PluginContext } from '../plugins/types'
+import type { FluxStack, PluginContext } from '../plugins/types'
 
 export interface StaticFilesConfig {
   publicDir?: string // Default: 'public'

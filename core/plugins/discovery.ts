@@ -3,7 +3,7 @@
  * Handles automatic discovery and loading of plugins from various sources
  */
 
-import type { Plugin, PluginManifest, PluginLoadResult, PluginDiscoveryOptions } from "./types"
+import type { FluxStack, PluginManifest, PluginLoadResult, PluginDiscoveryOptions } from "./types"
 import type { Logger } from "../utils/logger/index"
 import { readdir, readFile } from "fs/promises"
 import { join, resolve } from "path"

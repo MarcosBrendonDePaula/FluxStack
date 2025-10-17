@@ -61,5 +61,5 @@ export const cryptoAuthAdmin = (options: CryptoAuthMiddlewareOptions = {}) => {
         }
       })
     )
-    .as('plugin')
+
 }

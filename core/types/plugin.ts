@@ -5,7 +5,7 @@
 
 // Re-export plugin types
 export type {
-  Plugin,
+  FluxStack,
   PluginContext,
   PluginUtils,
   RequestContext,

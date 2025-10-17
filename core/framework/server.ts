@@ -198,8 +198,8 @@ export class FluxStackFramework {
 
     // Override stderr.write to filter Elysia HEAD bug errors
     process.stderr.write = function (
-      chunk: string | Uint8Array, 
-      encoding?: BufferEncoding | ((error?: Error) => void), 
+      chunk: string | Uint8Array,
+      encoding?: BufferEncoding | ((error?: Error) => void),
       callback?: (error?: Error) => void
     ): boolean {
       const str = chunk.toString()

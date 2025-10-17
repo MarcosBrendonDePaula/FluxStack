@@ -1,4 +1,4 @@
-import type { Plugin, PluginContext, RequestContext } from "../../types"
+import type { FluxStack, PluginContext, RequestContext } from "../../types"
 import { createServer, type ViteDevServer } from 'vite'
 
 let viteServer: ViteDevServer | null = null

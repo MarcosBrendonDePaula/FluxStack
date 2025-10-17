@@ -3,7 +3,7 @@
  * Handles plugin-specific configuration validation and management
  */
 
-import type { Plugin, PluginConfigSchema, PluginValidationResult } from "./types"
+import type { FluxStack, PluginConfigSchema, PluginValidationResult } from "./types"
 import type { FluxStackConfig } from "../config/schema"
 import type { Logger } from "../utils/logger/index"
 

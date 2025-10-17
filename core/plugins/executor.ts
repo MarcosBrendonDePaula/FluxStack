@@ -4,7 +4,7 @@
  */
 
 import type { 
-  Plugin, 
+  FluxStack, 
   PluginHook, 
   PluginHookResult,
   PluginPriority,

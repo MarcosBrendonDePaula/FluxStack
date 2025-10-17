@@ -1,6 +1,6 @@
 import { join, extname } from "path"
 import { existsSync, statSync } from "fs"
-import type { Plugin, PluginContext } from "../../types"
+import type { FluxStack, PluginContext } from "../../types"
 
 export const staticPlugin: Plugin = {
   name: "static",

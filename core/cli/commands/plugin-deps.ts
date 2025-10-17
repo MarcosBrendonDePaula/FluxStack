@@ -242,7 +242,7 @@ function findPluginDirectory(pluginName: string): string | null {
   return null
 }
 
-function createConsoleLogger() {
+function createConsoleLogger(): any {
   return {
     debug: (msg: string, meta?: any) => {
       if (process.env.DEBUG) {
@@ -259,5 +259,5 @@ function createConsoleLogger() {
       console.log(chalk.red(`[ERROR] ${msg}`), meta || '')
     },
     child: () => createConsoleLogger()
-  }
+  } as any
 }

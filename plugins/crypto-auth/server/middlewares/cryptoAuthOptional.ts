@@ -22,5 +22,5 @@ export const cryptoAuthOptional = (options: CryptoAuthMiddlewareOptions = {}) =>
 
       return {}
     })
-    .as('plugin')
+
 }
