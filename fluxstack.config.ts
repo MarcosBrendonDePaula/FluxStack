@@ -7,6 +7,7 @@
 import type { FluxStackConfig } from './core/config/schema'
 import { defineConfig, config as configHelpers } from './core/utils/config-schema'
 import { env, helpers } from './core/utils/env'
+import { FLUXSTACK_VERSION } from './core/utils/version'
 
 console.log(`🔧 Loading FluxStack config for ${env.NODE_ENV} environment`)
 
@@ -19,7 +20,7 @@ console.log(`🔧 Loading FluxStack config for ${env.NODE_ENV} environment`)
  */
 const appConfigSchema = {
   name: configHelpers.string('FLUXSTACK_APP_NAME', 'FluxStack', true),
-  version: configHelpers.string('FLUXSTACK_APP_VERSION', '1.7.4', true),
+  version: configHelpers.string('FLUXSTACK_APP_VERSION', FLUXSTACK_VERSION, true),
   description: configHelpers.string('FLUXSTACK_APP_DESCRIPTION', 'A FluxStack application')
 } as const
 
@@ -259,7 +260,7 @@ export const config: FluxStackConfig = {
       },
       swagger: {
         title: env.get('SWAGGER_TITLE', 'FluxStack API'),
-        version: env.get('SWAGGER_VERSION', '1.7.4'),
+        version: env.get('SWAGGER_VERSION', FLUXSTACK_VERSION),
         description: env.get('SWAGGER_DESCRIPTION', 'API documentation for FluxStack application')
       },
       staticFiles: {

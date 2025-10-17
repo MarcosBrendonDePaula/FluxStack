@@ -4,6 +4,7 @@ import type { FluxStackConfig } from "../config"
 import type { BuildResult, BuildManifest } from "../types/build"
 import { Bundler } from "./bundler"
 import { Optimizer } from "./optimizer"
+import { FLUXSTACK_VERSION } from "../utils/version"
 
 export class FluxStackBuilder {
   private config: FluxStackConfig
@@ -196,7 +197,7 @@ coverage
       const defaultEnv = `NODE_ENV=production
 PORT=3000
 FLUXSTACK_APP_NAME=fluxstack-app
-FLUXSTACK_APP_VERSION=1.7.4
+FLUXSTACK_APP_VERSION=${FLUXSTACK_VERSION}
 LOG_LEVEL=info
 MONITORING_ENABLED=true
 `

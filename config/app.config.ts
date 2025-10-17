@@ -4,6 +4,7 @@
  */
 
 import { defineConfig, config } from '@/core/utils/config-schema'
+import { FLUXSTACK_VERSION } from '@/core/utils/version'
 
 /**
  * App configuration schema
@@ -15,7 +16,7 @@ const appConfigSchema = {
   version: {
     type: 'string' as const,
     env: 'APP_VERSION',
-    default: '1.7.4',
+    default: FLUXSTACK_VERSION,
     validate: (value: string) => /^\d+\.\d+\.\d+$/.test(value) || 'Version must be semver format (e.g., 1.0.0)'
   },
 

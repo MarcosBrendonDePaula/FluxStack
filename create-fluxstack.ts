@@ -137,7 +137,7 @@ import type { FluxStackPlugin, PluginContext } from '@/core/types/plugin'
 
 export class MyPlugin implements FluxStackPlugin {
   name = 'my-plugin'
-  version = '1.0.0'
+  version = FLUXSTACK_VERSION
 
   // Intercept every request
   async onRequest(context: PluginContext, request: Request): Promise<void> {

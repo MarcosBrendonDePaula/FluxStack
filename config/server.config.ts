@@ -4,6 +4,7 @@
  */
 
 import { defineConfig, config } from '@/core/utils/config-schema'
+import { FLUXSTACK_VERSION } from '@/core/utils/version'
 
 const serverConfigSchema = {
   // Server basics
@@ -29,7 +30,7 @@ const serverConfigSchema = {
 
   // App info
   appName: config.string('FLUXSTACK_APP_NAME', 'FluxStack'),
-  appVersion: config.string('FLUXSTACK_APP_VERSION', '1.0.0'),
+  appVersion: config.string('FLUXSTACK_APP_VERSION', FLUXSTACK_VERSION),
 
   // Features
   enableSwagger: config.boolean('ENABLE_SWAGGER', true),
