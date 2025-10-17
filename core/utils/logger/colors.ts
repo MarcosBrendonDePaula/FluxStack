@@ -5,8 +5,8 @@
 
 import chalk from 'chalk'
 
-// Cache for module colors
-const moduleColors = new Map<string, any>()
+// Cache for module colors  
+const moduleColors = new Map<string, chalk.Chalk>()
 
 /**
  * Pre-defined colors for common modules
@@ -55,7 +55,7 @@ export const LEVEL_COLORS = {
 /**
  * Generate a unique color for a module based on its name
  */
-export function getColorForModule(moduleName: string): any {
+export function getColorForModule(moduleName: string): chalk.Chalk {
   // Check cache first
   if (moduleColors.has(moduleName)) {
     return moduleColors.get(moduleName)!

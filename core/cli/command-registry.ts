@@ -14,16 +14,15 @@ export class CliCommandRegistry {
     this.context = {
       config,
       logger: {
-        debug: (message: string, meta?: any) => logger.debug(message, meta),
-        info: (message: string, meta?: any) => logger.info(message, meta),
-        warn: (message: string, meta?: any) => logger.warn(message, meta),
-        error: (message: string, meta?: any) => logger.error(message, meta),
-        child: (context: any) => (logger as any).child(context),
-        time: (label: string) => (logger as any).time(label),
-        timeEnd: (label: string) => (logger as any).timeEnd(label),
+        debug: (message: string, meta?: unknown) => logger.debug(message, meta),
+        info: (message: string, meta?: unknown) => logger.info(message, meta),
+        warn: (message: string, meta?: unknown) => logger.warn(message, meta),
+        error: (message: string, meta?: unknown) => logger.error(message, meta),
+        child: (context: Record<string, unknown>) => logger,
+        time: (label: string) => logger.time(label),
+        timeEnd: (label: string) => logger.timeEnd(label),
         request: (method: string, path: string, status?: number, duration?: number) =>
           logger.request(method, path, status, duration)
-      } as any,
       },
       utils: {
         createTimer,
@@ -35,18 +34,18 @@ export class CliCommandRegistry {
           const crypto = require('crypto')
           return crypto.createHash('sha256').update(data).digest('hex')
         },
-        deepMerge: (target: any, source: any) => {
+        deepMerge: (target: Record<string, unknown>, source: Record<string, unknown>) => {
           const result = { ...target }
           for (const key in source) {
             if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
-              result[key] = this.context.utils.deepMerge(result[key] || {}, source[key])
+              result[key] = this.context.utils.deepMerge(result[key] as Record<string, unknown> || {}, source[key] as Record<string, unknown>)
             } else {
               result[key] = source[key]
             }
           }
           return result
         },
-        validateSchema: (_data: any, _schema: any) => {
+        validateSchema: (_data: unknown, _schema: unknown) => {
           try {
             return { valid: true, errors: [] }
           } catch (error) {

@@ -242,22 +242,30 @@ function findPluginDirectory(pluginName: string): string | null {
   return null
 }
 
-function createConsoleLogger(): any {
+interface ConsoleLogger {
+  debug: (msg: string, meta?: unknown) => void
+  info: (msg: string, meta?: unknown) => void
+  warn: (msg: string, meta?: unknown) => void
+  error: (msg: string, meta?: unknown) => void
+  child: () => ConsoleLogger
+}
+
+function createConsoleLogger(): ConsoleLogger {
   return {
-    debug: (msg: string, meta?: any) => {
+    debug: (msg: string, meta?: unknown) => {
       if (process.env.DEBUG) {
         console.log(chalk.gray(`[DEBUG] ${msg}`), meta || '')
       }
     },
-    info: (msg: string, meta?: any) => {
+    info: (msg: string, meta?: unknown) => {
       console.log(chalk.blue(`[INFO] ${msg}`), meta || '')
     },
-    warn: (msg: string, meta?: any) => {
+    warn: (msg: string, meta?: unknown) => {
       console.log(chalk.yellow(`[WARN] ${msg}`), meta || '')
     },
-    error: (msg: string, meta?: any) => {
+    error: (msg: string, meta?: unknown) => {
       console.log(chalk.red(`[ERROR] ${msg}`), meta || '')
     },
     child: () => createConsoleLogger()
-  } as any
+  }
 }
