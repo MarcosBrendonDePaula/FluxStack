@@ -291,7 +291,21 @@ export class PluginRegistry {
         }
       }
 
-      // Try to import the plugin
+      // Install dependencies BEFORE importing the plugin
+      if (manifest && manifest.dependencies && Object.keys(manifest.dependencies).length > 0) {
+        try {
+          const resolution = await this.dependencyManager.resolvePluginDependencies(pluginPath)
+          if (resolution.dependencies.length > 0) {
+            // Install dependencies directly in the plugin directory
+            await this.dependencyManager.installPluginDependenciesLocally(pluginPath, resolution.dependencies)
+            this.logger?.debug(`Dependencies installed for plugin at: ${pluginPath}`)
+          }
+        } catch (error) {
+          this.logger?.warn(`Failed to install dependencies for plugin at '${pluginPath}'`, { error })
+        }
+      }
+
+      // Try to import the plugin (after dependencies are installed)
       const pluginModule = await import(resolve(pluginPath))
       const plugin: FluxStackPlugin = pluginModule.default || pluginModule
 
@@ -434,36 +448,26 @@ export class PluginRegistry {
    * Resolver dependências de todos os plugins descobertos
    */
   private async resolveDependencies(results: PluginLoadResult[]): Promise<void> {
-    const resolutions = []
-    
-    // Resolver dependências para cada plugin carregado com sucesso
+    // Dependencies are now installed during plugin loading in loadPlugin()
+    // This method is kept for compatibility but no longer performs installation
+
+    // Only check for dependency conflicts on successfully loaded plugins
     for (const result of results) {
       if (result.success && result.plugin) {
         try {
-          // Tentar encontrar o diretório do plugin
           const pluginDir = this.findPluginDirectory(result.plugin.name)
           if (pluginDir) {
             const resolution = await this.dependencyManager.resolvePluginDependencies(pluginDir)
-            resolutions.push(resolution)
-            
+
             if (!resolution.resolved) {
-              this.logger?.warn(`Plugin '${result.plugin.name}' tem conflitos de dependências`, {
+              this.logger?.warn(`Plugin '${result.plugin.name}' has dependency conflicts`, {
                 conflicts: resolution.conflicts.length
               })
             }
           }
         } catch (error) {
-          this.logger?.warn(`Erro ao resolver dependências do plugin '${result.plugin.name}'`, { error })
+          this.logger?.warn(`Failed to check dependencies for plugin '${result.plugin.name}'`, { error })
         }
-      }
-    }
-
-    // Instalar dependências se houver resoluções
-    if (resolutions.length > 0) {
-      try {
-        await this.dependencyManager.installPluginDependencies(resolutions)
-      } catch (error) {
-        this.logger?.error('Erro ao instalar dependências de plugins', { error })
       }
     }
   }
