@@ -149,9 +149,13 @@ Examples:
 
       endGroup()
       console.log('') // Separator line
-      
+
       const { spawn } = await import("child_process")
-      const devProcess = spawn("bun", ["--watch", "app/server/index.ts"], {
+
+      // Use the same Bun executable that is running this script
+      const bunExecutable = process.execPath || 'bun'
+
+      const devProcess = spawn(bunExecutable, ["--watch", "app/server/index.ts"], {
         stdio: "inherit",
         cwd: process.cwd(),
         env: {
@@ -386,7 +390,7 @@ async function main() {
 // Legacy command handling for backward compatibility
 async function handleLegacyCommands() {
   switch (command) {
-  case "dev":
+  case "dev": {
     // Grouped startup messages
     startGroup({
       title: 'FluxStack Development Server',
@@ -401,10 +405,14 @@ async function handleLegacyCommands() {
 
     endGroup()
     console.log('') // Separator line
-    
+
     // Start only backend - it will start Vite programmatically
     const { spawn } = await import("child_process")
-    const devProcess = spawn("bun", ["--watch", "app/server/index.ts"], {
+
+    // Use the same Bun executable that is running this script
+    const bunExecutable = process.execPath || 'bun'
+
+    const devProcess = spawn(bunExecutable, ["--watch", "app/server/index.ts"], {
       stdio: "inherit",
       cwd: process.cwd()
     })
@@ -428,6 +436,7 @@ async function handleLegacyCommands() {
       devProcess.on('exit', resolve)
     })
     break
+  }
 
   case "frontend":
     console.log("🎨 FluxStack Frontend Development")
@@ -447,15 +456,19 @@ async function handleLegacyCommands() {
     })
     break
 
-  case "backend":
+  case "backend": {
     console.log("⚡ FluxStack Backend Development")
     console.log("🚀 API Server: http://localhost:3001")
     console.log("📦 Starting backend with hot reload...")
     console.log()
-    
+
     // Start backend with Bun watch for hot reload
     const { spawn: spawnBackend } = await import("child_process")
-    const backendProcess = spawnBackend("bun", ["--watch", "app/server/backend-only.ts"], {
+
+    // Use the same Bun executable that is running this script
+    const bunExecutable = process.execPath || 'bun'
+
+    const backendProcess = spawnBackend(bunExecutable, ["--watch", "app/server/backend-only.ts"], {
       stdio: "inherit",
       cwd: process.cwd()
     })
@@ -466,6 +479,7 @@ async function handleLegacyCommands() {
       process.exit(0)
     })
     break
+  }
 
   case "build":
     const config = getConfigSync()

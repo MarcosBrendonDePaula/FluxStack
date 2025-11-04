@@ -352,7 +352,10 @@ export class PluginDependencyManager {
    */
   private getInstallCommand(packages: string, dev: boolean): string {
     const devFlag = dev ? '--save-dev' : ''
-    
+
+    // Use the same Bun executable that is running this script
+    const bunExecutable = process.execPath || 'bun'
+
     switch (this.config.packageManager) {
       case 'npm':
         return `npm install ${devFlag} ${packages}`
@@ -361,7 +364,7 @@ export class PluginDependencyManager {
       case 'pnpm':
         return `pnpm add ${devFlag} ${packages}`
       case 'bun':
-        return `bun add ${devFlag} ${packages}`
+        return `${bunExecutable} add ${devFlag} ${packages}`
       default:
         return `npm install ${devFlag} ${packages}`
     }
