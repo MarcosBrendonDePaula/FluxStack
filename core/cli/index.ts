@@ -150,38 +150,27 @@ Examples:
       endGroup()
       console.log('') // Separator line
 
-      const { spawn } = await import("child_process")
-
-      // Use the same Bun executable that is running this script
-      const bunExecutable = process.execPath || 'bun'
-
-      const devProcess = spawn(bunExecutable, ["--watch", "app/server/index.ts"], {
-        stdio: "inherit",
+      // Start backend with Bun's native spawn (backend will start Vite programmatically via plugin)
+      const devProcess = Bun.spawn([process.execPath, "--watch", "app/server/index.ts"], {
+        stdio: ["inherit", "inherit", "inherit"],
         cwd: process.cwd(),
         env: {
           ...process.env,
-          FRONTEND_PORT: options['frontend-port'].toString(),
-          BACKEND_PORT: options.port.toString()
+          VITE_PORT: options['frontend-port'].toString(),
+          PORT: options.port.toString()
         }
       })
       
       process.on('SIGINT', () => {
         console.log('\n🛑 Shutting down gracefully...')
-        devProcess.kill('SIGTERM')
+        devProcess.kill()
         setTimeout(() => {
-          devProcess.kill('SIGKILL')
           process.exit(0)
-        }, 5000)
+        }, 2000)
       })
-      
-      devProcess.on('close', (code) => {
-        process.exit(code || 0)
-      })
-      
-      // Keep the CLI running until the child process exits
-      return new Promise((resolve) => {
-        devProcess.on('exit', resolve)
-      })
+
+      // Wait for process to exit
+      await devProcess.exited
     }
   })
 
@@ -410,14 +399,9 @@ async function handleLegacyCommands() {
     endGroup()
     console.log('') // Separator line
 
-    // Start only backend - it will start Vite programmatically
-    const { spawn } = await import("child_process")
-
-    // Use the same Bun executable that is running this script
-    const bunExecutable = process.execPath || 'bun'
-
-    const devProcess = spawn(bunExecutable, ["--watch", "app/server/index.ts"], {
-      stdio: "inherit",
+    // Start backend with Bun's native spawn (backend will start Vite programmatically via plugin)
+    const devProcess = Bun.spawn([process.execPath, "--watch", "app/server/index.ts"], {
+      stdio: ["inherit", "inherit", "inherit"],
       cwd: process.cwd(),
       env: {
         ...process.env,
@@ -425,50 +409,18 @@ async function handleLegacyCommands() {
         PORT: backendPort
       }
     })
-    
+
     // Handle process cleanup
     process.on('SIGINT', () => {
       console.log('\n🛑 Shutting down gracefully...')
-      devProcess.kill('SIGTERM')
+      devProcess.kill()
       setTimeout(() => {
-        devProcess.kill('SIGKILL')
         process.exit(0)
-      }, 5000)
+      }, 2000)
     })
-    
-    devProcess.on('close', (code) => {
-      process.exit(code || 0)
-    })
-    
-    // Keep the CLI running until the child process exits
-    await new Promise((resolve) => {
-      devProcess.on('exit', resolve)
-    })
-    break
-  }
 
-  case "frontend": {
-    const frontendPort = process.env.VITE_PORT || '5173'
-
-    console.log("🎨 FluxStack Frontend Development")
-    console.log(`🌐 Frontend: http://localhost:${frontendPort}`)
-    console.log("📦 Starting Vite dev server...")
-    console.log()
-
-    const { spawn: spawnFrontend } = await import("child_process")
-    const frontendProcess = spawnFrontend("vite", ["--config", "vite.config.ts"], {
-      stdio: "inherit",
-      cwd: process.cwd(),
-      env: {
-        ...process.env,
-        VITE_PORT: frontendPort
-      }
-    })
-    
-    process.on('SIGINT', () => {
-      frontendProcess.kill('SIGINT')
-      process.exit(0)
-    })
+    // Wait for process to exit
+    await devProcess.exited
     break
   }
 
@@ -480,26 +432,23 @@ async function handleLegacyCommands() {
     console.log("📦 Starting backend with hot reload...")
     console.log()
 
-    // Start backend with Bun watch for hot reload
-    const { spawn: spawnBackend } = await import("child_process")
-
-    // Use the same Bun executable that is running this script
-    const bunExecutable = process.execPath || 'bun'
-
-    const backendProcess = spawnBackend(bunExecutable, ["--watch", "app/server/backend-only.ts"], {
-      stdio: "inherit",
+    // Start backend-only with Bun's native spawn
+    const backendProcess = Bun.spawn([process.execPath, "--watch", "app/server/backend-only.ts"], {
+      stdio: ["inherit", "inherit", "inherit"],
       cwd: process.cwd(),
       env: {
         ...process.env,
         BACKEND_PORT: backendPort
       }
     })
-    
+
     // Handle process cleanup
     process.on('SIGINT', () => {
-      backendProcess.kill('SIGINT')
+      backendProcess.kill()
       process.exit(0)
     })
+
+    await backendProcess.exited
     break
   }
 
@@ -567,8 +516,7 @@ async function handleLegacyCommands() {
 ⚡ FluxStack Framework CLI
 
 Usage:
-  flux dev             Start full-stack development server
-  flux frontend        Start frontend only (Vite dev server)
+  flux dev             Start full-stack development server (backend + Vite via plugin)
   flux backend         Start backend only (API server)
   flux build           Build both frontend and backend
   flux build:frontend  Build frontend only
@@ -577,8 +525,7 @@ Usage:
   flux create          Create new project
 
 Examples:
-  flux dev                    # Full-stack development
-  flux frontend               # Frontend only (port 5173)
+  flux dev                    # Full-stack development (Vite iniciado programaticamente)
   flux backend                # Backend only (port 3001)
   flux create my-app          # Create new project
 
