@@ -391,6 +391,10 @@ async function main() {
 async function handleLegacyCommands() {
   switch (command) {
   case "dev": {
+    // Get ports from environment or use defaults
+    const frontendPort = process.env.VITE_PORT || '5173'
+    const backendPort = process.env.PORT || '3000'
+
     // Grouped startup messages
     startGroup({
       title: 'FluxStack Development Server',
@@ -398,8 +402,8 @@ async function handleLegacyCommands() {
       color: 'cyan'
     })
 
-    logInGroup('Frontend: http://localhost:5173', '🌐')
-    logInGroup('Backend: http://localhost:3000', '🚀')
+    logInGroup(`Frontend: http://localhost:${frontendPort}`, '🌐')
+    logInGroup(`Backend: http://localhost:${backendPort}`, '🚀')
     logInGroup('Backend inicia Vite programaticamente', '🔄')
     logInGroup('Starting backend server...', '📦')
 
@@ -414,7 +418,12 @@ async function handleLegacyCommands() {
 
     const devProcess = spawn(bunExecutable, ["--watch", "app/server/index.ts"], {
       stdio: "inherit",
-      cwd: process.cwd()
+      cwd: process.cwd(),
+      env: {
+        ...process.env,
+        VITE_PORT: frontendPort,
+        PORT: backendPort
+      }
     })
     
     // Handle process cleanup
@@ -438,16 +447,22 @@ async function handleLegacyCommands() {
     break
   }
 
-  case "frontend":
+  case "frontend": {
+    const frontendPort = process.env.VITE_PORT || '5173'
+
     console.log("🎨 FluxStack Frontend Development")
-    console.log("🌐 Frontend: http://localhost:5173")
+    console.log(`🌐 Frontend: http://localhost:${frontendPort}`)
     console.log("📦 Starting Vite dev server...")
     console.log()
-    
+
     const { spawn: spawnFrontend } = await import("child_process")
     const frontendProcess = spawnFrontend("vite", ["--config", "vite.config.ts"], {
       stdio: "inherit",
-      cwd: process.cwd()
+      cwd: process.cwd(),
+      env: {
+        ...process.env,
+        VITE_PORT: frontendPort
+      }
     })
     
     process.on('SIGINT', () => {
@@ -455,10 +470,13 @@ async function handleLegacyCommands() {
       process.exit(0)
     })
     break
+  }
 
   case "backend": {
+    const backendPort = process.env.BACKEND_PORT || '3001'
+
     console.log("⚡ FluxStack Backend Development")
-    console.log("🚀 API Server: http://localhost:3001")
+    console.log(`🚀 API Server: http://localhost:${backendPort}`)
     console.log("📦 Starting backend with hot reload...")
     console.log()
 
@@ -470,7 +488,11 @@ async function handleLegacyCommands() {
 
     const backendProcess = spawnBackend(bunExecutable, ["--watch", "app/server/backend-only.ts"], {
       stdio: "inherit",
-      cwd: process.cwd()
+      cwd: process.cwd(),
+      env: {
+        ...process.env,
+        BACKEND_PORT: backendPort
+      }
     })
     
     // Handle process cleanup
