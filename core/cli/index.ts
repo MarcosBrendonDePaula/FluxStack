@@ -424,6 +424,33 @@ async function handleLegacyCommands() {
     break
   }
 
+  case "frontend": {
+    const frontendPort = process.env.VITE_PORT || '5173'
+
+    console.log("🎨 FluxStack Frontend Development")
+    console.log(`🌐 Frontend: http://localhost:${frontendPort}`)
+    console.log("📦 Starting Vite dev server (frontend-only, no backend plugins)...")
+    console.log()
+
+    // Start Vite directly without backend (no FluxStack plugins)
+    const frontendProcess = Bun.spawn(["bunx", "vite", "--config", "vite.config.ts"], {
+      stdio: ["inherit", "inherit", "inherit"],
+      cwd: process.cwd(),
+      env: {
+        ...process.env,
+        VITE_PORT: frontendPort
+      }
+    })
+
+    process.on('SIGINT', () => {
+      frontendProcess.kill()
+      process.exit(0)
+    })
+
+    await frontendProcess.exited
+    break
+  }
+
   case "backend": {
     const backendPort = process.env.BACKEND_PORT || '3001'
 
@@ -516,7 +543,8 @@ async function handleLegacyCommands() {
 ⚡ FluxStack Framework CLI
 
 Usage:
-  flux dev             Start full-stack development server (backend + Vite via plugin)
+  flux dev             Start full-stack development (backend + Vite via plugin)
+  flux frontend        Start frontend only (Vite, no backend plugins)
   flux backend         Start backend only (API server)
   flux build           Build both frontend and backend
   flux build:frontend  Build frontend only
@@ -525,9 +553,14 @@ Usage:
   flux create          Create new project
 
 Examples:
-  flux dev                    # Full-stack development (Vite iniciado programaticamente)
-  flux backend                # Backend only (port 3001)
+  flux dev                    # Full-stack with FluxStack plugins (recommended)
+  flux frontend               # Frontend-only development (port 5173)
+  flux backend                # Backend-only (port 3001)
   flux create my-app          # Create new project
+
+Difference:
+  dev = backend starts Vite programmatically (with FluxStack plugins)
+  frontend = Vite directly (no backend, no FluxStack plugins)
 
 Alternative commands:
   fluxstack dev              # Same as flux dev
