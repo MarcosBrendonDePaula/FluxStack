@@ -114,8 +114,9 @@ export type BuildLifecycleHook =
   | 'afterTreeShake'          // After tree shaking
   | 'onMinify'                // During minification
   | 'afterMinify'             // After minification
-  | 'onCompress'              // During compression
-  | 'afterCompress'           // After compression
+  | 'beforeBuildCompress'     // Before build compression
+  | 'onBuildCompress'         // During build compression
+  | 'afterBuildCompress'      // After build compression
   | 'afterOptimize'           // After all optimization
 
   // Code generation phase
@@ -159,7 +160,7 @@ export type DevelopmentLifecycleHook =
   | 'beforeHotReload'         // Before hot reload
   | 'onFileChange'            // When file changes detected
   | 'onFileAdd'               // When file is added
-  | 'onFileDelete'            // When file is deleted
+  | 'onDevFileDelete'         // When file is deleted in dev
   | 'onFileRename'            // When file is renamed
   | 'afterHotReload'          // After hot reload complete
 
@@ -726,47 +727,6 @@ export interface CliCommand {
 }
 
 /**
- * Combined hook type - All possible hooks
- */
-export type PluginHook =
-  | LifecycleHook
-  | ServerLifecycleHook
-  | HttpHook
-  | ErrorHook
-  | DatabaseHook
-  | CacheHook
-  | ValidationHook
-  | FileHook
-  | WebSocketHook
-  | AuthHook
-  | BuildLifecycleHook
-  | DevelopmentLifecycleHook
-  | TestingLifecycleHook
-  | DeploymentLifecycleHook
-  | CliHook
-  | TransformHook
-  | MonitoringHook
-
-/**
- * Plugin filter type - Data transformation filters
- */
-export type PluginFilter =
-  | 'filterRequestBody'
-  | 'filterResponseBody'
-  | 'filterQueryParams'
-  | 'filterHeaders'
-  | 'filterRouteParams'
-  | 'filterUserData'
-  | 'filterQueryResults'
-  | 'filterConfig'
-  | 'filterEnvironment'
-  | 'filterHTML'
-  | 'filterJSON'
-  | 'filterMarkdown'
-
-export type PluginPriority = 'highest' | 'high' | 'normal' | 'low' | 'lowest' | number
-
-/**
  * FluxStack Plugin System
  */
 export namespace FluxStack {
@@ -980,9 +940,9 @@ export namespace FluxStack {
     beforeTreeshake?: (context: BuildContext) => void | Promise<void>
     onTreeshake?: (context: BuildContext) => void | Promise<void>
     afterTreeshake?: (context: BuildContext) => void | Promise<void>
-    beforeCompress?: (context: BuildContext) => void | Promise<void>
-    onCompress?: (context: BuildContext) => void | Promise<void>
-    afterCompress?: (context: BuildContext) => void | Promise<void>
+    beforeBuildCompress?: (context: BuildContext) => void | Promise<void>
+    onBuildCompress?: (context: BuildContext) => void | Promise<void>
+    afterBuildCompress?: (context: BuildContext) => void | Promise<void>
     beforeSourceMap?: (context: BuildContext) => void | Promise<void>
     onSourceMap?: (context: BuildContext) => void | Promise<void>
     afterSourceMap?: (context: BuildContext) => void | Promise<void>
@@ -1015,7 +975,7 @@ export namespace FluxStack {
     afterHotReload?: (context: PluginContext) => void | Promise<void>
     onFileChange?: (context: PluginContext & { file: string; event: string }) => void | Promise<void>
     onFileAdd?: (context: PluginContext & { file: string }) => void | Promise<void>
-    onFileDelete?: (context: PluginContext & { file: string }) => void | Promise<void>
+    onDevFileDelete?: (context: PluginContext & { file: string }) => void | Promise<void>
     beforeHMRUpdate?: (context: PluginContext) => void | Promise<void>
     onHMRUpdate?: (context: PluginContext & { modules: string[] }) => void | Promise<void>
     afterHMRUpdate?: (context: PluginContext) => void | Promise<void>
