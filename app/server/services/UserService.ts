@@ -3,7 +3,7 @@
  * Handles user-related business logic
  */
 
-import { BaseService } from '../../../core/server/services/index.js'
+import { BaseService } from '../../../core/server/services/index'
 
 export interface User {
   id: number

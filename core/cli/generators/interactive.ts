@@ -1,7 +1,7 @@
-import type { CliCommand } from "../../plugins/types.js"
-import { generatorRegistry } from "./index.js"
-import type { GeneratorContext, GeneratorOptions } from "./types.js"
-import { promptSystem } from "./prompts.js"
+import type { CliCommand } from '../../plugins/types'
+import { generatorRegistry } from './index'
+import type { GeneratorContext, GeneratorOptions } from './types'
+import { promptSystem } from './prompts'
 
 export const interactiveGenerateCommand: CliCommand = {
   name: 'generate:interactive',

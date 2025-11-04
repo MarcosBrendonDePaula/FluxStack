@@ -3,7 +3,7 @@
  * Core FluxStack authentication utilities
  */
 
-import type { BaseUser, BaseUserStore } from '../state/index.js'
+import type { BaseUser, BaseUserStore } from '../state/index'
 
 /**
  * Create authentication hook for a user store

@@ -1,4 +1,4 @@
-import type { PromptConfig } from "./types.js"
+import type { PromptConfig } from './types'
 
 export class PromptSystem {
   async prompt(config: PromptConfig): Promise<any> {

@@ -3,7 +3,7 @@
  * Handles application notifications and messaging
  */
 
-import { BaseService } from '../../../core/server/services/index.js'
+import { BaseService } from '../../../core/server/services/index'
 
 export interface Notification {
     id: string
