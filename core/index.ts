@@ -4,26 +4,26 @@
  */
 
 // Server exports
-export * from './server/services/index.ts'
-export * from './server/middleware/index.ts'
+export * from './server/services/index'
+export * from './server/middleware/index'
 
 // Client exports
-export * from './client/index.ts'
-export * from './client/state/index.ts'
-export * from './client/hooks/index.ts'
+export * from './client/index'
+export * from './client/state/index'
+export * from './client/hooks/index'
 
 // Testing exports
-export * from './testing/index.ts'
+export * from './testing/index'
 
 // Existing exports
-export * from './build/index.ts'
-export * from './cli/generators/index.ts'
-export * from './config/index.ts'
-export * from './framework/server.ts'
-export * from './framework/client.ts'
-export * from './plugins/index.ts'
-export * from './utils/logger/index.ts'
-export * from './utils/errors/index.ts'
+export * from './build/index'
+export * from './cli/generators/index'
+export * from './config/index'
+export * from './framework/server'
+export * from './framework/client'
+export * from './plugins/index'
+export * from './utils/logger/index'
+export * from './utils/errors/index'
 
 // Version exports
-export { FLUXSTACK_VERSION, getVersion, getVersionInfo } from './utils/version.ts'
+export { FLUXSTACK_VERSION, getVersion, getVersionInfo } from './utils/version'
