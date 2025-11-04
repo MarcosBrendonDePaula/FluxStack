@@ -69,6 +69,13 @@ export type {
     PluginExecutionStats
 } from './executor'
 
+// Filter manager
+export {
+    PluginFilterManager,
+    createPluginWithFilters
+} from './filter-manager'
+export type { FilterResult, FilterManagerConfig } from './filter-manager'
+
 // Utility functions for plugin development
 export const PluginUtils = {
     /**
