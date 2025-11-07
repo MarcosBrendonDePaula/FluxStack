@@ -1,31 +1,31 @@
-# FluxStack – Visão Geral do Projeto (Outubro/2025)
+# FluxStack – Visão Geral do Projeto (Novembro/2025)
 
 ## Resumo Executivo
 FluxStack é um gerador e runtime full-stack sobre o ecossistema Bun, composto por:
-- **Backend**: Elysia 1.4.x + TypeScript 5.8, com plugins de descoberta automática e middlewares prontos.
-- **Frontend**: React 19.1 + Vite 7.1 e Tailwind 4, com componentes demonstrativos e hooks integrados ao Eden Treaty.
+- **Backend**: Elysia ^1.4.6 + TypeScript ^5.8.3, com plugins de descoberta automática e middlewares prontos.
+- **Frontend**: React ^19.1.0 + Vite ^7.1.7 e Tailwind ^4.1.13, com componentes demonstrativos e hooks integrados ao Eden Treaty.
 - **Infra**: CLI própria, pipeline de build otimizado, suporte a Docker e sistema declarativo de configuração.
 - **Autenticação opcional**: plugin externo `plugins/crypto-auth` com CLI, client e server próprios.
 
 O repositório serve tanto como template quanto como referência de integração completa (API + SPA + documentação).
 
-## Destaques da Versão 1.5
+## Destaques da Versão 1.7
 - Eden Treaty nativo (sem wrappers) com inferência 100% funcional.
 - Sistema declarativo de configuração (`fluxstack.config.ts` + `config/*.config.ts`).
 - Plugins core revisados: Vite (dev proxy), Swagger, arquivos estáticos, Live Components, Monitoring (opt-in).
 - Exemplo prático de autenticação assinada por chaves (`plugins/crypto-auth`).
 - Oficina de live components/monitoramento exibida no app de exemplo.
 
-## Stack Atual
+## Stack Atual (v1.7.5)
 | Camada          | Tecnologia                                     |
 |-----------------|------------------------------------------------|
 | Runtime         | Bun >= 1.2.0                                   |
 | Backend         | Elysia ^1.4.6, TypeScript ^5.8.3               |
 | Frontend        | React ^19.1.0, Vite ^7.1.7, Tailwind ^4.1.13   |
-| Tooling         | Vitest ^3.2.4, ESLint ^9.30, Eden Treaty ^1.3  |
-| Observabilidade | Winston 3 + logger integrado, Monitoring plugin opcional |
+| Tooling         | Vitest ^3.2.4, ESLint ^9.30, Eden Treaty ^1.3.2|
+| Observabilidade | Winston ^3.18.3 + logger integrado, Monitoring plugin opcional |
 
-As versões estão definidas em `package.json` e bloqueadas em `bun.lock`.
+As versões estão definidas em `package.json` (v1.7.5) e bloqueadas em `bun.lock`.
 
 ## Arquitetura em Camadas
 1. **Core (`core/`)** – framework imutável:

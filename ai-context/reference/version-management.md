@@ -7,7 +7,7 @@ O FluxStack usa um sistema unificado de versão com **fonte única de verdade**:
 ### **📍 Arquivo Principal**
 ```typescript
 // core/utils/version.ts
-export const FLUXSTACK_VERSION = '1.6.0'
+export const FLUXSTACK_VERSION = '1.7.5'
 ```
 
 ### **🔄 Sincronização Automática**
@@ -32,7 +32,7 @@ console.log(`FluxStack v${FLUXSTACK_VERSION}`)
 // Ou usar as funções utilitárias
 const version = getVersion()
 const info = getVersionInfo()
-// info = { version: '1.6.0', name: 'FluxStack', major: 1, minor: 6, patch: 0 }
+// info = { version: '1.7.5', name: 'FluxStack', major: 1, minor: 7, patch: 5 }
 ```
 
 ### **2. Em Live Components**
@@ -80,7 +80,7 @@ bun run prebuild          # Executa apenas as verificações pré-build
 ### **1. Atualizar package.json**
 ```json
 {
-  "version": "1.7.0"
+  "version": "1.7.5"
 }
 ```
 
@@ -93,7 +93,7 @@ bun run sync-version
 ```bash
 # Verificar se version.ts foi atualizado
 cat core/utils/version.ts
-# Deve mostrar: export const FLUXSTACK_VERSION = '1.7.0'
+# Deve mostrar: export const FLUXSTACK_VERSION = '1.7.5'
 ```
 
 ## ⚙️ **Arquivos Envolvidos**
@@ -161,4 +161,4 @@ if (pkg.version !== FLUXSTACK_VERSION) {
 
 ---
 
-**📅 Implementado**: Janeiro 2025 - FluxStack v1.6.0
+**📅 Implementado**: Novembro 2025 - FluxStack v1.7.5

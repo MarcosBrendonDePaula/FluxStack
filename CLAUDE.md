@@ -17,6 +17,7 @@
 - **[Troubleshooting](./ai-context/reference/troubleshooting.md)** - Solução de problemas
 
 ### 🔥 **Mudanças Recentes**
+- **[Version Management](./ai-context/reference/version-management.md)** - Sistema de versionamento (v1.7.5)
 - **[Eden Treaty Refactor](./ai-context/recent-changes/eden-treaty-refactor.md)** - Refatoração crítica
 - **[Type Inference Fix](./ai-context/recent-changes/type-inference-fix.md)** - Correção de tipos
 
@@ -26,11 +27,11 @@
 
 **FluxStack** é um framework full-stack TypeScript moderno que combina:
 
-### 🛠️ **Stack Tecnológica (Janeiro 2025)**
-- **Runtime**: Bun 1.2.20 (3x mais rápido que Node.js)
-- **Backend**: Elysia.js 1.4.6 (ultra-performático)
-- **Frontend**: React 19.1.0 + Vite 7.0.4
-- **Language**: TypeScript 5.9.2 (100% type-safe)
+### 🛠️ **Stack Tecnológica (Novembro 2025)**
+- **Runtime**: Bun >=1.2.0 (3x mais rápido que Node.js)
+- **Backend**: Elysia.js ^1.4.6 (ultra-performático)
+- **Frontend**: React ^19.1.0 + Vite ^7.1.7
+- **Language**: TypeScript ^5.8.3 (100% type-safe)
 - **Communication**: Eden Treaty com inferência automática
 - **Docs**: Swagger UI gerado automaticamente
 - **Testing**: Vitest + React Testing Library
@@ -260,19 +261,19 @@ curl http://localhost:3000/api/health  # ✅ Health check
 - **🩺 Health Check**: http://localhost:3000/api/health
 - **👥 Users API**: http://localhost:3000/api/users
 
-## 🔥 **Mudanças Importantes v1.5→v1.6**
+## 🔥 **Mudanças Importantes v1.6→v1.7**
 
-### **✅ Limpeza e Organização do Projeto (Janeiro 2025)**
+### **✅ Limpeza e Organização do Projeto (Novembro 2025)**
 - **Problema resolvido**: Arquivos markdown duplicados e desorganizados na raiz
 - **Solução implementada**: Consolidação em `ai-context/` e remoção de arquivos desnecessários
 - **Resultado**: Estrutura limpa com apenas README.md e CLAUDE.md na raiz
 
-### **✅ Integração do Filtro de Bug do Elysia (Janeiro 2025)**
+### **✅ Integração do Filtro de Bug do Elysia (Novembro 2025)**
 - **Problema resolvido**: Logs poluídos com erros HEAD do Elysia em desenvolvimento
 - **Solução implementada**: Filtro integrado no core do framework
 - **Resultado**: Logs limpos automaticamente, sem necessidade de scripts externos
 
-### **✅ Correção de Tipos TypeScript (Janeiro 2025)**
+### **✅ Correção de Tipos TypeScript (Novembro 2025)**
 - **Problema resolvido**: Uso inadequado de tipos `any` e erros de compilação
 - **Solução implementada**: Tipos específicos e interfaces apropriadas
 - **Resultado**: Type safety melhorada e código mais robusto
@@ -292,7 +293,7 @@ curl http://localhost:3000/api/health  # ✅ Health check
 - **Hot reload independente**: Backend e frontend separados
 - **Build otimizado**: Sistema unificado
 
-### **✅ Sistema de Configuração Declarativa (Janeiro 2025)**
+### **✅ Sistema de Configuração Declarativa (Novembro 2025)**
 - **Problema resolvido**: Uso direto de `process.env` sem validação
 - **Solução implementada**: Sistema Laravel-inspired com schemas
 - **Arquitetura**: 3 camadas (env loader → config schema → app configs)
@@ -330,4 +331,4 @@ curl http://localhost:3000/api/health  # ✅ Health check
 
 **🎯 Objetivo**: Capacitar LLMs a trabalhar eficientemente com FluxStack, seguindo padrões estabelecidos e garantindo código de alta qualidade com type safety automática.
 
-**📅 Última atualização**: Janeiro 2025 - Documentação completamente reorganizada e validada.
+**📅 Última atualização**: Novembro 2025 (v1.7.5) - Documentação completamente reorganizada e validada.
