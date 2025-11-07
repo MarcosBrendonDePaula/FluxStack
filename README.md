@@ -31,9 +31,9 @@ Your development environment will be available at:
 ### Modern Tech Stack
 - Bun runtime (3x faster than Node.js)
 - Elysia.js backend
-- React 19 + Vite 7 frontend
+- React 19.1+ / Vite 7.1+ frontend
 - Tailwind CSS v4 styling
-- TypeScript 5 end-to-end typing
+- TypeScript 5.8+ end-to-end typing
 
 ### Zero-Config Features
 - Automatic Eden Treaty type inference
@@ -190,10 +190,16 @@ export const auditPlugin = new Elysia({ name: 'audit' })
 
 ## Documentation & Support
 
-- Full documentation lives in `ai-context/`.
-- Assistant guidelines: `CLAUDE.md`.
-- Quick start for AI agents: `ai-context/00-QUICK-START.md`.
-- Example apps and guides included in `examples/` and `ai-context/`.
+### For Developers
+- Quick start: This README
+- Examples: `examples/` directory
+- Architecture: `ai-context/project/`
+
+### For AI Assistants
+- **Start here**: `CLAUDE.md` - Complete framework context
+- Quick reference: `ai-context/00-QUICK-START.md`
+- Detailed guides: `ai-context/development/`
+- Troubleshooting: `ai-context/reference/troubleshooting.md`
 
 ---
 
@@ -238,9 +244,10 @@ npm list -g create-fluxstack
 - Optional monitoring plugin for metrics/exporters.
 
 ### Modern Stack
-- TypeScript 5, React 19, Tailwind v4, Eden Treaty.
+- TypeScript 5.8+, React 19, Tailwind v4, Eden Treaty.
 - Shared types everywhere.
 - WebSocket live components built in.
+- AI-optimized documentation (`CLAUDE.md`, `ai-context/`).
 
 ---
 
