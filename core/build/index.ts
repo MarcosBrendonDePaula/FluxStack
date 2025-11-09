@@ -5,6 +5,7 @@ import type { BuildResult, BuildManifest } from "../types/build"
 import { Bundler } from "./bundler"
 import { Optimizer } from "./optimizer"
 import { FLUXSTACK_VERSION } from "../utils/version"
+import { buildLogger } from "../utils/build-logger"
 
 export class FluxStackBuilder {
   private config: FluxStackConfig
@@ -46,18 +47,18 @@ export class FluxStackBuilder {
   }
 
   async createDockerFiles() {
-    console.log("🐳 Creating Docker files...")
+    buildLogger.section('Docker Configuration', '🐳')
 
     const distDir = this.config.build.outDir
-    console.log(`📁 Output directory: ${distDir}`)
+    buildLogger.step(`Output directory: ${distDir}`)
 
     // Ensure dist directory exists
     if (!existsSync(distDir)) {
-      console.log(`📁 Creating directory: ${distDir}`)
+      buildLogger.step(`Creating directory: ${distDir}`)
       mkdirSync(distDir, { recursive: true })
-      console.log(`✅ Directory created successfully`)
+      buildLogger.success('Directory created successfully')
     } else {
-      console.log(`✅ Directory already exists`)
+      buildLogger.success('Directory already exists')
     }
 
     // Dockerfile optimizado para produção
@@ -156,14 +157,14 @@ coverage
 
     // Escrever arquivos no dist
     try {
-      console.log(`📝 Writing Dockerfile...`)
+      buildLogger.step('Writing Dockerfile...')
       writeFileSync(join(distDir, "Dockerfile"), dockerfile)
-      console.log(`📝 Writing docker-compose.yml...`)
+      buildLogger.step('Writing docker-compose.yml...')
       writeFileSync(join(distDir, "docker-compose.yml"), dockerCompose)
-      console.log(`📝 Writing .dockerignore...`)
+      buildLogger.step('Writing .dockerignore...')
       writeFileSync(join(distDir, ".dockerignore"), dockerignore)
     } catch (error) {
-      console.error(`❌ Error writing Docker files:`, error)
+      buildLogger.error(`Error writing Docker files: ${error}`)
       throw error
     }
 
@@ -172,13 +173,9 @@ coverage
     const envExamplePath = join(process.cwd(), '.env.example')
     const distEnvPath = join(distDir, ".env")
 
-    console.log(`🔍 Checking for .env files...`)
-    console.log(`  - .env path: ${envPath}`)
-    console.log(`  - .env.example path: ${envExamplePath}`)
-    console.log(`  - target path: ${distEnvPath}`)
+    buildLogger.step('Configuring environment files...')
 
     if (existsSync(envPath)) {
-      console.log(`📄 Copying .env file and setting production mode...`)
       // Read .env content
       let envContent = readFileSync(envPath, 'utf-8')
       // Replace development with production
@@ -186,13 +183,11 @@ coverage
       envContent = envContent.replace(/VITE_NODE_ENV=development/g, 'VITE_NODE_ENV=production')
       // Write to dist
       writeFileSync(distEnvPath, envContent)
-      console.log("📄 Environment file copied to dist/ (NODE_ENV=production)")
+      buildLogger.success("Environment file copied (NODE_ENV=production)")
     } else if (existsSync(envExamplePath)) {
-      console.log(`📄 Copying .env.example file...`)
       copyFileSync(envExamplePath, distEnvPath)
-      console.log("📄 Example environment file copied to dist/")
+      buildLogger.success("Example environment file copied")
     } else {
-      console.log(`📄 Creating default .env file...`)
       // Criar um .env básico para produção
       const defaultEnv = `NODE_ENV=production
 PORT=3000
@@ -202,22 +197,20 @@ LOG_LEVEL=info
 MONITORING_ENABLED=true
 `
       writeFileSync(distEnvPath, defaultEnv)
-      console.log("📄 Default environment file created for production")
+      buildLogger.success("Default environment file created")
     }
 
     // Copy package.json for Docker build
     const packageJsonPath = join(process.cwd(), 'package.json')
     const distPackageJsonPath = join(distDir, 'package.json')
 
-    console.log(`📦 Copying package.json...`)
-    console.log(`  - source: ${packageJsonPath}`)
-    console.log(`  - target: ${distPackageJsonPath}`)
+    buildLogger.step('Copying package.json...')
 
     if (existsSync(packageJsonPath)) {
       copyFileSync(packageJsonPath, distPackageJsonPath)
-      console.log("📦 Package.json copied successfully")
+      buildLogger.success("Package.json copied successfully")
     } else {
-      console.warn("⚠️ package.json not found, creating minimal version...")
+      buildLogger.warn("package.json not found, creating minimal version...")
       const minimalPackageJson = {
         name: "fluxstack-app",
         version: "1.0.0",
@@ -230,12 +223,13 @@ MONITORING_ENABLED=true
       writeFileSync(distPackageJsonPath, JSON.stringify(minimalPackageJson, null, 2))
     }
 
-    console.log("✅ Docker files created in dist/")
+    buildLogger.success("Docker configuration completed")
   }
 
 
   async build(): Promise<BuildResult> {
-    console.log("⚡ FluxStack Framework - Building...")
+    buildLogger.header('⚡ FluxStack Build')
+    buildLogger.startTimer()
 
     const startTime = Date.now()
 
@@ -292,9 +286,15 @@ MONITORING_ENABLED=true
 
       const duration = Date.now() - startTime
 
-      console.log("🎉 Build completed successfully!")
-      console.log(`⏱️ Build time: ${duration}ms`)
-      console.log("🐳 Ready for Docker deployment from dist/ directory")
+      // Print build summary
+      buildLogger.summary('Build Completed Successfully', [
+        { label: 'Build Time', value: buildLogger.formatDuration(duration), highlight: true },
+        { label: 'Output Directory', value: this.config.build.outDir },
+        { label: 'Client Assets', value: clientResult.assets?.length || 0 },
+        { label: 'Total Size', value: buildLogger.formatSize(optimizationResult?.optimizedSize || 0) },
+        { label: 'Compression', value: optimizationResult?.compressionRatio ? `${optimizationResult.compressionRatio.toFixed(2)}%` : 'N/A' },
+        { label: 'Docker Ready', value: '✓', highlight: true }
+      ])
 
       return {
         success: true,
@@ -316,7 +316,7 @@ MONITORING_ENABLED=true
       const duration = Date.now() - startTime
       const errorMessage = error instanceof Error ? error.message : "Unknown build error"
 
-      console.error("❌ Build failed:", errorMessage)
+      buildLogger.error(`Build failed: ${errorMessage}`)
 
       return {
         success: false,
@@ -364,7 +364,7 @@ MONITORING_ENABLED=true
 
   private async clean(): Promise<void> {
     // Clean output directory - implementation would go here
-    console.log("🧹 Cleaning output directory...")
+    buildLogger.step("Cleaning output directory...")
   }
 
   private async generateManifest(

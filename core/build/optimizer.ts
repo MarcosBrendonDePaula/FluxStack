@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync, statSync, readdirSync } from "fs"
 import { join, extname } from "path"
 import { gzipSync } from "zlib"
 import type { OptimizationConfig, OptimizationResult } from "../types/build"
+import { buildLogger } from "../utils/build-logger"
 
 export interface OptimizerConfig {
   treeshake: boolean
@@ -19,8 +20,8 @@ export class Optimizer {
   }
 
   async optimize(buildPath: string): Promise<OptimizationResult> {
-    console.log("🔧 Optimizing build...")
-    
+    buildLogger.section('Build Optimization', '🔧')
+
     const startTime = Date.now()
     const results: OptimizationResult = {
       success: true,
@@ -34,6 +35,7 @@ export class Optimizer {
     try {
       // Get original size
       results.originalSize = await this.calculateDirectorySize(buildPath)
+      buildLogger.step(`Original size: ${buildLogger.formatSize(results.originalSize)}`)
 
       // Apply optimizations (minification removed for compatibility)
 
@@ -55,23 +57,40 @@ export class Optimizer {
 
       // Calculate final size and compression ratio
       results.optimizedSize = await this.calculateDirectorySize(buildPath)
-      results.compressionRatio = results.originalSize > 0 
-        ? ((results.originalSize - results.optimizedSize) / results.originalSize) * 100 
+      results.compressionRatio = results.originalSize > 0
+        ? ((results.originalSize - results.optimizedSize) / results.originalSize) * 100
         : 0
 
       results.duration = Date.now() - startTime
 
-      console.log(`✅ Optimization completed in ${results.duration}ms`)
-      console.log(`📊 Size reduction: ${results.compressionRatio.toFixed(2)}%`)
-      
+      buildLogger.success(`Optimization completed in ${buildLogger.formatDuration(results.duration)}`)
+
+      // Create optimization summary table
+      const optimizationData = results.optimizations.map(opt => ({
+        type: opt.type,
+        description: opt.description,
+        saved: buildLogger.formatSize(opt.sizeSaved)
+      }))
+
+      if (optimizationData.length > 0) {
+        buildLogger.table(
+          [
+            { header: 'Optimization', key: 'type', width: 20, align: 'left', color: 'cyan' },
+            { header: 'Description', key: 'description', width: 35, align: 'left' },
+            { header: 'Size Saved', key: 'saved', width: 12, align: 'right', color: 'green' }
+          ],
+          optimizationData
+        )
+      }
+
       return results
 
     } catch (error) {
       results.success = false
       results.duration = Date.now() - startTime
       results.error = error instanceof Error ? error.message : "Unknown optimization error"
-      
-      console.error("❌ Optimization failed:", results.error)
+
+      buildLogger.error(`Optimization failed: ${results.error}`)
       return results
     }
   }
@@ -79,8 +98,8 @@ export class Optimizer {
   // Minification methods removed for compatibility with Bun bundler
 
   private async compressAssets(buildPath: string, results: OptimizationResult): Promise<void> {
-    console.log("📦 Compressing assets...")
-    
+    buildLogger.step("Compressing assets...")
+
     const files = this.getFilesRecursively(buildPath)
     let compressedCount = 0
 
@@ -98,11 +117,12 @@ export class Optimizer {
             compressedCount++
           }
         } catch (error) {
-          console.warn(`⚠️ Failed to compress ${file}:`, error)
+          // Silently skip files that can't be compressed
         }
       }
     }
 
+    buildLogger.success(`Compressed ${compressedCount} files`)
     results.optimizations.push({
       type: 'compression',
       description: `Created gzip versions for ${compressedCount} files`,
@@ -111,8 +131,8 @@ export class Optimizer {
   }
 
   private async removeUnusedCSS(buildPath: string, results: OptimizationResult): Promise<void> {
-    console.log("🎨 Removing unused CSS...")
-    
+    buildLogger.step("Analyzing CSS...")
+
     // This is a placeholder - real implementation would use PurgeCSS or similar
     results.optimizations.push({
       type: 'css-purging',
@@ -122,8 +142,8 @@ export class Optimizer {
   }
 
   private async optimizeImages(buildPath: string, results: OptimizationResult): Promise<void> {
-    console.log("🖼️ Optimizing images...")
-    
+    buildLogger.step("Optimizing images...")
+
     // This is a placeholder - real implementation would use imagemin or similar
     results.optimizations.push({
       type: 'image-optimization',
@@ -133,7 +153,7 @@ export class Optimizer {
   }
 
   private async analyzeBundles(buildPath: string, results: OptimizationResult): Promise<void> {
-    console.log("📊 Analyzing bundles...")
+    buildLogger.step("Analyzing bundles...")
     
     const files = this.getFilesRecursively(buildPath)
     const jsFiles = files.filter(f => extname(f) === '.js')
