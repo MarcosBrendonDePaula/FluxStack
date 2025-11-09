@@ -144,10 +144,10 @@ describe('Backward Compatibility', () => {
   })
 
   describe('Values Consistency', () => {
-    it('should compose values from new modular configs', () => {
+    it('should compose values from new modular configs', async () => {
       // Import new configs to compare
-      const { appConfig } = require('@/config/app.config')
-      const { serverConfig } = require('@/config/server.config')
+      const { appConfig } = await import('../../../config/app.config')
+      const { serverConfig } = await import('../../../config/server.config')
 
       // Values should match
       expect(fluxStackConfig.app.name).toBe(appConfig.name)
