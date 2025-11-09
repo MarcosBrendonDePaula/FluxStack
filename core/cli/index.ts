@@ -452,14 +452,18 @@ async function handleLegacyCommands() {
     console.log("🚀 API Server: http://localhost:3001")
     console.log("📦 Starting backend with hot reload...")
     console.log()
-    
+
+    // Ensure backend-only.ts exists
+    const { ensureBackendEntry } = await import("../utils/regenerate-files")
+    await ensureBackendEntry()
+
     // Start backend with Bun watch for hot reload
     const { spawn: spawnBackend } = await import("child_process")
     const backendProcess = spawnBackend("bun", ["--watch", "app/server/backend-only.ts"], {
       stdio: "inherit",
       cwd: process.cwd()
     })
-    
+
     // Handle process cleanup
     process.on('SIGINT', () => {
       backendProcess.kill('SIGINT')

@@ -1,15 +1,18 @@
-// Backend standalone entry point
-import { startBackendOnly } from "@/core/server/standalone"
+/**
+ * Backend Standalone Entry Point
+ *
+ * This is a minimal wrapper for starting the backend in standalone mode.
+ * The core logic is protected in @/core/server/backend-entry.ts
+ *
+ * You can customize the configuration here if needed.
+ */
+
+import { startBackend, createBackendConfig } from "@/core/server/backend-entry"
 import { apiRoutes } from "./routes"
 import { serverConfig } from "@/config/server.config"
 
-// Configuração para backend standalone usando config declarativo
-const backendConfig = {
-  port: serverConfig.backendPort,
-  apiPrefix: serverConfig.apiPrefix
-}
+// Create backend configuration from declarative config
+const backendConfig = createBackendConfig(serverConfig)
 
-console.log(`🚀 Backend standalone: ${serverConfig.host}:${backendConfig.port}`)
-
-// Iniciar apenas o backend
-startBackendOnly(apiRoutes, backendConfig)
+// Start backend in standalone mode
+startBackend(apiRoutes, backendConfig)
