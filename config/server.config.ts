@@ -1,48 +1,68 @@
 /**
  * Server Configuration
- * Declarative server config using FluxStack config system
+ * Server-specific settings (port, host, CORS, middleware)
  */
 
-import { defineConfig, config } from '@/core/utils/config-schema'
-import { FLUXSTACK_VERSION } from '@/core/utils/version'
+import { defineConfig, defineNestedConfig, config } from '@/core/utils/config-schema'
 
-const serverConfigSchema = {
+/**
+ * CORS configuration schema
+ */
+const corsSchema = {
+  origins: config.array('CORS_ORIGINS', ['http://localhost:3000', 'http://localhost:5173']),
+  methods: config.array('CORS_METHODS', ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']),
+  headers: config.array('CORS_HEADERS', ['Content-Type', 'Authorization']),
+  credentials: config.boolean('CORS_CREDENTIALS', false),
+  maxAge: config.number('CORS_MAX_AGE', 86400)
+} as const
+
+/**
+ * Server configuration schema
+ */
+const serverSchema = {
   // Server basics
-  port: config.number('PORT', 3000, true),
+  port: {
+    type: 'number' as const,
+    env: 'PORT',
+    default: 3000,
+    required: true,
+    validate: (value: number) => {
+      if (value < 1 || value > 65535) {
+        return 'Port must be between 1 and 65535'
+      }
+      return true
+    }
+  },
+
   host: config.string('HOST', 'localhost', true),
-  apiPrefix: config.string('API_PREFIX', '/api'),
 
-  // CORS configuration
-  corsOrigins: config.array('CORS_ORIGINS', ['http://localhost:3000', 'http://localhost:5173']),
-  corsMethods: config.array('CORS_METHODS', ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']),
-  corsHeaders: config.array('CORS_HEADERS', ['Content-Type', 'Authorization']),
-  corsCredentials: config.boolean('CORS_CREDENTIALS', false),
-  corsMaxAge: config.number('CORS_MAX_AGE', 86400),
-
-  // Client config
-  clientPort: config.number('VITE_PORT', 5173),
-  clientTarget: config.string('CLIENT_TARGET', 'es2020'),
-  clientOutDir: config.string('CLIENT_OUTDIR', 'dist'),
-  clientSourceMaps: config.boolean('CLIENT_SOURCEMAPS', false),
+  apiPrefix: {
+    type: 'string' as const,
+    env: 'API_PREFIX',
+    default: '/api',
+    validate: (value: string) => value.startsWith('/') || 'API prefix must start with /'
+  },
 
   // Backend-only mode
   backendPort: config.number('BACKEND_PORT', 3001),
 
-  // App info
-  appName: config.string('FLUXSTACK_APP_NAME', 'FluxStack'),
-  appVersion: config.string('FLUXSTACK_APP_VERSION', FLUXSTACK_VERSION),
-
   // Features
-  enableSwagger: config.boolean('ENABLE_SWAGGER', true),
-  enableMetrics: config.boolean('ENABLE_METRICS', false),
-  enableMonitoring: config.boolean('ENABLE_MONITORING', false),
   enableRequestLogging: config.boolean('ENABLE_REQUEST_LOGGING', true),
-
-  // Vite/Development
-  enableViteProxyLogs: config.boolean('ENABLE_VITE_PROXY_LOGS', false)
+  showBanner: config.boolean('SHOW_SERVER_BANNER', true)
 } as const
 
-export const serverConfig = defineConfig(serverConfigSchema)
+/**
+ * Export server config (nested with CORS)
+ */
+export const serverConfig = defineNestedConfig({
+  server: serverSchema,
+  cors: corsSchema
+})
 
-export type ServerConfig = typeof serverConfig
+// Export types
+export type ServerConfig = typeof serverConfig.server
+export type CorsConfig = typeof serverConfig.cors
+export type ServerFullConfig = typeof serverConfig
+
+// Export default
 export default serverConfig
