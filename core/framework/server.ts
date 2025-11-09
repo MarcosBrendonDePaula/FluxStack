@@ -8,6 +8,7 @@ import { logger } from "../utils/logger"
 import { displayStartupBanner, type StartupInfo } from "../utils/logger/startup-banner"
 import { createErrorHandler } from "../utils/errors/handlers"
 import { createTimer, formatBytes, isProduction, isDevelopment } from "../utils/helpers"
+import type { Plugin } from "../plugins"
 
 export class FluxStackFramework {
   private app: Elysia
