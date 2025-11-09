@@ -1,9 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { apiCall, getErrorMessage, APIException } from '@/app/client/src/lib/eden-api'
+import { apiCall, getErrorMessage, APIException, resetCircuitBreaker } from '@/app/client/src/lib/eden-api'
+import { ClientAPIError } from '@/app/client/src/lib/errors'
 
 describe('Eden API Utilities', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    resetCircuitBreaker()
   })
 
   describe('apiCall', () => {
@@ -20,11 +22,11 @@ describe('Eden API Utilities', () => {
       expect(result).toEqual(mockData)
     })
 
-    it('should throw APIException on error response', async () => {
-      const mockError = { 
+    it('should throw ClientAPIError on error response', async () => {
+      const mockError = {
         status: 400,
         value: {
-          message: 'Validation failed', 
+          message: 'Validation failed',
           code: 'VALIDATION_ERROR',
           details: { field: 'email' }
         }
@@ -36,16 +38,17 @@ describe('Eden API Utilities', () => {
         response: new Response()
       })
 
-      await expect(apiCall(mockPromise)).rejects.toThrow(APIException)
-      
+      await expect(apiCall(mockPromise, { useCircuitBreaker: false })).rejects.toThrow(ClientAPIError)
+
       try {
-        await apiCall(mockPromise)
+        await apiCall(mockPromise, { useCircuitBreaker: false })
       } catch (error) {
-        expect(error).toBeInstanceOf(APIException)
-        expect((error as APIException).message).toBe('Validation failed')
-        expect((error as APIException).status).toBe(400)
-        expect((error as APIException).code).toBe('VALIDATION_ERROR')
-        expect((error as APIException).details).toEqual(mockError.value)
+        expect(error).toBeInstanceOf(ClientAPIError)
+        expect((error as ClientAPIError).message).toBe('Validation failed')
+        expect((error as ClientAPIError).statusCode).toBe(400)
+        expect((error as ClientAPIError).code).toBe('VALIDATION_ERROR')
+        // details should be { field: 'email' } based on implementation
+        expect((error as ClientAPIError).details).toEqual({ field: 'email' })
       }
     })
 
@@ -53,15 +56,15 @@ describe('Eden API Utilities', () => {
       const networkError = new Error('Network error')
       const mockPromise = Promise.reject(networkError)
 
-      await expect(apiCall(mockPromise)).rejects.toThrow(APIException)
-      
+      await expect(apiCall(mockPromise, { useCircuitBreaker: false })).rejects.toThrow(ClientAPIError)
+
       try {
-        await apiCall(mockPromise)
+        await apiCall(mockPromise, { useCircuitBreaker: false })
       } catch (error) {
-        expect(error).toBeInstanceOf(APIException)
-        expect((error as APIException).message).toBe('Network error')
-        expect((error as APIException).status).toBe(500)
-        expect((error as APIException).code).toBe('NETWORK_ERROR')
+        expect(error).toBeInstanceOf(ClientAPIError)
+        expect((error as ClientAPIError).message).toBe('Network error')
+        expect((error as ClientAPIError).statusCode).toBe(0)
+        expect((error as ClientAPIError).code).toBe('NETWORK_ERROR')
       }
     })
 
@@ -69,15 +72,15 @@ describe('Eden API Utilities', () => {
       const unknownError = 'Some string error'
       const mockPromise = Promise.reject(unknownError)
 
-      await expect(apiCall(mockPromise)).rejects.toThrow(APIException)
-      
+      await expect(apiCall(mockPromise, { useCircuitBreaker: false })).rejects.toThrow(ClientAPIError)
+
       try {
-        await apiCall(mockPromise)
+        await apiCall(mockPromise, { useCircuitBreaker: false })
       } catch (error) {
-        expect(error).toBeInstanceOf(APIException)
-        expect((error as APIException).message).toBe('Unknown error')
-        expect((error as APIException).status).toBe(500)
-        expect((error as APIException).code).toBe('NETWORK_ERROR')
+        expect(error).toBeInstanceOf(ClientAPIError)
+        expect((error as ClientAPIError).message).toBe('Unknown error occurred')
+        expect((error as ClientAPIError).statusCode).toBe(500)
+        expect((error as ClientAPIError).code).toBe('UNKNOWN_ERROR')
       }
     })
   })
@@ -88,37 +91,37 @@ describe('Eden API Utilities', () => {
         message: 'Custom message',
         status: 400
       })
-      expect(getErrorMessage(badRequestError)).toBe('Custom message')
+      expect(getErrorMessage(badRequestError)).toBe('Invalid request. Please check your input.')
 
       const unauthorizedError = new APIException({
         message: 'Custom auth message',
         status: 401
       })
-      expect(getErrorMessage(unauthorizedError)).toBe('Acesso não autorizado')
+      expect(getErrorMessage(unauthorizedError)).toBe('Authentication required. Please log in.')
 
       const forbiddenError = new APIException({
         message: 'Forbidden',
         status: 403
       })
-      expect(getErrorMessage(forbiddenError)).toBe('Acesso negado')
+      expect(getErrorMessage(forbiddenError)).toBe('Access denied. You do not have permission.')
 
       const notFoundError = new APIException({
         message: 'Not found',
         status: 404
       })
-      expect(getErrorMessage(notFoundError)).toBe('Recurso não encontrado')
+      expect(getErrorMessage(notFoundError)).toBe('Resource not found.')
 
       const validationError = new APIException({
         message: 'Validation error',
         status: 422
       })
-      expect(getErrorMessage(validationError)).toBe('Dados de entrada inválidos')
+      expect(getErrorMessage(validationError)).toBe('Invalid data provided.')
 
       const serverError = new APIException({
         message: 'Server error',
         status: 500
       })
-      expect(getErrorMessage(serverError)).toBe('Erro interno do servidor')
+      expect(getErrorMessage(serverError)).toBe('Server error. Please try again later.')
     })
 
     it('should return generic message for unknown status codes', () => {
@@ -126,7 +129,7 @@ describe('Eden API Utilities', () => {
         message: 'Custom error',
         status: 418 // I'm a teapot
       })
-      expect(getErrorMessage(unknownError)).toBe('Custom error')
+      expect(getErrorMessage(unknownError)).toBe('An unexpected error occurred.')
     })
 
     it('should handle regular Error objects', () => {
@@ -135,10 +138,10 @@ describe('Eden API Utilities', () => {
     })
 
     it('should handle unknown error types', () => {
-      expect(getErrorMessage('string error')).toBe('Erro desconhecido')
-      expect(getErrorMessage(null)).toBe('Erro desconhecido')
-      expect(getErrorMessage(undefined)).toBe('Erro desconhecido')
-      expect(getErrorMessage({ unknownProp: 'value' })).toBe('Erro desconhecido')
+      expect(getErrorMessage('string error')).toBe('An unexpected error occurred')
+      expect(getErrorMessage(null)).toBe('An unexpected error occurred')
+      expect(getErrorMessage(undefined)).toBe('An unexpected error occurred')
+      expect(getErrorMessage({ unknownProp: 'value' })).toBe('An unexpected error occurred')
     })
 
     it('should fallback to default messages when APIException has no message', () => {
@@ -146,7 +149,7 @@ describe('Eden API Utilities', () => {
         message: '',
         status: 401
       })
-      expect(getErrorMessage(errorWithoutMessage)).toBe('Acesso não autorizado')
+      expect(getErrorMessage(errorWithoutMessage)).toBe('Authentication required. Please log in.')
     })
   })
 
