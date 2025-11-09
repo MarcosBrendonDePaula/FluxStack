@@ -1,6 +1,6 @@
 /**
  * Application Configuration
- * Laravel-style declarative config with validation
+ * Core application metadata and global settings
  */
 
 import { defineConfig, config } from '@/core/utils/config-schema'
@@ -8,6 +8,7 @@ import { FLUXSTACK_VERSION } from '@/core/utils/version'
 
 /**
  * App configuration schema
+ * Contains only app-level metadata and global feature flags
  */
 const appConfigSchema = {
   // App basics
@@ -27,49 +28,13 @@ const appConfigSchema = {
 
   debug: config.boolean('DEBUG', false),
 
-  // Server
-  port: {
-    type: 'number' as const,
-    env: 'PORT',
-    default: 3000,
-    required: true,
-    validate: (value: number) => {
-      if (value < 1 || value > 65535) {
-        return 'Port must be between 1 and 65535'
-      }
-      return true
-    }
-  },
-
-  host: config.string('HOST', 'localhost', true),
-
-  apiPrefix: {
-    type: 'string' as const,
-    env: 'API_PREFIX',
-    default: '/api',
-    validate: (value: string) => value.startsWith('/') || 'API prefix must start with /'
-  },
-
   // URLs
   url: config.string('APP_URL', undefined, false),
 
-  // Features
+  // Global features (high-level flags)
   enableSwagger: config.boolean('ENABLE_SWAGGER', true),
   enableMetrics: config.boolean('ENABLE_METRICS', false),
   enableMonitoring: config.boolean('ENABLE_MONITORING', false),
-
-  // Client
-  clientPort: config.number('VITE_PORT', 5173),
-
-  // Logging
-  logLevel: config.enum('LOG_LEVEL', ['debug', 'info', 'warn', 'error'] as const, 'info'),
-  logFormat: config.enum('LOG_FORMAT', ['json', 'pretty'] as const, 'pretty'),
-
-  // CORS
-  corsOrigins: config.array('CORS_ORIGINS', ['*']),
-  corsMethods: config.array('CORS_METHODS', ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']),
-  corsHeaders: config.array('CORS_HEADERS', ['Content-Type', 'Authorization']),
-  corsCredentials: config.boolean('CORS_CREDENTIALS', false),
 
   // Security
   trustProxy: config.boolean('TRUST_PROXY', false),
@@ -99,16 +64,6 @@ export type AppConfig = typeof appConfig
  * Use this when you need the literal type explicitly
  */
 export type Environment = typeof appConfig.env
-
-/**
- * Type-safe log level type
- */
-export type LogLevel = typeof appConfig.logLevel
-
-/**
- * Type-safe log format type
- */
-export type LogFormat = typeof appConfig.logFormat
 
 // Export default
 export default appConfig

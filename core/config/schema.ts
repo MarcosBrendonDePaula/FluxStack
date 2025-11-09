@@ -1,7 +1,29 @@
 /**
- * Enhanced Configuration Schema for FluxStack
- * Provides comprehensive type definitions and JSON schema validation
+ * ⚠️ DEPRECATED - Enhanced Configuration Schema for FluxStack
+ *
+ * This file is DEPRECATED and maintained only for backward compatibility.
+ * Please use the new modular config system from /config instead:
+ *
+ * ✅ NEW WAY:
+ * ```ts
+ * import { appConfig, serverConfig, clientConfig } from '@/config'
+ * ```
+ *
+ * ❌ OLD WAY (DEPRECATED):
+ * ```ts
+ * import { FluxStackConfig } from '@/core/config/schema'
+ * ```
+ *
+ * The modular system provides:
+ * - Better organization (separated by domain)
+ * - Automatic validation
+ * - Type inference
+ * - Laravel-style declarative schemas
+ *
+ * This file will be removed in a future version.
+ * @deprecated Use /config modular system instead
  */
+
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 export type BuildTarget = 'bun' | 'node' | 'docker'
