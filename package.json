@@ -45,16 +45,7 @@
     "make:live": "bun run core/cli/index.ts make:component",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:watch": "vitest --watch",
-    "test:live": "tsx scripts/test-live-components.ts",
-    "test:live:coverage": "tsx scripts/test-live-components.ts --coverage",
-    "test:live:watch": "tsx scripts/test-live-components.ts --watch",
-    "test:live:verbose": "tsx scripts/test-live-components.ts --verbose",
-    "test:config": "bun run core/config/__tests__/run-tests.ts",
-    "test:config:coverage": "bun run core/config/__tests__/run-tests.ts coverage",
-    "test:config:manual": "bun run core/config/__tests__/manual-test.ts",
     "legacy:dev": "bun --watch app/server/index.ts"
   },
   "devDependencies": {
