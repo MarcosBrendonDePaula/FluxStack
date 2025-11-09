@@ -3,6 +3,7 @@
 
 import { existsSync, readdirSync, writeFileSync, unlinkSync, readFileSync, statSync } from 'fs'
 import { join, extname, basename } from 'path'
+import { buildLogger } from '../utils/build-logger'
 
 export interface PluginInfo {
   pluginDir: string
@@ -36,8 +37,6 @@ export class FluxPluginsGenerator {
     if (existsSync(this.pluginsPath)) {
       const externalPlugins = this.discoverPluginsInDirectory(this.pluginsPath, 'external')
       plugins.push(...externalPlugins)
-    } else {
-      console.log('⚠️ No external plugins directory found (plugins/)')
     }
 
     // Note: Built-in plugins are automatically loaded by core system
@@ -78,13 +77,13 @@ export class FluxPluginsGenerator {
             type
           })
 
-          console.log(`🔍 Discovered ${type} plugin: ${entry} (${entryFile})`)
+          buildLogger.step(`Discovered ${type} plugin: ${entry} (${entryFile})`)
         } else {
-          console.warn(`⚠️ Plugin '${entry}' has no valid entry point`)
+          buildLogger.warn(`Plugin '${entry}' has no valid entry point`)
         }
       }
     } catch (error) {
-      console.warn(`⚠️ Failed to scan ${type} plugins directory '${directory}':`, error)
+      // Silently skip directories that can't be scanned
     }
 
     return plugins
@@ -122,7 +121,6 @@ export class FluxPluginsGenerator {
     if (existsSync(this.registrationFilePath)) {
       const existingContent = readFileSync(this.registrationFilePath, 'utf-8')
       writeFileSync(this.backupFilePath, existingContent)
-      console.log('📄 Backed up existing auto-registry.ts')
     }
 
     // All discovered plugins are external (built-in are handled by core)
@@ -198,7 +196,7 @@ console.log('🔍 Auto-discovered ${plugins.length} external plugins' + (pluginN
 `
 
     writeFileSync(this.registrationFilePath, fileContent)
-    console.log(`✅ Generated plugin registry with ${plugins.length} plugins`)
+    buildLogger.success(`Generated registry for ${plugins.length} plugins`)
   }
 
   /**
@@ -220,12 +218,10 @@ console.log('🔍 Auto-discovered ${plugins.length} external plugins' + (pluginN
       const backupContent = readFileSync(this.backupFilePath, 'utf-8')
       writeFileSync(this.registrationFilePath, backupContent)
       unlinkSync(this.backupFilePath)
-      console.log('🔄 Restored original auto-registry.ts')
     } else {
       // If no backup exists, remove the generated file
       if (existsSync(this.registrationFilePath)) {
         unlinkSync(this.registrationFilePath)
-        console.log('🗑️ Removed auto-generated registry file')
       }
     }
   }
@@ -246,17 +242,33 @@ console.log('🔍 Auto-discovered ${plugins.length} external plugins' + (pluginN
    * Pre-build hook: Generate registration file
    */
   async preBuild(): Promise<PluginInfo[]> {
-    console.log('🚀 [PRE-BUILD] Generating FluxStack Plugins registry...')
-    
+    buildLogger.section('FluxStack Plugins Discovery', '🔌')
+
     const plugins = this.discoverPlugins()
-    
+
     if (plugins.length === 0) {
-      console.log('⚠️ No FluxStack Plugins found to register')
+      buildLogger.warn('No FluxStack Plugins found')
       return []
     }
 
+    // Create table of discovered plugins
+    const pluginData = plugins.map(p => ({
+      plugin: p.pluginName,
+      type: p.type,
+      entry: p.entryFile
+    }))
+
+    buildLogger.table(
+      [
+        { header: 'Plugin', key: 'plugin', width: 25, align: 'left', color: 'cyan' },
+        { header: 'Type', key: 'type', width: 12, align: 'left', color: 'yellow' },
+        { header: 'Entry Point', key: 'entry', width: 20, align: 'left', color: 'gray' }
+      ],
+      pluginData
+    )
+
     this.generateRegistrationFile(plugins)
-    
+
     return plugins
   }
 
@@ -264,10 +276,9 @@ console.log('🔍 Auto-discovered ${plugins.length} external plugins' + (pluginN
    * Post-build hook: Clean up generated file (optional)
    */
   async postBuild(keepGenerated: boolean = false): Promise<void> {
-    console.log('🧹 [POST-BUILD] Cleaning up FluxStack Plugins registry...')
-    
+    buildLogger.step('Cleaning up FluxStack Plugins registry...')
+
     if (keepGenerated) {
-      console.log('📝 Keeping auto-generated plugin registry for production')
       // Remove backup since we're keeping the generated version
       if (existsSync(this.backupFilePath)) {
         unlinkSync(this.backupFilePath)
@@ -304,7 +315,7 @@ console.log('🔍 Auto-discovered ${plugins.length} external plugins' + (pluginN
    */
   updateIfNeeded(): void {
     if (this.needsUpdate()) {
-      console.log('🔄 FluxStack Plugins changed, updating registry...')
+      buildLogger.info('FluxStack Plugins changed, updating registry...')
       const plugins = this.discoverPlugins()
       this.generateRegistrationFile(plugins)
     }

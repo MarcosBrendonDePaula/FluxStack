@@ -3,6 +3,7 @@ import { existsSync, mkdirSync } from "fs"
 import { join } from "path"
 import type { FluxStackConfig } from "../config"
 import type { BundleResult, BundleOptions } from "../types/build"
+import { buildLogger } from "../utils/build-logger"
 
 export interface BundlerConfig {
   target: 'bun' | 'node' | 'docker'
@@ -19,8 +20,9 @@ export class Bundler {
   }
 
   async bundleClient(options: BundleOptions = {}): Promise<BundleResult> {
-    console.log("⚡ Bundling client...")
-    
+    buildLogger.section('Client Build', '⚡')
+    buildLogger.step('Starting Vite build...')
+
     const startTime = Date.now()
     
     try {
@@ -41,9 +43,9 @@ export class Bundler {
 
       const exitCode = await buildProcess.exited
       const duration = Date.now() - startTime
-      
+
       if (exitCode === 0) {
-        console.log("✅ Client bundle completed")
+        buildLogger.success(`Client bundle completed in ${buildLogger.formatDuration(duration)}`)
         return {
           success: true,
           duration,
@@ -52,7 +54,7 @@ export class Bundler {
         }
       } else {
         const stderr = await new Response(buildProcess.stderr).text()
-        console.error("❌ Client bundle failed")
+        buildLogger.error("Client bundle failed")
         return {
           success: false,
           duration,
@@ -70,23 +72,21 @@ export class Bundler {
   }
 
   async bundleServer(entryPoint: string, options: BundleOptions = {}): Promise<BundleResult> {
-    console.log("⚡ Bundling server...")
-    
+    buildLogger.section('Server Build', '⚡')
+
     const startTime = Date.now()
     let liveComponentsGenerator: any = null
-    
+
     try {
       // 🚀 PRE-BUILD: Auto-generate Live Components registration
       const generatorModule = await import('./live-components-generator')
       liveComponentsGenerator = generatorModule.liveComponentsGenerator
       const discoveredComponents = await liveComponentsGenerator.preBuild()
-      console.log(`🔍 Auto-discovered ${discoveredComponents.length} Live Components for bundle`)
-      
+
       // 🔌 PRE-BUILD: Auto-generate FluxStack Plugins registration
       const pluginsGeneratorModule = await import('./flux-plugins-generator')
       const fluxPluginsGenerator = pluginsGeneratorModule.fluxPluginsGenerator
       const discoveredPlugins = await fluxPluginsGenerator.preBuild()
-      console.log(`🔍 Auto-discovered ${discoveredPlugins.length} FluxStack Plugins for bundle`)
       
       // Ensure output directory exists
       if (!existsSync(this.config.outDir)) {
@@ -130,12 +130,12 @@ export class Bundler {
 
       const exitCode = await buildProcess.exited
       const duration = Date.now() - startTime
-      
+
       // 🧹 POST-BUILD: Handle auto-generated registration file
       // (liveComponentsGenerator already available from above)
-      
+
       if (exitCode === 0) {
-        console.log("✅ Server bundle completed")
+        buildLogger.success(`Server bundle completed in ${buildLogger.formatDuration(duration)}`)
         
         // Keep generated files for production (they're now baked into bundle)
         await liveComponentsGenerator.postBuild(false)
@@ -152,7 +152,7 @@ export class Bundler {
           entryPoint: join(this.config.outDir, "index.js")
         }
       } else {
-        console.error("❌ Server bundle failed")
+        buildLogger.error("Server bundle failed")
         
         // Restore original files since build failed
         await liveComponentsGenerator.postBuild(false)
@@ -183,7 +183,7 @@ export class Bundler {
         const fluxPluginsGenerator = pluginsGeneratorModule.fluxPluginsGenerator
         await fluxPluginsGenerator.postBuild(false)
       } catch (cleanupError) {
-        console.warn('⚠️ Failed to cleanup generated files:', cleanupError)
+        buildLogger.warn(`Failed to cleanup generated files: ${cleanupError}`)
       }
       
       return {

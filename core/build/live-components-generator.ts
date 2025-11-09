@@ -3,6 +3,7 @@
 
 import { existsSync, readdirSync, writeFileSync, unlinkSync, readFileSync } from 'fs'
 import { join, extname, basename } from 'path'
+import { buildLogger } from '../utils/build-logger'
 
 export interface ComponentInfo {
   fileName: string
@@ -27,7 +28,6 @@ export class LiveComponentsGenerator {
    */
   discoverComponents(): ComponentInfo[] {
     if (!existsSync(this.componentsPath)) {
-      console.log('⚠️ Live components directory not found:', this.componentsPath)
       return []
     }
 
@@ -66,13 +66,13 @@ export class LiveComponentsGenerator {
                 componentName,
                 filePath: `./${fileName}`
               })
-              
-              console.log(`🔍 Discovered component: ${className} -> ${componentName}`)
+
+              buildLogger.step(`Discovered component: ${className} → ${componentName}`)
             }
           }
         }
       } catch (error) {
-        console.warn(`⚠️ Failed to analyze ${file}:`, error)
+        // Silently skip files that can't be analyzed
       }
     }
 
@@ -87,7 +87,6 @@ export class LiveComponentsGenerator {
     if (existsSync(this.registrationFilePath)) {
       const existingContent = readFileSync(this.registrationFilePath, 'utf-8')
       writeFileSync(this.backupFilePath, existingContent)
-      console.log('📄 Backed up existing register-components.ts')
     }
 
     // Generate imports
@@ -130,7 +129,7 @@ ${components.map(comp => `  ${comp.className}`).join(',\n')}
 `
 
     writeFileSync(this.registrationFilePath, fileContent)
-    console.log(`✅ Generated registration file with ${components.length} components`)
+    buildLogger.success(`Generated registration for ${components.length} components`)
   }
 
   /**
@@ -141,9 +140,6 @@ ${components.map(comp => `  ${comp.className}`).join(',\n')}
       const backupContent = readFileSync(this.backupFilePath, 'utf-8')
       writeFileSync(this.registrationFilePath, backupContent)
       unlinkSync(this.backupFilePath)
-      console.log('🔄 Restored original register-components.ts')
-    } else {
-      console.log('⚠️ No backup file found, keeping generated registration file')
     }
   }
 
@@ -163,17 +159,33 @@ ${components.map(comp => `  ${comp.className}`).join(',\n')}
    * Pre-build hook: Generate registration file
    */
   async preBuild(): Promise<ComponentInfo[]> {
-    console.log('🚀 [PRE-BUILD] Generating Live Components registration...')
-    
+    buildLogger.section('Live Components Discovery', '🚀')
+
     const components = this.discoverComponents()
-    
+
     if (components.length === 0) {
-      console.log('⚠️ No Live Components found to register')
+      buildLogger.warn('No Live Components found')
       return []
     }
 
+    // Create table of discovered components
+    const componentData = components.map(c => ({
+      component: c.componentName,
+      className: c.className,
+      file: c.fileName + '.ts'
+    }))
+
+    buildLogger.table(
+      [
+        { header: 'Component', key: 'component', width: 20, align: 'left', color: 'cyan' },
+        { header: 'Class Name', key: 'className', width: 25, align: 'left' },
+        { header: 'File', key: 'file', width: 20, align: 'left', color: 'gray' }
+      ],
+      componentData
+    )
+
     this.generateRegistrationFile(components)
-    
+
     return components
   }
 
@@ -181,10 +193,9 @@ ${components.map(comp => `  ${comp.className}`).join(',\n')}
    * Post-build hook: Clean up generated file (optional)
    */
   async postBuild(keepGenerated: boolean = false): Promise<void> {
-    console.log('🧹 [POST-BUILD] Cleaning up Live Components registration...')
-    
+    buildLogger.step('Cleaning up Live Components registration...')
+
     if (keepGenerated) {
-      console.log('📝 Keeping auto-generated registration file for production')
       // Remove backup since we're keeping the generated version
       if (existsSync(this.backupFilePath)) {
         unlinkSync(this.backupFilePath)
@@ -220,7 +231,7 @@ ${components.map(comp => `  ${comp.className}`).join(',\n')}
    */
   updateIfNeeded(): void {
     if (this.needsUpdate()) {
-      console.log('🔄 Live Components changed, updating registration...')
+      buildLogger.info('Live Components changed, updating registration...')
       const components = this.discoverComponents()
       this.generateRegistrationFile(components)
     }
