@@ -160,9 +160,9 @@ export class FluxStackConfig extends LiveComponent<FluxStackConfigState> {
     // Set default state with real configuration
     this.state = {
       environment: appConfig.env,
-      port: serverConfig.port,
-      host: serverConfig.host,
-      apiPrefix: serverConfig.apiPrefix,
+      port: serverConfig.server.port,
+      host: serverConfig.server.host,
+      apiPrefix: serverConfig.server.apiPrefix,
       
       framework: {
         name: 'FluxStack',
@@ -439,8 +439,8 @@ export class FluxStackConfig extends LiveComponent<FluxStackConfigState> {
   async getEnvironmentVariables() {
     const envVars = {
       NODE_ENV: appConfig.env,
-      PORT: serverConfig.port.toString(),
-      HOST: serverConfig.host,
+      PORT: serverConfig.server.port.toString(),
+      HOST: serverConfig.server.host,
       LOG_LEVEL: loggerConfig.level,
       // Add other non-sensitive env vars from system config
       PWD: systemConfig.pwd || undefined,

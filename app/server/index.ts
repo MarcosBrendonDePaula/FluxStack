@@ -13,37 +13,37 @@ import "./live/register-components"
 // Startup info moved to DEBUG level (set LOG_LEVEL=debug to see details)
 DEBUG('🔧 Loading declarative configuration...')
 DEBUG(`📊 Environment: ${appConfig.env}`)
-DEBUG(`🚀 Port: ${serverConfig.port}`)
-DEBUG(`🌐 Host: ${serverConfig.host}`)
+DEBUG(`🚀 Port: ${serverConfig.server.port}`)
+DEBUG(`🌐 Host: ${serverConfig.server.host}`)
 
 // Criar aplicação com configuração declarativa
 const app = new FluxStackFramework({
   server: {
-    port: serverConfig.port,
-    host: serverConfig.host,
-    apiPrefix: serverConfig.apiPrefix,
+    port: serverConfig.server.port,
+    host: serverConfig.server.host,
+    apiPrefix: serverConfig.server.apiPrefix,
     cors: {
-      origins: serverConfig.corsOrigins,
-      methods: serverConfig.corsMethods,
-      headers: serverConfig.corsHeaders,
-      credentials: serverConfig.corsCredentials
+      origins: serverConfig.cors.origins,
+      methods: serverConfig.cors.methods,
+      headers: serverConfig.cors.headers,
+      credentials: serverConfig.cors.credentials
     },
     middleware: []
   },
   app: {
-    name: serverConfig.appName,
-    version: serverConfig.appVersion
+    name: appConfig.name,
+    version: appConfig.version
   },
   client: {
-    port: serverConfig.clientPort,
+    port: serverConfig.server.backendPort,
     proxy: {
       target: helpers.getServerUrl()
     },
     build: {
-      sourceMaps: serverConfig.clientSourceMaps,
+      sourceMaps: false,
       minify: false,
-      target: serverConfig.clientTarget as any,
-      outDir: serverConfig.clientOutDir
+      target: 'es2020' as any,
+      outDir: 'dist'
     }
   }
 })
@@ -72,25 +72,25 @@ app.getApp().get('/api/env-test', () => {
     message: '⚡ Declarative Config System!',
     timestamp: new Date().toISOString(),
     serverConfig: {
-      port: serverConfig.port,
-      host: serverConfig.host,
-      apiPrefix: serverConfig.apiPrefix,
-      appName: serverConfig.appName,
-      appVersion: serverConfig.appVersion,
+      port: serverConfig.server.port,
+      host: serverConfig.server.host,
+      apiPrefix: serverConfig.server.apiPrefix,
+      appName: appConfig.name,
+      appVersion: appConfig.version,
       cors: {
-        origins: serverConfig.corsOrigins,
-        methods: serverConfig.corsMethods,
-        credentials: serverConfig.corsCredentials
+        origins: serverConfig.cors.origins,
+        methods: serverConfig.cors.methods,
+        credentials: serverConfig.cors.credentials
       },
       client: {
-        port: serverConfig.clientPort,
-        target: serverConfig.clientTarget,
-        sourceMaps: serverConfig.clientSourceMaps
+        port: serverConfig.server.backendPort,
+        target: 'es2020',
+        sourceMaps: false
       },
       features: {
-        enableSwagger: serverConfig.enableSwagger,
-        enableMetrics: serverConfig.enableMetrics,
-        enableMonitoring: serverConfig.enableMonitoring
+        enableSwagger: appConfig.enableSwagger,
+        enableMetrics: appConfig.enableMetrics,
+        enableMonitoring: appConfig.enableMonitoring
       }
     },
     environment: {
