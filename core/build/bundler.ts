@@ -103,12 +103,9 @@ export class Bundler {
         ...(options.external || [])
       ]
 
-      // Config files are automatically bundled by Bun via imports
-      // No need to copy config directory - it's included in the bundle
-
       const buildArgs = [
-        "bun", "build",
-        entryPoint,
+        "bun", "build", 
+        entryPoint, 
         "--outdir", this.config.outDir,
         "--target", this.config.target,
         ...external.flatMap(ext => ["--external", ext])
@@ -202,8 +199,6 @@ export class Bundler {
     // For now, return empty array - can be enhanced later
     return []
   }
-
-  // copyDirectory method removed - no longer needed since config files are bundled automatically
 
   async bundle(clientEntry?: string, serverEntry?: string, options: BundleOptions = {}): Promise<{
     client: BundleResult

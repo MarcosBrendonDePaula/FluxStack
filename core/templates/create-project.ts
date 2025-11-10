@@ -211,16 +211,11 @@ export class ProjectCreator {
         noEmit: true,
         baseUrl: ".",
         paths: {
-          // Framework/Core aliases (read-only system)
           "@/*": ["./*"],
           "@/core/*": ["./core/*"],
+          "@/app/*": ["./app/*"],
           "@/config/*": ["./config/*"],
-
-          // Application aliases (developer code)
-          "#/*": ["./app/*"],
-          "#backend/*": ["./app/server/*"],
-          "#frontend/*": ["./app/client/*"],
-          "#shared/*": ["./app/shared/*"]
+          "@/shared/*": ["./app/shared/*"]
         },
         strict: true,
         skipLibCheck: true,
@@ -245,35 +240,13 @@ target = "bun"
 cache = true
 lockfile = true
 
-# Path mapping for runtime execution
-[run]
-preload = []
-
-# Path mapping (alias support) for runtime
-[run.alias]
-# Framework/Core aliases (read-only system)
-"@" = "."
-"@/core" = "./core"
-"@/config" = "./config"
-
-# Application aliases (developer code)
-"#" = "./app"
-"#backend" = "./app/server"
-"#frontend" = "./app/client"
-"#shared" = "./app/shared"
-
-# Path mapping (alias support) for build
+# Path mapping (alias support)
 [build.alias]
-# Framework/Core aliases (read-only system)
 "@" = "."
 "@/core" = "./core"
+"@/app" = "./app"
 "@/config" = "./config"
-
-# Application aliases (developer code)
-"#" = "./app"
-"#backend" = "./app/server"
-"#frontend" = "./app/client"
-"#shared" = "./app/shared"
+"@/shared" = "./app/shared"
 `
 
     await Bun.write(join(this.targetDir, "bunfig.toml"), bunConfig)
@@ -288,14 +261,10 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, '.'),
-      // Framework/Core aliases (read-only system)
       '@/core': resolve(__dirname, './core'),
+      '@/app': resolve(__dirname, './app'),
       '@/config': resolve(__dirname, './config'),
-      // Application aliases (developer code)
-      '#': resolve(__dirname, './app'),
-      '#backend': resolve(__dirname, './app/server'),
-      '#frontend': resolve(__dirname, './app/client'),
-      '#shared': resolve(__dirname, './app/shared')
+      '@/shared': resolve(__dirname, './app/shared')
     }
   },
   server: {

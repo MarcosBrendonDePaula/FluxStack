@@ -15,7 +15,24 @@ COPY package.json bun.lock ./
 RUN bun install --production --frozen-lockfile
 
 # =====================================
-# Stage 2: Production Runner
+# Stage 2: Builder
+# =====================================
+FROM oven/bun:1.1.34-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files and install all dependencies (including dev)
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
+
+# Copy source code
+COPY . .
+
+# Build the application
+RUN bun run build
+
+# =====================================
+# Stage 3: Production Runner
 # =====================================
 FROM oven/bun:1.1.34-alpine AS runner
 
@@ -32,15 +49,12 @@ RUN addgroup -g 1001 -S fluxstack && \
 # Copy production dependencies from deps stage
 COPY --from=deps --chown=fluxstack:fluxstack /app/node_modules ./node_modules
 
-# Copy built application (dist folder must exist - run 'bun run build' before Docker build)
-COPY --chown=fluxstack:fluxstack ./dist ./dist
-COPY --chown=fluxstack:fluxstack ./package.json ./
+# Copy built application from builder stage
+COPY --from=builder --chown=fluxstack:fluxstack /app/dist ./dist
+COPY --from=builder --chown=fluxstack:fluxstack /app/package.json ./
 
-# Note: config directory not needed - configurations are bundled in dist/index.js
-
-# Create necessary runtime directories
-RUN mkdir -p public uploads logs && \
-    chown -R fluxstack:fluxstack public uploads logs
+# Copy config directory (required for runtime configuration)
+COPY --from=builder --chown=fluxstack:fluxstack /app/config ./config
 
 # Switch to non-root user
 USER fluxstack
@@ -53,4 +67,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD bun run -e 'fetch("http://localhost:3000/api/health").then(r => r.ok ? process.exit(0) : process.exit(1))' || exit 1
 
 # Start the application
-CMD ["bun", "dist/index.js"]
+CMD ["bun", "run", "start"]
