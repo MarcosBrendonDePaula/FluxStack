@@ -90,7 +90,7 @@ jobs:
       - name: 🧪 Run all tests
         run: |
           echo "🔬 Running complete test suite..."
-          bun run test:run
+          bun run test
 
       - name: 📊 Generate test coverage
         run: |
