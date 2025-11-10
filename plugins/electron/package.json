@@ -1,0 +1,37 @@
+{
+  "name": "@fluxstack/plugin-electron",
+  "version": "1.0.0",
+  "description": "Electron plugin for FluxStack - Build desktop applications",
+  "keywords": [
+    "fluxstack",
+    "plugin",
+    "electron",
+    "desktop",
+    "cross-platform"
+  ],
+  "author": "FluxStack Team",
+  "license": "MIT",
+  "type": "module",
+  "main": "index.ts",
+  "dependencies": {
+    "electron": "^34.0.0",
+    "electron-builder": "^26.0.0"
+  },
+  "peerDependencies": {
+    "elysia": "^1.4.0"
+  },
+  "fluxstack": {
+    "plugin": true,
+    "version": "1.0.0",
+    "hooks": [
+      "setup",
+      "onBuild",
+      "onBuildComplete",
+      "onServerStart"
+    ],
+    "commands": [
+      "build:electron",
+      "dev:electron"
+    ]
+  }
+}

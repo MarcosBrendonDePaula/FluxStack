@@ -1,0 +1,138 @@
+# FluxStack Electron Builder Configuration
+# This file is used by electron-builder to package your application
+
+# Application ID (reverse domain notation)
+appId: ${ELECTRON_APP_ID}
+
+# Product name (displayed to users)
+productName: ${ELECTRON_PRODUCT_NAME}
+
+# Copyright notice
+copyright: Copyright © 2025 ${author}
+
+# Directories
+directories:
+  output: ${ELECTRON_OUTPUT_DIR}
+  buildResources: ${ELECTRON_BUILD_DIR}
+
+# Files to include in the build
+files:
+  - dist/**/*
+  - dist-electron/**/*
+  - package.json
+  - "!node_modules/**/*"
+  - "!app/**/*"
+  - "!core/**/*"
+  - "!plugins/**/*"
+  - "!tests/**/*"
+  - "!*.ts"
+  - "!*.md"
+  - "!.env*"
+
+# ASAR archive (reduces file count, improves load time)
+asar: ${ELECTRON_ASAR}
+
+# Compression level (store, normal, maximum)
+compression: ${ELECTRON_COMPRESSION}
+
+# macOS specific
+mac:
+  category: ${ELECTRON_MAC_CATEGORY}
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+    - target: zip
+      arch: [x64, arm64]
+  icon: build/icon.icns
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+
+# Windows specific
+win:
+  target:
+    - target: nsis
+      arch: [x64, ia32]
+    - target: portable
+      arch: [x64, ia32]
+  icon: build/icon.ico
+  publisherName: ${author}
+  verifyUpdateCodeSignature: false
+
+# Linux specific
+linux:
+  target:
+    - target: AppImage
+      arch: [x64, arm64]
+    - target: deb
+      arch: [x64, arm64]
+    - target: rpm
+      arch: [x64, arm64]
+  icon: build/icons
+  category: Development
+  maintainer: ${author}
+  vendor: ${author}
+
+# NSIS installer (Windows)
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: ${ELECTRON_PRODUCT_NAME}
+
+# DMG options (macOS)
+dmg:
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
+  window:
+    width: 540
+    height: 380
+
+# AppImage options (Linux)
+appImage:
+  license: LICENSE
+  category: Development
+
+# Publish configuration (optional)
+# publish:
+#   - provider: github
+#     owner: your-username
+#     repo: your-repo
+#   - provider: generic
+#     url: https://your-update-server.com
+
+# Extra resources to copy (outside the asar)
+extraResources:
+  - from: build/resources
+    to: resources
+    filter:
+      - "**/*"
+
+# File associations (optional)
+fileAssociations:
+  - ext: flux
+    name: FluxStack Project
+    description: FluxStack Project File
+    role: Editor
+
+# Protocol handlers (optional)
+protocols:
+  - name: fluxstack
+    schemes:
+      - fluxstack
+
+# Artifact name templates
+artifactName: ${productName}-${version}-${os}-${arch}.${ext}
+
+# Build version
+buildVersion: ${version}
+
+# Sign (requires code signing certificates)
+# afterSign: build/notarize.js
