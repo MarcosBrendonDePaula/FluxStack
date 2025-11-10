@@ -65,11 +65,15 @@ export default defineConfig({
   resolve: {
     alias: [
       { find: 'fluxstack', replacement: resolve(__dirname, './core/client/fluxstack') },
+      // Framework/Core aliases (read-only system)
       { find: '@/core', replacement: resolve(__dirname, './core') },
-      { find: '@', replacement: resolve(__dirname, './app/client/src') },
-      { find: '@/app', replacement: resolve(__dirname, './app') },
       { find: '@/config', replacement: resolve(__dirname, './config') },
-      { find: '@/shared', replacement: resolve(__dirname, './app/shared') },
+      { find: '@', replacement: resolve(__dirname, './app/client/src') },
+      // Application aliases (developer code)
+      { find: '#', replacement: resolve(__dirname, './app') },
+      { find: '#backend', replacement: resolve(__dirname, './app/server') },
+      { find: '#frontend', replacement: resolve(__dirname, './app/client') },
+      { find: '#shared', replacement: resolve(__dirname, './app/shared') },
       { find: '@/components', replacement: resolve(__dirname, './app/client/src/components') },
       { find: '@/utils', replacement: resolve(__dirname, './app/client/src/utils') },
       { find: '@/hooks', replacement: resolve(__dirname, './app/client/src/hooks') },

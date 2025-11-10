@@ -6,9 +6,9 @@
 node_modules/
 **/node_modules/
 
-# Build artifacts (will be built in container)
-dist/
-**/dist/
+# Build artifacts (dist folder will be copied from local build)
+# dist/
+# **/dist/
 
 # Development files
 .git/

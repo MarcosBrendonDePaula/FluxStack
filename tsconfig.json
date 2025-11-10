@@ -20,11 +20,16 @@
     // Path mapping (alias support)
     "baseUrl": ".",
     "paths": {
+      // Framework/Core aliases (read-only system)
       "@/*": ["./*"],
       "@/core/*": ["./core/*"],
-      "@/app/*": ["./app/*"],
       "@/config/*": ["./config/*"],
-      "@/shared/*": ["./app/shared/*"]
+
+      // Application aliases (developer code)
+      "#/*": ["./app/*"],
+      "#backend/*": ["./app/server/*"],
+      "#frontend/*": ["./app/client/*"],
+      "#shared/*": ["./app/shared/*"]
     },
 
     // Best practices
