@@ -32,15 +32,41 @@ jobs:
 
       - name: 📊 Analyze dependency tree
         run: |
-          echo "🔍 Analyzing dependency tree..."
-          echo "📦 Total packages:"
-          bun pm ls --depth=0 | wc -l
-          
-          echo "🎯 Production dependencies:"
-          bun pm ls --production --depth=0
-          
-          echo "🔧 Development dependencies:" 
-          bun pm ls --dev --depth=0
+          echo "## 📊 Dependency Tree Analysis"
+
+          total_packages=$(bun pm ls --depth=0 | wc -l)
+          prod_packages=$(bun pm ls --production --depth=0 | wc -l)
+          dev_packages=$(bun pm ls --dev --depth=0 | wc -l)
+
+          echo "| Category | Count | Percentage |"
+          echo "|----------|-------|------------|"
+          echo "| Total | $total_packages | 100% |"
+          echo "| Production | $prod_packages | $((prod_packages * 100 / total_packages))% |"
+          echo "| Development | $dev_packages | $((dev_packages * 100 / total_packages))% |"
+
+          echo ""
+          echo "### 🎯 Production Dependencies"
+          echo "| Package | Version |"
+          echo "|---------|---------|"
+          bun pm ls --production --depth=0 | head -20 | while read line; do
+            if [[ $line == *"@"* ]]; then
+              pkg=$(echo "$line" | awk '{print $1}')
+              ver=$(echo "$line" | awk '{print $2}')
+              echo "| $pkg | $ver |"
+            fi
+          done || true
+
+          echo ""
+          echo "### 🔧 Development Dependencies (Top 10)"
+          echo "| Package | Version |"
+          echo "|---------|---------|"
+          bun pm ls --dev --depth=0 | head -10 | while read line; do
+            if [[ $line == *"@"* ]]; then
+              pkg=$(echo "$line" | awk '{print $1}')
+              ver=$(echo "$line" | awk '{print $2}')
+              echo "| $pkg | $ver |"
+            fi
+          done || true
 
       - name: 🔒 Security audit
         run: |
@@ -307,13 +333,46 @@ jobs:
     steps:
       - name: 📋 Summary Report
         run: |
-          echo "📦 FluxStack Dependency Management Summary"
-          echo "======================================="
-          echo "🔍 Dependency analysis: ${{ needs.dependency-analysis.result }}"
-          echo "📊 Monorepo validation: ${{ needs.monorepo-validation.result }}"  
-          echo "🏥 Dependency health: ${{ needs.dependency-health.result }}"
+          echo "# 📦 FluxStack Dependency Management Summary"
           echo ""
-          echo "🎯 FluxStack v1.4.0 monorepo dependency system validated!"
+          echo "## 📊 Validation Results"
+          echo "| Component | Status | Result |"
+          echo "|-----------|--------|--------|"
+
+          analysis_icon="${{ needs.dependency-analysis.result == 'success' && '✅' || '❌' }}"
+          validation_icon="${{ needs.monorepo-validation.result == 'success' && '✅' || '❌' }}"
+          health_icon="${{ needs.dependency-health.result == 'success' && '✅' || '❌' }}"
+
+          echo "| 🔍 Dependency Analysis | $analysis_icon | ${{ needs.dependency-analysis.result }} |"
+          echo "| 📊 Monorepo Validation | $validation_icon | ${{ needs.monorepo-validation.result }} |"
+          echo "| 🏥 Health Check | $health_icon | ${{ needs.dependency-health.result }} |"
+
+          echo ""
+
+          # Calculate success rate
+          success_count=0
+          total_tests=3
+
+          [[ "${{ needs.dependency-analysis.result }}" == "success" ]] && ((success_count++))
+          [[ "${{ needs.monorepo-validation.result }}" == "success" ]] && ((success_count++))
+          [[ "${{ needs.dependency-health.result }}" == "success" ]] && ((success_count++))
+
+          success_rate=$((success_count * 100 / total_tests))
+
+          echo "## 📈 Overall Health"
+          echo "| Metric | Value |"
+          echo "|--------|-------|"
+          echo "| Success Rate | $success_count/$total_tests ($success_rate%) |"
+          echo "| Status | $([[ $success_count -eq $total_tests ]] && echo '🎉 HEALTHY' || echo '⚠️ ISSUES DETECTED') |"
+
+          echo ""
+          if [ $success_count -eq $total_tests ]; then
+            echo "🎉 **FluxStack v1.4.0 monorepo dependency system fully validated!**"
+            echo "✅ All dependency checks passed"
+          else
+            echo "⚠️ **Some dependency issues detected**"
+            echo "🔍 Review failed checks above"
+          fi
 
       - name: ❌ Fail if critical issues found
         if: |

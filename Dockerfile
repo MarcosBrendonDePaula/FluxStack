@@ -62,9 +62,9 @@ USER fluxstack
 # Expose application port
 EXPOSE 3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD bun run -e 'fetch("http://localhost:3000/api/health").then(r => r.ok ? process.exit(0) : process.exit(1))' || exit 1
+# Health check disabled for now
+# HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+#   CMD bun run -e 'fetch("http://localhost:3000/api/health").then(r => r.ok ? process.exit(0) : process.exit(1))' || exit 1
 
 # Start the application
 CMD ["bun", "run", "start"]

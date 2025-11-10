@@ -331,24 +331,56 @@ jobs:
     steps:
       - name: 📋 Release Validation Summary
         run: |
-          echo "🎉 FluxStack Release Validation Summary"
-          echo "======================================"
-          echo "🔒 Security audit: ${{ needs.security-audit.result }}"
-          echo "📦 Release artifacts: ${{ needs.release-artifacts.result }}"
-          echo "🌍 Cross-platform compatibility: ${{ needs.cross-platform-test.result }}"
-          echo "🚀 Production simulation: ${{ needs.production-simulation.result }}"
-          echo "⚡ Performance validation: ${{ needs.performance-validation.result }}"
-          echo "📋 Documentation validation: ${{ needs.documentation-validation.result }}"
+          echo "# 🎉 FluxStack Release Validation Summary"
           echo ""
-          
-          if [[ "${{ needs.security-audit.result }}" == "success" && \
-                "${{ needs.release-artifacts.result }}" == "success" && \
-                "${{ needs.cross-platform-test.result }}" == "success" && \
-                "${{ needs.production-simulation.result }}" == "success" && \
-                "${{ needs.performance-validation.result }}" == "success" && \
-                "${{ needs.documentation-validation.result }}" == "success" ]]; then
-            echo "🎉 Release validation PASSED! Ready for production deployment."
+          echo "## 📊 Validation Results"
+          echo "| Component | Status | Result |"
+          echo "|-----------|--------|--------|"
+
+          security_icon="${{ needs.security-audit.result == 'success' && '✅' || '❌' }}"
+          artifacts_icon="${{ needs.release-artifacts.result == 'success' && '✅' || '❌' }}"
+          platform_icon="${{ needs.cross-platform-test.result == 'success' && '✅' || '❌' }}"
+          production_icon="${{ needs.production-simulation.result == 'success' && '✅' || '❌' }}"
+          performance_icon="${{ needs.performance-validation.result == 'success' && '✅' || '❌' }}"
+          docs_icon="${{ needs.documentation-validation.result == 'success' && '✅' || '❌' }}"
+
+          echo "| 🔒 Security Audit | $security_icon | ${{ needs.security-audit.result }} |"
+          echo "| 📦 Release Artifacts | $artifacts_icon | ${{ needs.release-artifacts.result }} |"
+          echo "| 🌍 Cross-Platform | $platform_icon | ${{ needs.cross-platform-test.result }} |"
+          echo "| 🚀 Production Simulation | $production_icon | ${{ needs.production-simulation.result }} |"
+          echo "| ⚡ Performance | $performance_icon | ${{ needs.performance-validation.result }} |"
+          echo "| 📋 Documentation | $docs_icon | ${{ needs.documentation-validation.result }} |"
+
+          echo ""
+
+          # Calculate success metrics
+          success_count=0
+          total_tests=6
+
+          [[ "${{ needs.security-audit.result }}" == "success" ]] && ((success_count++))
+          [[ "${{ needs.release-artifacts.result }}" == "success" ]] && ((success_count++))
+          [[ "${{ needs.cross-platform-test.result }}" == "success" ]] && ((success_count++))
+          [[ "${{ needs.production-simulation.result }}" == "success" ]] && ((success_count++))
+          [[ "${{ needs.performance-validation.result }}" == "success" ]] && ((success_count++))
+          [[ "${{ needs.documentation-validation.result }}" == "success" ]] && ((success_count++))
+
+          success_rate=$((success_count * 100 / total_tests))
+
+          echo "## 📈 Release Readiness"
+          echo "| Metric | Value |"
+          echo "|--------|-------|"
+          echo "| Validation Rate | $success_count/$total_tests ($success_rate%) |"
+          echo "| Failed Tests | $((total_tests - success_count)) |"
+          echo "| Status | $([[ $success_count -eq $total_tests ]] && echo '🎉 READY FOR RELEASE' || echo '❌ NOT READY') |"
+
+          echo ""
+          if [[ $success_count -eq $total_tests ]]; then
+            echo "🎉 **Release validation PASSED! Ready for production deployment.**"
+            echo "✅ All quality gates satisfied"
+            echo "🚀 Safe to proceed with release"
           else
-            echo "❌ Release validation FAILED! Review issues before deployment."
+            echo "❌ **Release validation FAILED! Review issues before deployment.**"
+            echo "⚠️ Fix failed validations before proceeding"
+            echo "🔍 Check individual job results above"
             exit 1
           fi
