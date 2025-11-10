@@ -614,7 +614,11 @@ jobs:
 
           frontend_seconds=$((frontend_duration / 1000))
           backend_seconds=$((backend_duration / 1000))
-          parallel_estimate=$((frontend_seconds > backend_seconds ? frontend_seconds : backend_seconds))
+          if [ $frontend_seconds -gt $backend_seconds ]; then
+            parallel_estimate=$frontend_seconds
+          else
+            parallel_estimate=$backend_seconds
+          fi
 
           echo "| Sequential Time | ${total_seconds}s |"
           echo "| Parallel Estimate | ${parallel_estimate}s |"
@@ -648,14 +652,14 @@ jobs:
           echo "|------------|--------|----------|"
 
           # Format each result with appropriate emoji
-          installation_icon="${{ needs.installation-test.result == 'success' && '✅' || '❌' }}"
-          test_suite_icon="${{ needs.test-suite.result == 'success' && '✅' || '❌' }}"
-          frontend_icon="${{ needs.frontend-build-test.result == 'success' && '✅' || '❌' }}"
-          backend_icon="${{ needs.backend-build-test.result == 'success' && '✅' || '❌' }}"
-          fullstack_icon="${{ needs.fullstack-build-test.result == 'success' && '✅' || '❌' }}"
-          dev_modes_icon="${{ needs.development-mode-test.result == 'success' && '✅' || '❌' }}"
-          hot_reload_icon="${{ needs.hot-reload-test.result == 'success' && '✅' || '❌' }}"
-          performance_icon="${{ needs.performance-test.result == 'success' && '✅' || '❌' }}"
+          installation_icon="$([[ "${{ needs.installation-test.result }}" == "success" ]] && echo '✅' || echo '❌')"
+          test_suite_icon="$([[ "${{ needs.test-suite.result }}" == "success" ]] && echo '✅' || echo '❌')"
+          frontend_icon="$([[ "${{ needs.frontend-build-test.result }}" == "success" ]] && echo '✅' || echo '❌')"
+          backend_icon="$([[ "${{ needs.backend-build-test.result }}" == "success" ]] && echo '✅' || echo '❌')"
+          fullstack_icon="$([[ "${{ needs.fullstack-build-test.result }}" == "success" ]] && echo '✅' || echo '❌')"
+          dev_modes_icon="$([[ "${{ needs.development-mode-test.result }}" == "success" ]] && echo '✅' || echo '❌')"
+          hot_reload_icon="$([[ "${{ needs.hot-reload-test.result }}" == "success" ]] && echo '✅' || echo '❌')"
+          performance_icon="$([[ "${{ needs.performance-test.result }}" == "success" ]] && echo '✅' || echo '❌')"
 
           echo "| 📦 Monorepo Installation | $installation_icon ${{ needs.installation-test.result }} | - |"
           echo "| 🧪 Test Suite (30 tests) | $test_suite_icon ${{ needs.test-suite.result }} | - |"

@@ -339,9 +339,9 @@ jobs:
           echo "| Component | Status | Result |"
           echo "|-----------|--------|--------|"
 
-          analysis_icon="${{ needs.dependency-analysis.result == 'success' && '✅' || '❌' }}"
-          validation_icon="${{ needs.monorepo-validation.result == 'success' && '✅' || '❌' }}"
-          health_icon="${{ needs.dependency-health.result == 'success' && '✅' || '❌' }}"
+          analysis_icon="$([[ "${{ needs.dependency-analysis.result }}" == "success" ]] && echo '✅' || echo '❌')"
+          validation_icon="$([[ "${{ needs.monorepo-validation.result }}" == "success" ]] && echo '✅' || echo '❌')"
+          health_icon="$([[ "${{ needs.dependency-health.result }}" == "success" ]] && echo '✅' || echo '❌')"
 
           echo "| 🔍 Dependency Analysis | $analysis_icon | ${{ needs.dependency-analysis.result }} |"
           echo "| 📊 Monorepo Validation | $validation_icon | ${{ needs.monorepo-validation.result }} |"

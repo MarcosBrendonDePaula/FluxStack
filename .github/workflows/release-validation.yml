@@ -337,12 +337,12 @@ jobs:
           echo "| Component | Status | Result |"
           echo "|-----------|--------|--------|"
 
-          security_icon="${{ needs.security-audit.result == 'success' && '✅' || '❌' }}"
-          artifacts_icon="${{ needs.release-artifacts.result == 'success' && '✅' || '❌' }}"
-          platform_icon="${{ needs.cross-platform-test.result == 'success' && '✅' || '❌' }}"
-          production_icon="${{ needs.production-simulation.result == 'success' && '✅' || '❌' }}"
-          performance_icon="${{ needs.performance-validation.result == 'success' && '✅' || '❌' }}"
-          docs_icon="${{ needs.documentation-validation.result == 'success' && '✅' || '❌' }}"
+          security_icon="$([[ "${{ needs.security-audit.result }}" == "success" ]] && echo '✅' || echo '❌')"
+          artifacts_icon="$([[ "${{ needs.release-artifacts.result }}" == "success" ]] && echo '✅' || echo '❌')"
+          platform_icon="$([[ "${{ needs.cross-platform-test.result }}" == "success" ]] && echo '✅' || echo '❌')"
+          production_icon="$([[ "${{ needs.production-simulation.result }}" == "success" ]] && echo '✅' || echo '❌')"
+          performance_icon="$([[ "${{ needs.performance-validation.result }}" == "success" ]] && echo '✅' || echo '❌')"
+          docs_icon="$([[ "${{ needs.documentation-validation.result }}" == "success" ]] && echo '✅' || echo '❌')"
 
           echo "| 🔒 Security Audit | $security_icon | ${{ needs.security-audit.result }} |"
           echo "| 📦 Release Artifacts | $artifacts_icon | ${{ needs.release-artifacts.result }} |"
