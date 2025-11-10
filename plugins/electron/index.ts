@@ -189,6 +189,7 @@ async function buildElectronScripts(context: BuildContext): Promise<void> {
     'build',
     mainFile,
     '--target=node',
+    '--format=cjs',
     '--outfile=' + join(outDir, 'main.js'),
     '--minify',
     '--external=electron'
@@ -196,11 +197,12 @@ async function buildElectronScripts(context: BuildContext): Promise<void> {
 
   logger?.info('  Building Electron preload script...')
 
-  // Build preload.js
+  // Build preload.js (MUST be CommonJS for Electron)
   await runBuildCommand([
     'build',
     preloadFile,
     '--target=node',
+    '--format=cjs',
     '--outfile=' + join(outDir, 'preload.js'),
     '--minify',
     '--external=electron'
