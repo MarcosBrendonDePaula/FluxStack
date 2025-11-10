@@ -105,26 +105,26 @@ async function buildElectronMain(context: CliContext): Promise<void> {
     mkdirSync(outDir, { recursive: true })
   }
 
-  // Build main process
-  logger.info('  Building main.js...')
+  // Build main process (use .cjs extension to force CommonJS)
+  logger.info('  Building main.cjs...')
   await runCommand('bun', [
     'build',
     mainFile,
     '--target=node',
     '--format=cjs',
-    '--outfile=' + join(outDir, 'main.js'),
+    '--outfile=' + join(outDir, 'main.cjs'),
     '--minify',
     '--external=electron'
   ], context)
 
-  // Build preload script (MUST be CommonJS for Electron)
-  logger.info('  Building preload.js...')
+  // Build preload script (use .cjs extension to force CommonJS)
+  logger.info('  Building preload.cjs...')
   await runCommand('bun', [
     'build',
     preloadFile,
     '--target=node',
     '--format=cjs',
-    '--outfile=' + join(outDir, 'preload.js'),
+    '--outfile=' + join(outDir, 'preload.cjs'),
     '--minify',
     '--external=electron'
   ], context)

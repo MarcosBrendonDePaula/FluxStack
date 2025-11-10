@@ -34,10 +34,10 @@ let mainWindow: BrowserWindow | null = null
  * Create the main application window
  */
 function createWindow(): BrowserWindow {
-  // Get the correct preload path (dist-electron/preload.js)
+  // Get the correct preload path (dist-electron/preload.cjs)
   const preloadPath = isDev
-    ? join(process.cwd(), 'dist-electron', 'preload.js')
-    : join(__dirname, 'preload.js')
+    ? join(process.cwd(), 'dist-electron', 'preload.cjs')
+    : join(__dirname, 'preload.cjs')
 
   const windowOptions: ElectronWindowOptions = {
     width: CONFIG.width,
