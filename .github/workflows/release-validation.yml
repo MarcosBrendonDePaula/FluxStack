@@ -144,7 +144,7 @@ jobs:
         run: bun install
 
       - name: 🧪 Run tests on ${{ matrix.os }}
-        run: bun run test:run
+        run: bun run test
 
       - name: 🏗️ Build on ${{ matrix.os }}
         run: bun run build
@@ -289,10 +289,9 @@ jobs:
           required_docs=(
             "README.md"
             "CLAUDE.md"
-            "context_ai/project-overview.md"
-            "context_ai/architecture-guide.md"
-            "context_ai/development-patterns.md"
-            "context_ai/api-reference.md"
+            "ai-context/00-QUICK-START.md"
+            "ai-context/README.md"
+            "ai-context/development/patterns.md"
             "LICENSE"
           )
           

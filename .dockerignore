@@ -1,0 +1,82 @@
+# =====================================
+# FluxStack Docker Ignore
+# =====================================
+
+# Node modules (will be installed in container)
+node_modules/
+**/node_modules/
+
+# Build artifacts (will be built in container)
+dist/
+**/dist/
+
+# Development files
+.git/
+.github/
+.vscode/
+.idea/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+bun-debug.log*
+lerna-debug.log*
+
+# Testing
+coverage/
+.nyc_output/
+**/__tests__/
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+
+# Documentation
+*.md
+!README.md
+ai-context/
+docs/
+
+# Development tools
+.eslintrc*
+.prettierrc*
+tsconfig*.json
+vitest.config.ts
+vite.config.ts
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.swp
+*.swo
+*~
+
+# Lock files (using bun.lockb only)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# CI/CD
+.github/
+
+# Editor directories
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
