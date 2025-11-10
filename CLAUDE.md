@@ -233,6 +233,57 @@ config.enum(envVar, values, defaultValue, required)
 - Definir response schemas para documentação automática
 - Testar com `bun run dev`
 
+## 🔧 **Verificação e Instalação do Bun**
+
+### ⚠️ **REGRA CRÍTICA: Verificar Bun Antes de Executar Comandos**
+
+**SEMPRE** que tentar executar um comando `bun` ou `bunx` e receber erro de "command not found", você **DEVE** instalar o Bun automaticamente.
+
+### **1. Verificar se Bun está Instalado**
+```bash
+which bun || bun --version
+```
+
+### **2. Se Bun NÃO estiver instalado, instalar automaticamente:**
+
+**Linux/macOS:**
+```bash
+curl -fsSL https://bun.sh/install | bash
+```
+
+**Após instalação, verificar:**
+```bash
+bun --version
+```
+
+### **3. Comportamento Esperado:**
+- ✅ **Se `bun --version` funcionar**: Continuar com o comando original
+- ❌ **Se `bun: command not found`**: Instalar Bun automaticamente e tentar novamente
+- 🔄 **Após instalação**: Sempre verificar se funcionou antes de continuar
+
+### **Exemplo de Fluxo:**
+```bash
+# Tentativa 1
+bun run dev
+# ❌ Error: bun: command not found
+
+# Ação automática: Instalar Bun
+curl -fsSL https://bun.sh/install | bash
+
+# Verificar instalação
+bun --version
+# ✅ Output: 1.2.20
+
+# Tentativa 2 (agora funciona)
+bun run dev
+# ✅ Servidor iniciado com sucesso
+```
+
+### **💡 Dica Importante:**
+- Bun é **ESSENCIAL** para FluxStack funcionar
+- A instalação é rápida (< 1 minuto)
+- Após instalar, pode ser necessário reiniciar o terminal ou executar: `source ~/.bashrc` (Linux) ou `source ~/.zshrc` (macOS)
+
 ## 🔧 **Comandos Validados**
 
 ```bash
@@ -260,39 +311,65 @@ curl http://localhost:3000/api/health  # ✅ Health check
 - **🩺 Health Check**: http://localhost:3000/api/health
 - **👥 Users API**: http://localhost:3000/api/users
 
-## 🔥 **Mudanças Importantes v1.5→v1.6**
+## 🔥 **Mudanças Importantes v1.7→v1.8**
 
-### **✅ Limpeza e Organização do Projeto (Janeiro 2025)**
+### **✅ Centralização da App Instance (Janeiro 2025)**
+- **Problema resolvido**: Multiple exports da app instance causavam inconsistências
+- **Solução implementada**: App instance como fonte única de verdade
+- **Resultado**: Arquitetura mais limpa e previne bugs de sincronização
+
+### **✅ CI/CD Arithmetic Safety (Janeiro 2025)**
+- **Problema resolvido**: Exit codes inconsistentes em workflows
+- **Solução implementada**: Arithmetic safety aplicado em todos os workflows CI/CD
+- **Resultado**: Pipeline mais confiável e previsível
+
+### **✅ Regra de Instalação Automática do Bun (Janeiro 2025)**
+- **Problema resolvido**: LLMs não sabiam como proceder quando Bun não estava instalado
+- **Solução implementada**: Instrução clara no CLAUDE.md para instalar Bun automaticamente
+- **Resultado**: Onboarding mais fluido e menos erros de "command not found"
+
+### **✅ Sistema de Versão Unificado Consolidado**
+- **Aprimoramento**: Sistema de versão única de verdade completamente estável
+- **Sincronização**: package.json ↔ version.ts funcionando perfeitamente
+- **DX Melhorado**: Scripts `sync-version` integrados no workflow
+
+---
+
+## 📋 **Histórico de Versões Anteriores**
+
+### **v1.5→v1.6 (Janeiro 2025)**
+
+#### **✅ Limpeza e Organização do Projeto**
 - **Problema resolvido**: Arquivos markdown duplicados e desorganizados na raiz
 - **Solução implementada**: Consolidação em `ai-context/` e remoção de arquivos desnecessários
 - **Resultado**: Estrutura limpa com apenas README.md e CLAUDE.md na raiz
 
-### **✅ Integração do Filtro de Bug do Elysia (Janeiro 2025)**
+#### **✅ Integração do Filtro de Bug do Elysia**
 - **Problema resolvido**: Logs poluídos com erros HEAD do Elysia em desenvolvimento
 - **Solução implementada**: Filtro integrado no core do framework
 - **Resultado**: Logs limpos automaticamente, sem necessidade de scripts externos
 
-### **✅ Correção de Tipos TypeScript (Janeiro 2025)**
+#### **✅ Correção de Tipos TypeScript**
 - **Problema resolvido**: Uso inadequado de tipos `any` e erros de compilação
 - **Solução implementada**: Tipos específicos e interfaces apropriadas
 - **Resultado**: Type safety melhorada e código mais robusto
 
-### **✅ Eden Treaty Refatoração (Setembro 2025)**
+#### **✅ Eden Treaty Refatoração**
 - **Problema resolvido**: Wrapper `apiCall()` quebrava type inference
 - **Solução implementada**: Eden Treaty nativo preserva tipos automáticos
 - **Resultado**: Zero tipos `unknown`, autocomplete perfeito
 
-### **✅ Response Schemas Implementados**
+#### **✅ Response Schemas Implementados**
 - **Todas as rotas**: Schemas TypeBox para inferência
 - **Documentação automática**: Swagger UI atualizado
 - **Type inference**: Eden Treaty funcionando 100%
 
-### **✅ Monorepo Estabilizado**
+#### **✅ Monorepo Estabilizado**
 - **Uma instalação**: `bun install` para todo o projeto
 - **Hot reload independente**: Backend e frontend separados
 - **Build otimizado**: Sistema unificado
 
-### **✅ Sistema de Configuração Declarativa (Janeiro 2025)**
+#### **✅ Sistema de Configuração Declarativa**
 - **Problema resolvido**: Uso direto de `process.env` sem validação
 - **Solução implementada**: Sistema Laravel-inspired com schemas
 - **Arquitetura**: 3 camadas (env loader → config schema → app configs)
@@ -330,4 +407,4 @@ curl http://localhost:3000/api/health  # ✅ Health check
 
 **🎯 Objetivo**: Capacitar LLMs a trabalhar eficientemente com FluxStack, seguindo padrões estabelecidos e garantindo código de alta qualidade com type safety automática.
 
-**📅 Última atualização**: Janeiro 2025 - Documentação completamente reorganizada e validada.
+**📅 Última atualização**: Janeiro 2025 - v1.8.0 - Centralização de app instance e regra de instalação do Bun.
