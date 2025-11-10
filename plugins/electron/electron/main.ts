@@ -3,7 +3,7 @@
  * This is the entry point for the Electron application
  */
 
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, session } from 'electron'
 import { join } from 'path'
 import type { ElectronWindowOptions } from '../types'
 
@@ -34,6 +34,11 @@ let mainWindow: BrowserWindow | null = null
  * Create the main application window
  */
 function createWindow(): BrowserWindow {
+  // Get the correct preload path (dist-electron/preload.js)
+  const preloadPath = isDev
+    ? join(process.cwd(), 'dist-electron', 'preload.js')
+    : join(__dirname, 'preload.js')
+
   const windowOptions: ElectronWindowOptions = {
     width: CONFIG.width,
     height: CONFIG.height,
@@ -45,7 +50,7 @@ function createWindow(): BrowserWindow {
     webPreferences: {
       nodeIntegration: CONFIG.nodeIntegration,
       contextIsolation: CONFIG.contextIsolation,
-      preload: join(__dirname, 'preload.js'),
+      preload: preloadPath,
     },
   }
 
@@ -89,6 +94,30 @@ function createWindow(): BrowserWindow {
 
 // App is ready - create the main window
 app.whenReady().then(() => {
+  // Set up Content Security Policy for security
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [
+          isDev
+            ? // Development: Allow localhost and inline scripts for hot reload
+              "default-src 'self' http://localhost:* ws://localhost:*; " +
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:*; " +
+              "style-src 'self' 'unsafe-inline' http://localhost:*; " +
+              "img-src 'self' data: http://localhost:* https:; " +
+              "connect-src 'self' http://localhost:* ws://localhost:* https:;"
+            : // Production: Strict CSP
+              "default-src 'self'; " +
+              "script-src 'self'; " +
+              "style-src 'self' 'unsafe-inline'; " +
+              "img-src 'self' data: https:; " +
+              "connect-src 'self' https:;"
+        ]
+      }
+    })
+  })
+
   createWindow()
 
   // On macOS, re-create window when dock icon is clicked
