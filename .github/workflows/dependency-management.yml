@@ -353,9 +353,9 @@ jobs:
           success_count=0
           total_tests=3
 
-          [[ "${{ needs.dependency-analysis.result }}" == "success" ]] && ((success_count++))
-          [[ "${{ needs.monorepo-validation.result }}" == "success" ]] && ((success_count++))
-          [[ "${{ needs.dependency-health.result }}" == "success" ]] && ((success_count++))
+          [[ "${{ needs.dependency-analysis.result }}" == "success" ]] && success_count=$((success_count + 1)) || true
+          [[ "${{ needs.monorepo-validation.result }}" == "success" ]] && success_count=$((success_count + 1)) || true
+          [[ "${{ needs.dependency-health.result }}" == "success" ]] && success_count=$((success_count + 1)) || true
 
           success_rate=$((success_count * 100 / total_tests))
 

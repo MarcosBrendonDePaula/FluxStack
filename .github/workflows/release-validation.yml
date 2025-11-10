@@ -357,12 +357,12 @@ jobs:
           success_count=0
           total_tests=6
 
-          [[ "${{ needs.security-audit.result }}" == "success" ]] && ((success_count++))
-          [[ "${{ needs.release-artifacts.result }}" == "success" ]] && ((success_count++))
-          [[ "${{ needs.cross-platform-test.result }}" == "success" ]] && ((success_count++))
-          [[ "${{ needs.production-simulation.result }}" == "success" ]] && ((success_count++))
-          [[ "${{ needs.performance-validation.result }}" == "success" ]] && ((success_count++))
-          [[ "${{ needs.documentation-validation.result }}" == "success" ]] && ((success_count++))
+          [[ "${{ needs.security-audit.result }}" == "success" ]] && success_count=$((success_count + 1)) || true
+          [[ "${{ needs.release-artifacts.result }}" == "success" ]] && success_count=$((success_count + 1)) || true
+          [[ "${{ needs.cross-platform-test.result }}" == "success" ]] && success_count=$((success_count + 1)) || true
+          [[ "${{ needs.production-simulation.result }}" == "success" ]] && success_count=$((success_count + 1)) || true
+          [[ "${{ needs.performance-validation.result }}" == "success" ]] && success_count=$((success_count + 1)) || true
+          [[ "${{ needs.documentation-validation.result }}" == "success" ]] && success_count=$((success_count + 1)) || true
 
           success_rate=$((success_count * 100 / total_tests))
 
