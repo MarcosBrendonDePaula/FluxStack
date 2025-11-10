@@ -75,26 +75,29 @@ const app = new Elysia()
 Start Electron with hot reload:
 
 ```bash
-# Start FluxStack dev server first
+# Terminal 1: Start FluxStack dev server (includes embedded Vite on port 3000)
 bun run dev
 
-# In another terminal, start Electron
-bun run cli dev:electron
+# Terminal 2: Start Electron (will connect to port 3000)
+bun run dev:electron
 ```
 
-Or use the alias:
+Or use shortcuts:
 
 ```bash
+bun run cli dev:electron
 bun run cli electron
 ```
+
+**Important:** FluxStack runs Vite **embedded** on the backend port (default 3000), not standalone on 5173. Electron automatically connects to the correct port.
 
 **Options:**
 ```bash
 # Enable Node.js debugger
 bun run cli dev:electron --inspect
 
-# Custom Vite port
-bun run cli dev:electron --port=3000
+# Custom port (if you changed FluxStack's PORT in .env)
+bun run cli dev:electron --port=3001
 ```
 
 ### Build Desktop Application

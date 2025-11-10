@@ -23,7 +23,9 @@ const CONFIG = {
 const isDev = process.env.NODE_ENV === 'development'
 
 // URLs
-const DEV_URL = 'http://localhost:5173' // Vite dev server
+// FluxStack runs Vite embedded on backend port (default 3000), not standalone on 5173
+const DEV_PORT = process.env.ELECTRON_DEV_PORT || process.env.PORT || '3000'
+const DEV_URL = `http://localhost:${DEV_PORT}` // FluxStack dev server with embedded Vite
 const PROD_URL = `file://${join(__dirname, '../dist/index.html')}` // Production build
 
 let mainWindow: BrowserWindow | null = null

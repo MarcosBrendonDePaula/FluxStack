@@ -26,9 +26,9 @@ export const devElectronCommand: CliCommand = {
     {
       name: 'port',
       short: 'p',
-      description: 'Vite dev server port',
+      description: 'FluxStack dev server port (with embedded Vite)',
       type: 'number',
-      default: 5173
+      default: 3000
     }
   ],
 
@@ -59,9 +59,9 @@ export const devElectronCommand: CliCommand = {
       logger.info('⚙️  Building Electron main process...')
       await buildElectronMainDev(context)
 
-      // Step 3: Wait for Vite dev server to be ready
-      logger.info('⏳ Waiting for Vite dev server...')
-      await waitForVite(options.port, context)
+      // Step 3: Wait for FluxStack dev server to be ready (with embedded Vite)
+      logger.info('⏳ Waiting for FluxStack dev server...')
+      await waitForServer(options.port, context)
 
       // Step 4: Start Electron
       logger.info('🖥️  Starting Electron...')
@@ -107,21 +107,26 @@ async function buildElectronMainDev(context: CliContext): Promise<void> {
 }
 
 /**
- * Wait for Vite dev server to be ready
+ * Wait for FluxStack dev server to be ready (with embedded Vite)
  */
-async function waitForVite(port: number, context: CliContext): Promise<void> {
+async function waitForServer(port: number, context: CliContext): Promise<void> {
   const maxAttempts = 30
   const delayMs = 1000
+
+  context.logger.info(`  Checking http://localhost:${port}...`)
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       const response = await fetch(`http://localhost:${port}`)
       if (response.ok) {
-        context.logger.info('  ✅ Vite dev server is ready!')
+        context.logger.info('  ✅ FluxStack dev server is ready!')
         return
       }
     } catch {
       // Server not ready yet
+      if (attempt === 1) {
+        context.logger.info('  Server not ready yet, waiting...')
+      }
     }
 
     if (attempt < maxAttempts) {
@@ -129,7 +134,7 @@ async function waitForVite(port: number, context: CliContext): Promise<void> {
     }
   }
 
-  throw new Error('Vite dev server did not start in time. Please run "bun run dev" first.')
+  throw new Error(`FluxStack dev server did not start in time on port ${port}.\n\nPlease run "bun run dev" first in another terminal.`)
 }
 
 /**
@@ -150,6 +155,7 @@ async function startElectron(options: any, context: CliContext): Promise<void> {
   const env = {
     ...process.env,
     NODE_ENV: 'development',
+    ELECTRON_DEV_PORT: String(options.port), // Pass the port to Electron
     ELECTRON_DEV_TOOLS: 'true',
     ELECTRON_WINDOW_WIDTH: String(electronConfig.width),
     ELECTRON_WINDOW_HEIGHT: String(electronConfig.height),
