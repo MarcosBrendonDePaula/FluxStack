@@ -10,9 +10,29 @@ This guide shows how to integrate the Electron plugin into your FluxStack applic
 
 ## 🚀 Quick Start
 
-### 1. Register the Plugin
+### 1. Install Dependencies (if not already done)
 
-In `app/server/index.ts`:
+```bash
+bun install
+```
+
+### 2. Start Development
+
+**One command to start everything:**
+
+```bash
+bun run dev:electron
+```
+
+This automatically:
+- ✅ Starts FluxStack backend + Vite (if not running)
+- ✅ Builds Electron main process
+- ✅ Opens your app in Electron window
+- ✅ Stops everything when you close the window
+
+### 3. (Optional) Register the Plugin for Custom Features
+
+If you want custom Electron features, register the plugin in `app/server/index.ts`:
 
 ```typescript
 import { electronPlugin } from '@/plugins/electron'
@@ -26,7 +46,7 @@ const app = new Elysia()
   // ... rest of your plugins
 ```
 
-### 2. Add Electron Controls to Your UI
+### 4. (Optional) Add Electron Controls to Your UI
 
 In `app/client/src/App.tsx`:
 
@@ -47,7 +67,7 @@ export function App() {
 }
 ```
 
-### 3. Use Electron API in Your Components
+### 5. Use Electron API in Your Components
 
 ```typescript
 import { useEffect, useState } from 'react'

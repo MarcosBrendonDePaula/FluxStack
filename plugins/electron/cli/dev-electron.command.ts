@@ -48,6 +48,9 @@ export const devElectronCommand: CliCommand = {
 
     logger.info('🚀 Starting Electron in development mode...')
 
+    let backendProcess: any = null
+    let backendStartedByUs = false
+
     try {
       // Step 1: Ensure dist-electron exists
       const outDir = join(process.cwd(), 'dist-electron')
@@ -55,20 +58,40 @@ export const devElectronCommand: CliCommand = {
         mkdirSync(outDir, { recursive: true })
       }
 
-      // Step 2: Build Electron main process in watch mode
+      // Step 2: Build Electron main process
       logger.info('⚙️  Building Electron main process...')
       await buildElectronMainDev(context)
 
-      // Step 3: Wait for FluxStack dev server to be ready (with embedded Vite)
-      logger.info('⏳ Waiting for FluxStack dev server...')
-      await waitForServer(options.port, context)
+      // Step 3: Check if FluxStack dev server is already running
+      logger.info('🔍 Checking if FluxStack dev server is running...')
+      const isServerRunning = await checkServerRunning(options.port)
+
+      if (!isServerRunning) {
+        // Start FluxStack dev server automatically
+        logger.info('📦 Starting FluxStack dev server automatically...')
+        backendProcess = await startBackendServer(context)
+        backendStartedByUs = true
+
+        // Wait for server to be ready
+        logger.info('⏳ Waiting for FluxStack dev server to be ready...')
+        await waitForServer(options.port, context, 60) // Longer timeout for initial startup
+      } else {
+        logger.info('✅ FluxStack dev server is already running!')
+      }
 
       // Step 4: Start Electron
       logger.info('🖥️  Starting Electron...')
-      await startElectron(options, context)
+      await startElectron(options, context, backendProcess, backendStartedByUs)
 
     } catch (error: any) {
       logger.error('❌ Electron dev failed:', error.message)
+
+      // Cleanup backend if we started it
+      if (backendStartedByUs && backendProcess) {
+        logger.info('🧹 Cleaning up backend server...')
+        backendProcess.kill()
+      }
+
       process.exit(1)
     }
   }
@@ -107,13 +130,63 @@ async function buildElectronMainDev(context: CliContext): Promise<void> {
 }
 
 /**
+ * Check if server is already running on the given port
+ */
+async function checkServerRunning(port: number): Promise<boolean> {
+  try {
+    const response = await fetch(`http://localhost:${port}`, {
+      method: 'HEAD',
+      signal: AbortSignal.timeout(1000) // 1 second timeout
+    })
+    return response.ok
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Start FluxStack backend server in background
+ */
+async function startBackendServer(context: CliContext): Promise<any> {
+  const { logger } = context
+
+  logger.info('  Starting backend with: bun --watch app/server/index.ts')
+
+  const backendProcess = spawn('bun', ['--watch', 'app/server/index.ts'], {
+    stdio: ['ignore', 'pipe', 'pipe'], // Capture stdout/stderr
+    shell: true,
+    cwd: process.cwd(),
+    detached: false
+  })
+
+  // Log backend output (optional, helps with debugging)
+  backendProcess.stdout?.on('data', (data: Buffer) => {
+    const output = data.toString().trim()
+    if (output) {
+      console.log(`[Backend] ${output}`)
+    }
+  })
+
+  backendProcess.stderr?.on('data', (data: Buffer) => {
+    const output = data.toString().trim()
+    if (output && !output.includes('Debugger listening')) {
+      console.error(`[Backend Error] ${output}`)
+    }
+  })
+
+  backendProcess.on('error', (error) => {
+    logger.error('Backend process error:', error)
+  })
+
+  return backendProcess
+}
+
+/**
  * Wait for FluxStack dev server to be ready (with embedded Vite)
  */
-async function waitForServer(port: number, context: CliContext): Promise<void> {
-  const maxAttempts = 30
+async function waitForServer(port: number, context: CliContext, maxSeconds: number = 30): Promise<void> {
+  const maxAttempts = maxSeconds
   const delayMs = 1000
-
-  context.logger.info(`  Checking http://localhost:${port}...`)
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
@@ -124,8 +197,8 @@ async function waitForServer(port: number, context: CliContext): Promise<void> {
       }
     } catch {
       // Server not ready yet
-      if (attempt === 1) {
-        context.logger.info('  Server not ready yet, waiting...')
+      if (attempt % 5 === 0) {
+        context.logger.info(`  Still waiting... (${attempt}/${maxAttempts}s)`)
       }
     }
 
@@ -134,13 +207,18 @@ async function waitForServer(port: number, context: CliContext): Promise<void> {
     }
   }
 
-  throw new Error(`FluxStack dev server did not start in time on port ${port}.\n\nPlease run "bun run dev" first in another terminal.`)
+  throw new Error(`FluxStack dev server did not start in time on port ${port}.`)
 }
 
 /**
  * Start Electron with the dev server
  */
-async function startElectron(options: any, context: CliContext): Promise<void> {
+async function startElectron(
+  options: any,
+  context: CliContext,
+  backendProcess: any = null,
+  backendStartedByUs: boolean = false
+): Promise<void> {
   const { logger } = context
   const electronArgs = [
     'electron',
@@ -169,6 +247,9 @@ async function startElectron(options: any, context: CliContext): Promise<void> {
 
   logger.info('  Electron is starting...')
   logger.info(`  Frontend: http://localhost:${options.port}`)
+  if (backendStartedByUs) {
+    logger.info('  Backend will stop when you close Electron')
+  }
   logger.info('  Press Ctrl+C to stop')
 
   // Run electron (don't wait for it to finish)
@@ -178,21 +259,47 @@ async function startElectron(options: any, context: CliContext): Promise<void> {
     env
   })
 
+  // Cleanup function
+  const cleanup = (code: number = 0) => {
+    if (backendStartedByUs && backendProcess) {
+      logger.info('🧹 Stopping backend server...')
+      try {
+        backendProcess.kill('SIGTERM')
+        // Force kill after 5 seconds
+        setTimeout(() => {
+          if (!backendProcess.killed) {
+            backendProcess.kill('SIGKILL')
+          }
+        }, 5000)
+      } catch (error) {
+        // Process might already be dead
+      }
+    }
+    process.exit(code)
+  }
+
   child.on('close', (code) => {
-    logger.info(`Electron exited with code ${code}`)
-    process.exit(code || 0)
+    logger.info(`\n✅ Electron closed`)
+    cleanup(code || 0)
   })
 
   child.on('error', (error) => {
     logger.error('Electron error:', error)
-    process.exit(1)
+    cleanup(1)
   })
 
   // Handle Ctrl+C
   process.on('SIGINT', () => {
-    logger.info('Stopping Electron...')
-    child.kill()
-    process.exit(0)
+    logger.info('\n⚠️  Received Ctrl+C, shutting down...')
+    child.kill('SIGINT')
+    cleanup(0)
+  })
+
+  // Handle process termination
+  process.on('SIGTERM', () => {
+    logger.info('\n⚠️  Received termination signal, shutting down...')
+    child.kill('SIGTERM')
+    cleanup(0)
   })
 
   // Keep the process alive

@@ -72,17 +72,31 @@ const app = new Elysia()
 
 ### Development Mode
 
-Start Electron with hot reload:
+**One command to rule them all:**
 
 ```bash
-# Terminal 1: Start FluxStack dev server (includes embedded Vite on port 3000)
-bun run dev
-
-# Terminal 2: Start Electron (will connect to port 3000)
+# Start everything automatically (backend + Electron)
 bun run dev:electron
 ```
 
-Or use shortcuts:
+That's it! This command will:
+1. ✅ Check if FluxStack dev server is running
+2. ✅ Start it automatically if needed (backend + embedded Vite)
+3. ✅ Build Electron main process
+4. ✅ Open Electron window with your app
+5. ✅ Stop everything when you close Electron
+
+**Alternative (if you want separate terminals):**
+
+```bash
+# Terminal 1: Start FluxStack dev server manually
+bun run dev
+
+# Terminal 2: Start Electron (detects server is already running)
+bun run dev:electron
+```
+
+**Shortcuts:**
 
 ```bash
 bun run cli dev:electron
@@ -94,10 +108,10 @@ bun run cli electron
 **Options:**
 ```bash
 # Enable Node.js debugger
-bun run cli dev:electron --inspect
+bun run dev:electron --inspect
 
 # Custom port (if you changed FluxStack's PORT in .env)
-bun run cli dev:electron --port=3001
+bun run dev:electron --port=3001
 ```
 
 ### Build Desktop Application
