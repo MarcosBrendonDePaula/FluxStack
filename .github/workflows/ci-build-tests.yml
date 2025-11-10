@@ -676,14 +676,14 @@ jobs:
           success_count=0
           total_count=8
 
-          [[ "${{ needs.installation-test.result }}" == "success" ]] && ((success_count++))
-          [[ "${{ needs.test-suite.result }}" == "success" ]] && ((success_count++))
-          [[ "${{ needs.frontend-build-test.result }}" == "success" ]] && ((success_count++))
-          [[ "${{ needs.backend-build-test.result }}" == "success" ]] && ((success_count++))
-          [[ "${{ needs.fullstack-build-test.result }}" == "success" ]] && ((success_count++))
-          [[ "${{ needs.development-mode-test.result }}" == "success" ]] && ((success_count++))
-          [[ "${{ needs.hot-reload-test.result }}" == "success" ]] && ((success_count++))
-          [[ "${{ needs.performance-test.result }}" == "success" ]] && ((success_count++))
+          [[ "${{ needs.installation-test.result }}" == "success" ]] && success_count=$((success_count + 1)) || true
+          [[ "${{ needs.test-suite.result }}" == "success" ]] && success_count=$((success_count + 1)) || true
+          [[ "${{ needs.frontend-build-test.result }}" == "success" ]] && success_count=$((success_count + 1)) || true
+          [[ "${{ needs.backend-build-test.result }}" == "success" ]] && success_count=$((success_count + 1)) || true
+          [[ "${{ needs.fullstack-build-test.result }}" == "success" ]] && success_count=$((success_count + 1)) || true
+          [[ "${{ needs.development-mode-test.result }}" == "success" ]] && success_count=$((success_count + 1)) || true
+          [[ "${{ needs.hot-reload-test.result }}" == "success" ]] && success_count=$((success_count + 1)) || true
+          [[ "${{ needs.performance-test.result }}" == "success" ]] && success_count=$((success_count + 1)) || true
 
           success_percentage=$((success_count * 100 / total_count))
 
@@ -701,18 +701,14 @@ jobs:
           else
             echo "❌ **Some tests failed - check individual job results**"
             echo "⚠️ Review failed tests before proceeding"
+            echo "📊 Detailed Results:"
+            echo "- Installation: ${{ needs.installation-test.result }}"
+            echo "- Test Suite: ${{ needs.test-suite.result }}"
+            echo "- Frontend: ${{ needs.frontend-build-test.result }}"
+            echo "- Backend: ${{ needs.backend-build-test.result }}"
+            echo "- Full-Stack: ${{ needs.fullstack-build-test.result }}"
+            echo "- Dev Modes: ${{ needs.development-mode-test.result }}"
+            echo "- Hot Reload: ${{ needs.hot-reload-test.result }}"
+            echo "- Performance: ${{ needs.performance-test.result }}"
+            exit 1
           fi
-
-      - name: ❌ Fail if any test failed
-        if: |
-          needs.installation-test.result == 'failure' ||
-          needs.test-suite.result == 'failure' ||
-          needs.frontend-build-test.result == 'failure' ||
-          needs.backend-build-test.result == 'failure' ||
-          needs.fullstack-build-test.result == 'failure' ||
-          needs.development-mode-test.result == 'failure' ||
-          needs.hot-reload-test.result == 'failure' ||
-          needs.performance-test.result == 'failure'
-        run: |
-          echo "❌ Some tests failed - check individual job results"
-          exit 1
