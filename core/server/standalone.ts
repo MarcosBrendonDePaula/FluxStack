@@ -39,13 +39,48 @@ export const createStandaloneServer = (userConfig: any = {}) => {
   return app
 }
 
+/**
+ * Create a simple table-like output
+ */
+function printTable(data: Record<string, string>, title?: string) {
+  const maxKeyLength = Math.max(...Object.keys(data).map(k => k.length))
+  const maxValueLength = Math.max(...Object.values(data).map(v => v.length))
+  const tableWidth = maxKeyLength + maxValueLength + 7
+
+  const border = '─'.repeat(tableWidth)
+
+  if (title) {
+    console.log(`┌${border}┐`)
+    const padding = Math.floor((tableWidth - title.length) / 2)
+    console.log(`│${' '.repeat(padding)}${title}${' '.repeat(tableWidth - padding - title.length)}│`)
+    console.log(`├${border}┤`)
+  } else {
+    console.log(`┌${border}┐`)
+  }
+
+  Object.entries(data).forEach(([key, value]) => {
+    const keyPadded = key.padEnd(maxKeyLength)
+    const valuePadded = value.padEnd(maxValueLength)
+    console.log(`│ ${keyPadded} │ ${valuePadded} │`)
+  })
+
+  console.log(`└${border}┘`)
+}
+
 export const startBackendOnly = async (userRoutes?: any, config: any = {}) => {
   const port = config.port || process.env.BACKEND_PORT || 3000
-  const host = process.env.HOST || 'localhost'
-  
-  console.log(`🦊 FluxStack Backend`)
-  console.log(`🚀 http://${host}:${port}`)
-  console.log(`📋 Health: http://${host}:${port}/health`)
+  const host = config.host || process.env.HOST || 'localhost'
+  const apiPrefix = config.apiPrefix || '/api'
+
+  // Display server information in a clean table
+  printTable({
+    'Mode': 'Backend Standalone',
+    'Server': `http://${host}:${port}`,
+    'API Prefix': apiPrefix,
+    'Health Check': `http://${host}:${port}/health`,
+    'Hot Reload': 'Enabled'
+  }, 'FluxStack Backend Server')
+
   console.log()
 
   const app = createStandaloneServer(config)

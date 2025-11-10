@@ -28,12 +28,8 @@ export function startBackend(
 ) {
   const { port, apiPrefix = '/api', host = 'localhost' } = config
 
-  console.log(`🚀 Backend standalone: ${host}:${port}`)
-  console.log(`📡 API Prefix: ${apiPrefix}`)
-  console.log()
-
   // Start backend using the standalone utility
-  startBackendOnly(apiRoutes, { port, apiPrefix })
+  startBackendOnly(apiRoutes, { port, apiPrefix, host })
 }
 
 /**

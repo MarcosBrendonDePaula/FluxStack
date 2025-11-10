@@ -448,11 +448,6 @@ async function handleLegacyCommands() {
     break
 
   case "backend":
-    console.log("⚡ FluxStack Backend Development")
-    console.log("🚀 API Server: http://localhost:3001")
-    console.log("📦 Starting backend with hot reload...")
-    console.log()
-
     // Ensure backend-only.ts exists
     const { ensureBackendEntry } = await import("../utils/regenerate-files")
     await ensureBackendEntry()
