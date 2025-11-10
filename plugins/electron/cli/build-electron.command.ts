@@ -81,7 +81,7 @@ export const buildElectronCommand: CliCommand = {
       logger.info('📦 Packaging with electron-builder...')
       await runElectronBuilder(options, context)
 
-      logger.success('✅ Electron application built successfully!')
+      logger.info('✅ Electron application built successfully!')
       logger.info(`📁 Output directory: ${electronConfig.outputDir}`)
 
     } catch (error: any) {
@@ -127,7 +127,7 @@ async function buildElectronMain(context: CliContext): Promise<void> {
     '--external=electron'
   ], context)
 
-  logger.success('  Main process built successfully')
+  logger.info('  ✅ Main process built successfully')
 }
 
 /**

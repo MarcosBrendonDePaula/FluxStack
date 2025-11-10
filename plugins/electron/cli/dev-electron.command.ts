@@ -103,7 +103,7 @@ async function buildElectronMainDev(context: CliContext): Promise<void> {
     '--external=electron'
   ], context, false)
 
-  logger.success('  Main process built successfully')
+  logger.info('  ✅ Main process built successfully')
 }
 
 /**
@@ -117,7 +117,7 @@ async function waitForVite(port: number, context: CliContext): Promise<void> {
     try {
       const response = await fetch(`http://localhost:${port}`)
       if (response.ok) {
-        context.logger.success('  Vite dev server is ready!')
+        context.logger.info('  ✅ Vite dev server is ready!')
         return
       }
     } catch {

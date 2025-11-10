@@ -137,7 +137,7 @@ export const electronPlugin: Plugin = {
     // Build main and preload scripts
     await buildElectronScripts(context)
 
-    context.config.logger?.success('✅ [Electron] Ready for electron-builder')
+    context.config.logger?.info('✅ [Electron] Ready for electron-builder')
   },
 
   onBuildComplete: async (context: BuildContext) => {
@@ -206,7 +206,7 @@ async function buildElectronScripts(context: BuildContext): Promise<void> {
     '--external=electron'
   ])
 
-  logger?.success('  Electron scripts built successfully')
+  logger?.info('  ✅ Electron scripts built successfully')
 
   // Copy electron-builder config to root
   const configSource = join(rootDir, 'plugins/electron/electron-builder.yml')
