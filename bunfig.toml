@@ -7,7 +7,19 @@ target = "bun"
 cache = true
 lockfile = true
 
-# Path mapping (alias support)
+# Path mapping for runtime execution
+[run]
+preload = []
+
+# Path mapping (alias support) for runtime
+[run.alias]
+"@" = "."
+"@/core" = "./core"
+"@/app" = "./app"
+"@/config" = "./config"
+"@/shared" = "./app/shared"
+
+# Path mapping (alias support) for build
 [build.alias]
 "@" = "."
 "@/core" = "./core"
