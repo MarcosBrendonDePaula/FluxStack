@@ -8,11 +8,11 @@
  */
 
 import { startBackend, createBackendConfig } from "@/core/server/backend-entry"
-import { apiRoutes } from "./routes"
+import { appInstance } from "./app"
 import { serverConfig } from "@/config/server.config"
 
 // Create backend configuration from declarative config
 const backendConfig = createBackendConfig(serverConfig)
 
 // Start backend in standalone mode
-startBackend(apiRoutes, backendConfig)
+startBackend(appInstance, backendConfig)

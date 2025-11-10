@@ -2,7 +2,7 @@
 import { FluxStackFramework, vitePlugin, swaggerPlugin, staticPlugin, liveComponentsPlugin, staticFilesPlugin } from "@/core/server"
 import { isDevelopment } from "@/core/utils/helpers"
 import { DEBUG } from "@/core/utils/logger"
-import { apiRoutes } from "./routes"
+import { appInstance } from "./app"
 import { helpers } from "@/core/utils/env"
 import { serverConfig } from "@/config/server.config"
 import { appConfig } from "@/config/app.config"
@@ -111,7 +111,7 @@ app.getApp().get('/api/env-test', () => {
 })
 
 // Registrar rotas da aplicação DEPOIS da rota de teste
-app.routes(apiRoutes)
+app.routes(appInstance)
 
 // Swagger por último para descobrir todas as rotas
 app.use(swaggerPlugin)
