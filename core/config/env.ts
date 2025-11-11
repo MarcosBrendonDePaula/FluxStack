@@ -417,6 +417,8 @@ export function getEnvironmentRecommendations(environment: string): Partial<Flux
           target: 'bun' as const,
           outDir: 'dist',
           clean: true,
+          minify: false,
+          treeshake: false,
           optimization: {
             minify: false,
             compress: false,
@@ -459,6 +461,8 @@ export function getEnvironmentRecommendations(environment: string): Partial<Flux
           target: 'bun' as const,
           outDir: 'dist',
           clean: true,
+          minify: true,
+          treeshake: true,
           optimization: {
             minify: true,
             compress: true,

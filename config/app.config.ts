@@ -26,15 +26,8 @@ const appConfigSchema = {
   // Environment
   env: config.enum('NODE_ENV', ['development', 'production', 'test'] as const, 'development', true),
 
-  debug: config.boolean('DEBUG', false),
-
   // URLs
   url: config.string('APP_URL', undefined, false),
-
-  // Global features (high-level flags)
-  enableSwagger: config.boolean('ENABLE_SWAGGER', true),
-  enableMetrics: config.boolean('ENABLE_METRICS', false),
-  enableMonitoring: config.boolean('ENABLE_MONITORING', false),
 
   // Security
   trustProxy: config.boolean('TRUST_PROXY', false),

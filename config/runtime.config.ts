@@ -16,19 +16,6 @@ export const appRuntimeConfig = defineReactiveConfig({
   enableMonitoring: config.boolean('ENABLE_MONITORING', false),
   enableDebugMode: config.boolean('DEBUG', false),
 
-  // Logging level can be changed in runtime
-  logLevel: config.enum(
-    'LOG_LEVEL',
-    ['debug', 'info', 'warn', 'error'] as const,
-    'info'
-  ),
-
-  logFormat: config.enum(
-    'LOG_FORMAT',
-    ['json', 'pretty'] as const,
-    'pretty'
-  ),
-
   // Rate limiting
   rateLimitEnabled: config.boolean('RATE_LIMIT_ENABLED', true),
 
@@ -62,9 +49,6 @@ export const appRuntimeConfig = defineReactiveConfig({
     validate: (value: number) => value > 0 || 'Max upload size must be positive'
   },
 
-  // Allowed origins (can be updated in runtime)
-  corsOrigins: config.array('CORS_ORIGINS', ['*']),
-
   // Maintenance mode
   maintenanceMode: config.boolean('MAINTENANCE_MODE', false),
 
@@ -80,7 +64,6 @@ export const appRuntimeConfig = defineReactiveConfig({
 appRuntimeConfig.watch((newConfig) => {
   console.log('🔄 Runtime config reloaded:')
   console.log('   Debug:', newConfig.enableDebugMode)
-  console.log('   Log Level:', newConfig.logLevel)
   console.log('   Maintenance:', newConfig.maintenanceMode)
 })
 

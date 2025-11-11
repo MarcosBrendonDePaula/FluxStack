@@ -28,7 +28,6 @@ export { clientConfig } from './client.config'
 export { databaseConfig } from './database.config'
 export { servicesConfig } from './services.config'
 export { loggerConfig } from './logger.config'
-export { buildConfig } from './build.config'
 export { pluginsConfig } from './plugins.config'
 export { monitoringConfig } from './monitoring.config'
 export { appRuntimeConfig } from './runtime.config'
@@ -62,7 +61,6 @@ export type {
   RedisConfig
 } from './services.config'
 export type { LoggerConfig } from './logger.config'
-export type { BuildConfig } from './build.config'
 export type { PluginsConfig } from './plugins.config'
 export type {
   MonitoringConfig,
@@ -85,7 +83,6 @@ import { clientConfig } from './client.config'
 import { databaseConfig } from './database.config'
 import { servicesConfig } from './services.config'
 import { loggerConfig } from './logger.config'
-import { buildConfig } from './build.config'
 import { pluginsConfig } from './plugins.config'
 import { monitoringConfig } from './monitoring.config'
 import { appRuntimeConfig } from './runtime.config'
@@ -103,7 +100,6 @@ export const config = {
   database: databaseConfig,
   services: servicesConfig,
   logger: loggerConfig,
-  build: buildConfig,
   plugins: pluginsConfig,
   monitoring: monitoringConfig,
   runtime: appRuntimeConfig,

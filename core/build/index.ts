@@ -20,6 +20,7 @@ export class FluxStackBuilder {
       target: config.build.target,
       outDir: config.build.outDir,
       sourceMaps: config.build.sourceMaps,
+      minify: config.build.minify,
       external: config.build.external
     })
 
