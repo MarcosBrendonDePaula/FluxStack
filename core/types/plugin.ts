@@ -3,6 +3,9 @@
  * Comprehensive type definitions for the plugin system
  */
 
+// Import namespace for type alias
+import type { FluxStack } from "../plugins/types"
+
 // Re-export plugin types
 export type {
   FluxStack,
@@ -12,6 +15,9 @@ export type {
   ResponseContext,
   ErrorContext
 } from "../plugins/types"
+
+// Export Plugin as a standalone type for convenience
+export type Plugin = FluxStack.Plugin
 
 // Additional plugin-related types
 export interface PluginManifest {

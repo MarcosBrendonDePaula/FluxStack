@@ -86,22 +86,27 @@ export const throttle = <T extends (...args: any[]) => any>(
   }
 }
 
+/**
+ * Environment detection utilities
+ * Uses declarative config system instead of legacy env
+ */
+
 export const isProduction = (): boolean => {
-  // Import here to avoid circular dependency
-  const { env } = require('./env')
-  return env.NODE_ENV === 'production'
+  // Lazy import to avoid circular dependency during module initialization
+  const { appConfig } = require('@/config/app.config')
+  return appConfig.env === 'production'
 }
 
 export const isDevelopment = (): boolean => {
-  // Import here to avoid circular dependency
-  const { env } = require('./env')
-  return env.NODE_ENV === 'development' || !env.NODE_ENV
+  // Lazy import to avoid circular dependency during module initialization
+  const { appConfig } = require('@/config/app.config')
+  return appConfig.env === 'development'
 }
 
 export const isTest = (): boolean => {
-  // Import here to avoid circular dependency
-  const { env } = require('./env')
-  return env.NODE_ENV === 'test'
+  // Lazy import to avoid circular dependency during module initialization
+  const { appConfig } = require('@/config/app.config')
+  return appConfig.env === 'test'
 }
 
 export const deepMerge = <T extends Record<string, any>>(target: T, source: Partial<T>): T => {
