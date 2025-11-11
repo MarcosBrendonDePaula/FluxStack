@@ -159,11 +159,12 @@ export const appConfig = defineConfig(appConfigSchema)
 **2. Usar Configuração com Type Safety:**
 ```typescript
 import { appConfig } from '@/config/app.config'
+import { appRuntimeConfig } from '@/config/runtime.config'
 
 // ✅ Type inference automática
-const port = appConfig.port        // number
+const name = appConfig.name        // string
 const env = appConfig.env          // "development" | "production" | "test"
-const debug = appConfig.debug      // boolean
+const debug = appRuntimeConfig.values.enableDebugMode  // boolean
 
 // ✅ Validação em tempo de boot
 if (appConfig.env === 'production') {

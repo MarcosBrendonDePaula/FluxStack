@@ -23,17 +23,13 @@
  *     default: 3000,
  *     validate: (value) => value > 0 && value < 65536
  *   },
- *   debug: {
- *     type: 'boolean',
- *     env: 'DEBUG',
- *     default: false
- *   }
+ *   env: config.enum('NODE_ENV', ['development', 'production', 'test'] as const, 'development', true)
  * })
  *
  * // Access with full type safety
  * appConfig.name   // string
  * appConfig.port   // number
- * appConfig.debug  // boolean
+ * appConfig.env    // "development" | "production" | "test"
  * ```
  */
 
