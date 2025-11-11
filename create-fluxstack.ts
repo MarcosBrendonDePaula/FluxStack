@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 
 import { program } from 'commander'
-import { resolve, join } from 'path'
-import { existsSync, mkdirSync, cpSync, writeFileSync, readFileSync } from 'fs'
+import { resolve, join, basename } from 'path'
+import { existsSync, mkdirSync, cpSync, writeFileSync, readFileSync, readdirSync } from 'fs'
 import chalk from 'chalk'
 import ora from 'ora'
 import { FLUXSTACK_VERSION } from './core/utils/version'
@@ -28,30 +28,62 @@ program
   .action(async (projectName, options) => {
     console.clear()
     console.log(chalk.magenta(logo))
-    
+
     if (!projectName || projectName.trim().length === 0) {
       console.log(chalk.red('❌ Project name is required'))
-      console.log(chalk.gray('Usage: ./create-fluxstack.ts my-app'))
+      console.log(chalk.gray('Usage: bunx create-fluxstack@latest my-app'))
+      console.log(chalk.gray('   or: bunx create-fluxstack@latest .'))
       process.exit(1)
     }
-    
+
     const currentDir = import.meta.dir
-    const projectPath = resolve(projectName)
-    
-    // Check if directory already exists
-    if (existsSync(projectPath)) {
+
+    // Normalize path: remove trailing slashes (which may indicate current dir usage like path/.)
+    let normalizedName = projectName
+    const hasTrailingSlash = normalizedName.endsWith('/') || normalizedName.endsWith('\\')
+
+    if (hasTrailingSlash) {
+      normalizedName = normalizedName.slice(0, -1)
+    }
+
+    // Check if it's current directory
+    // - Explicit '.'
+    // - Path ending with /. or \. (e.g., /path/to/dir/.)
+    // - Path ending with / or \ (Bun normalizes path/. to path/)
+    const isCurrentDir = normalizedName === '.' ||
+                         projectName.endsWith('/.') ||
+                         projectName.endsWith('\\.') ||
+                         hasTrailingSlash
+
+    const projectPath = resolve(normalizedName)
+    const displayName = isCurrentDir ? 'current directory' : projectName
+
+    // Check if directory already exists (skip for current dir)
+    if (!isCurrentDir && existsSync(projectPath)) {
       console.log(chalk.red(`❌ Directory ${projectName} already exists`))
       process.exit(1)
     }
-    
-    console.log(chalk.cyan(`\n🚀 Creating FluxStack project: ${chalk.bold(projectName)}`))
+
+    // Check if current directory is not empty (when using '.')
+    if (isCurrentDir) {
+      const files = readdirSync(projectPath).filter(f => !f.startsWith('.'))
+      if (files.length > 0) {
+        console.log(chalk.yellow('⚠️  Current directory is not empty'))
+        console.log(chalk.gray(`Found ${files.length} file(s). FluxStack will be initialized here.`))
+      }
+    }
+
+    console.log(chalk.cyan(`\n🚀 Creating FluxStack project: ${chalk.bold(displayName)}`))
     console.log(chalk.gray(`📁 Location: ${projectPath}`))
     
     // Create project directory
     const spinner = ora('Creating project structure...').start()
-    
+
     try {
-      mkdirSync(projectPath, { recursive: true })
+      // Only create directory if not using current directory
+      if (!isCurrentDir) {
+        mkdirSync(projectPath, { recursive: true })
+      }
       
       // Copy only essential FluxStack files (not node_modules, not test apps, etc.)
       const frameworkDir = currentDir // Use current directory (framework root)
@@ -305,18 +337,20 @@ bun.lockb
       
       // Customize package.json with project name
       const packageJsonPath = join(projectPath, 'package.json')
+      const actualProjectName = isCurrentDir ? basename(projectPath) : normalizedName
+
       if (existsSync(packageJsonPath)) {
         const packageContent = readFileSync(packageJsonPath, 'utf-8')
         const packageJson = JSON.parse(packageContent)
-        
+
         // Update project-specific fields
-        packageJson.name = projectName
-        packageJson.description = `${projectName} - FluxStack application`
+        packageJson.name = actualProjectName
+        packageJson.description = `${actualProjectName} - FluxStack application`
         packageJson.version = "1.0.0"
-        
+
         writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2))
       }
-      
+
       // Create .env from .env.example and set development mode + project name
       const envExamplePath = join(projectPath, '.env.example')
       const envPath = join(projectPath, '.env')
@@ -325,14 +359,14 @@ bun.lockb
         // Set development mode
         envContent = envContent.replace('NODE_ENV=production', 'NODE_ENV=development')
         // Customize app name to match project name
-        envContent = envContent.replace('VITE_APP_NAME=FluxStack', `VITE_APP_NAME=${projectName}`)
+        envContent = envContent.replace('VITE_APP_NAME=FluxStack', `VITE_APP_NAME=${actualProjectName}`)
         writeFileSync(envPath, envContent)
       }
-      
+
       // Customize README.md
       const readmePath = join(projectPath, 'README.md')
       if (existsSync(readmePath)) {
-        const readmeContent = `# ${projectName}
+        const readmeContent = `# ${actualProjectName}
 
 ⚡ **FluxStack Application** - Modern full-stack TypeScript framework
 
@@ -352,7 +386,7 @@ bun run start
 ## 📁 Project Structure
 
 \`\`\`
-${projectName}/
+${actualProjectName}/
 ├── core/          # FluxStack framework (don't modify)
 ├── app/           # Your application code
 │   ├── server/    # Backend API routes
@@ -471,7 +505,7 @@ Built with ❤️ using FluxStack
           })
           await addProc.exited
           
-          const commitProc = Bun.spawn(['git', 'commit', '-m', `feat: initial ${projectName} with FluxStack`], {
+          const commitProc = Bun.spawn(['git', 'commit', '-m', `feat: initial ${actualProjectName} with FluxStack`], {
             cwd: projectPath,
             stdio: ['ignore', 'pipe', 'pipe']
           })
@@ -487,7 +521,9 @@ Built with ❤️ using FluxStack
       // Success message
       console.log(chalk.green('\n🎉 Project created successfully!'))
       console.log(chalk.cyan('\nNext steps:'))
-      console.log(chalk.white(`  cd ${projectName}`))
+      if (!isCurrentDir) {
+        console.log(chalk.white(`  cd ${projectName}`))
+      }
       if (!options.install) {
         console.log(chalk.white(`  bun install`))
       }

@@ -10,11 +10,14 @@ Create modern full-stack TypeScript applications with zero configuration.
 ## Quick Start
 
 ```bash
-# scaffold a new FluxStack app
+# Create a new FluxStack app
 bunx create-fluxstack my-awesome-app
-
-# enter the project and start developing
 cd my-awesome-app
+bun run dev
+
+# OR create in current directory
+mkdir my-app && cd my-app
+bunx create-fluxstack .
 bun run dev
 ```
 
