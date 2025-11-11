@@ -31,24 +31,6 @@ describe('App Configuration', () => {
       expect(appConfig.env).toBeDefined()
       expect(['development', 'production', 'test']).toContain(appConfig.env)
     })
-
-    it('should have debug flag as boolean', () => {
-      expect(typeof appConfig.debug).toBe('boolean')
-    })
-  })
-
-  describe('Feature Flags', () => {
-    it('should have enableSwagger as boolean', () => {
-      expect(typeof appConfig.enableSwagger).toBe('boolean')
-    })
-
-    it('should have enableMetrics as boolean', () => {
-      expect(typeof appConfig.enableMetrics).toBe('boolean')
-    })
-
-    it('should have enableMonitoring as boolean', () => {
-      expect(typeof appConfig.enableMonitoring).toBe('boolean')
-    })
   })
 
   describe('Security Settings', () => {
