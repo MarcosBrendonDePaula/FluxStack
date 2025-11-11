@@ -9,6 +9,7 @@ export interface BundlerConfig {
   target: 'bun' | 'node' | 'docker'
   outDir: string
   sourceMaps: boolean
+  minify?: boolean
   external?: string[]
 }
 

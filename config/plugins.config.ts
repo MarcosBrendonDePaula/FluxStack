@@ -28,8 +28,7 @@ const pluginsConfigSchema = {
   // Logger plugin (handled by logger.config.ts)
   loggerEnabled: config.boolean('LOGGER_PLUGIN_ENABLED', true),
 
-  // Swagger plugin
-  swaggerEnabled: config.boolean('ENABLE_SWAGGER', true),
+  // Swagger plugin (enable/disable via runtime.config.ts)
   swaggerTitle: config.string('SWAGGER_TITLE', 'FluxStack API'),
   swaggerVersion: config.string('SWAGGER_VERSION', FLUXSTACK_VERSION),
   swaggerDescription: config.string(
@@ -46,9 +45,7 @@ const pluginsConfigSchema = {
   staticEnableUploads: config.boolean('STATIC_ENABLE_UPLOADS', true),
   staticEnablePublic: config.boolean('STATIC_ENABLE_PUBLIC', true),
 
-  // CORS plugin
-  corsEnabled: config.boolean('CORS_ENABLED', true),
-
+  // CORS plugin (configuration via server.config.ts)
   // Vite plugin
   viteEnabled: config.boolean('VITE_PLUGIN_ENABLED', true)
 } as const

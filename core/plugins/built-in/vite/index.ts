@@ -203,8 +203,8 @@ export const vitePlugin: Plugin = {
       } catch (viteError) {
         // If Vite fails, let the request continue to normal routing (will become 404)
         // Only log if explicitly enabled for debugging
-        const { serverConfig } = await import('@/config/server.config')
-        if (serverConfig.enableViteProxyLogs) {
+        const { clientConfig } = await import('@/config/client.config')
+        if (clientConfig.vite.enableLogging) {
           console.warn(`Vite proxy error: ${viteError}`)
         }
       }
@@ -242,8 +242,8 @@ export const vitePlugin: Plugin = {
     } catch (viteError) {
       // If Vite fails, let the request continue to normal routing (will become 404)
       // Only log if explicitly enabled for debugging
-      const { serverConfig } = await import('@/config/server.config')
-      if (serverConfig.enableViteProxyLogs) {
+      const { clientConfig } = await import('@/config/client.config')
+      if (clientConfig.vite.enableLogging) {
         console.warn(`Vite proxy error: ${viteError}`)
       }
     }

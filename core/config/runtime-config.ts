@@ -7,7 +7,9 @@ import { env, createNamespace } from '../utils/env'
 import type { FluxStackConfig } from './schema'
 import { defaultFluxStackConfig } from './schema'
 import { loggerConfig } from '../../config/logger.config'
-import { buildConfig } from '../../config/build.config'
+import { clientConfig } from '../../config/client.config'
+import { serverConfig } from '../../config/server.config'
+import { monitoringConfig } from '../../config/monitoring.config'
 import { appConfig } from '../../config/app.config'
 
 /**
@@ -163,7 +165,7 @@ export const runtimeConfig = {
       .override('logging.format', 'json')
       .override('build.optimization.minify', true)
       .override('build.sourceMaps', false)
-      .override('monitoring.enabled', buildConfig.monitoringEnabled)
+      .override('monitoring.enabled', monitoringConfig.monitoring.enabled)
       .build()
   },
 
@@ -304,14 +306,14 @@ export const configHelpers = {
     return {
       port: env.VITE_PORT,
       proxy: {
-        target: buildConfig.apiUrl,
-        changeOrigin: buildConfig.proxyChangeOrigin
+        target: clientConfig.proxy.target,
+        changeOrigin: clientConfig.proxy.changeOrigin
       },
       build: {
-        outDir: buildConfig.clientBuildDir,
-        sourceMaps: buildConfig.clientSourceMaps,
-        minify: buildConfig.clientMinify,
-        target: buildConfig.clientTarget
+        outDir: clientConfig.build.outDir,
+        sourceMaps: clientConfig.build.sourceMaps,
+        minify: clientConfig.build.minify,
+        target: clientConfig.build.target
       }
     }
   }

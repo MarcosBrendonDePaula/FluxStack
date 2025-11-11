@@ -20,7 +20,6 @@ describe('Config Integration', () => {
       expect(config.database).toBeDefined()
       expect(config.services).toBeDefined()
       expect(config.logger).toBeDefined()
-      expect(config.build).toBeDefined()
       expect(config.plugins).toBeDefined()
       expect(config.monitoring).toBeDefined()
       expect(config.runtime).toBeDefined()
@@ -52,14 +51,13 @@ describe('Config Integration', () => {
     })
 
     it('should have consistent feature flags', () => {
-      // Feature flags should be coordinated
-      if (appConfig.enableSwagger) {
-        expect(pluginsConfig.swaggerEnabled).toBeDefined()
-      }
+      // Feature flags in runtime.config should be coordinated with other modules
+      expect(config.runtime.values.enableSwagger).toBeDefined()
+      expect(config.runtime.values.enableMetrics).toBeDefined()
+      expect(config.runtime.values.enableMonitoring).toBeDefined()
 
-      if (appConfig.enableMonitoring) {
-        expect(monitoringConfig.monitoring.enabled).toBeDefined()
-      }
+      // Monitoring config should be available
+      expect(monitoringConfig.monitoring.enabled).toBeDefined()
     })
   })
 

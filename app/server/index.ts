@@ -7,6 +7,7 @@ import { helpers } from "@/core/utils/env"
 import { serverConfig } from "@/config/server.config"
 import { appConfig } from "@/config/app.config"
 import { loggerConfig } from "@/config/logger.config"
+import { appRuntimeConfig } from "@/config/runtime.config"
 import cryptoAuthPlugin from "@/plugins/crypto-auth"
 import "./live/register-components"
 
@@ -88,14 +89,14 @@ app.getApp().get('/api/env-test', () => {
         sourceMaps: false
       },
       features: {
-        enableSwagger: appConfig.enableSwagger,
-        enableMetrics: appConfig.enableMetrics,
-        enableMonitoring: appConfig.enableMonitoring
+        enableSwagger: appRuntimeConfig.values.enableSwagger,
+        enableMetrics: appRuntimeConfig.values.enableMetrics,
+        enableMonitoring: appRuntimeConfig.values.enableMonitoring
       }
     },
     environment: {
       NODE_ENV: appConfig.env,
-      DEBUG: appConfig.debug,
+      DEBUG: appRuntimeConfig.values.enableDebugMode,
       LOG_LEVEL: loggerConfig.level
     },
     urls: {

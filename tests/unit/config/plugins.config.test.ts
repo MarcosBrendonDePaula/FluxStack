@@ -39,10 +39,6 @@ describe('Plugins Configuration', () => {
   })
 
   describe('Swagger Plugin Settings', () => {
-    it('should have swagger enabled flag', () => {
-      expect(typeof pluginsConfig.swaggerEnabled).toBe('boolean')
-    })
-
     it('should have valid swagger title', () => {
       expect(pluginsConfig.swaggerTitle).toBeDefined()
       expect(typeof pluginsConfig.swaggerTitle).toBe('string')
@@ -88,10 +84,6 @@ describe('Plugins Configuration', () => {
   })
 
   describe('Other Plugin Flags', () => {
-    it('should have cors plugin flag', () => {
-      expect(typeof pluginsConfig.corsEnabled).toBe('boolean')
-    })
-
     it('should have vite plugin flag', () => {
       expect(typeof pluginsConfig.viteEnabled).toBe('boolean')
     })
