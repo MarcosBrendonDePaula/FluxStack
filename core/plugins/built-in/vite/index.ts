@@ -84,9 +84,10 @@ export const vitePlugin: Plugin = {
     const vitePort = config.port || context.config.client.port || 5173
     const viteHost = config.host || "localhost"
 
-    try {
-      const { startGroup, endGroup, logInGroup } = await import('../../../utils/logger/group-logger')
+    // Import group logger utilities
+    const { startGroup, endGroup, logInGroup } = await import('../../../utils/logger/group-logger')
 
+    try {
       startGroup({
         title: 'Vite Development Server',
         icon: '🎨',
@@ -139,8 +140,25 @@ export const vitePlugin: Plugin = {
       process.on('exit', cleanup)
 
     } catch (error) {
-      context.logger.error('❌ Failed to start Vite server programmatically:', error)
-      context.logger.debug('⚠️ Falling back to monitoring mode...')
+      // Check if error is related to port already in use
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      const isPortInUse = errorMessage.includes('EADDRINUSE') ||
+                         errorMessage.includes('address already in use') ||
+                         errorMessage.includes('Port') && errorMessage.includes('is in use')
+
+      if (isPortInUse) {
+        endGroup()
+        console.log('') // Separator line
+        context.logger.error(`❌ Failed to start Vite: Port ${vitePort} is already in use`)
+        context.logger.info(`💡 Try one of these solutions:`)
+        context.logger.info(`   1. Stop the process using port ${vitePort}`)
+        context.logger.info(`   2. Change VITE_PORT in your .env file`)
+        context.logger.info(`   3. Kill the process: ${process.platform === 'win32' ? `netstat -ano | findstr :${vitePort}` : `lsof -ti:${vitePort} | xargs kill -9`}`)
+        process.exit(1)
+      } else {
+        context.logger.error('❌ Failed to start Vite server:', errorMessage)
+        context.logger.debug('Full error:', error)
+        context.logger.debug('⚠️ Falling back to monitoring mode...')
 
         // Fallback to monitoring if programmatic start fails
         ; (context as any).viteConfig = {
@@ -148,7 +166,8 @@ export const vitePlugin: Plugin = {
           host: viteHost,
           ...config
         }
-      monitorVite(context, viteHost, vitePort, config)
+        monitorVite(context, viteHost, vitePort, config)
+      }
     }
   },
 
