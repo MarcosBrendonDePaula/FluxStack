@@ -86,11 +86,14 @@ export const cryptoAuthPlugin: Plugin = {
     ;(global as any).cryptoAuthService = authService
     ;(global as any).cryptoAuthMiddleware = authMiddleware
 
-    context.logger.info("✅ Crypto Auth plugin inicializado", {
-      mode: 'middleware-based',
-      maxTimeDrift: cryptoAuthConfig.maxTimeDrift,
-      adminKeys: cryptoAuthConfig.adminKeys.length,
-      usage: 'Use cryptoAuthRequired(), cryptoAuthAdmin(), cryptoAuthOptional() nas rotas'
+    // Store plugin info for table display
+    if (!(global as any).__fluxstackPlugins) {
+      (global as any).__fluxstackPlugins = []
+    }
+    (global as any).__fluxstackPlugins.push({
+      name: 'Crypto Auth',
+      status: 'Active',
+      details: `${cryptoAuthConfig.adminKeys.length} admin keys`
     })
   },
 
@@ -148,14 +151,7 @@ export const cryptoAuthPlugin: Plugin = {
   },
 
   onServerStart: async (context: PluginContext) => {
-    if (cryptoAuthConfig.enabled) {
-      context.logger.info("✅ Crypto Auth plugin ativo", {
-        mode: 'middleware-based',
-        adminKeys: cryptoAuthConfig.adminKeys.length,
-        maxTimeDrift: `${cryptoAuthConfig.maxTimeDrift}ms`,
-        usage: 'Use cryptoAuthRequired(), cryptoAuthAdmin() nas rotas'
-      })
-    }
+    // Silent - plugin is already initialized
   }
 }
 

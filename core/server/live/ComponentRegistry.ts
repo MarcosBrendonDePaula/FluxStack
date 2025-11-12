@@ -159,15 +159,9 @@ export class ComponentRegistry {
       }
 
       const files = fs.readdirSync(componentsPath)
-      let discoveredCount = 0
+      const components: string[] = []
 
-      startGroup({
-        title: 'Live Components Auto-Discovery',
-        icon: '🔍',
-        color: 'blue',
-        collapsed: true
-      })
-
+      // Discovery with component names collection
       for (const file of files) {
         if (file.endsWith('.ts') || file.endsWith('.js')) {
           try {
@@ -183,30 +177,19 @@ export class ComponentRegistry {
 
                 const componentName = exportName.replace(/Component$/, '')
                 this.registerComponentClass(componentName, exportedItem)
-                logInGroup(`${componentName} (from ${file})`, '📦')
-                discoveredCount++
+                components.push(componentName)
               }
             })
-
-            // Check for integration hooks (like SystemMonitorIntegration)
-            if (module.default && typeof module.default === 'object' && module.default.setupIntegration) {
-              logInGroup('Integration hooks found', '🔗')
-            }
           } catch (error) {
-            logInGroup(`Failed to load ${file}`, '⚠️')
+            // Silent - only log in debug mode
           }
         }
       }
 
-      if (discoveredCount > 0) {
-        const label = discoveredCount === 1 ? 'component discovered' : 'components discovered'
-        groupSummary(discoveredCount, label, '✓')
-      } else {
-        logInGroup('No components found', '⚠️')
+      // Display components in a compact single line format
+      if (components.length > 0) {
+        console.log(`\nLive Components (${components.length}): ${components.join(', ')}\n`)
       }
-
-      endGroup()
-      console.log('') // Separator line
     } catch (error) {
       console.error('❌ Auto-discovery failed:', error)
     }

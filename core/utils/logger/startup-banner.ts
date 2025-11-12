@@ -33,43 +33,17 @@ export function displayStartupBanner(info: StartupInfo): void {
     pluginCount = 0,
     vitePort,
     viteEmbedded = false,
-    swaggerPath
   } = info
 
-  console.log('\n' + chalk.cyan.bold('⚡ FluxStack') + chalk.gray(` v${FLUXSTACK_VERSION}\n`))
-
-  // Server info
-  console.log(chalk.bold('🚀 Server'))
-  console.log(`   ${chalk.gray('→')} http://localhost:${port}`)
-  console.log(`   ${chalk.gray('→')} API: http://localhost:${port}${apiPrefix}`)
-  console.log(`   ${chalk.gray('→')} Health: http://localhost:${port}${apiPrefix}/health`)
-
-  // Frontend info (only if Vite is running standalone, NOT embedded)
-  if (vitePort && !viteEmbedded) {
-    console.log('')
-    console.log(chalk.bold('⚛️  Frontend'))
-    console.log(`   ${chalk.gray('→')} http://localhost:${vitePort}`)
+  // Display plugins in compact format
+  const plugins = (global as any).__fluxstackPlugins || []
+  if (plugins.length > 0) {
+    const pluginList = plugins.map((p: any) => `${p.name} (${p.details})`).join(', ')
+    console.log(`Plugins (${plugins.length}): ${pluginList}\n`)
   }
 
-  // Swagger docs (if enabled)
-  if (swaggerPath) {
-    console.log('')
-    console.log(chalk.bold('📋 Documentation'))
-    console.log(`   ${chalk.gray('→')} Swagger: http://localhost:${port}${swaggerPath}`)
-  }
-
-  // Environment and plugins
-  console.log('')
-  console.log(chalk.bold('ℹ️  Info'))
-  console.log(`   ${chalk.gray('→')} Environment: ${chalk.green(environment)}`)
-  console.log(`   ${chalk.gray('→')} Plugins: ${chalk.yellow(pluginCount)}`)
-
-  // Show Vite embedded status when applicable
-  if (viteEmbedded && vitePort) {
-    console.log(`   ${chalk.gray('→')} Vite: ${chalk.magenta('embedded')} ${chalk.gray(`(port ${vitePort})`)}`)
-  }
-
-  console.log('\n' + chalk.green('✨ Ready!') + chalk.gray(' Press Ctrl+C to stop\n'))
+  // Simple ready message
+  console.log(chalk.green('Server ready!') + chalk.gray(` Environment: ${environment}${viteEmbedded ? ' | Vite: embedded' : ''}\n`))
 }
 
 /**

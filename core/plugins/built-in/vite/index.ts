@@ -88,16 +88,7 @@ export const vitePlugin: Plugin = {
     const { startGroup, endGroup, logInGroup } = await import('@/core/utils/logger/group-logger')
 
     try {
-      startGroup({
-        title: 'Vite Development Server',
-        icon: '🎨',
-        color: 'magenta',
-        collapsed: true
-      })
-
-      logInGroup(`Starting on ${viteHost}:${vitePort}`, '📍')
-
-      // Start Vite dev server programmatically
+      // Start Vite dev server programmatically (silently)
       viteServer = await createServer({
         configFile: './vite.config.ts',
         // Don't override root - let vite.config.ts handle it
@@ -106,17 +97,13 @@ export const vitePlugin: Plugin = {
           host: viteHost,
           strictPort: true
         },
-        logLevel: 'warn' // Suppress Vite's verbose logs
+        logLevel: 'silent' // Suppress all Vite logs
       })
 
       await viteServer.listen()
 
-      // Custom URL display instead of viteServer.printUrls()
-      logInGroup(`Local: http://${viteHost}:${vitePort}/`, '✅')
-      logInGroup('Hot reload coordination active', '🔄')
-
-      endGroup()
-      console.log('') // Separator line
+      context.logger.debug(`Vite server started on ${viteHost}:${vitePort} (internal proxy)`)
+      context.logger.debug('Hot reload coordination active')
 
         // Store Vite config in context for later use
         ; (context as any).viteConfig = {
