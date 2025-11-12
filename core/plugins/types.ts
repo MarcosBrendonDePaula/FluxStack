@@ -96,11 +96,31 @@ export namespace FluxStack {
   onError?: (context: ErrorContext) => void | Promise<void>
   onBuild?: (context: BuildContext) => void | Promise<void>
   onBuildComplete?: (context: BuildContext) => void | Promise<void>
-  
+
   // Configuration
+  /**
+   * @deprecated Use declarative config system instead (plugins/[name]/config/)
+   * Create a config/ folder with defineConfig() for type-safe configuration.
+   * This property is kept for backward compatibility with built-in plugins.
+   *
+   * @example
+   * // ✅ New way (recommended):
+   * // plugins/my-plugin/config/index.ts
+   * import { defineConfig, config } from '@/core/utils/config-schema'
+   * export const myConfig = defineConfig({ ... })
+   *
+   * // ❌ Old way (deprecated):
+   * configSchema: { type: 'object', properties: { ... } }
+   */
   configSchema?: PluginConfigSchema
+
+  /**
+   * @deprecated Use declarative config system with defineConfig()
+   * This property will be removed in a future major version.
+   * Use the config/ folder structure for automatic type inference.
+   */
   defaultConfig?: any
-  
+
   // CLI commands
   commands?: CliCommand[]
   }
