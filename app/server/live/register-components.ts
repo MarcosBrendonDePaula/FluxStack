@@ -1,8 +1,19 @@
-// 🧪 Manual Registration REMOVED for Auto-Generation Testing
-// This file is intentionally left empty to test the auto-generation system
-// The build system should automatically generate all imports and registrations
+// ⚠️ DEPRECATION NOTICE
+// This file has been moved to: core/server/live/auto-generated-components.ts
+//
+// The auto-generated component registration is now located in the core/ directory
+// to prevent accidental user modifications and keep framework code separate from
+// application code.
+//
+// If you're looking for component registration logic:
+// - Generated file: core/server/live/auto-generated-components.ts (auto-generated during build)
+// - Generator: core/build/live-components-generator.ts
+// - Import location: app/server/index.ts
+//
+// To add new Live Components:
+// 1. Create your component class in this directory (app/server/live/)
+// 2. Extend LiveComponent class
+// 3. Run 'bun run build' to regenerate the registration file
 
-// NOTE: If you see this in production, auto-generation worked!
-// All Live Components should be discovered and registered automatically during build
-
-// Removed startup log to keep output clean - auto-generation handles everything
+// This file intentionally left empty - do not import
+export {}
