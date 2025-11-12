@@ -329,7 +329,7 @@ export class ComponentRegistry {
     performanceMonitor.initializeComponent(component.id, componentName)
     performanceMonitor.recordRenderTime(component.id, renderTime)
 
-    console.log(`🚀 Mounted component: ${componentName} (${component.id}) in ${renderTime}ms`)
+    // console.log(`🚀 Mounted component: ${componentName} (${component.id}) in ${renderTime}ms`)
     
     // Send initial state to client with signature
     const signedState = await stateSignature.signState(component.id, component.getSerializableState(), 1, {

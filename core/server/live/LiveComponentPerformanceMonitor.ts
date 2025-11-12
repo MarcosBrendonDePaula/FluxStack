@@ -279,7 +279,7 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
     this.alerts.set(componentId, [])
     this.suggestions.set(componentId, [])
 
-    console.log(`📊 Performance monitoring initialized for component: ${componentId}`)
+    // console.log(`📊 Performance monitoring initialized for component: ${componentId}`)
   }
 
   /**

@@ -30,8 +30,8 @@ export class LiveClockComponent extends LiveComponent<LiveClockState> {
     }, ws, options);
     
     this.startTime = now;
-    console.log(`🕐 ${this.constructor.name} created: ${this.id}`);
-    
+    // console.log(`🕐 ${this.constructor.name} created: ${this.id}`);
+
     // Start the real-time clock immediately
     this.startClock();
   }

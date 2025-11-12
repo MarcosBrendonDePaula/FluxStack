@@ -53,7 +53,7 @@ export const liveComponentsPlugin: Plugin = {
         
         open(ws) {
           const connectionId = `ws-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-          console.log(`🔌 Live Components WebSocket connected: ${connectionId}`)
+          // console.log(`🔌 Live Components WebSocket connected: ${connectionId}`)
           
           // Register connection with enhanced connection manager
           connectionManager.registerConnection(ws, connectionId, 'live-components')
@@ -85,13 +85,14 @@ export const liveComponentsPlugin: Plugin = {
           try {
             // Add connection metadata
             message.timestamp = Date.now()
-            
-            console.log(`📨 Received message:`, {
-              type: message.type,
-              componentId: message.componentId,
-              action: message.action,
-              requestId: message.requestId
-            })
+
+            // Uncomment for debugging:
+            // console.log(`📨 Received message:`, {
+            //   type: message.type,
+            //   componentId: message.componentId,
+            //   action: message.action,
+            //   requestId: message.requestId
+            // })
 
             // Handle different message types
             switch (message.type) {
@@ -142,7 +143,7 @@ export const liveComponentsPlugin: Plugin = {
         
         close(ws) {
           const connectionId = ws.data?.connectionId
-          console.log(`🔌 Live Components WebSocket disconnected: ${connectionId}`)
+          // console.log(`🔌 Live Components WebSocket disconnected: ${connectionId}`)
           
           // Cleanup connection in connection manager
           if (connectionId) {
@@ -282,10 +283,10 @@ async function handleComponentMount(ws: any, message: LiveMessage) {
 }
 
 async function handleComponentRehydrate(ws: any, message: LiveMessage) {
-  console.log('🔄 Processing component re-hydration request:', {
-    componentId: message.componentId,
-    payload: message.payload
-  })
+  // console.log('🔄 Processing component re-hydration request:', {
+  //   componentId: message.componentId,
+  //   payload: message.payload
+  // })
 
   try {
     const { componentName, signedState, room, userId } = message.payload || {}
@@ -315,12 +316,12 @@ async function handleComponentRehydrate(ws: any, message: LiveMessage) {
       timestamp: Date.now()
     }
 
-    console.log('📤 Sending COMPONENT_REHYDRATED response:', {
-      type: response.type,
-      success: response.success,
-      newComponentId: response.result?.newComponentId,
-      requestId: response.requestId
-    })
+    // console.log('📤 Sending COMPONENT_REHYDRATED response:', {
+    //   type: response.type,
+    //   success: response.success,
+    //   newComponentId: response.result?.newComponentId,
+    //   requestId: response.requestId
+    // })
     
     ws.send(JSON.stringify(response))
 
@@ -408,7 +409,7 @@ async function handleComponentPing(ws: any, message: LiveMessage) {
 
 // File Upload Handler Functions
 async function handleFileUploadStart(ws: any, message: FileUploadStartMessage) {
-  console.log('📤 Starting file upload:', message.uploadId)
+  // console.log('📤 Starting file upload:', message.uploadId)
   
   const result = await fileUploadManager.startUpload(message)
   
@@ -426,7 +427,7 @@ async function handleFileUploadStart(ws: any, message: FileUploadStartMessage) {
 }
 
 async function handleFileUploadChunk(ws: any, message: FileUploadChunkMessage) {
-  console.log(`📦 Receiving chunk ${message.chunkIndex + 1} for upload ${message.uploadId}`)
+  // console.log(`📦 Receiving chunk ${message.chunkIndex + 1} for upload ${message.uploadId}`)
   
   const progressResponse = await fileUploadManager.receiveChunk(message, ws)
   
@@ -447,7 +448,7 @@ async function handleFileUploadChunk(ws: any, message: FileUploadChunkMessage) {
 }
 
 async function handleFileUploadComplete(ws: any, message: FileUploadCompleteMessage) {
-  console.log('✅ Completing file upload:', message.uploadId)
+  // console.log('✅ Completing file upload:', message.uploadId)
   
   const completeResponse = await fileUploadManager.completeUpload(message)
   ws.send(JSON.stringify(completeResponse))

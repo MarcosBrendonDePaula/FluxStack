@@ -227,15 +227,15 @@ export class StateSignature {
         await this.createStateBackup(componentId, data, version)
       }
       
-      console.log('🔐 State signed:', {
-        componentId,
-        timestamp,
-        version,
-        keyId,
-        compressed,
-        encrypted,
-        signature: signature.substring(0, 16) + '...'
-      })
+      // console.log('🔐 State signed:', {
+      //   componentId,
+      //   timestamp,
+      //   version,
+      //   keyId,
+      //   compressed,
+      //   encrypted,
+      //   signature: signature.substring(0, 16) + '...'
+      // })
 
       return {
         data: processedData,
@@ -421,7 +421,7 @@ export class StateSignature {
       
       this.backups.set(componentId, backups)
       
-      console.log(`💾 State backup created for component ${componentId} v${version}`)
+      // console.log(`💾 State backup created for component ${componentId} v${version}`)
     } catch (error) {
       console.error(`❌ Failed to create backup for component ${componentId}:`, error)
     }
