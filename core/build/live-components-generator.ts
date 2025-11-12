@@ -18,9 +18,12 @@ export class LiveComponentsGenerator {
   private backupFilePath: string
 
   constructor() {
+    // Scan components from app/ directory (user code)
     this.componentsPath = join(process.cwd(), 'app', 'server', 'live')
-    this.registrationFilePath = join(process.cwd(), 'app', 'server', 'live', 'register-components.ts')
-    this.backupFilePath = join(process.cwd(), 'app', 'server', 'live', 'register-components.backup.ts')
+
+    // Generate registration file in core/ directory (framework code - protected from user modifications)
+    this.registrationFilePath = join(process.cwd(), 'core', 'server', 'live', 'auto-generated-components.ts')
+    this.backupFilePath = join(process.cwd(), 'core', 'server', 'live', 'auto-generated-components.backup.ts')
   }
 
   /**
@@ -64,7 +67,8 @@ export class LiveComponentsGenerator {
                 fileName,
                 className,
                 componentName,
-                filePath: `./${fileName}`
+                // Path relative to core/server/live/ where the generated file will be
+                filePath: `@/app/server/live/${fileName}`
               })
 
               buildLogger.step(`Discovered component: ${className} → ${componentName}`)
@@ -190,18 +194,17 @@ ${components.map(comp => `  ${comp.className}`).join(',\n')}
   }
 
   /**
-   * Post-build hook: Clean up generated file (optional)
+   * Post-build hook: Clean up backup file
+   * Note: Since the generated file is now in core/, we always keep it (it's bundled into production)
    */
-  async postBuild(keepGenerated: boolean = false): Promise<void> {
+  async postBuild(keepGenerated: boolean = true): Promise<void> {
     buildLogger.step('Cleaning up Live Components registration...')
 
-    if (keepGenerated) {
-      // Remove backup since we're keeping the generated version
-      if (existsSync(this.backupFilePath)) {
-        unlinkSync(this.backupFilePath)
-      }
-    } else {
-      this.restoreOriginalFile()
+    // Always keep the generated file in core/ (it gets bundled)
+    // Just remove the backup
+    if (existsSync(this.backupFilePath)) {
+      unlinkSync(this.backupFilePath)
+      buildLogger.step('Removed backup file')
     }
   }
 
