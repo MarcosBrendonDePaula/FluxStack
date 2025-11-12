@@ -361,15 +361,15 @@ export class ComponentRegistry {
     ws: any,
     options?: { room?: string; userId?: string }
   ): Promise<{ success: boolean; newComponentId?: string; error?: string }> {
-    console.log('🔄 Attempting component re-hydration:', {
-      oldComponentId: componentId,
-      componentName,
-      signedState: {
-        timestamp: signedState.timestamp,
-        version: signedState.version,
-        signature: signedState.signature.substring(0, 16) + '...'
-      }
-    })
+    // console.log('🔄 Attempting component re-hydration:', {
+    //   oldComponentId: componentId,
+    //   componentName,
+    //   signedState: {
+    //     timestamp: signedState.timestamp,
+    //     version: signedState.version,
+    //     signature: signedState.signature.substring(0, 16) + '...'
+    //   }
+    // })
 
     try {
       // Validate signed state integrity
@@ -701,7 +701,7 @@ export class ComponentRegistry {
 
     const componentsToCleanup = Array.from(ws.data.components.keys()) as string[]
     
-    console.log(`🧹 Cleaning up ${componentsToCleanup.length} components for disconnected WebSocket`)
+    // console.log(`🧹 Cleaning up ${componentsToCleanup.length} components for disconnected WebSocket`)
     
     for (const componentId of componentsToCleanup) {
       this.cleanupComponent(componentId)
@@ -710,7 +710,7 @@ export class ComponentRegistry {
     // Clear the WebSocket's component map
     ws.data.components.clear()
 
-    console.log(`🧹 Cleaned up ${componentsToCleanup.length} components from disconnected WebSocket`)
+    // console.log(`🧹 Cleaned up ${componentsToCleanup.length} components from disconnected WebSocket`)
   }
 
   // Get statistics

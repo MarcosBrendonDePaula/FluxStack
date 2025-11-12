@@ -122,7 +122,7 @@ export class WebSocketConnectionManager extends EventEmitter {
     // Setup connection event handlers
     this.setupConnectionHandlers(ws, connectionId)
 
-    console.log(`🔌 Connection registered: ${connectionId} (Pool: ${poolId || 'default'})`)
+    // console.log(`🔌 Connection registered: ${connectionId} (Pool: ${poolId || 'default'})`)
     this.emit('connectionRegistered', { connectionId, poolId })
   }
 
@@ -185,7 +185,7 @@ export class WebSocketConnectionManager extends EventEmitter {
     }
     
     this.connectionPools.get(poolId)!.add(connectionId)
-    console.log(`🏊 Connection ${connectionId} added to pool ${poolId}`)
+    // console.log(`🏊 Connection ${connectionId} added to pool ${poolId}`)
   }
 
   /**
@@ -323,7 +323,7 @@ export class WebSocketConnectionManager extends EventEmitter {
       queue.splice(insertIndex, 0, queuedMessage)
     }
 
-    console.log(`📬 Message queued for ${connectionId}: ${queuedMessage.id}`)
+    // console.log(`📬 Message queued for ${connectionId}: ${queuedMessage.id}`)
     return true
   }
 
@@ -356,7 +356,7 @@ export class WebSocketConnectionManager extends EventEmitter {
             console.warn(`❌ Message ${queuedMessage.id} exceeded max retries`)
           }
         } else {
-          console.log(`✅ Queued message delivered: ${queuedMessage.id}`)
+          // console.log(`✅ Queued message delivered: ${queuedMessage.id}`)
         }
       } catch (error) {
         console.error(`❌ Error processing queued message ${queuedMessage.id}:`, error)
@@ -437,7 +437,7 @@ export class WebSocketConnectionManager extends EventEmitter {
    * Handle connection close
    */
   private handleConnectionClose(connectionId: string): void {
-    console.log(`🔌 Connection closed: ${connectionId}`)
+    // console.log(`🔌 Connection closed: ${connectionId}`)
     
     // Update metrics
     const metrics = this.connectionMetrics.get(connectionId)
@@ -595,7 +595,7 @@ export class WebSocketConnectionManager extends EventEmitter {
       }
     }
 
-    console.log(`🧹 Connection cleaned up: ${connectionId}`)
+    // console.log(`🧹 Connection cleaned up: ${connectionId}`)
   }
 
   /**
