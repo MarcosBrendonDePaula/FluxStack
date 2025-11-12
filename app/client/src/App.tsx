@@ -1,8 +1,69 @@
 import { useState, useEffect } from 'react'
 import { api } from './lib/eden-api'
-import { FaFire, FaGithub, FaBook, FaRocket } from 'react-icons/fa'
+import { FaFire, FaGithub, FaBook, FaRocket, FaClock } from 'react-icons/fa'
+import { LiveComponentsProvider, useHybridLiveComponent } from '@/core/client'
 
-function App() {
+interface LiveClockState {
+  currentTime: string
+  timeZone: string
+  format: '12h' | '24h'
+  showSeconds: boolean
+  showDate: boolean
+  lastSync: Date
+  serverUptime: number
+}
+
+const initialClockState: LiveClockState = {
+  currentTime: "--:--:--",
+  timeZone: "America/Sao_Paulo",
+  format: "24h",
+  showSeconds: true,
+  showDate: false,
+  lastSync: new Date(),
+  serverUptime: 0,
+}
+
+function LiveClockCompact() {
+  const { state, connected, status } = useHybridLiveComponent<LiveClockState>('LiveClock', initialClockState, {
+    debug: false
+  })
+
+  if (!connected || status !== 'synced') {
+    return (
+      <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all">
+        <div className="flex items-center gap-3 mb-3">
+          <FaClock className="text-2xl text-blue-400 animate-pulse" />
+          <div>
+            <h3 className="text-lg font-semibold text-white">Relógio em Tempo Real</h3>
+            <p className="text-gray-400 text-sm">Conectando ao servidor...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all">
+      <div className="flex items-center gap-3 mb-3">
+        <FaClock className="text-2xl text-emerald-400" />
+        <div>
+          <h3 className="text-lg font-semibold text-white">Relógio em Tempo Real</h3>
+          <p className="text-gray-400 text-sm">Sincronizado com o servidor</p>
+        </div>
+      </div>
+      <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-xl p-4 border border-blue-400/20">
+        <div className="text-4xl font-mono font-bold text-white text-center tracking-wider">
+          {state.currentTime}
+        </div>
+        <div className="text-center mt-2">
+          <span className="text-xs text-gray-400">{state.timeZone}</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function AppContent() {
   const [apiStatus, setApiStatus] = useState<'checking' | 'online' | 'offline'>('checking')
 
   useEffect(() => {
@@ -60,7 +121,7 @@ function App() {
         </div>
 
         {/* Feature cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 max-w-4xl">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12 max-w-6xl">
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all">
             <div className="text-3xl mb-3">⚡</div>
             <h3 className="text-lg font-semibold text-white mb-2">Ultra Rápido</h3>
@@ -78,6 +139,9 @@ function App() {
             <h3 className="text-lg font-semibold text-white mb-2">Moderno</h3>
             <p className="text-gray-400 text-sm">React 19 + Vite + Tailwind CSS</p>
           </div>
+
+          {/* Live Clock Card */}
+          <LiveClockCompact />
         </div>
 
         {/* Links */}
@@ -130,6 +194,21 @@ function App() {
         }
       `}</style>
     </div>
+  )
+}
+
+// Main App component - Wrapped with LiveComponentsProvider for WebSocket connection
+function App() {
+  return (
+    <LiveComponentsProvider
+      autoConnect={true}
+      reconnectInterval={1000}
+      maxReconnectAttempts={5}
+      heartbeatInterval={30000}
+      debug={false}
+    >
+      <AppContent />
+    </LiveComponentsProvider>
   )
 }
 
