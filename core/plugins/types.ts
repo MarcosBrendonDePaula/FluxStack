@@ -252,3 +252,112 @@ export interface CliContext {
     version: string
   }
 }
+
+// Live Components Types
+export interface LiveComponent<TState = any> {
+  id: string
+  name: string
+  state: TState
+  mounted: boolean
+  socket?: any
+  userId?: string
+  destroy?: () => void
+  executeAction?: (action: string, payload?: any) => Promise<any>
+  setState?: (newState: Partial<TState>) => void
+  getSerializableState?: () => TState
+}
+
+export interface LiveMessage {
+  type: string
+  componentId: string
+  data?: any
+  payload?: any
+  action?: string
+  property?: string
+  userId?: string
+  expectResponse?: boolean
+  timestamp?: number
+  requestId?: string
+}
+
+export interface BroadcastMessage {
+  type: string
+  data?: any
+  channel?: string
+  room?: string
+  payload?: any
+  excludeUser?: string
+}
+
+export interface ComponentDefinition<TState = any> {
+  name: string
+  initialState: TState
+  handlers?: Record<string, Function>
+  component?: any
+}
+
+export interface WebSocketData {
+  componentId?: string
+  userId?: string
+  sessionId?: string
+}
+
+// File Upload Types
+export interface ActiveUpload {
+  uploadId: string
+  componentId?: string
+  filename: string
+  fileType?: string
+  fileSize?: number
+  totalChunks: number
+  receivedChunks: Map<number, any>
+  startTime: number
+  lastChunkTime?: number
+}
+
+export interface FileUploadStartMessage {
+  type: 'upload:start' | 'FILE_UPLOAD_START'
+  uploadId: string
+  filename: string
+  totalChunks: number
+  fileSize: number
+  componentId?: string
+  fileType?: string
+  chunkSize?: number
+  requestId?: string
+}
+
+export interface FileUploadChunkMessage {
+  type: 'upload:chunk' | 'FILE_UPLOAD_CHUNK'
+  uploadId: string
+  chunkIndex: number
+  data: string | ArrayBuffer
+  totalChunks?: number
+  componentId?: string
+  requestId?: string
+}
+
+export interface FileUploadCompleteMessage {
+  type: 'upload:complete' | 'FILE_UPLOAD_COMPLETE'
+  uploadId: string
+  requestId?: string
+}
+
+export interface FileUploadProgressResponse {
+  type: 'upload:progress' | 'FILE_UPLOAD_PROGRESS'
+  uploadId: string
+  receivedChunks: number
+  totalChunks: number
+  percentage: number
+}
+
+export interface FileUploadCompleteResponse {
+  type: 'upload:complete' | 'FILE_UPLOAD_COMPLETE'
+  uploadId: string
+  url: string
+  filename: string
+  size: number
+}
+
+// Plugin Type Export
+export type Plugin = FluxStack.Plugin

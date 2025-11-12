@@ -1,9 +1,8 @@
-import type { FluxStack, PluginContext, CliCommand } from "../../plugins/types"
+import type { FluxStack, PluginContext, CliCommand, Plugin } from "../../plugins/types"
 
 // Database plugin with CLI commands
 export const databasePlugin: Plugin = {
   name: "database",
-  version: "1.0.0",
   description: "Database management plugin with CLI commands",
   author: "FluxStack Team",
   category: "data",

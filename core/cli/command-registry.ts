@@ -10,20 +10,10 @@ export class CliCommandRegistry {
 
   constructor() {
     const config = getConfigSync()
-    
+
     this.context = {
       config,
-      logger: {
-        debug: (message: string, meta?: unknown) => logger.debug(message, meta),
-        info: (message: string, meta?: unknown) => logger.info(message, meta),
-        warn: (message: string, meta?: unknown) => logger.warn(message, meta),
-        error: (message: string, meta?: unknown) => logger.error(message, meta),
-        child: (context: Record<string, unknown>) => logger,
-        time: (label: string) => logger.time(label),
-        timeEnd: (label: string) => logger.timeEnd(label),
-        request: (method: string, path: string, status?: number, duration?: number) =>
-          logger.request(method, path, status, duration)
-      },
+      logger: logger as any,
       utils: {
         createTimer,
         formatBytes,

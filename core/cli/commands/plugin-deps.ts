@@ -32,11 +32,11 @@ function createInstallCommand(): Command {
         const dependencyManager = new PluginDependencyManager({
           autoInstall: !options.dryRun,
           packageManager: options.packageManager,
-          logger: createConsoleLogger()
+          logger: createConsoleLogger() as any as any
         })
 
         const registry = new PluginRegistry({
-          logger: createConsoleLogger()
+          logger: createConsoleLogger() as any as any
         })
 
         // Descobrir plugins
@@ -104,7 +104,7 @@ function createListCommand(): Command {
 
       try {
         const registry = new PluginRegistry({
-          logger: createConsoleLogger()
+          logger: createConsoleLogger() as any
         })
 
         const results = await registry.discoverPlugins({
@@ -113,7 +113,7 @@ function createListCommand(): Command {
 
         const dependencyManager = new PluginDependencyManager({
           autoInstall: false,
-          logger: createConsoleLogger()
+          logger: createConsoleLogger() as any
         })
 
         for (const result of results) {
@@ -162,7 +162,7 @@ function createCheckCommand(): Command {
 
       try {
         const registry = new PluginRegistry({
-          logger: createConsoleLogger()
+          logger: createConsoleLogger() as any
         })
 
         const results = await registry.discoverPlugins({
@@ -171,7 +171,7 @@ function createCheckCommand(): Command {
 
         const dependencyManager = new PluginDependencyManager({
           autoInstall: false,
-          logger: createConsoleLogger()
+          logger: createConsoleLogger() as any
         })
 
         const resolutions = []

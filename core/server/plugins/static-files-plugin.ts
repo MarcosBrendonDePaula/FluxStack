@@ -2,7 +2,7 @@
 
 import { existsSync, statSync } from 'fs'
 import { join, extname, resolve } from 'path'
-import type { FluxStack, PluginContext } from '../plugins/types'
+import type { FluxStack, PluginContext, Plugin } from '../../plugins/types'
 
 export interface StaticFilesConfig {
   publicDir?: string // Default: 'public'
@@ -16,7 +16,6 @@ export interface StaticFilesConfig {
 
 export const staticFilesPlugin: Plugin = {
   name: 'static-files',
-  version: '1.0.0',
   description: 'Serve static files and uploads with proper caching and security',
   author: 'FluxStack Team',
   priority: 'normal',

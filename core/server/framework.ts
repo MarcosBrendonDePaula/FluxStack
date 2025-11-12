@@ -65,7 +65,7 @@ export class FluxStackFramework {
     // Create plugin context
     this.pluginContext = {
       config: fullConfig,
-      logger: logger as Logger,
+      logger: logger as any,
       app: this.app,
       utils: pluginUtils
     }
@@ -73,7 +73,7 @@ export class FluxStackFramework {
     // Initialize plugin manager
     this.pluginManager = new PluginManager({
       config: fullConfig,
-      logger: logger as Logger,
+      logger: logger as any,
       app: this.app
     })
 
