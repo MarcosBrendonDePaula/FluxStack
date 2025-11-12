@@ -1,330 +1,135 @@
 import { useState, useEffect } from 'react'
-import { api, getErrorMessage } from './lib/eden-api'
-import {
-  FaRocket,
-  FaCheckCircle, FaTimesCircle, FaBook, FaShieldAlt, FaBolt,
-  FaClipboardList, FaFire, FaFlask as FaTest,
-} from 'react-icons/fa'
-import { Routes, Route, Link } from 'react-router-dom'
+import { api } from './lib/eden-api'
+import { FaFire, FaGithub, FaBook, FaRocket } from 'react-icons/fa'
 
-// Live Components Provider - Singleton WebSocket Connection for All Live Components
-import { LiveComponentsProvider } from '@/core/client'
-
-// Import page components
-import { OverviewPage } from './pages/Overview'
-import { DemoPage } from './pages/Demo'
-import { HybridLivePage } from './pages/HybridLive'
-import { ApiDocsPage } from './pages/ApiDocs'
-import { CryptoAuthPage } from './pages/CryptoAuthPage'
-import { MainLayout } from './components/MainLayout'
-
-// State management is now handled by Zustand stores directly
-
-interface User {
-  id: number
-  name: string
-  email: string
-  createdAt: string | Date
-}
-
-interface UsersResponse {
-  users: User[]
-}
-
-interface UserCreateResponse {
-  success: boolean
-  user?: User
-  message?: string
-}
-
-interface UserDeleteResponse {
-  success: boolean
-  message?: string
-}
-
-function AppContent() {
-  const [users, setUsers] = useState<User[]>([])
-  const [loading, setLoading] = useState(false)
-  const [apiStatus, setApiStatus] = useState<'online' | 'offline'>('offline')
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [submitting, setSubmitting] = useState(false)
-  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+function App() {
+  const [apiStatus, setApiStatus] = useState<'checking' | 'online' | 'offline'>('checking')
 
   useEffect(() => {
     checkApiStatus()
-    loadUsers()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])
 
   const checkApiStatus = async () => {
     try {
       const { error } = await api.health.get()
-      if (error) {
-        setApiStatus('offline')
-      } else {
-        setApiStatus('online')
-      }
+      setApiStatus(error ? 'offline' : 'online')
     } catch {
       setApiStatus('offline')
     }
   }
 
-  const loadUsers = async () => {
-    try {
-      setLoading(true)
-      const { data, error } = await api.users.get()
-      
-      if (error) {
-        showMessage('error', `Erro ao carregar usuários: ${error.status}`)
-        return
-      }
-      
-      setUsers((data as UsersResponse).users || [])
-    } catch (error) {
-      showMessage('error', getErrorMessage(error))
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!name.trim() || !email.trim()) return
-
-    try {
-      setSubmitting(true)
-      const { data: result, error } = await api.users.post({ 
-        name: name.trim(), 
-        email: email.trim() 
-      })
-      
-      if (error) {
-        showMessage('error', `Erro ao criar usuário: ${error.status}`)
-        return
-      }
-      
-      const createResult = result as UserCreateResponse
-      if (createResult.success && createResult.user) {
-        setUsers(prev => [...prev, createResult.user!])
-        setName('')
-        setEmail('')
-        showMessage('success', `Usuário ${name} adicionado com sucesso!`)
-      } else {
-        showMessage('error', createResult.message || 'Erro ao criar usuário')
-      }
-    } catch (error) {
-      showMessage('error', getErrorMessage(error))
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  const handleDelete = async (userId: number, userName: string) => {
-    if (!confirm(`Tem certeza que deseja remover ${userName}?`)) return
-    
-    try {
-      const { data: result, error } = await api.users({ id: userId }).delete()
-      
-      if (error) {
-        showMessage('error', `Erro ao deletar usuário: ${error.status}`)
-        return
-      }
-      
-      const deleteResult = result as UserDeleteResponse
-      if (deleteResult.success) {
-        setUsers(prev => prev.filter(user => user.id !== userId))
-        showMessage('success', `Usuário ${userName} removido com sucesso!`)
-      } else {
-        showMessage('error', deleteResult.message || 'Erro ao deletar usuário')
-      }
-    } catch (error) {
-      showMessage('error', getErrorMessage(error))
-    }
-  }
-
-  const showMessage = (type: 'success' | 'error', text: string) => {
-    setMessage({ type, text })
-    setTimeout(() => setMessage(null), 5000)
-  }
-
-  const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-  }
-
   return (
-    <div>
-      <Routes>
-        {/* Full-screen Live App Route */}
-        <Route path="/live-app" element={<MainLayout />} />
-        
-        {/* Regular routes with header and layout */}
-        <Route path="*" element={
-          <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-            {/* Header */}
-            <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center h-16">
-                  {/* Logo and Navigation */}
-                  <div className="flex items-center space-x-8">
-                    <div className="flex items-center space-x-3">
-                      <div className="flex items-center gap-2">
-                        <FaFire className="text-2xl text-orange-500" />
-                        <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
-                          FluxStack
-                        </div>
-                      </div>
-                      <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                        v1.4.0
-                      </span>
-                    </div>
-                    
-                    {/* Navigation Tabs */}
-                    <nav className="hidden md:flex space-x-1">
-                      {[
-                        { id: 'overview', label: 'Visão Geral', icon: <FaClipboardList />, path: '/' },
-                        { id: 'demo', label: 'Demo', icon: <FaRocket />, path: '/demo' },
-                        { id: 'crypto-auth', label: 'Crypto Auth', icon: <FaShieldAlt />, path: '/crypto-auth' },
-                        { id: 'hybrid-live', label: 'Hybrid Live', icon: <FaBolt />, path: '/hybrid-live' },
-                        { id: 'live-app', label: 'Live App', icon: <FaFire />, path: '/live-app' },
-                        { id: 'api-docs', label: 'API Docs', icon: <FaBook />, path: '/api-docs' },
-                        { id: 'tests', label: 'Testes', icon: <FaTest />, path: '/tests' }
-                      ].map(tab => (
-                        <Link
-                          key={tab.id}
-                          to={tab.path}
-                          className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
-                            location.pathname === tab.path
-                              ? 'bg-blue-100 text-blue-700 shadow-sm'
-                              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            {tab.icon}
-                            {tab.label}
-                          </div>
-                        </Link>
-                      ))}
-                    </nav>
-                  </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center">
+        {/* Logo animado */}
+        <div className="mb-8 animate-pulse-slow">
+          <FaFire className="text-8xl text-orange-500 drop-shadow-2xl" />
+        </div>
 
-                  {/* Status Badge */}
-                  <div className={`flex items-center space-x-2 px-3 py-2 rounded-full text-sm font-medium ${
-                    apiStatus === 'online' 
-                      ? 'bg-emerald-100 text-emerald-700' 
-                      : 'bg-red-100 text-red-700'
-                  }`}>
-                    <div className={`w-2 h-2 rounded-full ${
-                      apiStatus === 'online' ? 'bg-emerald-400' : 'bg-red-400'
-                    }`}></div>
-                    <span>API {apiStatus === 'online' ? 'Online' : 'Offline'}</span>
-                  </div>
-                </div>
+        {/* Título */}
+        <h1 className="text-6xl md:text-7xl font-bold mb-4 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+          FluxStack
+        </h1>
 
-                {/* Mobile Navigation */}
-                <div className="md:hidden pb-3">
-                  <nav className="flex space-x-1">
-                    {[
-                      { id: 'overview', label: 'Visão', icon: <FaClipboardList />, path: '/' },
-                      { id: 'demo', label: 'Demo', icon: <FaRocket />, path: '/demo' },
-                      { id: 'crypto-auth', label: 'Crypto', icon: <FaShieldAlt />, path: '/crypto-auth' },
-                      { id: 'hybrid-live', label: 'Hybrid', icon: <FaBolt />, path: '/hybrid-live' },
-                      { id: 'api-docs', label: 'Docs', icon: <FaBook />, path: '/api-docs' },
-                      { id: 'tests', label: 'Testes', icon: <FaTest />, path: '/tests' }
-                    ].map(tab => (
-                      <Link
-                        key={tab.id}
-                        to={tab.path}
-                        className={`flex-1 px-3 py-2 text-xs font-medium rounded-lg transition-all duration-200 ${
-                          location.pathname === tab.path
-                            ? 'bg-blue-100 text-blue-700'
-                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                        }`}
-                      >
-                        <div className="flex flex-col items-center gap-1">
-                          {tab.icon}
-                          <span>{tab.label}</span>
-                        </div>
-                      </Link>
-                    ))}
-                  </nav>
-                </div>
-              </div>
-            </header>
+        {/* Subtítulo */}
+        <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-2xl">
+          Full-stack TypeScript framework with{' '}
+          <span className="text-purple-400 font-semibold">Bun</span>,{' '}
+          <span className="text-blue-400 font-semibold">Elysia</span>, and{' '}
+          <span className="text-cyan-400 font-semibold">React</span>
+        </p>
 
-            {/* Main Content */}
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-              <Routes>
-                <Route path="/" element={<OverviewPage />} />
-                <Route 
-                  path="/demo" 
-                  element={
-                    <DemoPage 
-                      users={users}
-                      apiStatus={apiStatus}
-                      loading={loading}
-                      submitting={submitting}
-                      name={name}
-                      email={email}
-                      setName={setName}
-                      setEmail={setEmail}
-                      handleSubmit={handleSubmit}
-                      handleDelete={handleDelete}
-                      loadUsers={loadUsers}
-                      getInitials={getInitials}
-                    />
-                  }
-                />
-                <Route path="/crypto-auth" element={<CryptoAuthPage />} />
-                <Route path="/hybrid-live" element={<HybridLivePage />} />
-                <Route path="/api-docs" element={<ApiDocsPage />} />
-                <Route path="/tests" element={
-                  <div className="p-6">
-                    <h2 className="text-2xl font-bold mb-4">🧪 Tests</h2>
-                    <p className="text-gray-600">Test suite functionality will be available here.</p>
-                  </div>
-                } />
-              </Routes>
-            </main>
-          </div>
-        } />
-      </Routes>
-
-      {/* Toast Notification */}
-      {message && (
-        <div 
-          className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-lg cursor-pointer transform transition-all duration-300 max-w-sm ${
-            message.type === 'success' 
-              ? 'bg-emerald-500 text-white' 
-              : 'bg-red-500 text-white'
-          }`}
-          onClick={() => setMessage(null)}
-        >
-          <div className="flex items-center space-x-2">
-            {message.type === 'success' ? (
-              <FaCheckCircle className="text-lg" />
-            ) : (
-              <FaTimesCircle className="text-lg" />
-            )}
-            <span className="font-medium">{message.text}</span>
+        {/* Status badge */}
+        <div className="mb-12">
+          <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+            apiStatus === 'online'
+              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+              : apiStatus === 'offline'
+              ? 'bg-red-500/20 text-red-300 border border-red-500/30'
+              : 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 animate-pulse'
+          }`}>
+            <div className={`w-2 h-2 rounded-full ${
+              apiStatus === 'online' ? 'bg-emerald-400' : apiStatus === 'offline' ? 'bg-red-400' : 'bg-yellow-400'
+            }`}></div>
+            <span>
+              {apiStatus === 'checking' && 'Verificando API...'}
+              {apiStatus === 'online' && 'API Online'}
+              {apiStatus === 'offline' && 'API Offline'}
+            </span>
           </div>
         </div>
-      )}
-    </div>
-  )
-}
 
-// Main App component - Wrapped with LiveComponentsProvider for single WebSocket connection
-function App() {
-  return (
-    <LiveComponentsProvider
-      autoConnect={true}
-      reconnectInterval={1000}
-      maxReconnectAttempts={5}
-      heartbeatInterval={30000}
-      debug={false}
-    >
-      <AppContent />
-    </LiveComponentsProvider>
+        {/* Feature cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 max-w-4xl">
+          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all">
+            <div className="text-3xl mb-3">⚡</div>
+            <h3 className="text-lg font-semibold text-white mb-2">Ultra Rápido</h3>
+            <p className="text-gray-400 text-sm">Bun runtime 3x mais rápido que Node.js</p>
+          </div>
+
+          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all">
+            <div className="text-3xl mb-3">🔒</div>
+            <h3 className="text-lg font-semibold text-white mb-2">Type Safe</h3>
+            <p className="text-gray-400 text-sm">Eden Treaty com inferência automática</p>
+          </div>
+
+          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all">
+            <div className="text-3xl mb-3">🎨</div>
+            <h3 className="text-lg font-semibold text-white mb-2">Moderno</h3>
+            <p className="text-gray-400 text-sm">React 19 + Vite + Tailwind CSS</p>
+          </div>
+        </div>
+
+        {/* Links */}
+        <div className="flex flex-wrap gap-4 justify-center">
+          <a
+            href="http://localhost:3000/swagger"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all"
+          >
+            <FaBook />
+            API Docs
+          </a>
+
+          <a
+            href="https://github.com/MarcosBrendonDePaula/FluxStack"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 backdrop-blur-sm border border-white/20 text-white rounded-xl font-medium hover:bg-white/20 transition-all"
+          >
+            <FaGithub />
+            GitHub
+          </a>
+
+          <a
+            href="http://localhost:3000/api/users"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 backdrop-blur-sm border border-white/20 text-white rounded-xl font-medium hover:bg-white/20 transition-all"
+          >
+            <FaRocket />
+            API Demo
+          </a>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-16 text-gray-500 text-sm">
+          <p>Desenvolvido com ❤️ usando TypeScript</p>
+        </div>
+      </div>
+
+      {/* Estilo para animação */}
+      <style>{`
+        @keyframes pulse-slow {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.8; }
+        }
+        .animate-pulse-slow {
+          animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+      `}</style>
+    </div>
   )
 }
 
