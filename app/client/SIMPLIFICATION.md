@@ -22,9 +22,9 @@ This is a **simplified, single-page version** of the FluxStack client, inspired 
 - ❌ **Complex Live Component UIs** - Simplified to minimal clock display
 
 ### ✅ **Kept (Advanced Features)**
-- ✅ **WebSocket/LiveComponents** - Live Clock using real WebSocket connection
+- ✅ **LiveComponents** - Live Clock provido via LiveComponent
 - ✅ **LiveComponentsProvider** - Full real-time capabilities maintained
-- ✅ **Hybrid Live Component** - Clock synced with server via WebSocket
+- ✅ **Hybrid Live Component** - Clock synced with server in real-time
 
 ## 📊 Comparison
 
@@ -44,7 +44,7 @@ The simplified client demonstrates:
 1. **🎨 Minimalist Design** - Clean, centered design inspired by Next.js, React, and Vite
 2. **⚡ Simple API Status** - Single badge showing API online/offline
 3. **🚀 Core Features** - 4 feature cards highlighting main capabilities
-4. **🕐 Live Clock (WebSocket)** - Real Live Component synced with server via WebSocket
+4. **🕐 Live Clock** - Real LiveComponent synced with server in real-time
 5. **📖 Quick Actions** - Direct links to API Docs, GitHub, and API Demo
 6. **🔥 Clean but Powerful** - Minimalist UI with full real-time capabilities
 
@@ -54,7 +54,7 @@ The simplified client demonstrates:
 app/client/src/
 ├── App.tsx              # Single-page application (213 lines)
 │                        # - AppContent component (main UI)
-│                        # - MinimalLiveClock component (WebSocket)
+│                        # - MinimalLiveClock component (LiveComponent)
 │                        # - LiveComponentsProvider wrapper
 ├── main.tsx             # Entry point (simplified)
 ├── index.css            # Minimal global styles
@@ -70,7 +70,7 @@ Inspired by **Next.js, React, and Vite landing pages**:
 - Minimal text, maximum impact
 - Simple API status badge (online/offline)
 - 4 feature cards in responsive grid
-- **Live Clock using WebSocket** - Real-time sync with server
+- **Live Clock via LiveComponent** - Real-time sync with server
 - Clean action buttons at bottom
 - No background blob animations (clean and fast)
 - Mobile-first responsive design

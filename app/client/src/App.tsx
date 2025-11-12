@@ -137,7 +137,7 @@ function AppContent() {
               <FaClock className="text-2xl text-emerald-400" />
               <div>
                 <h3 className="text-lg font-semibold text-white">Live Clock</h3>
-                <p className="text-gray-400 text-sm">Sincronizado via WebSocket</p>
+                <p className="text-gray-400 text-sm">Provido via LiveComponent</p>
               </div>
             </div>
             <MinimalLiveClock />
