@@ -38,9 +38,9 @@ export interface Plugin {
   onBuild?: (ctx: BuildContext) => Awaitable<void>
   onBuildComplete?: (ctx: BuildContext) => Awaitable<void>
 
-  // Configuração
-  configSchema?: PluginConfigSchema
-  defaultConfig?: unknown
+  // Configuração (deprecated - use config/ folder)
+  configSchema?: PluginConfigSchema      // ⚠️ deprecated
+  defaultConfig?: unknown                 // ⚠️ deprecated
 
   // CLI
   commands?: CliCommand[]
@@ -110,11 +110,79 @@ plugins/
 ---
 
 ## 6. Configuração Declarativa
-- `fluxstack.config.ts` possui `plugins.config` para ajustes por plugin (ex.: `staticFiles`).
-- Dentro do plugin, leia `context.config.plugins.config[plugin.name]` ou exponha em campos específicos.
-- `configSchema` + `defaultConfig` permitem validação automática via `DefaultPluginConfigManager`.
+
+### 6.1. Sistema Recomendado (config/ folder)
+**✅ Nova estrutura:** Cada plugin deve ter uma pasta `config/` com arquivos TypeScript usando `defineConfig()`.
+
+```
+plugins/
+└── my-plugin/
+    ├── config/
+    │   └── index.ts       # Configuração declarativa
+    ├── index.ts           # Plugin principal
+    └── server/            # Código do plugin
+```
+
+**Exemplo de configuração type-safe:**
 
 ```ts
+// plugins/my-plugin/config/index.ts
+import { defineConfig, config } from '@/core/utils/config-schema'
+
+const myPluginConfigSchema = {
+  enabled: config.boolean('MY_PLUGIN_ENABLED', true),
+  endpoint: config.string('MY_PLUGIN_ENDPOINT', '', true), // required
+  sampleRate: config.number('MY_PLUGIN_SAMPLE_RATE', 0.1),
+  features: config.array('MY_PLUGIN_FEATURES', ['feature1', 'feature2']),
+} as const
+
+export const myPluginConfig = defineConfig(myPluginConfigSchema)
+export type MyPluginConfig = typeof myPluginConfig
+export default myPluginConfig
+```
+
+**Uso no plugin:**
+
+```ts
+// plugins/my-plugin/index.ts
+import type { FluxStack, PluginContext } from "@/core/plugins/types"
+import { myPluginConfig } from "./config"
+
+export const myPlugin: FluxStack.Plugin = {
+  name: "my-plugin",
+  version: "1.0.0",
+
+  // ✅ Não precisa de configSchema/defaultConfig
+  // Config é gerenciada pela pasta config/
+
+  setup: async (context: PluginContext) => {
+    // ✅ Type inference automática!
+    if (!myPluginConfig.enabled) return
+
+    context.logger.info('Plugin config', {
+      endpoint: myPluginConfig.endpoint,     // string
+      sampleRate: myPluginConfig.sampleRate, // number
+      features: myPluginConfig.features      // string[]
+    })
+  }
+}
+```
+
+**Benefícios:**
+- ✅ **Type inference automática** - TypeScript infere tipos literais
+- ✅ **Validação em boot time** - Falha rápida com mensagens claras
+- ✅ **Zero tipos `any`** - Type safety completo
+- ✅ **Hot reload seguro** - Configs podem ser recarregadas
+- ✅ **Documentação automática** - Schema serve como documentação
+
+**Exemplo real:** Veja `plugins/crypto-auth/config/` como referência completa.
+
+### 6.2. Sistema Legado (deprecated)
+
+> ⚠️ **DEPRECATED**: `configSchema` e `defaultConfig` são mantidos apenas para compatibilidade com plugins built-in. Use o sistema `config/` para novos plugins.
+
+```ts
+// ❌ Sistema antigo (não recomendado)
 export const telemetryPlugin: FluxStack.Plugin = {
   name: "telemetry",
   configSchema: {
@@ -134,7 +202,9 @@ export const telemetryPlugin: FluxStack.Plugin = {
 }
 ```
 
-> Dica: documente novas chaves em `project/configuration.md` e acrescente placeholders em `.env.example`.
+> **Nota**: Plugins built-in (`vite`, `swagger`, `monitoring`, `static`) ainda usam este sistema e serão migrados em versões futuras.
+
+> **Dica**: Documente variáveis de ambiente em `project/configuration.md` e adicione em `.env.example`.
 
 ---
 
@@ -204,7 +274,13 @@ flux make:plugin crypto --template full        # server + client + config comple
 Notas:
 - Use caracteres alfanuméricos, hífen ou sublinhado no nome.
 - `--force` permite sobrescrever pastas existentes.
-- O gerador cria estrutura inicial (`package.json`, `config`, `server/`, `client/`, `types.ts`, README) com sugestões de próximos passos.
+- O gerador cria estrutura inicial com:
+  - ✅ `config/` - Configuração declarativa com `defineConfig()`
+  - ✅ `server/` - Código do plugin
+  - ✅ `client/` - Componentes React (se aplicável)
+  - ✅ `types.ts` - Tipos compartilhados
+  - ✅ `README.md` - Documentação
+  - ✅ `package.json` - Dependências (se necessário)
 - Para rodar dentro do projeto, use `bun run cli make:plugin ...` ou adicione alias via `package.json`.
 
 Além disso, `flux plugin:deps` auxilia na gestão de dependências dos plugins:
@@ -263,8 +339,14 @@ bun run cli migrations:up --seed
 ---
 
 ## 12. Referências Úteis
-- Código-fonte do sistema: `core/plugins/*` (registry, manager, config, dependency-manager, module-resolver).
-- Exemplo completo: `plugins/crypto-auth`.
-- Documentação complementar: `project/architecture.md`, `project/configuration.md`, `reference/environment-vars.md`.
+- **Código-fonte do sistema**: `core/plugins/*` (registry, manager, config, dependency-manager, module-resolver).
+- **Exemplo completo com novo sistema de config**: `plugins/crypto-auth` - demonstra:
+  - ✅ Configuração declarativa em `config/` com `defineConfig()`
+  - ✅ Type inference automática sem `configSchema`/`defaultConfig`
+  - ✅ Estrutura completa: server, CLI commands, hooks
+- **Documentação complementar**:
+  - `project/architecture.md` - Arquitetura geral
+  - `project/configuration.md` - Sistema de configuração
+  - `reference/environment-vars.md` - Variáveis de ambiente
 
 Com essas informações, é possível projetar plugins que interajam com todo o ciclo do FluxStack (rotas, middlewares, build, CLI e configuração declarativa) sem consultar o código-fonte diretamente.***
