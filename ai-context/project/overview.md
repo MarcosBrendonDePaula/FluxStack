@@ -1,4 +1,4 @@
-# FluxStack – Visão Geral do Projeto (Outubro/2025)
+# FluxStack – Visão Geral do Projeto (Janeiro/2025)
 
 ## Resumo Executivo
 FluxStack é um gerador e runtime full-stack sobre o ecossistema Bun, composto por:
@@ -9,12 +9,14 @@ FluxStack é um gerador e runtime full-stack sobre o ecossistema Bun, composto p
 
 O repositório serve tanto como template quanto como referência de integração completa (API + SPA + documentação).
 
-## Destaques da Versão 1.5
+## Destaques da Versão 1.8
 - Eden Treaty nativo (sem wrappers) com inferência 100% funcional.
-- Sistema declarativo de configuração (`fluxstack.config.ts` + `config/*.config.ts`).
+- Sistema declarativo de configuração (`fluxstack.config.ts` na raiz + `config/*.config.ts`).
 - Plugins core revisados: Vite (dev proxy), Swagger, arquivos estáticos, Live Components, Monitoring (opt-in).
 - Exemplo prático de autenticação assinada por chaves (`plugins/crypto-auth`).
 - Oficina de live components/monitoramento exibida no app de exemplo.
+- Centralização da app instance como fonte única de verdade.
+- Sistema de versão unificado (package.json ↔ version.ts).
 
 ## Stack Atual
 | Camada          | Tecnologia                                     |

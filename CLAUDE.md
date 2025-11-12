@@ -27,13 +27,14 @@
 **FluxStack** é um framework full-stack TypeScript moderno que combina:
 
 ### 🛠️ **Stack Tecnológica (Janeiro 2025)**
-- **Runtime**: Bun 1.2.20 (3x mais rápido que Node.js)
+- **Runtime**: Bun >= 1.2.0 (3x mais rápido que Node.js)
 - **Backend**: Elysia.js 1.4.6 (ultra-performático)
-- **Frontend**: React 19.1.0 + Vite 7.0.4
-- **Language**: TypeScript 5.9.2 (100% type-safe)
-- **Communication**: Eden Treaty com inferência automática
+- **Frontend**: React 19.1.0 + Vite 7.1.7
+- **Language**: TypeScript 5.8.3 (100% type-safe)
+- **Styling**: Tailwind CSS 4.1.13
+- **Communication**: Eden Treaty 1.3.2 com inferência automática
 - **Docs**: Swagger UI gerado automaticamente
-- **Testing**: Vitest + React Testing Library
+- **Testing**: Vitest 3.2.4 + React Testing Library
 - **Deploy**: Docker otimizado
 
 ### ✨ **Estado Atual (Validado)**
@@ -408,4 +409,4 @@ curl http://localhost:3000/api/health  # ✅ Health check
 
 **🎯 Objetivo**: Capacitar LLMs a trabalhar eficientemente com FluxStack, seguindo padrões estabelecidos e garantindo código de alta qualidade com type safety automática.
 
-**📅 Última atualização**: Janeiro 2025 - v1.8.0 - Centralização de app instance e regra de instalação do Bun.
+**📅 Última atualização**: Janeiro 2025 - v1.8.2 - Centralização de app instance e regra de instalação do Bun.

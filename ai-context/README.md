@@ -58,12 +58,12 @@ Guia otimizado para assistentes compreenderem rapidamente o FluxStack, sua arqui
 - Centralizar tipos compartilhados em `app/shared/`.
 - Validar alterações com `bun run dev` e os testes disponíveis.
 
-## Estado Atual (v1.6+)
+## Estado Atual (v1.8+)
 
 - Eden Treaty nativo com inferência completa.
-- Sistema declarativo de configuração (`fluxstack.config.ts` + `config/*.config.ts`).
+- Sistema declarativo de configuração (`fluxstack.config.ts` na raiz + `config/*.config.ts`).
 - Plugins core revisados (Vite, Swagger, arquivos estáticos, Live Components) e plugin externo `crypto-auth`.
-- Documentação alinhada com o código em outubro/2025.
+- Documentação alinhada com o código em janeiro/2025.
 
 ## Atalhos de Suporte
 
