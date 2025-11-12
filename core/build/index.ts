@@ -3,14 +3,12 @@ import { join } from "path"
 import type { FluxStackConfig } from "../config"
 import type { BuildResult, BuildManifest } from "../types/build"
 import { Bundler } from "./bundler"
-import { Optimizer } from "./optimizer"
 import { FLUXSTACK_VERSION } from "../utils/version"
 import { buildLogger } from "../utils/build-logger"
 
 export class FluxStackBuilder {
   private config: FluxStackConfig
   private bundler: Bundler
-  private optimizer: Optimizer
 
   constructor(config: FluxStackConfig) {
     this.config = config
@@ -22,15 +20,6 @@ export class FluxStackBuilder {
       sourceMaps: config.build.sourceMaps,
       minify: config.build.minify,
       external: config.build.external
-    })
-
-    // Initialize optimizer with configuration
-    this.optimizer = new Optimizer({
-      treeshake: config.build.treeshake,
-      compress: config.build.compress || false,
-      removeUnusedCSS: config.build.removeUnusedCSS || false,
-      optimizeImages: config.build.optimizeImages || false,
-      bundleAnalysis: config.build.bundleAnalysis || false
     })
   }
 
@@ -273,17 +262,11 @@ MONITORING_ENABLED=true
         }
       }
 
-      // Optimize build if enabled
-      let optimizationResult
-      if (this.config.build.optimize) {
-        optimizationResult = await this.optimizer.optimize(this.config.build.outDir)
-      }
-
       // Create Docker files
       await this.createDockerFiles()
 
       // Generate build manifest
-      const manifest = await this.generateManifest(clientResult, serverResult, optimizationResult)
+      const manifest = await this.generateManifest(clientResult, serverResult)
 
       const duration = Date.now() - startTime
 
@@ -292,8 +275,6 @@ MONITORING_ENABLED=true
         { label: 'Build Time', value: buildLogger.formatDuration(duration), highlight: true },
         { label: 'Output Directory', value: this.config.build.outDir },
         { label: 'Client Assets', value: clientResult.assets?.length || 0 },
-        { label: 'Total Size', value: buildLogger.formatSize(optimizationResult?.optimizedSize || 0) },
-        { label: 'Compression', value: optimizationResult?.compressionRatio ? `${optimizationResult.compressionRatio.toFixed(2)}%` : 'N/A' },
         { label: 'Docker Ready', value: '✓', highlight: true }
       ])
 
@@ -304,7 +285,7 @@ MONITORING_ENABLED=true
         warnings: [],
         errors: [],
         stats: {
-          totalSize: optimizationResult?.optimizedSize || 0,
+          totalSize: 0,
           gzippedSize: 0,
           chunkCount: 0,
           assetCount: clientResult.assets?.length || 0,
@@ -370,8 +351,7 @@ MONITORING_ENABLED=true
 
   private async generateManifest(
     clientResult: any,
-    serverResult: any,
-    optimizationResult?: any
+    serverResult: any
   ): Promise<BuildManifest> {
     return {
       version: this.config.app.version,
@@ -394,15 +374,15 @@ MONITORING_ENABLED=true
         minified: this.config.build.minify,
         treeshaken: this.config.build.treeshake,
         compressed: this.config.build.compress || false,
-        originalSize: optimizationResult?.originalSize || 0,
-        optimizedSize: optimizationResult?.optimizedSize || 0,
-        compressionRatio: optimizationResult?.compressionRatio || 0
+        originalSize: 0,
+        optimizedSize: 0,
+        compressionRatio: 0
       },
       metrics: {
         buildTime: clientResult.duration + serverResult.duration,
         bundleTime: 0,
-        optimizationTime: optimizationResult?.duration || 0,
-        totalSize: optimizationResult?.optimizedSize || 0,
+        optimizationTime: 0,
+        totalSize: 0,
         gzippedSize: 0,
         chunkCount: 0,
         assetCount: clientResult.assets?.length || 0
