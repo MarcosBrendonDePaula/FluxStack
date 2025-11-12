@@ -307,14 +307,15 @@ export class FluxStackFramework {
       }
 
       // Log the request automatically (if not disabled in config)
-      if (this.context.config.server.enableRequestLogging !== false) {
-        // Ensure status is always a number (HTTP status code)
-        const status = typeof responseContext.statusCode === 'number'
-          ? responseContext.statusCode
-          : Number(set.status) || 200
-
-        logger.request(request.method, url.pathname, status, duration)
-      }
+      // Commented out to reduce console noise - uncomment for debugging HTTP requests
+      // if (this.context.config.server.enableRequestLogging !== false) {
+      //   // Ensure status is always a number (HTTP status code)
+      //   const status = typeof responseContext.statusCode === 'number'
+      //     ? responseContext.statusCode
+      //     : Number(set.status) || 200
+      //
+      //   logger.request(request.method, url.pathname, status, duration)
+      // }
 
       // Execute onResponse hooks for all plugins
       await this.executePluginHooks('onResponse', responseContext)

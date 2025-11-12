@@ -451,12 +451,12 @@ export class ComponentRegistry {
       }
       ws.data.components.set(component.id, component)
 
-      console.log('✅ Component re-hydrated successfully:', {
-        oldComponentId: componentId,
-        newComponentId: component.id,
-        componentName,
-        stateVersion: signedState.version
-      })
+      // console.log('✅ Component re-hydrated successfully:', {
+      //   oldComponentId: componentId,
+      //   newComponentId: component.id,
+      //   componentName,
+      //   stateVersion: signedState.version
+      // })
       
       // Send updated state to client (with new signature)
       const newSignedState = await stateSignature.signState(

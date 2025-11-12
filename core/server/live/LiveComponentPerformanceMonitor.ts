@@ -900,7 +900,7 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
     this.alerts.delete(componentId)
     this.suggestions.delete(componentId)
     
-    console.log(`📊 Performance monitoring removed for component: ${componentId}`)
+    // console.log(`📊 Performance monitoring removed for component: ${componentId}`)
   }
 
   /**

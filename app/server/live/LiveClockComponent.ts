@@ -207,7 +207,7 @@ export class LiveClockComponent extends LiveComponent<LiveClockState> {
     if (this.clockInterval) {
       clearInterval(this.clockInterval);
       this.clockInterval = null;
-      console.log(`🕐 Clock interval cleared for component: ${this.id}`);
+      // console.log(`🕐 Clock interval cleared for component: ${this.id}`);
     }
     
     super.destroy();

@@ -319,11 +319,11 @@ export class StateSignature {
         }
       }
 
-      console.log('✅ State signature valid:', {
-        componentId,
-        age: `${Math.round(age / 1000)}s`,
-        version
-      })
+      // console.log('✅ State signature valid:', {
+      //   componentId,
+      //   age: `${Math.round(age / 1000)}s`,
+      //   version
+      // })
 
       return { valid: true }
 
