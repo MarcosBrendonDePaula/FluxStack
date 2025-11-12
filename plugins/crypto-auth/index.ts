@@ -25,38 +25,10 @@ export const cryptoAuthPlugin: Plugin = {
   category: "auth",
   tags: ["authentication", "ed25519", "cryptography", "security"],
   dependencies: [],
-  
-  configSchema: {
-    type: "object",
-    properties: {
-      enabled: {
-        type: "boolean",
-        description: "Habilitar autenticação criptográfica"
-      },
-      maxTimeDrift: {
-        type: "number",
-        minimum: 30000,
-        description: "Máximo drift de tempo permitido em millisegundos (previne replay attacks)"
-      },
-      adminKeys: {
-        type: "array",
-        items: { type: "string" },
-        description: "Chaves públicas dos administradores (hex 64 caracteres)"
-      },
-      enableMetrics: {
-        type: "boolean",
-        description: "Habilitar métricas de autenticação"
-      }
-    },
-    additionalProperties: false
-  },
 
-  defaultConfig: {
-    enabled: true,
-    maxTimeDrift: 300000, // 5 minutos
-    adminKeys: [],
-    enableMetrics: true
-  },
+  // ✅ Plugin usa sistema declarativo de configuração (plugins/crypto-auth/config/)
+  // ❌ Removido: configSchema e defaultConfig (redundante com nova estrutura)
+  // 📖 Configuração gerenciada por defineConfig() com type inference automática
 
   // CLI Commands
   commands: [
