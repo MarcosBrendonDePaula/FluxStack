@@ -135,7 +135,7 @@ describe('Users API Routes', () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(incompleteData)
         }))
-        
+
       expect(response.status).toBe(400)
     })
 
