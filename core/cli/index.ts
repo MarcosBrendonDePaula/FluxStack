@@ -356,6 +356,148 @@ Examples:
       }
     }
   })
+
+  // Frontend command (frontend-only development)
+  cliRegistry.register({
+    name: 'frontend',
+    description: 'Start frontend development server only',
+    category: 'Development',
+    usage: 'flux frontend [options]',
+    examples: [
+      'flux frontend               # Start Vite dev server on port 5173',
+      'flux frontend --port 3000   # Start on custom port'
+    ],
+    options: [
+      {
+        name: 'port',
+        short: 'p',
+        description: 'Port for frontend server',
+        type: 'number',
+        default: 5173
+      }
+    ],
+    handler: async (args, options, context) => {
+      console.log("🎨 FluxStack Frontend Development")
+      console.log(`🌐 Frontend: http://localhost:${options.port}`)
+      console.log("📦 Starting Vite dev server...")
+      console.log()
+
+      const { spawn } = await import("child_process")
+      const frontendProcess = spawn("vite", ["--config", "vite.config.ts", "--port", options.port.toString()], {
+        stdio: "inherit",
+        cwd: process.cwd()
+      })
+
+      process.on('SIGINT', () => {
+        frontendProcess.kill('SIGINT')
+        process.exit(0)
+      })
+
+      return new Promise((resolve) => {
+        frontendProcess.on('exit', resolve)
+      })
+    }
+  })
+
+  // Backend command (backend-only development)
+  cliRegistry.register({
+    name: 'backend',
+    description: 'Start backend development server only',
+    category: 'Development',
+    usage: 'flux backend [options]',
+    examples: [
+      'flux backend                # Start backend on port 3001',
+      'flux backend --port 4000    # Start on custom port'
+    ],
+    options: [
+      {
+        name: 'port',
+        short: 'p',
+        description: 'Port for backend server',
+        type: 'number',
+        default: 3001
+      }
+    ],
+    handler: async (args, options, context) => {
+      console.log("⚡ FluxStack Backend Development")
+      console.log(`🚀 API Server: http://localhost:${options.port}`)
+      console.log("📦 Starting backend with hot reload...")
+      console.log()
+
+      // Ensure backend-only.ts exists
+      const { ensureBackendEntry } = await import("../utils/regenerate-files")
+      await ensureBackendEntry()
+
+      // Start backend with Bun watch for hot reload
+      const { spawn } = await import("child_process")
+      const backendProcess = spawn("bun", ["--watch", "app/server/backend-only.ts"], {
+        stdio: "inherit",
+        cwd: process.cwd(),
+        env: {
+          ...process.env,
+          BACKEND_PORT: options.port.toString()
+        }
+      })
+
+      // Handle process cleanup
+      process.on('SIGINT', () => {
+        backendProcess.kill('SIGINT')
+        process.exit(0)
+      })
+
+      return new Promise((resolve) => {
+        backendProcess.on('exit', resolve)
+      })
+    }
+  })
+
+  // Start command (production server)
+  cliRegistry.register({
+    name: 'start',
+    description: 'Start production server',
+    category: 'Production',
+    usage: 'flux start',
+    examples: [
+      'flux start                  # Start production server from dist/'
+    ],
+    handler: async (args, options, context) => {
+      console.log("🚀 Starting FluxStack production server...")
+      const { join } = await import("path")
+      await import(join(process.cwd(), "dist", "index.js"))
+    }
+  })
+
+  // Build:frontend command (shortcut)
+  cliRegistry.register({
+    name: 'build:frontend',
+    description: 'Build frontend only (shortcut for build --frontend-only)',
+    category: 'Build',
+    usage: 'flux build:frontend',
+    examples: [
+      'flux build:frontend         # Build only frontend'
+    ],
+    handler: async (args, options, context) => {
+      const config = getConfigSync()
+      const builder = new FluxStackBuilder(config)
+      await builder.buildClient()
+    }
+  })
+
+  // Build:backend command (shortcut)
+  cliRegistry.register({
+    name: 'build:backend',
+    description: 'Build backend only (shortcut for build --backend-only)',
+    category: 'Build',
+    usage: 'flux build:backend',
+    examples: [
+      'flux build:backend          # Build only backend'
+    ],
+    handler: async (args, options, context) => {
+      const config = getConfigSync()
+      const builder = new FluxStackBuilder(config)
+      await builder.buildServer()
+    }
+  })
 }
 
 // Main CLI logic

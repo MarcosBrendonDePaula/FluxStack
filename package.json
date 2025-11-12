@@ -29,7 +29,7 @@
     "dev:backend": "bun run core/cli/index.ts backend",
     "sync-version": "bun run core/utils/sync-version.ts",
     "build": "cross-env NODE_ENV=production bun run core/cli/index.ts build",
-    "build:frontend": "vite build --config vite.config.ts --emptyOutDir",
+    "build:frontend": "bun run core/cli/index.ts build:frontend",
     "build:backend": "bun run core/cli/index.ts build:backend",
     "start": "bun run core/cli/index.ts start",
     "start:frontend": "bun run app/client/frontend-only.ts",
