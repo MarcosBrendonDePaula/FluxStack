@@ -1,42 +1,30 @@
 import { useState, useEffect } from 'react'
 import { api } from './lib/eden-api'
-import { FaFire, FaBook, FaGithub, FaClock } from 'react-icons/fa'
+import { FaFire, FaBook, FaGithub } from 'react-icons/fa'
 import { LiveComponentsProvider, useHybridLiveComponent } from '@/core/client'
 
-interface LiveClockState {
-  currentTime: string
-  timeZone: string
-  format: '12h' | '24h'
-  showSeconds: boolean
-  showDate: boolean
-  lastSync: Date
-  serverUptime: number
+interface CounterState {
+  count: number
 }
 
-const initialClockState: LiveClockState = {
-  currentTime: "Loading...",
-  timeZone: "America/Sao_Paulo",
-  format: "24h",
-  showSeconds: true,
-  showDate: true,
-  lastSync: new Date(),
-  serverUptime: 0,
+const initialCounterState: CounterState = {
+  count: 0
 }
 
-// Minimal Live Clock Component
-function MinimalLiveClock() {
-  const { state } = useHybridLiveComponent<LiveClockState>(
-    'LiveClock',
-    initialClockState
+// Minimal Counter Component
+function MinimalCounter() {
+  const { state } = useHybridLiveComponent<CounterState>(
+    'SimpleCounter',
+    initialCounterState
   )
 
   return (
     <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-xl p-4 border border-blue-400/20">
-      <div className="text-4xl font-mono font-bold text-white text-center tracking-wider">
-        {state.currentTime}
+      <div className="text-6xl font-bold text-white text-center tracking-wider">
+        {state.count}
       </div>
       <div className="text-center mt-2">
-        <span className="text-xs text-gray-400">{state.timeZone}</span>
+        <span className="text-xs text-gray-400">Auto-incrementando...</span>
       </div>
     </div>
   )
@@ -115,16 +103,16 @@ function AppContent() {
             <p className="text-gray-400 text-sm">React 19 + Vite + Tailwind CSS</p>
           </div>
 
-          {/* Live Clock Card */}
+          {/* Live Counter Card */}
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all">
             <div className="flex items-center gap-3 mb-3">
-              <FaClock className="text-2xl text-emerald-400" />
+              <div className="text-2xl text-emerald-400">🔢</div>
               <div>
-                <h3 className="text-lg font-semibold text-white">Live Clock</h3>
+                <h3 className="text-lg font-semibold text-white">Live Counter</h3>
                 <p className="text-gray-400 text-sm">Provido via LiveComponent</p>
               </div>
             </div>
-            <MinimalLiveClock />
+            <MinimalCounter />
           </div>
         </div>
 
