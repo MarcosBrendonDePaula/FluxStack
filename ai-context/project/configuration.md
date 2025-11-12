@@ -1,9 +1,10 @@
 # Sistema de Configuração do FluxStack
 
 ## Visão Geral
-- Arquivo central: `fluxstack.config.ts` (raiz) – declara schemas tipados para todas as áreas (app, server, client, build, plugins, logging, monitoring, etc.).
-- Camada de consumo: arquivos em `config/` (ex.: `server.config.ts`, `app.config.ts`, `logger.config.ts`) convertem os schemas em objetos prontos para a aplicação.
-- Loader de ambiente: `core/utils/env.ts` fornece acesso dinâmico a variáveis (`env`) e helpers (`helpers`) que respeitam a precedência `process.env` → runtime → `.env` → defaults.
+- **Arquivo central**: `fluxstack.config.ts` (raiz do projeto) – compõe a configuração completa do FluxStack a partir dos módulos em `config/`. Este é o arquivo principal usado pelo framework.
+- **Camada modular**: arquivos em `config/` (ex.: `server.config.ts`, `app.config.ts`, `logger.config.ts`) definem configurações específicas de cada área usando schemas tipados.
+- **Camada deprecated**: `config/fluxstack.config.ts` – mantido apenas para compatibilidade retroativa, redireciona para o sistema novo. Não use para novos projetos.
+- **Loader de ambiente**: `core/utils/env.ts` fornece acesso dinâmico a variáveis (`env`) e helpers (`helpers`) que respeitam a precedência `process.env` → runtime → `.env` → defaults.
 
 O objetivo é permitir ajustes via código ou variáveis de ambiente sem perder type-safety.
 
