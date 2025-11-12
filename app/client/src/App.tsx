@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, createContext, useContext } from 'react'
 import { api } from './lib/eden-api'
 import { FaFire, FaGithub, FaBook, FaRocket, FaClock } from 'react-icons/fa'
 import { LiveComponentsProvider, useHybridLiveComponent } from '@/core/client'
@@ -23,10 +23,32 @@ const initialClockState: LiveClockState = {
   serverUptime: 0,
 }
 
+// Debug Context
+const DebugContext = createContext<{
+  debugMode: boolean
+  addLog: (type: string, message: string) => void
+}>({
+  debugMode: false,
+  addLog: () => {}
+})
+
 function LiveClockCompact() {
+  const { debugMode, addLog } = useContext(DebugContext)
   const { state, connected, status } = useHybridLiveComponent<LiveClockState>('LiveClock', initialClockState, {
     debug: false
   })
+
+  useEffect(() => {
+    if (debugMode && connected) {
+      addLog('clock', `Status: ${status}`)
+    }
+  }, [connected, status, debugMode])
+
+  useEffect(() => {
+    if (debugMode && state.currentTime !== "--:--:--") {
+      addLog('clock', `Time updated: ${state.currentTime}`)
+    }
+  }, [state.currentTime, debugMode])
 
   if (!connected || status !== 'synced') {
     return (
@@ -65,27 +87,71 @@ function LiveClockCompact() {
 
 function AppContent() {
   const [apiStatus, setApiStatus] = useState<'checking' | 'online' | 'offline'>('checking')
+  const [debugMode, setDebugMode] = useState(() => {
+    return localStorage.getItem('fluxstack-debug') === 'true'
+  })
+  const [logs, setLogs] = useState<Array<{ time: string; type: string; message: string }>>([])
 
   useEffect(() => {
     checkApiStatus()
+
+    // Verificar tecla de atalho para ativar debug (Ctrl + Shift + D)
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+        toggleDebugMode()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
   }, [])
+
+  useEffect(() => {
+    if (debugMode) {
+      addLog('system', 'Debug mode enabled')
+    }
+  }, [debugMode])
 
   const checkApiStatus = async () => {
     try {
       const { error } = await api.health.get()
-      setApiStatus(error ? 'offline' : 'online')
+      const status = error ? 'offline' : 'online'
+      setApiStatus(status)
+      if (debugMode) {
+        addLog('api', `Health check: ${status}`)
+      }
     } catch {
       setApiStatus('offline')
+      if (debugMode) {
+        addLog('error', 'Health check failed')
+      }
     }
   }
 
+  const toggleDebugMode = () => {
+    const newMode = !debugMode
+    setDebugMode(newMode)
+    localStorage.setItem('fluxstack-debug', String(newMode))
+    if (newMode) {
+      addLog('system', 'Debug mode enabled')
+    } else {
+      setLogs([])
+    }
+  }
+
+  const addLog = (type: string, message: string) => {
+    const time = new Date().toLocaleTimeString()
+    setLogs(prev => [...prev.slice(-9), { time, type, message }])
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center">
-        {/* Logo animado */}
-        <div className="mb-8 animate-pulse-slow">
-          <FaFire className="text-8xl text-orange-500 drop-shadow-2xl" />
-        </div>
+    <DebugContext.Provider value={{ debugMode, addLog }}>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center">
+          {/* Logo animado */}
+          <div className="mb-8 animate-pulse-slow">
+            <FaFire className="text-8xl text-orange-500 drop-shadow-2xl" />
+          </div>
 
         {/* Título */}
         <h1 className="text-6xl md:text-7xl font-bold mb-4 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
@@ -180,8 +246,68 @@ function AppContent() {
         {/* Footer */}
         <div className="mt-16 text-gray-500 text-sm">
           <p>Desenvolvido com ❤️ usando TypeScript</p>
+          <p className="text-xs mt-2 opacity-50">Press Ctrl+Shift+D for debug mode</p>
         </div>
       </div>
+
+      {/* Debug Toggle Button */}
+      <button
+        onClick={toggleDebugMode}
+        className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-full shadow-lg transition-all duration-300 ${
+          debugMode
+            ? 'bg-emerald-500 text-white hover:bg-emerald-600'
+            : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20'
+        }`}
+        title="Toggle debug mode (Ctrl+Shift+D)"
+      >
+        <span className="flex items-center gap-2">
+          {debugMode ? '🐛 Debug ON' : '🔍 Debug OFF'}
+        </span>
+      </button>
+
+      {/* Debug Panel */}
+      {debugMode && (
+        <div className="fixed bottom-24 right-6 z-50 w-96 max-h-80 bg-black/90 backdrop-blur-sm border border-emerald-500/30 rounded-xl shadow-2xl overflow-hidden">
+          <div className="bg-emerald-500/20 border-b border-emerald-500/30 px-4 py-2 flex items-center justify-between">
+            <span className="text-emerald-300 font-semibold flex items-center gap-2">
+              <span className="animate-pulse">🐛</span>
+              Debug Console
+            </span>
+            <button
+              onClick={() => setLogs([])}
+              className="text-xs text-emerald-300 hover:text-white transition-colors"
+            >
+              Clear
+            </button>
+          </div>
+          <div className="p-3 space-y-1 overflow-y-auto max-h-60 font-mono text-xs">
+            {logs.length === 0 ? (
+              <div className="text-gray-500 text-center py-4">No logs yet...</div>
+            ) : (
+              logs.map((log, i) => (
+                <div
+                  key={i}
+                  className={`flex gap-2 ${
+                    log.type === 'error'
+                      ? 'text-red-400'
+                      : log.type === 'system'
+                      ? 'text-emerald-400'
+                      : log.type === 'api'
+                      ? 'text-blue-400'
+                      : log.type === 'clock'
+                      ? 'text-purple-400'
+                      : 'text-gray-300'
+                  }`}
+                >
+                  <span className="text-gray-500">[{log.time}]</span>
+                  <span className="font-semibold uppercase text-xs">{log.type}:</span>
+                  <span className="flex-1">{log.message}</span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Estilo para animação */}
       <style>{`
@@ -193,7 +319,8 @@ function AppContent() {
           animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
       `}</style>
-    </div>
+      </div>
+    </DebugContext.Provider>
   )
 }
 
