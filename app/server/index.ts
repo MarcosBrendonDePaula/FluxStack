@@ -26,8 +26,10 @@ import cryptoAuthPlugin from "@/plugins/crypto-auth"
 // ===== Application Routes =====
 import { appInstance } from "./app"
 
-// NOTE: Live Components auto-discovery is handled by liveComponentsPlugin
-// No need to import "./live/register-components" anymore
+// ===== Live Components Registration =====
+// Import generated component registrations (for production build)
+// This ensures components are registered before the plugin tries to use them
+import "./live/register-components"
 
 // ===== Startup Logging =====
 DEBUG('🔧 Loading declarative configuration...')
