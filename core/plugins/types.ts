@@ -278,6 +278,7 @@ export interface LiveMessage {
   expectResponse?: boolean
   timestamp?: number
   requestId?: string
+  room?: string
 }
 
 export interface BroadcastMessage {
@@ -346,17 +347,29 @@ export interface FileUploadCompleteMessage {
 export interface FileUploadProgressResponse {
   type: 'upload:progress' | 'FILE_UPLOAD_PROGRESS'
   uploadId: string
-  receivedChunks: number
-  totalChunks: number
-  percentage: number
+  receivedChunks?: number
+  totalChunks?: number
+  percentage?: number
+  componentId?: string
+  chunkIndex?: number
+  bytesUploaded?: number
+  totalBytes?: number
+  progress?: number
+  timestamp?: number
 }
 
 export interface FileUploadCompleteResponse {
   type: 'upload:complete' | 'FILE_UPLOAD_COMPLETE'
   uploadId: string
-  url: string
-  filename: string
-  size: number
+  url?: string
+  filename?: string
+  size?: number
+  componentId?: string
+  success?: boolean
+  error?: string
+  message?: string
+  fileUrl?: string
+  timestamp?: number
 }
 
 // Plugin Type Export

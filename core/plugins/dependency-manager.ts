@@ -176,7 +176,7 @@ export class PluginDependencyManager {
   /**
    * Instalar dependências no diretório local do plugin
    */
-  private async installPluginDependenciesLocally(pluginPath: string, dependencies: PluginDependency[]): Promise<void> {
+  async installPluginDependenciesLocally(pluginPath: string, dependencies: PluginDependency[]): Promise<void> {
     if (dependencies.length === 0) return
 
     const regularDeps = dependencies.filter(d => d.type === 'dependency')

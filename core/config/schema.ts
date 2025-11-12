@@ -209,6 +209,15 @@ export interface FluxStackConfig {
   auth?: AuthConfig
   email?: EmailConfig
   storage?: StorageConfig
+  staticFiles?: {
+    publicDir?: string
+    uploadsDir?: string
+    cacheMaxAge?: number
+    enableUploads?: boolean
+    enablePublic?: boolean
+    publicRoute?: string
+    uploadsRoute?: string
+  }
 
   // Environment-specific overrides
   environments?: {

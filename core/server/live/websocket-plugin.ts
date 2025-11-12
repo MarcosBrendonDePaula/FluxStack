@@ -120,7 +120,7 @@ export const liveComponentsPlugin: Plugin = {
                 await handleFileUploadChunk(ws, message as FileUploadChunkMessage)
                 break
               case 'FILE_UPLOAD_COMPLETE':
-                await handleFileUploadComplete(ws, message as FileUploadCompleteMessage)
+                await handleFileUploadComplete(ws, message as unknown as FileUploadCompleteMessage)
                 break
               default:
                 console.warn(`❌ Unknown message type: ${message.type}`)

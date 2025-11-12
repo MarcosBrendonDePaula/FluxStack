@@ -110,7 +110,7 @@ export class CliPluginDiscovery {
     }
   }
 
-  private registerPluginCommands(plugin: Plugin): void {
+  private registerPluginCommands(plugin: FluxStack.Plugin): void {
     if (!plugin.commands || this.loadedPlugins.has(plugin.name)) {
       return
     }
