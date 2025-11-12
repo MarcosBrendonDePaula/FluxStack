@@ -1,7 +1,7 @@
 import { useState, useEffect, createContext, useContext } from 'react'
 import { api } from './lib/eden-api'
 import { FaFire, FaGithub, FaBook, FaRocket, FaClock } from 'react-icons/fa'
-import { LiveComponentsProvider, useHybridLiveComponent } from '@/core/client'
+import { LiveComponentsProvider, useHybridLiveComponent, useLiveComponents } from '@/core/client'
 
 interface LiveClockState {
   currentTime: string
@@ -92,6 +92,9 @@ function AppContent() {
   })
   const [logs, setLogs] = useState<Array<{ time: string; type: string; message: string }>>([])
 
+  // Get Live Components context for debug integration
+  const { setDebugMode: setServerDebugMode, setDebugLogCallback, connected } = useLiveComponents()
+
   useEffect(() => {
     checkApiStatus()
 
@@ -111,6 +114,25 @@ function AppContent() {
       addLog('system', 'Debug mode enabled')
     }
   }, [debugMode])
+
+  // Register debug log callback and sync debug mode with server
+  useEffect(() => {
+    if (connected) {
+      if (debugMode) {
+        // Register callback to receive server debug logs
+        setDebugLogCallback((logType, message, data) => {
+          addLog(logType, data ? `${message} ${JSON.stringify(data)}` : message)
+        })
+        // Enable debug mode on server
+        setServerDebugMode(true)
+        addLog('system', 'Server debug mode enabled')
+      } else {
+        // Disable debug mode on server
+        setDebugLogCallback(null)
+        setServerDebugMode(false)
+      }
+    }
+  }, [debugMode, connected, setDebugLogCallback, setServerDebugMode])
 
   const checkApiStatus = async () => {
     try {

@@ -27,6 +27,12 @@ export interface LiveComponentsContextValue {
 
   // Get current WebSocket instance (for advanced use)
   getWebSocket: () => WebSocket | null
+
+  // Set debug mode on server
+  setDebugMode: (enabled: boolean) => Promise<void>
+
+  // Register debug log callback
+  setDebugLogCallback: (callback: ((logType: string, message: string, data?: any) => void) | null) => void
 }
 
 const LiveComponentsContext = createContext<LiveComponentsContextValue | null>(null)
@@ -84,6 +90,9 @@ export function LiveComponentsProvider({
   // Component callbacks registry: componentId -> callback
   const componentCallbacksRef = useRef<Map<string, (message: WebSocketResponse) => void>>(new Map())
 
+  // Debug log callback
+  const debugLogCallbackRef = useRef<((logType: string, message: string, data?: any) => void) | null>(null)
+
   // Pending requests: requestId -> { resolve, reject, timeout }
   const pendingRequestsRef = useRef<Map<string, {
     resolve: (value: any) => void
@@ -140,6 +149,13 @@ export function LiveComponentsProvider({
           if (response.type === 'CONNECTION_ESTABLISHED') {
             setConnectionId(response.connectionId || null)
             log('🔗 Connection ID:', response.connectionId)
+          }
+
+          // Handle debug logs from server
+          if (response.type === 'DEBUG_LOG' && debugLogCallbackRef.current) {
+            const { logType, message: logMessage, data } = response as any
+            debugLogCallbackRef.current(logType, logMessage, data)
+            return
           }
 
           // Handle pending requests (request-response pattern)
@@ -374,6 +390,25 @@ export function LiveComponentsProvider({
     }
   }, [autoConnect, connect, disconnect])
 
+  // Set debug mode on server
+  const setDebugMode = useCallback(async (enabled: boolean) => {
+    try {
+      await sendMessage({
+        type: 'SET_DEBUG_MODE',
+        componentId: 'system',
+        payload: { enabled }
+      })
+      log('🐛 Debug mode request sent to server', { enabled })
+    } catch (error) {
+      log('❌ Failed to set debug mode on server', error)
+    }
+  }, [sendMessage, log])
+
+  // Set debug log callback
+  const setDebugLogCallback = useCallback((callback: ((logType: string, message: string, data?: any) => void) | null) => {
+    debugLogCallbackRef.current = callback
+  }, [])
+
   const value: LiveComponentsContextValue = {
     connected,
     connecting,
@@ -384,7 +419,9 @@ export function LiveComponentsProvider({
     registerComponent,
     unregisterComponent,
     reconnect,
-    getWebSocket
+    getWebSocket,
+    setDebugMode,
+    setDebugLogCallback
   }
 
   return (

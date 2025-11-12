@@ -9,6 +9,19 @@ import type { Plugin, PluginContext } from '@/core/index'
 import { t } from 'elysia'
 import path from 'path'
 
+// Helper function to send debug logs to client
+function sendDebugLog(ws: any, type: string, message: string, data?: any) {
+  if (ws.data?.debugMode) {
+    ws.send(JSON.stringify({
+      type: 'DEBUG_LOG',
+      logType: type,
+      message,
+      data,
+      timestamp: Date.now()
+    }))
+  }
+}
+
 export const liveComponentsPlugin: Plugin = {
   name: 'live-components',
   version: '1.0.0',
@@ -66,6 +79,7 @@ export const liveComponentsPlugin: Plugin = {
           ws.data.components = new Map()
           ws.data.subscriptions = new Set()
           ws.data.connectedAt = new Date()
+          ws.data.debugMode = false // Debug mode flag
           
           // Send connection confirmation
           ws.send(JSON.stringify({
@@ -122,6 +136,12 @@ export const liveComponentsPlugin: Plugin = {
                 break
               case 'FILE_UPLOAD_COMPLETE':
                 await handleFileUploadComplete(ws, message as unknown as FileUploadCompleteMessage)
+                break
+              case 'SET_DEBUG_MODE':
+                if (ws.data) {
+                  ws.data.debugMode = message.payload?.enabled || false
+                  sendDebugLog(ws, 'system', `Debug mode ${ws.data.debugMode ? 'enabled' : 'disabled'} on server`)
+                }
                 break
               default:
                 console.warn(`❌ Unknown message type: ${message.type}`)
@@ -266,9 +286,24 @@ export const liveComponentsPlugin: Plugin = {
 
 // Handler functions for WebSocket messages
 async function handleComponentMount(ws: any, message: LiveMessage) {
+  sendDebugLog(ws, 'component', `Mounting component: ${message.payload?.componentName}`, {
+    componentId: message.componentId
+  })
+
   const result = await componentRegistry.handleMessage(ws, message)
-  
+
   if (result !== null) {
+    if (result.success) {
+      sendDebugLog(ws, 'component', `Component mounted successfully: ${message.payload?.componentName}`, {
+        componentId: message.componentId,
+        newComponentId: result.result?.componentId
+      })
+    } else {
+      sendDebugLog(ws, 'error', `Component mount failed: ${result.error}`, {
+        componentId: message.componentId
+      })
+    }
+
     const response = {
       type: 'COMPONENT_MOUNTED',
       componentId: message.componentId,
@@ -283,14 +318,14 @@ async function handleComponentMount(ws: any, message: LiveMessage) {
 }
 
 async function handleComponentRehydrate(ws: any, message: LiveMessage) {
-  // console.log('🔄 Processing component re-hydration request:', {
-  //   componentId: message.componentId,
-  //   payload: message.payload
-  // })
+  sendDebugLog(ws, 'rehydration', `Processing component re-hydration request`, {
+    componentId: message.componentId,
+    componentName: message.payload?.componentName
+  })
 
   try {
     const { componentName, signedState, room, userId } = message.payload || {}
-    
+
     if (!componentName || !signedState) {
       throw new Error('Missing componentName or signedState in rehydration payload')
     }
@@ -302,6 +337,18 @@ async function handleComponentRehydrate(ws: any, message: LiveMessage) {
       ws,
       { room, userId }
     )
+
+    if (result.success) {
+      sendDebugLog(ws, 'rehydration', `Component re-hydrated successfully`, {
+        oldComponentId: message.componentId,
+        newComponentId: result.newComponentId,
+        componentName
+      })
+    } else {
+      sendDebugLog(ws, 'error', `Component re-hydration failed: ${result.error}`, {
+        componentId: message.componentId
+      })
+    }
 
     const response = {
       type: 'COMPONENT_REHYDRATED',
@@ -316,13 +363,6 @@ async function handleComponentRehydrate(ws: any, message: LiveMessage) {
       timestamp: Date.now()
     }
 
-    // console.log('📤 Sending COMPONENT_REHYDRATED response:', {
-    //   type: response.type,
-    //   success: response.success,
-    //   newComponentId: response.result?.newComponentId,
-    //   requestId: response.requestId
-    // })
-    
     ws.send(JSON.stringify(response))
 
   } catch (error: any) {
