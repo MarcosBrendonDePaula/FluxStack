@@ -2,7 +2,7 @@ import { existsSync } from 'fs'
 import { join } from 'path'
 import type { FluxStack } from '../plugins/types'
 import { cliRegistry } from './command-registry'
-import { logger } from '../utils/logger'
+import { logger } from '@/core/utils/logger'
 
 export class CliPluginDiscovery {
   private loadedPlugins = new Set<string>()

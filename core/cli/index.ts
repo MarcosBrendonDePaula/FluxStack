@@ -1,12 +1,12 @@
 #!/usr/bin/env bun
 
-import { FluxStackBuilder } from "../build"
-import { ProjectCreator } from "../templates/create-project"
-import { getConfigSync } from "../config"
+import { FluxStackBuilder } from "@/core/build"
+import { ProjectCreator } from "@/core/templates/create-project"
+import { getConfigSync } from "@/core/config"
 import { cliRegistry } from "./command-registry"
 import { pluginDiscovery } from "./plugin-discovery"
 import { generateCommand, interactiveGenerateCommand } from "./generators/index"
-import { startGroup, endGroup, logBox, logInGroup } from "../utils/logger/group-logger"
+import { startGroup, endGroup, logBox, logInGroup } from "@/core/utils/logger/group-logger"
 
 const command = process.argv[2]
 const args = process.argv.slice(3)
