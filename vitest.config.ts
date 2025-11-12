@@ -1,5 +1,10 @@
 import { defineConfig } from 'vitest/config'
-import path from 'path'
+import { fileURLToPath } from 'url'
+import { dirname, resolve } from 'path'
+
+// ES modules compatible __dirname
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 
 export default defineConfig({
   test: {
@@ -18,7 +23,11 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, '.')
+      '@': resolve(__dirname, '.'),
+      '@/core': resolve(__dirname, './core'),
+      '@/app': resolve(__dirname, './app'),
+      '@/config': resolve(__dirname, './config'),
+      '@/shared': resolve(__dirname, './app/shared')
     }
   }
 })
