@@ -55,23 +55,37 @@ FluxStack/
 │   ├── utils/              # Utilitários (env.ts, config-schema.ts)
 │   ├── types/              # Types do framework
 │   └── build/              # Sistema de build
-├── config/                  # ⚙️ CONFIGURAÇÕES DA APLICAÇÃO
-│   ├── app.config.ts       # Configuração principal
-│   ├── server.config.ts    # Servidor e CORS
-│   ├── logger.config.ts    # Sistema de logs
-│   ├── database.config.ts  # Banco de dados
-│   ├── system.config.ts    # Informações do sistema
+├── config/                  # ⚙️ CONFIGURAÇÕES DA APLICAÇÃO (12 arquivos)
+│   ├── app.config.ts       # Configuração principal da aplicação
+│   ├── server.config.ts    # Servidor, porta, host e CORS
+│   ├── logger.config.ts    # Sistema de logs (níveis, formatos)
+│   ├── database.config.ts  # Banco de dados e conexões
+│   ├── system.config.ts    # Informações do sistema (build, versão)
+│   ├── client.config.ts    # Vite, proxy e build do frontend
+│   ├── runtime.config.ts   # ⚡ Configs recarregáveis em runtime
+│   ├── monitoring.config.ts # Métricas, profiling e observabilidade
+│   ├── plugins.config.ts   # Gerenciamento de plugins
+│   ├── services.config.ts  # Email, JWT, Storage, Redis
+│   ├── fluxstack.config.ts # Config espelhada (compatibilidade)
 │   └── index.ts            # Exports centralizados
 ├── app/                     # 👨‍💻 CÓDIGO DA APLICAÇÃO
-│   ├── server/             # Backend (controllers, routes)
-│   │   ├── controllers/    # Lógica de negócio
+│   ├── server/             # Backend (Elysia + Bun)
+│   │   ├── app.ts          # Export do tipo para Eden Treaty
+│   │   ├── index.ts        # Entry point do servidor
+│   │   ├── backend-only.ts # Servidor standalone (sem Vite)
 │   │   ├── routes/         # Endpoints da API
-│   │   └── app.ts          # Export do tipo para Eden Treaty
+│   │   └── live/           # Live Components (WebSocket)
 │   ├── client/             # Frontend (React + Vite)
-│   │   ├── src/components/ # Componentes React
-│   │   ├── src/lib/        # Cliente Eden Treaty
-│   │   └── src/App.tsx     # Interface principal
-│   └── shared/             # Types compartilhados
+│   │   ├── public/         # Arquivos estáticos
+│   │   ├── frontend-only.ts # Cliente standalone (sem backend)
+│   │   └── src/
+│   │       ├── App.tsx     # Interface principal
+│   │       ├── main.tsx    # Entry point React
+│   │       ├── index.css   # Estilos globais
+│   │       ├── assets/     # Imagens e recursos
+│   │       └── lib/        # Cliente Eden Treaty e utils
+│   └── shared/             # Types compartilhados client/server
+│       └── types/          # Interfaces e types comuns
 ├── plugins/                 # 🔌 PLUGINS EXTERNOS
 │   └── crypto-auth/        # Plugin de autenticação criptográfica
 ├── tests/                   # Testes do framework
@@ -129,16 +143,42 @@ bun run dev          # ✅ Output automaticamente limpo em desenvolvimento
 
 FluxStack usa um sistema de configuração declarativa com validação automática e inferência de tipos completa.
 
-#### 📁 **Estrutura de Configuração**
+#### 📁 **Estrutura de Configuração Completa**
 ```
-config/
-├── app.config.ts       # Configuração da aplicação
-├── server.config.ts    # Configuração do servidor
-├── logger.config.ts    # Configuração de logs
-├── database.config.ts  # Configuração do banco de dados
-├── system.config.ts    # Informações do sistema
-└── index.ts           # Exports centralizados
+config/                          # 12 arquivos de configuração
+├── app.config.ts               # App name, version, environment
+├── server.config.ts            # Port, host, CORS, API prefix
+├── logger.config.ts            # Log levels, formats (console/file)
+├── database.config.ts          # Database connections e pools
+├── system.config.ts            # Build info, versão, system metadata
+├── client.config.ts            # Vite dev server, proxy, build frontend
+├── runtime.config.ts           # ⚡ Configs recarregáveis (hot reload)
+├── monitoring.config.ts        # Metrics, profiling, observability
+├── plugins.config.ts           # Plugin management e discovery
+├── services.config.ts          # External services (Email, JWT, Storage, Redis)
+├── fluxstack.config.ts         # Mirror config (backward compatibility)
+└── index.ts                    # Centralized exports
 ```
+
+**📌 Arquivos Principais por Categoria:**
+
+**🔧 Core Application:**
+- `app.config.ts` - Nome, versão, ambiente da aplicação
+- `server.config.ts` - Porta, host, CORS, prefixos de API
+- `client.config.ts` - Configurações Vite, proxy reverso, build
+
+**📊 Observabilidade:**
+- `logger.config.ts` - Níveis de log, formatos, destinos
+- `monitoring.config.ts` - Métricas HTTP/Sistema, profiling, exporters
+
+**🔌 Extensibilidade:**
+- `plugins.config.ts` - Plugins habilitados, discovery, configurações
+- `services.config.ts` - Serviços externos (Email SMTP, JWT, Storage S3/local, Redis)
+
+**⚡ Runtime & Build:**
+- `runtime.config.ts` - Configs que podem ser recarregadas sem restart
+- `system.config.ts` - Informações de build, versão, system info
+- `database.config.ts` - Conexões de banco de dados
 
 #### 🎯 **Como Usar**
 
@@ -160,17 +200,22 @@ export const appConfig = defineConfig(appConfigSchema)
 **2. Usar Configuração com Type Safety:**
 ```typescript
 import { appConfig } from '@/config/app.config'
+import { serverConfig } from '@/config/server.config'
 import { appRuntimeConfig } from '@/config/runtime.config'
 
 // ✅ Type inference automática
 const name = appConfig.name        // string
 const env = appConfig.env          // "development" | "production" | "test"
+const port = serverConfig.port     // number
 const debug = appRuntimeConfig.values.enableDebugMode  // boolean
 
 // ✅ Validação em tempo de boot
 if (appConfig.env === 'production') {
   // TypeScript sabe que env é exatamente 'production'
 }
+
+// ✅ Hot reload de configs runtime (sem restart do servidor)
+appRuntimeConfig.reload()
 ```
 
 **3. Validação e Transformação:**
@@ -198,6 +243,131 @@ const schema = {
 - ✅ **Hot Reload Seguro**: Configs podem ser recarregadas em runtime
 - ✅ **Documentação Automática**: Schema serve como documentação
 
+#### 🔥 **Configurações Runtime (runtime.config.ts)**
+
+O `runtime.config.ts` é especial pois permite **recarregar configurações sem reiniciar o servidor**:
+
+```typescript
+import { defineReactiveConfig, config } from '@/core/utils/config-schema'
+
+export const appRuntimeConfig = defineReactiveConfig({
+  // Features toggleáveis em runtime
+  enableSwagger: config.boolean('ENABLE_SWAGGER', true),
+  enableMetrics: config.boolean('ENABLE_METRICS', false),
+  enableDebugMode: config.boolean('DEBUG', false),
+
+  // Rate limiting dinâmico
+  rateLimitEnabled: config.boolean('RATE_LIMIT_ENABLED', true),
+  rateLimitMax: config.number('RATE_LIMIT_MAX', 100),
+  rateLimitWindow: config.number('RATE_LIMIT_WINDOW', 60000), // ms
+
+  // Modo manutenção
+  maintenanceMode: config.boolean('MAINTENANCE_MODE', false),
+  maintenanceMessage: config.string('MAINTENANCE_MESSAGE', 'Under maintenance')
+})
+
+// Watch para mudanças
+appRuntimeConfig.watch((newConfig) => {
+  console.log('🔄 Config reloaded:', newConfig)
+})
+```
+
+**💡 Casos de Uso:**
+- ✅ Habilitar/desabilitar Swagger em produção sem restart
+- ✅ Ativar modo manutenção dinamicamente
+- ✅ Ajustar rate limiting durante picos de tráfego
+- ✅ Toggle de debug mode para troubleshooting
+- ✅ Recarregar após atualizar variáveis de ambiente
+
+**🔄 Recarregar Manualmente:**
+```typescript
+// Em qualquer lugar do código
+import { appRuntimeConfig } from '@/config/runtime.config'
+
+// Recarregar do .env ou process.env
+await appRuntimeConfig.reload()
+
+// Acessar valores atualizados
+if (appRuntimeConfig.values.maintenanceMode) {
+  return { message: appRuntimeConfig.values.maintenanceMessage }
+}
+```
+
+#### 🌐 **Serviços Externos (services.config.ts)**
+
+Configuração centralizada para integrações externas:
+
+```typescript
+import { defineNestedConfig, config } from '@/core/utils/config-schema'
+
+export const servicesConfig = defineNestedConfig({
+  // Email SMTP
+  email: {
+    host: config.string('SMTP_HOST'),
+    port: config.number('SMTP_PORT', 587),
+    user: config.string('SMTP_USER'),
+    password: config.string('SMTP_PASSWORD'),
+    secure: config.boolean('SMTP_SECURE', false),
+    from: config.string('SMTP_FROM', 'noreply@example.com')
+  },
+
+  // JWT Authentication
+  jwt: {
+    secret: config.string('JWT_SECRET'), // Min 32 chars
+    expiresIn: config.string('JWT_EXPIRES_IN', '24h'),
+    algorithm: config.enum('JWT_ALGORITHM',
+      ['HS256', 'HS384', 'HS512', 'RS256'] as const,
+      'HS256'
+    ),
+    issuer: config.string('JWT_ISSUER', 'fluxstack')
+  },
+
+  // Storage (Local/S3/GCS/Azure)
+  storage: {
+    provider: config.enum('STORAGE_PROVIDER',
+      ['local', 's3', 'gcs', 'azure'] as const,
+      'local'
+    ),
+    uploadPath: config.string('UPLOAD_PATH', './uploads'),
+    maxFileSize: config.number('MAX_FILE_SIZE', 10485760), // 10MB
+    allowedTypes: config.array('ALLOWED_FILE_TYPES', ['image/*', 'application/pdf']),
+    // S3 specific
+    s3Bucket: config.string('S3_BUCKET'),
+    s3Region: config.string('S3_REGION', 'us-east-1')
+  },
+
+  // Redis Cache
+  redis: {
+    host: config.string('REDIS_HOST', 'localhost'),
+    port: config.number('REDIS_PORT', 6379),
+    password: config.string('REDIS_PASSWORD'),
+    db: config.number('REDIS_DB', 0),
+    keyPrefix: config.string('REDIS_KEY_PREFIX', 'fluxstack:')
+  }
+})
+```
+
+**💡 Uso:**
+```typescript
+import { servicesConfig } from '@/config/services.config'
+
+// Configurar email
+const transporter = nodemailer.createTransport({
+  host: servicesConfig.email.host,
+  port: servicesConfig.email.port,
+  auth: {
+    user: servicesConfig.email.user,
+    pass: servicesConfig.email.password
+  }
+})
+
+// JWT signing
+const token = jwt.sign(payload, servicesConfig.jwt.secret, {
+  expiresIn: servicesConfig.jwt.expiresIn,
+  algorithm: servicesConfig.jwt.algorithm
+})
+```
+
 #### 🔧 **Helpers Disponíveis**
 ```typescript
 import { config } from '@/core/utils/config-schema'
@@ -209,16 +379,97 @@ config.array(envVar, defaultValue, required)
 config.enum(envVar, values, defaultValue, required)
 ```
 
+#### 📊 **Observabilidade (monitoring.config.ts)**
+
+Sistema completo de métricas e profiling:
+
+```typescript
+import { defineNestedConfig, config } from '@/core/utils/config-schema'
+
+export const monitoringConfig = defineNestedConfig({
+  // Monitoring geral
+  monitoring: {
+    enabled: config.boolean('ENABLE_MONITORING', false),
+    exporters: config.array('MONITORING_EXPORTERS', []),
+    enableHealthChecks: config.boolean('ENABLE_HEALTH_CHECKS', true),
+    healthCheckInterval: config.number('HEALTH_CHECK_INTERVAL', 30000)
+  },
+
+  // Métricas (HTTP, Sistema)
+  metrics: {
+    enabled: config.boolean('ENABLE_METRICS', false),
+    collectInterval: config.number('METRICS_INTERVAL', 5000), // Min 1000ms
+    httpMetrics: config.boolean('HTTP_METRICS', true),
+    systemMetrics: config.boolean('SYSTEM_METRICS', true),
+    exportToConsole: config.boolean('METRICS_EXPORT_CONSOLE', true),
+    exportToFile: config.boolean('METRICS_EXPORT_FILE', false),
+    retentionPeriod: config.number('METRICS_RETENTION_PERIOD', 3600000) // 1h
+  },
+
+  // Profiling (CPU, Memory)
+  profiling: {
+    enabled: config.boolean('PROFILING_ENABLED', false),
+    sampleRate: config.number('PROFILING_SAMPLE_RATE', 0.1), // 0-1
+    memoryProfiling: config.boolean('MEMORY_PROFILING', false),
+    cpuProfiling: config.boolean('CPU_PROFILING', false),
+    outputDir: config.string('PROFILING_OUTPUT_DIR', 'profiling')
+  }
+})
+```
+
+**💡 Casos de Uso:**
+- ✅ Monitorar performance de APIs (latência, throughput)
+- ✅ Tracking de uso de memória e CPU
+- ✅ Exportar métricas para Prometheus/Grafana
+- ✅ Health checks automáticos
+- ✅ Profiling de código em produção (low overhead)
+
+#### ⚛️ **Frontend & Vite (client.config.ts)**
+
+Configuração do desenvolvimento e build frontend:
+
+```typescript
+export const clientConfig = defineNestedConfig({
+  // Vite Dev Server
+  vite: {
+    port: config.number('VITE_PORT', 5173),
+    host: config.string('VITE_HOST', 'localhost'),
+    strictPort: config.boolean('VITE_STRICT_PORT', false),
+    open: config.boolean('VITE_OPEN', false),
+    enableLogging: config.boolean('ENABLE_VITE_PROXY_LOGS', false)
+  },
+
+  // Proxy Reverso (Backend API)
+  proxy: {
+    target: config.string('PROXY_TARGET', 'http://localhost:3000'),
+    changeOrigin: config.boolean('PROXY_CHANGE_ORIGIN', true),
+    secure: config.boolean('PROXY_SECURE', false),
+    ws: config.boolean('PROXY_WS', true) // WebSocket support
+  },
+
+  // Build do Frontend
+  build: {
+    outDir: config.string('CLIENT_OUTDIR', 'dist/client'),
+    sourceMaps: config.boolean('CLIENT_SOURCEMAPS', true),
+    minify: config.boolean('CLIENT_MINIFY', true),
+    target: config.string('CLIENT_TARGET', 'esnext'),
+    chunkSizeWarningLimit: config.number('CLIENT_CHUNK_SIZE_WARNING', 500) // KB
+  }
+})
+```
+
 #### 🚫 **Não Fazer**
 - ❌ Usar `process.env` diretamente no código da aplicação
 - ❌ Acessar variáveis de ambiente sem validação
 - ❌ Criar configs sem schema
+- ❌ Hardcodar valores que variam por ambiente
 
 #### ✅ **Sempre Fazer**
 - ✅ Usar configs declarativos de `config/`
 - ✅ Definir schemas com validação
 - ✅ Usar helpers `config.*` para type safety
 - ✅ Adicionar `as const` nos schemas para preservar tipos literais
+- ✅ Documentar variáveis de ambiente no `.env.example`
 
 ## 🚨 **Regras Críticas (Atualizadas)**
 
@@ -409,4 +660,9 @@ curl http://localhost:3000/api/health  # ✅ Health check
 
 **🎯 Objetivo**: Capacitar LLMs a trabalhar eficientemente com FluxStack, seguindo padrões estabelecidos e garantindo código de alta qualidade com type safety automática.
 
-**📅 Última atualização**: Janeiro 2025 - v1.8.2 - Centralização de app instance e regra de instalação do Bun.
+**📅 Última atualização**: Janeiro 2025 - v1.8.3
+
+### **🔄 Changelog da Documentação:**
+- **v1.8.3 (12/01/2025)**: Documentação completa de configuração (12 arquivos), correção de estrutura de pastas, adição de runtime.config.ts, services.config.ts, monitoring.config.ts e client.config.ts
+- **v1.8.2**: Centralização de app instance e regra de instalação do Bun
+- **v1.8.0**: Sistema de versão unificado consolidado
