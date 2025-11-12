@@ -1,5 +1,5 @@
-import type { FluxStackConfig } from "../config/schema"
-import type { Logger } from "../utils/logger/index"
+import type { FluxStackConfig } from "@/core/config/schema"
+import type { Logger } from "@/core/utils/logger/index"
 
 export type PluginHook = 
   | 'setup'

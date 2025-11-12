@@ -6,7 +6,7 @@ import type {
   BroadcastMessage, 
   ComponentDefinition,
   WebSocketData 
-} from '../types/types'
+} from '@/core/types/types'
 
 export class ComponentRegistry {
   private components = new Map<string, LiveComponent>()

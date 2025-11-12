@@ -7,7 +7,7 @@ import { FluxStackFramework } from '../server'
 import type { Plugin } from '../../plugins/types'
 
 // Mock dependencies
-vi.mock('../../config', () => ({
+vi.mock('@/config', () => ({
   getConfigSync: vi.fn(() => ({
     server: {
       port: 3000,

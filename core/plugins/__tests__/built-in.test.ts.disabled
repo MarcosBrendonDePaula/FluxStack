@@ -17,7 +17,7 @@ import {
 } from '../built-in'
 import type { PluginContext, RequestContext, ResponseContext, ErrorContext } from '../types'
 import type { Logger } from '@/core/utils/logger/index'
-import type { FluxStackConfig } from '../../config/schema'
+import type { FluxStackConfig } from '@/config/schema'
 
 // Mock logger
 const mockLogger: Logger = {

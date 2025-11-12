@@ -3,7 +3,7 @@
  * Handles environment variable processing and precedence
  */
 
-import { env, helpers } from '../utils/env'
+import { env, helpers } from '@/core/utils/env'
 import type { FluxStackConfig, LogLevel, BuildTarget, LogFormat } from './schema'
 
 export interface EnvironmentInfo {

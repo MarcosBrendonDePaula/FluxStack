@@ -6,11 +6,11 @@
 import { env, createNamespace } from '../utils/env'
 import type { FluxStackConfig } from './schema'
 import { defaultFluxStackConfig } from './schema'
-import { loggerConfig } from '../../config/logger.config'
-import { clientConfig } from '../../config/client.config'
-import { serverConfig } from '../../config/server.config'
-import { monitoringConfig } from '../../config/monitoring.config'
-import { appConfig } from '../../config/app.config'
+import { loggerConfig } from '@/config/logger.config'
+import { clientConfig } from '@/config/client.config'
+import { serverConfig } from '@/config/server.config'
+import { monitoringConfig } from '@/config/monitoring.config'
+import { appConfig } from '@/config/app.config'
 
 /**
  * Runtime Configuration Builder

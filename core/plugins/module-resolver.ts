@@ -5,7 +5,7 @@
 
 import { existsSync } from 'fs'
 import { join, resolve } from 'path'
-import type { Logger } from '../utils/logger'
+import type { Logger } from '@/core/utils/logger'
 
 export interface ModuleResolverConfig {
   projectRoot: string

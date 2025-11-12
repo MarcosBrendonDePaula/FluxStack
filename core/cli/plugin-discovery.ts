@@ -1,6 +1,6 @@
 import { existsSync } from 'fs'
 import { join } from 'path'
-import type { FluxStack } from '../plugins/types'
+import type { FluxStack } from '@/core/plugins/types'
 import { cliRegistry } from './command-registry'
 import { logger } from '@/core/utils/logger'
 

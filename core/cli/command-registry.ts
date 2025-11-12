@@ -1,5 +1,5 @@
 import type { CliCommand, CliContext, CliArgument, CliOption } from "../plugins/types"
-import { getConfigSync } from "../config"
+import { getConfigSync } from "@/core/config"
 import { logger } from "@/core/utils/logger"
 import { createTimer, formatBytes, isProduction, isDevelopment } from "../utils/helpers"
 
