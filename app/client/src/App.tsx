@@ -25,34 +25,18 @@ const initialClockState: LiveClockState = {
 
 // Minimal Live Clock Component
 function MinimalLiveClock() {
-  const { state, connected, status } = useHybridLiveComponent<LiveClockState>(
+  const { state } = useHybridLiveComponent<LiveClockState>(
     'LiveClock',
-    initialClockState,
-    { debug: false }
+    initialClockState
   )
-
-  if (!connected || status !== 'synced') {
-    return (
-      <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-xl p-4 border border-blue-400/20">
-        <div className="text-2xl font-mono font-bold text-white text-center tracking-wider animate-pulse">
-          --:--:--
-        </div>
-        <div className="text-center mt-2">
-          <span className="text-xs text-yellow-400">🔄 Sincronizando...</span>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-xl p-4 border border-blue-400/20">
       <div className="text-4xl font-mono font-bold text-white text-center tracking-wider">
         {state.currentTime}
       </div>
-      <div className="text-center mt-2 flex items-center justify-center gap-2">
+      <div className="text-center mt-2">
         <span className="text-xs text-gray-400">{state.timeZone}</span>
-        <span className="w-1 h-1 rounded-full bg-emerald-400"></span>
-        <span className="text-xs text-emerald-400">Live</span>
       </div>
     </div>
   )
