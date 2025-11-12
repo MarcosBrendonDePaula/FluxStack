@@ -76,19 +76,8 @@ export class Bundler {
     buildLogger.section('Server Build', '⚡')
 
     const startTime = Date.now()
-    let liveComponentsGenerator: any = null
 
     try {
-      // 🚀 PRE-BUILD: Auto-generate Live Components registration
-      const generatorModule = await import('./live-components-generator')
-      liveComponentsGenerator = generatorModule.liveComponentsGenerator
-      const discoveredComponents = await liveComponentsGenerator.preBuild()
-
-      // 🔌 PRE-BUILD: Auto-generate FluxStack Plugins registration
-      const pluginsGeneratorModule = await import('./flux-plugins-generator')
-      const fluxPluginsGenerator = pluginsGeneratorModule.fluxPluginsGenerator
-      const discoveredPlugins = await fluxPluginsGenerator.preBuild()
-      
       // Ensure output directory exists
       if (!existsSync(this.config.outDir)) {
         mkdirSync(this.config.outDir, { recursive: true })
@@ -96,7 +85,7 @@ export class Bundler {
 
       const external = [
         "@tailwindcss/vite",
-        "tailwindcss", 
+        "tailwindcss",
         "lightningcss",
         "vite",
         "@vitejs/plugin-react",
@@ -105,8 +94,8 @@ export class Bundler {
       ]
 
       const buildArgs = [
-        "bun", "build", 
-        entryPoint, 
+        "bun", "build",
+        entryPoint,
         "--outdir", this.config.outDir,
         "--target", this.config.target,
         ...external.flatMap(ext => ["--external", ext])
@@ -132,20 +121,9 @@ export class Bundler {
       const exitCode = await buildProcess.exited
       const duration = Date.now() - startTime
 
-      // 🧹 POST-BUILD: Handle auto-generated registration file
-      // (liveComponentsGenerator already available from above)
-
       if (exitCode === 0) {
         buildLogger.success(`Server bundle completed in ${buildLogger.formatDuration(duration)}`)
-        
-        // Keep generated files for production (they're now baked into bundle)
-        await liveComponentsGenerator.postBuild(false)
-        
-        // Cleanup plugins registry
-        const pluginsGeneratorModule = await import('./flux-plugins-generator')
-        const fluxPluginsGenerator = pluginsGeneratorModule.fluxPluginsGenerator
-        await fluxPluginsGenerator.postBuild(false)
-        
+
         return {
           success: true,
           duration,
@@ -154,15 +132,7 @@ export class Bundler {
         }
       } else {
         buildLogger.error("Server bundle failed")
-        
-        // Restore original files since build failed
-        await liveComponentsGenerator.postBuild(false)
-        
-        // Restore plugins registry
-        const pluginsGeneratorModule = await import('./flux-plugins-generator')
-        const fluxPluginsGenerator = pluginsGeneratorModule.fluxPluginsGenerator
-        await fluxPluginsGenerator.postBuild(false)
-        
+
         const stderr = await new Response(buildProcess.stderr).text()
         return {
           success: false,
@@ -172,21 +142,7 @@ export class Bundler {
       }
     } catch (error) {
       const duration = Date.now() - startTime
-      
-      // 🧹 CLEANUP: Restore original files on error
-      try {
-        if (liveComponentsGenerator) {
-          await liveComponentsGenerator.postBuild(false)
-        }
-        
-        // Cleanup plugins registry
-        const pluginsGeneratorModule = await import('./flux-plugins-generator')
-        const fluxPluginsGenerator = pluginsGeneratorModule.fluxPluginsGenerator
-        await fluxPluginsGenerator.postBuild(false)
-      } catch (cleanupError) {
-        buildLogger.warn(`Failed to cleanup generated files: ${cleanupError}`)
-      }
-      
+
       return {
         success: false,
         duration,
