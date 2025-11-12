@@ -1,15 +1,68 @@
 import { useState, useEffect } from 'react'
 import { api } from './lib/eden-api'
 import { FaFire, FaBook, FaGithub, FaClock } from 'react-icons/fa'
+import { LiveComponentsProvider, useHybridLiveComponent } from '@/core/client'
 
-function App() {
+interface LiveClockState {
+  currentTime: string
+  timeZone: string
+  format: '12h' | '24h'
+  showSeconds: boolean
+  showDate: boolean
+  lastSync: Date
+  serverUptime: number
+}
+
+const initialClockState: LiveClockState = {
+  currentTime: "Loading...",
+  timeZone: "America/Sao_Paulo",
+  format: "24h",
+  showSeconds: true,
+  showDate: true,
+  lastSync: new Date(),
+  serverUptime: 0,
+}
+
+// Minimal Live Clock Component
+function MinimalLiveClock() {
+  const { state, connected, status } = useHybridLiveComponent<LiveClockState>(
+    'LiveClock',
+    initialClockState,
+    { debug: false }
+  )
+
+  if (!connected || status !== 'synced') {
+    return (
+      <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-xl p-4 border border-blue-400/20">
+        <div className="text-2xl font-mono font-bold text-white text-center tracking-wider animate-pulse">
+          --:--:--
+        </div>
+        <div className="text-center mt-2">
+          <span className="text-xs text-yellow-400">🔄 Sincronizando...</span>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-xl p-4 border border-blue-400/20">
+      <div className="text-4xl font-mono font-bold text-white text-center tracking-wider">
+        {state.currentTime}
+      </div>
+      <div className="text-center mt-2 flex items-center justify-center gap-2">
+        <span className="text-xs text-gray-400">{state.timeZone}</span>
+        <span className="w-1 h-1 rounded-full bg-emerald-400"></span>
+        <span className="text-xs text-emerald-400">Live</span>
+      </div>
+    </div>
+  )
+}
+
+function AppContent() {
   const [apiStatus, setApiStatus] = useState<'checking' | 'online' | 'offline'>('checking')
-  const [currentTime, setCurrentTime] = useState(new Date())
 
   useEffect(() => {
     checkApiStatus()
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000)
-    return () => clearInterval(timer)
   }, [])
 
   const checkApiStatus = async () => {
@@ -19,14 +72,6 @@ function App() {
     } catch {
       setApiStatus('offline')
     }
-  }
-
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('pt-BR', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    })
   }
 
   return (
@@ -91,18 +136,11 @@ function App() {
             <div className="flex items-center gap-3 mb-3">
               <FaClock className="text-2xl text-emerald-400" />
               <div>
-                <h3 className="text-lg font-semibold text-white">Relógio em Tempo Real</h3>
-                <p className="text-gray-400 text-sm">Sincronizado com o servidor</p>
+                <h3 className="text-lg font-semibold text-white">Live Clock</h3>
+                <p className="text-gray-400 text-sm">Sincronizado via WebSocket</p>
               </div>
             </div>
-            <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-xl p-4 border border-blue-400/20">
-              <div className="text-4xl font-mono font-bold text-white text-center tracking-wider">
-                {formatTime(currentTime)}
-              </div>
-              <div className="text-center mt-2">
-                <span className="text-xs text-gray-400">America/Sao_Paulo</span>
-              </div>
-            </div>
+            <MinimalLiveClock />
           </div>
         </div>
 
@@ -153,6 +191,21 @@ function App() {
         }
       `}</style>
     </div>
+  )
+}
+
+// Main App with LiveComponentsProvider
+function App() {
+  return (
+    <LiveComponentsProvider
+      autoConnect={true}
+      reconnectInterval={1000}
+      maxReconnectAttempts={5}
+      heartbeatInterval={30000}
+      debug={false}
+    >
+      <AppContent />
+    </LiveComponentsProvider>
   )
 }
 
