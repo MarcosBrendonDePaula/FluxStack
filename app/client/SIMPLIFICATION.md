@@ -19,6 +19,7 @@ This is a **simplified, single-page version** of the FluxStack client, inspired 
 - ❌ **Multiple Pages** - Consolidated into single page (Overview, Demo, HybridLive, ApiDocs, CryptoAuth)
 - ❌ **Complex Error System** - Simplified error handling
 - ❌ **Navigation System** - No more tabs and complex navigation
+- ❌ **Detailed API Status Section** - Replaced with simple badge
 
 ## 📊 Comparison
 
@@ -28,23 +29,24 @@ This is a **simplified, single-page version** of the FluxStack client, inspired 
 | **Components** | 11 | 1 | **-91%** |
 | **Pages** | 5 | 1 | **-80%** |
 | **Dependencies** | 27 | 19 | **-30%** |
-| **Lines in App.tsx** | 331 | 227 | **-31%** |
+| **Lines in App.tsx** | 331 | 160 | **-52%** |
 
 ## 🎯 What Does It Show?
 
 The simplified client demonstrates:
 
-1. **🎨 Modern Design** - Clean, gradient-based design inspired by Vite
-2. **⚡ Eden Treaty** - Live API health check with type inference
-3. **🚀 Core Features** - Highlights FluxStack's main capabilities
-4. **📖 Quick Links** - Direct access to GitHub and API docs
-5. **🔥 Tech Stack** - Shows all the technologies used
+1. **🎨 Minimalist Design** - Clean, centered design inspired by Next.js, React, and Vite
+2. **⚡ Simple API Status** - Single badge showing API online/offline
+3. **🚀 Core Features** - 4 feature cards highlighting main capabilities
+4. **🕐 Live Clock** - Real-time clock updating every second
+5. **📖 Quick Actions** - Direct links to API Docs, GitHub, and API Demo
+6. **🔥 No Complexity** - Just the essentials, nothing more
 
 ## 📝 Structure
 
 ```
 app/client/src/
-├── App.tsx              # Single-page application (227 lines)
+├── App.tsx              # Single-page application (160 lines)
 ├── main.tsx             # Entry point (simplified)
 ├── index.css            # Minimal global styles
 └── lib/
@@ -53,14 +55,16 @@ app/client/src/
 
 ## 🎨 Design Philosophy
 
-Inspired by **Vite's landing page**:
-- Single page, no navigation complexity
-- Large hero section with clear branding
-- Feature cards showcasing capabilities
-- Live demo with real API interaction
-- Clean, modern gradient aesthetics
-- Animated background blobs
-- Responsive design
+Inspired by **Next.js, React, and Vite landing pages**:
+- Everything centered vertically and horizontally
+- Large animated logo (fire icon with pulse animation)
+- Minimal text, maximum impact
+- Simple API status badge (online/offline)
+- 4 feature cards in responsive grid
+- Real-time clock demo in one card
+- Clean action buttons at bottom
+- No background animations (clean and fast)
+- Mobile-first responsive design
 
 ## 🔧 How to Use
 
@@ -78,23 +82,24 @@ bun run dev:backend
 The page will automatically show:
 - ✅ **Green badge** - Backend is running and healthy
 - ⚠️ **Yellow badge** - Checking backend status
-- ❌ **Red badge** - Backend is offline (shows "bun run dev" command)
+- ❌ **Red badge** - Backend is offline
 
 ## 🎯 When to Use This Version?
 
-**Use this simplified version when:**
-- You want a clean, simple demo
-- You're showcasing FluxStack to newcomers
-- You need a landing page for your project
-- You want minimal dependencies
-- You prefer simplicity over features
+**Use this ultra-simplified version when:**
+- You want the cleanest possible presentation
+- You're showcasing FluxStack to newcomers or investors
+- You need a professional landing page
+- You want maximum simplicity (like Next.js/React/Vite)
+- You prefer minimalism over features
+- You want fast loading and minimal JavaScript
 
 **Use the full version when:**
 - You need multiple pages/routes
-- You require state management (Zustand)
+- You require complex state management
 - You want real-time features (WebSocket)
-- You need advanced demos (CRUD, Auth, etc.)
-- You're building a complete application
+- You need complete demos (CRUD, Auth, etc.)
+- You're building a full application with all features
 
 ## 💡 Future Enhancements (Optional)
 
