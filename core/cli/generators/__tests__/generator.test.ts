@@ -8,8 +8,8 @@ import { ComponentGenerator } from '../component'
 import { RouteGenerator } from '../route'
 import type { GeneratorContext, GeneratorOptions } from '../types'
 import { getConfigSync } from '../../../config'
-import { logger } from '../../../utils/logger'
-import { createTimer, formatBytes, isProduction, isDevelopment } from '../../../utils/helpers'
+import { logger } from '@/core/utils/logger'
+import { createTimer, formatBytes, isProduction, isDevelopment } from '@/core/utils/helpers'
 
 describe('Code Generators', () => {
     let tempDir: string

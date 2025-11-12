@@ -6,7 +6,7 @@ import type {
   BroadcastMessage, 
   ComponentDefinition,
   WebSocketData 
-} from '../../types/types'
+} from '@/core/plugins/types'
 import { stateSignature, type SignedState } from './StateSignature'
 import { performanceMonitor } from './LiveComponentPerformanceMonitor'
 
@@ -151,7 +151,7 @@ export class ComponentRegistry {
     try {
       const fs = await import('fs')
       const path = await import('path')
-      const { startGroup, endGroup, logInGroup, groupSummary } = await import('../../utils/logger/group-logger')
+      const { startGroup, endGroup, logInGroup, groupSummary } = await import('@/core/utils/logger/group-logger')
 
       if (!fs.existsSync(componentsPath)) {
         console.log(`⚠️ Components path not found: ${componentsPath}`)

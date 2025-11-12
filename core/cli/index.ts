@@ -5,7 +5,7 @@ import { ProjectCreator } from "../templates/create-project"
 import { getConfigSync } from "../config"
 import { cliRegistry } from "./command-registry"
 import { pluginDiscovery } from "./plugin-discovery"
-import { generateCommand, interactiveGenerateCommand } from "./generators/index.js"
+import { generateCommand, interactiveGenerateCommand } from "./generators/index"
 import { startGroup, endGroup, logBox, logInGroup } from "../utils/logger/group-logger"
 
 const command = process.argv[2]

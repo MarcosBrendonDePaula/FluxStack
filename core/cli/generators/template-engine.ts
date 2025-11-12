@@ -1,4 +1,4 @@
-import type { GeneratorContext, GeneratorOptions, Template, TemplateFile, GeneratedFile, TemplateProcessor } from "./types.js"
+import type { GeneratorContext, GeneratorOptions, Template, TemplateFile, GeneratedFile, TemplateProcessor } from "./types"
 import { join, dirname } from "path"
 import { mkdir, writeFile, readFile, stat } from "fs/promises"
 import { existsSync } from "fs"

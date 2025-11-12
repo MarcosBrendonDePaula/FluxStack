@@ -1,5 +1,5 @@
 import { swagger } from '@elysiajs/swagger'
-import type { FluxStack, PluginContext } from '../../types'
+import type { FluxStack, PluginContext } from '@/core/plugins/types'
 
 type Plugin = FluxStack.Plugin
 

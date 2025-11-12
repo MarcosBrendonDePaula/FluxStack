@@ -1,6 +1,6 @@
-import type { Generator } from "./index.js"
-import type { GeneratorContext, GeneratorOptions, Template } from "./types.js"
-import { templateEngine } from "./template-engine.js"
+import type { Generator } from "./index"
+import type { GeneratorContext, GeneratorOptions, Template } from "./types"
+import { templateEngine } from "./template-engine"
 import { join } from "path"
 
 export class PluginGenerator implements Generator {

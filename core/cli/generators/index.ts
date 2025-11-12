@@ -1,10 +1,10 @@
-import type { CliCommand } from "../../plugins/types.js"
-import { ControllerGenerator } from "./controller.js"
-import { RouteGenerator } from "./route.js"
-import { ComponentGenerator } from "./component.js"
-import { ServiceGenerator } from "./service.js"
-import { PluginGenerator } from "./plugin.js"
-import type { GeneratorContext, GeneratorOptions } from "./types.js"
+import type { CliCommand } from "../../plugins/types"
+import { ControllerGenerator } from "./controller"
+import { RouteGenerator } from "./route"
+import { ComponentGenerator } from "./component"
+import { ServiceGenerator } from "./service"
+import { PluginGenerator } from "./plugin"
+import type { GeneratorContext, GeneratorOptions } from "./types"
 
 export interface Generator {
   name: string
@@ -47,7 +47,7 @@ export class GeneratorRegistry {
 export const generatorRegistry = new GeneratorRegistry()
 
 // Export additional commands
-export { interactiveGenerateCommand } from "./interactive.js"
+export { interactiveGenerateCommand } from "./interactive"
 
 // CLI command for code generation
 export const generateCommand: CliCommand = {

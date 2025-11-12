@@ -5,7 +5,7 @@ import type {
   FileUploadCompleteMessage,
   FileUploadProgressResponse,
   FileUploadCompleteResponse
-} from '../../types/types'
+} from '@/core/types/types'
 
 export interface ChunkedUploadOptions {
   chunkSize?: number // Default 64KB

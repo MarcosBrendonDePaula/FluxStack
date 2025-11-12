@@ -1,6 +1,6 @@
 // 🔥 State Validation Utilities
 
-import type { StateValidation, StateConflict, HybridState } from '../../types/types'
+import type { StateValidation, StateConflict, HybridState } from '@/core/types/types'
 
 export class StateValidator {
   /**

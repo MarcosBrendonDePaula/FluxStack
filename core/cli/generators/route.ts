@@ -1,6 +1,6 @@
-import type { Generator } from "./index.js"
-import type { GeneratorContext, GeneratorOptions, Template } from "./types.js"
-import { templateEngine } from "./template-engine.js"
+import type { Generator } from "./index"
+import type { GeneratorContext, GeneratorOptions, Template } from "./types"
+import { templateEngine } from "./template-engine"
 
 export class RouteGenerator implements Generator {
   name = 'route'

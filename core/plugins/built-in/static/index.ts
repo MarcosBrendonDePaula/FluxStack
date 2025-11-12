@@ -1,6 +1,6 @@
 import { join } from "path"
 import { statSync, existsSync } from "fs"
-import type { Plugin, PluginContext } from "../.."
+import type { Plugin, PluginContext } from "@/core/plugins"
 
 export const staticPlugin: Plugin = {
   name: "static",

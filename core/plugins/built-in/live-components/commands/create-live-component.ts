@@ -1,4 +1,4 @@
-import type { CliCommand } from "../../../types";
+import type { CliCommand } from "@/core/plugins/types";
 import { promises as fs } from "fs";
 import path from "path";
 

@@ -8,7 +8,7 @@ import type {
   FileUploadCompleteMessage,
   FileUploadProgressResponse,
   FileUploadCompleteResponse
-} from '../../types/types'
+} from '@/core/plugins/types'
 
 export class FileUploadManager {
   private activeUploads = new Map<string, ActiveUpload>()

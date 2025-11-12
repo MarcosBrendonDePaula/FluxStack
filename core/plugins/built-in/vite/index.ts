@@ -1,6 +1,6 @@
-import type { FluxStack, PluginContext, RequestContext } from "../../types"
+import type { FluxStack, PluginContext, RequestContext } from "@/core/plugins/types"
 import { createServer, type ViteDevServer } from 'vite'
-import { FLUXSTACK_VERSION } from "../../../utils/version"
+import { FLUXSTACK_VERSION } from "@/core/utils/version"
 
 type Plugin = FluxStack.Plugin
 
@@ -85,7 +85,7 @@ export const vitePlugin: Plugin = {
     const viteHost = config.host || "localhost"
 
     // Import group logger utilities
-    const { startGroup, endGroup, logInGroup } = await import('../../../utils/logger/group-logger')
+    const { startGroup, endGroup, logInGroup } = await import('@/core/utils/logger/group-logger')
 
     try {
       startGroup({

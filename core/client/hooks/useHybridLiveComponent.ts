@@ -12,7 +12,7 @@ import type {
   HybridComponentOptions,
   WebSocketMessage,
   WebSocketResponse
-} from '../../types/types'
+} from '@/core/types/types'
 
 // Client-side state persistence for reconnection
 interface PersistedComponentState {
