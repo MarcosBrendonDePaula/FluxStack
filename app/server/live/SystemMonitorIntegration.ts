@@ -1,6 +1,6 @@
 // 🔥 System Monitor Integration - Auto-capture metrics from Live Components
 
-import { componentRegistry } from '../../../core/server/live/ComponentRegistry'
+import { componentRegistry } from '@/core/server/live/ComponentRegistry'
 
 export class SystemMonitorIntegration {
   private static instance: SystemMonitorIntegration | null = null

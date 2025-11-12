@@ -1,5 +1,5 @@
 // Frontend standalone entry point
-import { startFrontendOnly } from "../../core/client/standalone"
+import { startFrontendOnly } from "@/core/client/standalone"
 
 // Configuração para frontend standalone
 const frontendConfig = {

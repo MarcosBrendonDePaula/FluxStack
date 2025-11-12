@@ -3,9 +3,9 @@
  * Configures and exports all application services
  */
 
-import type { FluxStackConfig } from '../../../core/config'
-import type { Logger } from '../../../core/utils/logger/index'
-import { ServiceContainer } from '../../../core/server/services/index.js'
+import type { FluxStackConfig } from '@/core/config'
+import type { Logger } from '@/core/utils/logger/index'
+import { ServiceContainer } from '@/core/server/services/index'
 import { UserService } from './UserService'
 import { NotificationService } from './NotificationService'
 
@@ -34,11 +34,11 @@ export function createServiceContainer(config: FluxStackConfig, logger: Logger):
 }
 
 // Re-export service classes and types
-export { BaseService, ServiceContainer } from '../../../core/server/services/index.js'
+export { BaseService, ServiceContainer } from '@/core/server/services/index'
 export { UserService } from './UserService'
 export { NotificationService } from './NotificationService'
 
-export type { ServiceContext, ServiceDefinition } from '../../../core/server/services/index.js'
+export type { ServiceContext, ServiceDefinition } from '@/core/server/services/index'
 export type { User, CreateUserData, UpdateUserData } from './UserService'
 export type { 
   Notification, 

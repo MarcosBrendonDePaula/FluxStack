@@ -8,7 +8,7 @@
  * - Service container integration
  */
 
-import type { Logger } from '../../utils/logger/index.js'
+import type { Logger } from '../../utils/logger/index'
 
 export interface ServiceContext {
   config: any

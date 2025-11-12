@@ -325,7 +325,7 @@ Examples:
       }
 
       // Use the plugin generator
-      const { generatorRegistry } = await import('./generators/index.js')
+      const { generatorRegistry } = await import('./generators/index')
       const pluginGenerator = generatorRegistry.get('plugin')
 
       if (!pluginGenerator) {

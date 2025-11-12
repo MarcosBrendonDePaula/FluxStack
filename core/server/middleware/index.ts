@@ -8,12 +8,12 @@ export {
   notFoundMiddleware,
   createError,
   asyncHandler
-} from './errorHandling.js'
+} from './errorHandling'
 
 export type {
   ErrorHandlingOptions,
   FluxStackError
-} from './errorHandling.js'
+} from './errorHandling'
 
 // Elysia Middleware Helpers
 export {
@@ -25,8 +25,8 @@ export {
   isDevelopment,
   isProduction,
   isTest
-} from './elysia-helpers.js'
+} from './elysia-helpers'
 
 export type {
   MiddlewareOptions
-} from './elysia-helpers.js'
+} from './elysia-helpers'

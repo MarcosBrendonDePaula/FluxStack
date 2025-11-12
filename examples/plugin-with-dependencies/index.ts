@@ -3,7 +3,7 @@
  * Demonstra como usar dependências externas em plugins
  */
 
-import type { Plugin, PluginContext, RequestContext, ResponseContext } from "../../core/plugins/types"
+import type { Plugin, PluginContext, RequestContext, ResponseContext } from "@/core/plugins/types"
 import axios from 'axios'
 import { debounce } from 'lodash'
 import { format } from 'date-fns'

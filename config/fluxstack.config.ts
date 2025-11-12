@@ -4,8 +4,8 @@
  * @deprecated Use the configuration from the root fluxstack.config.ts instead
  */
 
-import { getConfigSync, createLegacyConfig } from '../core/config'
-import type { FluxStackConfig } from '../core/config'
+import { getConfigSync, createLegacyConfig } from '@/core/config'
+import type { FluxStackConfig } from '@/core/config'
 
 // Load the new configuration
 const newConfig = getConfigSync()

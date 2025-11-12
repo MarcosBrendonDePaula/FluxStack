@@ -1,6 +1,6 @@
 // 🔥 Example Live Component - Counter
 
-import { LiveComponent } from "../../../core/types/types"
+import { LiveComponent } from "@/core/types/types"
 
 interface CounterState {
   count: number

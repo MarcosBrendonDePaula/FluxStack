@@ -7,4 +7,4 @@ export {
   setupFluxStackTests, 
   createMockLogger, 
   createMockServiceContext 
-} from './setup.js'
+} from './setup'

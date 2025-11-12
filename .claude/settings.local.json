@@ -92,7 +92,9 @@
       "Bash(LOG_LEVEL=debug timeout 5 bun run dev)",
       "Bash(LOG_LEVEL=debug timeout 10 bun run dev)",
       "Bash(./create-fluxstack.ts /tmp/test-fluxstack-dot/. --no-install --no-git)",
-      "Bash(./create-fluxstack.ts:*)"
+      "Bash(./create-fluxstack.ts:*)",
+      "Bash(netstat:*)",
+      "Bash(PORT=9999 bun run vite:*)"
     ],
     "deny": []
   }

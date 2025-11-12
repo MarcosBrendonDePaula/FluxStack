@@ -95,12 +95,12 @@ export class FluxPluginsGenerator {
   private findPluginEntryFile(pluginDir: string): string | null {
     const possibleFiles = [
       'index.ts',
-      'index.js',
+      'index',
       'plugin.ts',
-      'plugin.js',
+      'plugin',
       'src/index.ts',
-      'src/index.js',
-      'dist/index.js'
+      'src/index',
+      'dist/index'
     ]
 
     for (const file of possibleFiles) {
@@ -130,7 +130,7 @@ export class FluxPluginsGenerator {
     const imports = plugins
       .map(plugin => {
         const importName = this.getImportName(plugin.pluginName)
-        const importPath = plugin.entryFile === 'index.ts' || plugin.entryFile === 'index.js'
+        const importPath = plugin.entryFile === 'index.ts' || plugin.entryFile === 'index'
           ? plugin.relativePath
           : `${plugin.relativePath}/${plugin.entryFile.replace(/\.(ts|js)$/, '')}`
         return `import ${importName} from "${importPath}"`
