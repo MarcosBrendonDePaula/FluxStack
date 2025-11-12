@@ -61,7 +61,7 @@ function App() {
           </p>
 
           {/* Quick Actions */}
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex items-center justify-center gap-4 mb-12">
             <a
               href="https://github.com/MarcosBrendonDePaula/FluxStack"
               target="_blank"
@@ -81,28 +81,7 @@ function App() {
           </div>
         </div>
 
-        {/* Features Grid */}
-        <div className="grid md:grid-cols-3 gap-6 mb-16">
-          <div className="p-6 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 hover:border-purple-500/50 transition-all duration-300">
-            <div className="text-4xl mb-4">🚀</div>
-            <h3 className="text-xl font-bold text-white mb-2">Ultra Fast</h3>
-            <p className="text-gray-400">Powered by Bun runtime - 3x faster than Node.js</p>
-          </div>
-
-          <div className="p-6 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 hover:border-blue-500/50 transition-all duration-300">
-            <div className="text-4xl mb-4">🔒</div>
-            <h3 className="text-xl font-bold text-white mb-2">Type Safe</h3>
-            <p className="text-gray-400">End-to-end type inference with Eden Treaty</p>
-          </div>
-
-          <div className="p-6 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 hover:border-pink-500/50 transition-all duration-300">
-            <div className="text-4xl mb-4">⚡</div>
-            <h3 className="text-xl font-bold text-white mb-2">Modern Stack</h3>
-            <p className="text-gray-400">React 19 + Vite 7 + TypeScript 5.9</p>
-          </div>
-        </div>
-
-        {/* Live Demo Card */}
+        {/* Live Demo Card - Moved to top */}
         <div className="p-8 bg-gradient-to-br from-purple-500/10 to-blue-500/10 backdrop-blur-sm rounded-2xl border border-white/20 mb-16">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-3xl font-bold text-white flex items-center gap-3">
@@ -125,12 +104,16 @@ function App() {
 
           {healthData && (
             <div className="bg-black/20 rounded-xl p-6 border border-white/10">
-              <div className="flex items-start justify-between">
+              <div className="flex items-start justify-between mb-4">
                 <div>
                   <div className="text-sm text-gray-400 mb-1">Status Response</div>
-                  <div className="flex items-center gap-2 mb-4">
+                  <div className="flex items-center gap-2 mb-3">
                     <FaCheckCircle className="text-emerald-400" />
                     <span className="text-xl font-mono text-white">{healthData.status}</span>
+                  </div>
+                  <div className="flex items-center gap-2 px-3 py-1 bg-orange-500/20 border border-orange-500/30 rounded-full w-fit">
+                    <FaRocket className="text-orange-400 text-sm" />
+                    <span className="text-sm text-orange-300 font-medium">Hot Reload ativo!</span>
                   </div>
                 </div>
                 <button
@@ -170,6 +153,27 @@ function App() {
               </pre>
             </div>
           )}
+        </div>
+
+        {/* Features Grid */}
+        <div className="grid md:grid-cols-3 gap-6 mb-16">
+          <div className="p-6 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 hover:border-purple-500/50 transition-all duration-300">
+            <div className="text-4xl mb-4">🚀</div>
+            <h3 className="text-xl font-bold text-white mb-2">Ultra Fast</h3>
+            <p className="text-gray-400">Powered by Bun runtime - 3x faster than Node.js</p>
+          </div>
+
+          <div className="p-6 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 hover:border-blue-500/50 transition-all duration-300">
+            <div className="text-4xl mb-4">🔒</div>
+            <h3 className="text-xl font-bold text-white mb-2">Type Safe</h3>
+            <p className="text-gray-400">End-to-end type inference with Eden Treaty</p>
+          </div>
+
+          <div className="p-6 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 hover:border-pink-500/50 transition-all duration-300">
+            <div className="text-4xl mb-4">⚡</div>
+            <h3 className="text-xl font-bold text-white mb-2">Modern Stack</h3>
+            <p className="text-gray-400">React 19 + Vite 7 + TypeScript 5.9</p>
+          </div>
         </div>
 
         {/* Tech Stack */}
