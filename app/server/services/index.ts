@@ -7,7 +7,6 @@ import type { FluxStackConfig } from '@/core/config'
 import type { Logger } from '@/core/utils/logger/index'
 import { ServiceContainer } from '@/core/server/services/index'
 import { UserService } from './UserService'
-import { NotificationService } from './NotificationService'
 
 /**
  * Create and configure the service container
@@ -21,12 +20,6 @@ export function createServiceContainer(config: FluxStackConfig, logger: Logger):
       name: 'userService',
       constructor: UserService,
       singleton: true
-    },
-    {
-      name: 'notificationService',
-      constructor: NotificationService,
-      dependencies: [], // Could depend on userService if needed
-      singleton: true
     }
   ])
 
@@ -36,11 +29,6 @@ export function createServiceContainer(config: FluxStackConfig, logger: Logger):
 // Re-export service classes and types
 export { BaseService, ServiceContainer } from '@/core/server/services/index'
 export { UserService } from './UserService'
-export { NotificationService } from './NotificationService'
 
 export type { ServiceContext, ServiceDefinition } from '@/core/server/services/index'
 export type { User, CreateUserData, UpdateUserData } from './UserService'
-export type { 
-  Notification, 
-  CreateNotificationData 
-} from './NotificationService'
