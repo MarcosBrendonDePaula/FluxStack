@@ -58,9 +58,15 @@ app/client/src/
 │                        # - LiveComponentsProvider wrapper
 ├── main.tsx             # Entry point (simplified)
 ├── index.css            # Minimal global styles
-└── lib/
-    └── eden-api.ts      # Eden Treaty API client
+├── vite-env.d.ts        # Vite type definitions
+├── assets/              # Static assets
+│   └── react.svg        # React logo
+└── lib/                 # Core utilities
+    ├── eden-api.ts      # Eden Treaty API client
+    └── errors.ts        # Error handling utilities
 ```
+
+**Total files in src/**: 6 core files (vs 43+ before)
 
 ## 🎨 Design Philosophy
 
