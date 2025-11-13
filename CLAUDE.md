@@ -409,4 +409,4 @@ curl http://localhost:3000/api/health  # ✅ Health check
 
 **🎯 Objetivo**: Capacitar LLMs a trabalhar eficientemente com FluxStack, seguindo padrões estabelecidos e garantindo código de alta qualidade com type safety automática.
 
-**📅 Última atualização**: Janeiro 2025 - v1.8.2 - Centralização de app instance e regra de instalação do Bun.
+**📅 Última atualização**: Janeiro 2025 - v1.8.3 - Nova versão para publicação.
