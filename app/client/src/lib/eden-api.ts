@@ -26,21 +26,38 @@ const getAuthToken = (): string | null => {
 }
 
 /**
- * Create Eden Treaty client with authentication
- * Keep it simple - just auth headers
+ * Create Eden Treaty client with authentication and logging
+ * Based on official ElysiaJS Chan example
  */
-const client = treaty<App>(getBaseUrl(), {
-  headers() {
+export const api = treaty<App>(getBaseUrl(), {
+  // Dynamic headers for every request
+  headers(_path, _options) {
     const token = getAuthToken()
     return token ? { Authorization: `Bearer ${token}` } : undefined
-  }
-})
+  },
 
-/**
- * Export the API directly for full type inference
- * ⚠️ NEVER wrap this in apiCall() - it breaks type inference
- */
-export const api = client.api
+  // Custom fetcher with logging and error handling
+  async fetcher(url, init) {
+    if (import.meta.env.DEV) {
+      console.log(`🌐 ${init?.method ?? 'GET'} ${url}`)
+    }
+
+    const res = await fetch(url, init)
+
+    if (import.meta.env.DEV) {
+      console.log(`📡 ${url} → ${res.status}`)
+    }
+
+    // Auto-logout on 401
+    if (res.status === 401) {
+      console.warn('🔒 Token expired')
+      localStorage.removeItem('accessToken')
+      // window.location.href = '/login' // Uncomment if you have auth
+    }
+
+    return res
+  }
+}).api // ← expose the generated API object
 
 /**
  * Get user-friendly error message
