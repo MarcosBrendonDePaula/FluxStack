@@ -53,6 +53,11 @@ const pluginsConfigSchema = {
   swaggerShowExtensions: config.boolean('SWAGGER_SHOW_EXTENSIONS', true),
   swaggerTryItOutEnabled: config.boolean('SWAGGER_TRY_IT_OUT', true),
 
+  // Swagger authentication (Basic Auth)
+  swaggerAuthEnabled: config.boolean('SWAGGER_AUTH_ENABLED', false),
+  swaggerAuthUsername: config.string('SWAGGER_AUTH_USERNAME', 'admin'),
+  swaggerAuthPassword: config.string('SWAGGER_AUTH_PASSWORD', ''),
+
   // Static files plugin
   staticFilesEnabled: config.boolean('STATIC_FILES_ENABLED', true),
   staticPublicDir: config.string('STATIC_PUBLIC_DIR', 'public'),
