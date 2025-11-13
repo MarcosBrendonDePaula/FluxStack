@@ -7,121 +7,48 @@ import { pluginsConfig } from '@/config/plugins.config'
 type Plugin = FluxStack.Plugin
 
 /**
- * Auto-discovers tags from registered routes in the Elysia app
- * @param app - The Elysia application instance
- * @returns Array of unique tags with auto-generated descriptions
+ * Parse servers from config string
+ * Format: "url1|description1,url2|description2"
  */
-function autoDiscoverTags(app: any): Array<{ name: string; description: string }> {
-  const tagMap = new Map<string, string>()
-
-  // Default tag descriptions (used as fallback)
-  const defaultDescriptions: Record<string, string> = {
-    'Health': 'Health check and system status endpoints',
-    'API': 'General API endpoints',
-    'Users': 'User management endpoints',
-    'Authentication': 'Authentication and authorization endpoints',
-    'Development': 'Development and debugging endpoints',
-    'Configuration': 'Configuration and settings endpoints',
-    'CRUD': 'Create, Read, Update, Delete operations',
-    'Static Files': 'Static file serving endpoints',
-    'Live Components': 'Real-time live components endpoints',
-    'WebSocket': 'WebSocket connection endpoints',
-    'Monitoring': 'Monitoring and metrics endpoints',
-    'Performance': 'Performance tracking endpoints',
-    'Security': 'Security-related endpoints',
-    'Crypto': 'Cryptographic operations endpoints',
-    'Debug': 'Debug and diagnostic endpoints',
-    'Connections': 'Connection management endpoints',
-    'Pools': 'Connection pool endpoints',
-    'Alerts': 'Alert management endpoints'
+function parseServersFromConfig(serversString: string): Array<{ url: string; description: string }> {
+  if (!serversString || serversString.trim() === '') {
+    return []
   }
 
-  try {
-    // Try multiple ways to access routes from Elysia app
-    const routesArray = app.routes || app._routes || (app as any).router?.history || []
-
-    if (Array.isArray(routesArray) && routesArray.length > 0) {
-      for (const route of routesArray) {
-        // Extract tags from multiple possible locations
-        const tags =
-          route?.schema?.detail?.tags ||
-          route?.hooks?.detail?.tags ||
-          route?.detail?.tags ||
-          route?.tags ||
-          []
-
-        if (Array.isArray(tags)) {
-          for (const tag of tags) {
-            if (typeof tag === 'string' && !tagMap.has(tag)) {
-              const description = defaultDescriptions[tag] || `${tag} related endpoints`
-              tagMap.set(tag, description)
-            }
-          }
-        }
-      }
+  return serversString.split(',').map(server => {
+    const [url, description] = server.split('|').map(s => s.trim())
+    return {
+      url: url || '',
+      description: description || 'Server'
     }
-
-    // Also check for tags in decorators (for grouped routes)
-    if (app.decorator && typeof app.decorator === 'object') {
-      const decoratorTags = (app.decorator as any).tags || []
-      if (Array.isArray(decoratorTags)) {
-        for (const tag of decoratorTags) {
-          if (typeof tag === 'string' && !tagMap.has(tag)) {
-            const description = defaultDescriptions[tag] || `${tag} related endpoints`
-            tagMap.set(tag, description)
-          }
-        }
-      }
-    }
-  } catch (error) {
-    console.warn('Failed to auto-discover tags from routes:', error)
-  }
-
-  // Convert map to array and sort alphabetically
-  const discoveredTags = Array.from(tagMap.entries())
-    .map(([name, description]) => ({ name, description }))
-    .sort((a, b) => a.name.localeCompare(b.name))
-
-  // If no tags were discovered, return empty array (Swagger will auto-discover from routes)
-  // This is intentional - Elysia Swagger already auto-discovers tags from routes
-  // We're just providing descriptions here
-  return discoveredTags
+  }).filter(s => s.url !== '')
 }
 
-// Pre-defined tags with descriptions for common FluxStack routes
-// These tags provide documentation in Swagger UI
-// The Swagger plugin will also auto-discover additional tags from routes
-const SYSTEM_TAGS = [
-  { name: 'Health', description: 'Health check and system status endpoints' },
-  { name: 'API', description: 'General API endpoints' },
-  { name: 'Users', description: 'User management endpoints' },
-  { name: 'CRUD', description: 'Create, Read, Update, Delete operations' },
-  { name: 'Authentication', description: 'Authentication and authorization endpoints' },
-  { name: 'Security', description: 'Security-related endpoints' },
-  { name: 'Crypto', description: 'Cryptographic operations endpoints' },
-  { name: 'Development', description: 'Development and debugging endpoints' },
-  { name: 'Configuration', description: 'Configuration and settings endpoints' },
-  { name: 'Debug', description: 'Debug and diagnostic endpoints' },
-  { name: 'Static Files', description: 'Static file serving endpoints' },
-  { name: 'Live Components', description: 'Real-time live components endpoints' },
-  { name: 'WebSocket', description: 'WebSocket connection endpoints' },
-  { name: 'Monitoring', description: 'Monitoring and metrics endpoints' },
-  { name: 'Performance', description: 'Performance tracking endpoints' },
-  { name: 'Connections', description: 'Connection management endpoints' },
-  { name: 'Pools', description: 'Connection pool endpoints' },
-  { name: 'Alerts', description: 'Alert management endpoints' }
-]
-
-// Default configuration values (can be overridden via env vars in pluginsConfig)
+// Configuration from config/plugins.config.ts (user editable)
 const DEFAULTS = {
-  enabled: true,
+  enabled: pluginsConfig.swaggerEnabled,
   path: pluginsConfig.swaggerPath,
   title: pluginsConfig.swaggerTitle,
   description: pluginsConfig.swaggerDescription,
   version: pluginsConfig.swaggerVersion,
-  tags: SYSTEM_TAGS, // System tags with descriptions
-  servers: [] as Array<{ url: string; description: string }>,
-  excludePaths: [] as string[],
+  excludePaths: pluginsConfig.swaggerExcludePaths,
+  servers: parseServersFromConfig(pluginsConfig.swaggerServers),
+
+  // Swagger UI options
+  swaggerOptions: {
+    persistAuthorization: pluginsConfig.swaggerPersistAuthorization,
+    displayRequestDuration: pluginsConfig.swaggerDisplayRequestDuration,
+    filter: pluginsConfig.swaggerEnableFilter,
+    showExtensions: pluginsConfig.swaggerShowExtensions,
+    tryItOutEnabled: pluginsConfig.swaggerTryItOutEnabled
+  },
+
+  // Authentication
+  authEnabled: pluginsConfig.swaggerAuthEnabled,
+  authUsername: pluginsConfig.swaggerAuthUsername,
+  authPassword: pluginsConfig.swaggerAuthPassword,
+
+  // Security (can be extended via env vars if needed)
   securitySchemes: {},
   globalSecurity: [] as Array<Record<string, any>>
 }
@@ -129,7 +56,7 @@ const DEFAULTS = {
 export const swaggerPlugin: Plugin = {
   name: 'swagger',
   version: '1.0.0',
-  description: 'Enhanced Swagger documentation plugin for FluxStack with customizable options',
+  description: 'Swagger documentation plugin for FluxStack with automatic tag discovery',
   author: 'FluxStack Team',
   priority: 500,
   category: 'documentation',
@@ -159,6 +86,7 @@ export const swaggerPlugin: Plugin = {
         })
       }
 
+      // Simple Swagger configuration - all options from config/plugins.config.ts
       const swaggerConfig = {
         path: DEFAULTS.path,
         documentation: {
@@ -167,9 +95,6 @@ export const swaggerPlugin: Plugin = {
             version: DEFAULTS.version || appConfig.version,
             description: DEFAULTS.description || appConfig.description || 'Modern full-stack TypeScript framework with type-safe API endpoints'
           },
-          // System tags with descriptions for FluxStack routes
-          // Swagger will also auto-discover additional tags from routes
-          tags: DEFAULTS.tags,
           servers,
 
           // Add security schemes if defined
@@ -185,21 +110,57 @@ export const swaggerPlugin: Plugin = {
           })
         },
         exclude: DEFAULTS.excludePaths,
-        swaggerOptions: {
-          persistAuthorization: true,
-          displayRequestDuration: true,
-          filter: true,
-          showExtensions: true,
-          tryItOutEnabled: true
-        }
+        swaggerOptions: DEFAULTS.swaggerOptions
       }
 
+      // Add Basic Auth middleware if enabled
+      if (DEFAULTS.authEnabled && DEFAULTS.authPassword) {
+        context.app.onBeforeHandle({ as: 'global' }, ({ request, set, path }) => {
+          // Only protect Swagger routes
+          if (!path.startsWith(DEFAULTS.path)) {
+            return
+          }
+
+          const authHeader = request.headers.get('authorization')
+
+          if (!authHeader || !authHeader.startsWith('Basic ')) {
+            set.status = 401
+            set.headers['WWW-Authenticate'] = 'Basic realm="Swagger Documentation"'
+            return {
+              error: 'Authentication required',
+              message: 'Please provide valid credentials to access Swagger documentation'
+            }
+          }
+
+          // Decode Basic Auth credentials
+          const base64Credentials = authHeader.substring(6)
+          const credentials = Buffer.from(base64Credentials, 'base64').toString('utf-8')
+          const [username, password] = credentials.split(':')
+
+          // Validate credentials
+          if (username !== DEFAULTS.authUsername || password !== DEFAULTS.authPassword) {
+            set.status = 401
+            set.headers['WWW-Authenticate'] = 'Basic realm="Swagger Documentation"'
+            return {
+              error: 'Invalid credentials',
+              message: 'The provided username or password is incorrect'
+            }
+          }
+
+          // Credentials valid, continue to Swagger
+        })
+
+        context.logger.debug(`🔒 Swagger authentication enabled (username: ${DEFAULTS.authUsername})`)
+      }
+
+      // That's it! Elysia Swagger auto-discovers everything else
       context.app.use(swagger(swaggerConfig))
 
       context.logger.debug(`Swagger documentation enabled at ${DEFAULTS.path}`, {
         title: swaggerConfig.documentation.info.title,
         version: swaggerConfig.documentation.info.version,
-        servers: servers.length
+        servers: servers.length,
+        authEnabled: DEFAULTS.authEnabled
       })
     } catch (error) {
       context.logger.error('Failed to setup Swagger plugin', { error })
@@ -210,47 +171,93 @@ export const swaggerPlugin: Plugin = {
   onServerStart: async (context: PluginContext) => {
     if (DEFAULTS.enabled) {
       const swaggerUrl = `http://${serverConfig.server.host}:${serverConfig.server.port}${DEFAULTS.path}`
-      context.logger.debug(`Swagger documentation available at: ${swaggerUrl}`)
-
-      // Log system tags
-      context.logger.debug(`📋 Swagger tags configured (${SYSTEM_TAGS.length} tags):`, {
-        tags: SYSTEM_TAGS.map(t => t.name).join(', ')
-      })
-
-      // Try auto-discovery for debugging (to see if we can detect additional tags)
-      const discoveredTags = autoDiscoverTags(context.app)
-      if (discoveredTags.length > SYSTEM_TAGS.length) {
-        const newTags = discoveredTags.filter(dt => !SYSTEM_TAGS.find(st => st.name === dt.name))
-        if (newTags.length > 0) {
-          context.logger.debug(`📋 Additional tags detected from routes:`, {
-            tags: newTags.map(t => t.name).join(', ')
-          })
-        }
-      }
+      context.logger.debug(`📋 Swagger documentation available at: ${swaggerUrl}`)
     }
   }
 }
 
 // ==========================================
-// 🏷️  AUTO-DISCOVERY OF TAGS
+// ⚙️  SWAGGER CONFIGURATION
 // ==========================================
 //
-// The Swagger plugin automatically discovers tags from your routes!
-// Just define tags in your route definitions:
+// All Swagger options are configurable via:
+// 📁 config/plugins.config.ts (user editable)
+// 🌍 Environment variables (.env file)
 //
-// Example:
-// export const usersRoutes = new Elysia({ prefix: '/users', tags: ['Users'] })
+// Available configurations:
+//
+// 1️⃣ Basic Settings:
+//   - SWAGGER_ENABLED (default: true)
+//   - SWAGGER_TITLE (default: 'FluxStack API')
+//   - SWAGGER_VERSION (default: app version)
+//   - SWAGGER_DESCRIPTION (default: 'API documentation...')
+//   - SWAGGER_PATH (default: '/swagger')
+//
+// 2️⃣ Advanced Options:
+//   - SWAGGER_EXCLUDE_PATHS (array, default: [])
+//   - SWAGGER_SERVERS (format: "url1|desc1,url2|desc2")
+//     Example: "https://api.prod.com|Production,https://staging.com|Staging"
+//
+// 3️⃣ Swagger UI Options:
+//   - SWAGGER_PERSIST_AUTH (default: true)
+//   - SWAGGER_DISPLAY_DURATION (default: true)
+//   - SWAGGER_ENABLE_FILTER (default: true)
+//   - SWAGGER_SHOW_EXTENSIONS (default: true)
+//   - SWAGGER_TRY_IT_OUT (default: true)
+//
+// 4️⃣ Authentication (Basic Auth):
+//   - SWAGGER_AUTH_ENABLED (default: false)
+//   - SWAGGER_AUTH_USERNAME (default: 'admin')
+//   - SWAGGER_AUTH_PASSWORD (required if auth enabled)
+//
+// Example .env configuration:
+// ```
+// SWAGGER_ENABLED=true
+// SWAGGER_TITLE=My API
+// SWAGGER_PATH=/api-docs
+// SWAGGER_SERVERS=https://api.myapp.com|Production,https://staging.myapp.com|Staging
+// SWAGGER_EXCLUDE_PATHS=/internal,/admin
+//
+// # Protect Swagger with Basic Auth
+// SWAGGER_AUTH_ENABLED=true
+// SWAGGER_AUTH_USERNAME=admin
+// SWAGGER_AUTH_PASSWORD=super-secret-password
+// ```
+//
+// 🔒 When authentication is enabled:
+// - Browser will prompt for username/password
+// - All Swagger routes are protected (UI + JSON spec)
+// - Credentials are validated using Basic Auth
+// - Perfect for staging/production environments
+//
+// ==========================================
+// 🏷️  AUTOMATIC TAG DISCOVERY
+// ==========================================
+//
+// ✨ 100% AUTOMATIC - Just add tags to your routes!
+//
+// Example 1 - Simple route:
+// app.get('/products', handler, {
+//   detail: {
+//     summary: 'Get all products',
+//     tags: ['Products', 'Catalog']  // ✅ Auto-discovered!
+//   }
+// })
+//
+// Example 2 - Grouped routes:
+// export const ordersRoutes = new Elysia({ prefix: '/orders', tags: ['Orders'] })
 //   .get('/', handler, {
 //     detail: {
-//       tags: ['Users', 'CRUD']  // These tags are auto-discovered!
+//       summary: 'List orders',
+//       tags: ['Orders', 'Management']  // ✅ Auto-discovered!
 //     }
 //   })
 //
-// The plugin will:
-// 1. Scan all registered routes
-// 2. Extract unique tags
-// 3. Generate descriptions automatically
-// 4. Sort tags alphabetically
+// Elysia Swagger automatically:
+// - Discovers all tags from routes
+// - Organizes endpoints by tag
+// - Generates OpenAPI spec
+// - Creates interactive UI
 //
 // ==========================================
 // 🔐 SECURITY CONFIGURATION
