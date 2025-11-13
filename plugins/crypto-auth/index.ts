@@ -13,6 +13,36 @@ import { makeProtectedRouteCommand } from "./cli/make-protected-route.command"
 // ✅ Plugin carrega sua própria configuração (da pasta config/ do plugin)
 import { cryptoAuthConfig } from "./config"
 
+// Response schema for auth info endpoint
+const AuthInfoResponseSchema = t.Object({
+  name: t.String(),
+  description: t.String(),
+  version: t.String(),
+  mode: t.String(),
+  how_it_works: t.Object({
+    step1: t.String(),
+    step2: t.String(),
+    step3: t.String(),
+    step4: t.String(),
+    step5: t.String()
+  }),
+  required_headers: t.Object({
+    "x-public-key": t.String(),
+    "x-timestamp": t.String(),
+    "x-nonce": t.String(),
+    "x-signature": t.String()
+  }),
+  admin_keys: t.Number(),
+  usage: t.Object({
+    required: t.String(),
+    admin: t.String(),
+    optional: t.String(),
+    permissions: t.String()
+  })
+}, {
+  description: 'Crypto Auth plugin information and usage instructions'
+})
+
 // Store config globally for hooks to access
 let pluginConfig: any = cryptoAuthConfig
 
@@ -70,7 +100,7 @@ export const cryptoAuthPlugin: Plugin = {
   },
 
   // @ts-ignore - plugin property não está no tipo oficial mas é suportada
-  plugin: new Elysia({ prefix: "/api/auth" })
+  plugin: new Elysia({ prefix: "/api/auth", tags: ['Authentication'] })
     .get("/info", () => ({
       name: "FluxStack Crypto Auth",
       description: "Autenticação baseada em assinatura Ed25519",
@@ -96,7 +126,14 @@ export const cryptoAuthPlugin: Plugin = {
         optional: "import { cryptoAuthOptional } from '@/plugins/crypto-auth/server'",
         permissions: "import { cryptoAuthPermissions } from '@/plugins/crypto-auth/server'"
       }
-    })),
+    }), {
+      detail: {
+        summary: 'Crypto Auth Plugin Information',
+        description: 'Returns information about the Ed25519-based cryptographic authentication system, including how it works, required headers, and usage examples',
+        tags: ['Authentication', 'Security', 'Crypto']
+      },
+      response: AuthInfoResponseSchema
+    }),
 
   onResponse: async (context: ResponseContext) => {
     if (!cryptoAuthConfig.enableMetrics) return

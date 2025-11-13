@@ -3,6 +3,28 @@
 import { existsSync, statSync } from 'fs'
 import { join, extname, resolve } from 'path'
 import type { FluxStack, PluginContext, Plugin } from '../../plugins/types'
+import { t } from 'elysia'
+
+// Response schema for static files info endpoint
+const StaticFilesInfoSchema = t.Object({
+  success: t.Boolean(),
+  config: t.Object({
+    publicDir: t.String(),
+    uploadsDir: t.String(),
+    enablePublic: t.Boolean(),
+    enableUploads: t.Boolean(),
+    cacheMaxAge: t.Number()
+  }),
+  paths: t.Object({
+    publicPath: t.String(),
+    uploadsPath: t.String(),
+    publicUrl: t.String(),
+    uploadsUrl: t.String()
+  }),
+  timestamp: t.String()
+}, {
+  description: 'Static files configuration and paths information'
+})
 
 export interface StaticFilesConfig {
   publicDir?: string // Default: 'public'
@@ -188,6 +210,13 @@ export const staticFilesPlugin: Plugin = {
         },
         timestamp: new Date().toISOString()
       }
+    }, {
+      detail: {
+        summary: 'Static Files Configuration',
+        description: 'Returns configuration and paths for static files and uploads serving',
+        tags: ['Static Files', 'Configuration']
+      },
+      response: StaticFilesInfoSchema
     })
     
     // Create directories if they don't exist
