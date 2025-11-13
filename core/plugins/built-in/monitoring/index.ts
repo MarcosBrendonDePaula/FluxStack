@@ -5,6 +5,7 @@
 
 import type { FluxStack, PluginContext, RequestContext, ResponseContext, ErrorContext } from "@/core/plugins/types"
 import { MetricsCollector } from "@/core/utils/monitoring"
+import { appConfig } from '@/config/app.config'
 import * as os from 'os'
 import * as fs from 'fs'
 import * as path from 'path'
@@ -258,8 +259,8 @@ export const monitoringPlugin: Plugin = {
       // Record server start metric
       const metricsRegistry = (context as any).metricsRegistry as MetricsRegistry
       if (metricsRegistry) {
-        recordCounter(metricsRegistry, 'server_starts_total', 1, { 
-          version: context.config.app.version 
+        recordCounter(metricsRegistry, 'server_starts_total', 1, {
+          version: appConfig.version
         })
       }
     }

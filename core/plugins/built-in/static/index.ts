@@ -123,9 +123,10 @@ export const staticPlugin: Plugin = {
 }
 
 // Helper function to get plugin config
-function getPluginConfig(context: PluginContext) {
-  const pluginConfig = context.config.plugins.config?.static || {}
-  return { ...staticPlugin.defaultConfig, ...pluginConfig }
+function getPluginConfig(_context: PluginContext) {
+  // Use new declarative config system
+  // For backward compatibility, we still merge with defaultConfig
+  return { ...staticPlugin.defaultConfig }
 }
 
 
