@@ -27,41 +27,12 @@ const getAuthToken = (): string | null => {
 
 /**
  * Create Eden Treaty client with authentication
+ * Keep it simple - just auth headers
  */
 const client = treaty<App>(getBaseUrl(), {
-  // Dynamic headers - executed for EVERY request automatically
-  headers(path, options) {
+  headers() {
     const token = getAuthToken()
-    if (token) {
-      return { Authorization: `Bearer ${token}` }
-    }
-    return undefined
-  },
-
-  // Custom fetcher with logging and error handling
-  fetcher: async (url, init) => {
-    // Log in development
-    if (import.meta.env.DEV) {
-      const method = init?.method || 'GET'
-      console.log(`🌐 API: ${method} ${url}`)
-    }
-
-    // Execute fetch
-    const response = await fetch(url, init)
-
-    // Log response in development
-    if (import.meta.env.DEV) {
-      console.log(`📡 Response: ${url} - ${response.status}`)
-    }
-
-    // Auto-logout on 401
-    if (response.status === 401) {
-      console.warn('🔒 Token expired, redirecting to login...')
-      localStorage.removeItem('accessToken')
-      // window.location.href = '/login' // Uncomment if you have auth
-    }
-
-    return response
+    return token ? { Authorization: `Bearer ${token}` } : undefined
   }
 })
 
