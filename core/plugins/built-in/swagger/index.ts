@@ -26,27 +26,27 @@ function parseServersFromConfig(serversString: string): Array<{ url: string; des
 
 // Configuration from config/plugins.config.ts (user editable)
 const DEFAULTS = {
-  enabled: pluginsConfig.swagger.enabled,
-  path: pluginsConfig.swagger.path,
-  title: pluginsConfig.swagger.title,
-  description: pluginsConfig.swagger.description,
-  version: pluginsConfig.swagger.version,
-  excludePaths: pluginsConfig.swagger.excludePaths,
-  servers: parseServersFromConfig(pluginsConfig.swagger.servers),
+  enabled: pluginsConfig.swaggerEnabled,
+  path: pluginsConfig.swaggerPath,
+  title: pluginsConfig.swaggerTitle,
+  description: pluginsConfig.swaggerDescription,
+  version: pluginsConfig.swaggerVersion,
+  excludePaths: pluginsConfig.swaggerExcludePaths,
+  servers: parseServersFromConfig(pluginsConfig.swaggerServers),
 
   // Swagger UI options
   swaggerOptions: {
-    persistAuthorization: pluginsConfig.swagger.ui.persistAuthorization,
-    displayRequestDuration: pluginsConfig.swagger.ui.displayRequestDuration,
-    filter: pluginsConfig.swagger.ui.enableFilter,
-    showExtensions: pluginsConfig.swagger.ui.showExtensions,
-    tryItOutEnabled: pluginsConfig.swagger.ui.tryItOutEnabled
+    persistAuthorization: pluginsConfig.swaggerPersistAuthorization,
+    displayRequestDuration: pluginsConfig.swaggerDisplayRequestDuration,
+    filter: pluginsConfig.swaggerEnableFilter,
+    showExtensions: pluginsConfig.swaggerShowExtensions,
+    tryItOutEnabled: pluginsConfig.swaggerTryItOutEnabled
   },
 
   // Authentication
-  authEnabled: pluginsConfig.swagger.auth.enabled,
-  authUsername: pluginsConfig.swagger.auth.username,
-  authPassword: pluginsConfig.swagger.auth.password,
+  authEnabled: pluginsConfig.swaggerAuthEnabled,
+  authUsername: pluginsConfig.swaggerAuthUsername,
+  authPassword: pluginsConfig.swaggerAuthPassword,
 
   // Security (can be extended via env vars if needed)
   securitySchemes: {},
