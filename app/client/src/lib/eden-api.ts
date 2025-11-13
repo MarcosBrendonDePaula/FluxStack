@@ -30,16 +30,16 @@ const getAuthToken = (): string | null => {
  */
 const client = treaty<App>(getBaseUrl(), {
   // Dynamic headers - executed for EVERY request automatically
-  headers: () => {
+  headers(path, options) {
     const token = getAuthToken()
     if (token) {
       return { Authorization: `Bearer ${token}` }
     }
-    return undefined // Return undefined instead of empty object
+    return undefined
   },
 
-  // Custom fetch with logging and error handling
-  fetch: async (url: string | URL | Request, init?: RequestInit) => {
+  // Custom fetcher with logging and error handling
+  fetcher: async (url, init) => {
     // Log in development
     if (import.meta.env.DEV) {
       const method = init?.method || 'GET'
