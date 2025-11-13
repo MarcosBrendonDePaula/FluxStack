@@ -88,30 +88,6 @@ function autoDiscoverTags(app: any): Array<{ name: string; description: string }
   return discoveredTags
 }
 
-// Pre-defined tags with descriptions for common FluxStack routes
-// These tags provide documentation in Swagger UI
-// The Swagger plugin will also auto-discover additional tags from routes
-const SYSTEM_TAGS = [
-  { name: 'Health', description: 'Health check and system status endpoints' },
-  { name: 'API', description: 'General API endpoints' },
-  { name: 'Users', description: 'User management endpoints' },
-  { name: 'CRUD', description: 'Create, Read, Update, Delete operations' },
-  { name: 'Authentication', description: 'Authentication and authorization endpoints' },
-  { name: 'Security', description: 'Security-related endpoints' },
-  { name: 'Crypto', description: 'Cryptographic operations endpoints' },
-  { name: 'Development', description: 'Development and debugging endpoints' },
-  { name: 'Configuration', description: 'Configuration and settings endpoints' },
-  { name: 'Debug', description: 'Debug and diagnostic endpoints' },
-  { name: 'Static Files', description: 'Static file serving endpoints' },
-  { name: 'Live Components', description: 'Real-time live components endpoints' },
-  { name: 'WebSocket', description: 'WebSocket connection endpoints' },
-  { name: 'Monitoring', description: 'Monitoring and metrics endpoints' },
-  { name: 'Performance', description: 'Performance tracking endpoints' },
-  { name: 'Connections', description: 'Connection management endpoints' },
-  { name: 'Pools', description: 'Connection pool endpoints' },
-  { name: 'Alerts', description: 'Alert management endpoints' }
-]
-
 // Default configuration values (can be overridden via env vars in pluginsConfig)
 const DEFAULTS = {
   enabled: true,
@@ -119,7 +95,9 @@ const DEFAULTS = {
   title: pluginsConfig.swaggerTitle,
   description: pluginsConfig.swaggerDescription,
   version: pluginsConfig.swaggerVersion,
-  tags: SYSTEM_TAGS, // System tags with descriptions
+  // Tags will be discovered automatically from routes at runtime
+  // Users can optionally add custom tag descriptions via config
+  customTagDescriptions: {} as Record<string, string>,
   servers: [] as Array<{ url: string; description: string }>,
   excludePaths: [] as string[],
   securitySchemes: {},
@@ -167,9 +145,8 @@ export const swaggerPlugin: Plugin = {
             version: DEFAULTS.version || appConfig.version,
             description: DEFAULTS.description || appConfig.description || 'Modern full-stack TypeScript framework with type-safe API endpoints'
           },
-          // System tags with descriptions for FluxStack routes
-          // Swagger will also auto-discover additional tags from routes
-          tags: DEFAULTS.tags,
+          // Tags are auto-discovered by Elysia Swagger from route definitions
+          // No need to pre-define - they come from route.detail.tags automatically
           servers,
 
           // Add security schemes if defined
@@ -212,20 +189,14 @@ export const swaggerPlugin: Plugin = {
       const swaggerUrl = `http://${serverConfig.server.host}:${serverConfig.server.port}${DEFAULTS.path}`
       context.logger.debug(`Swagger documentation available at: ${swaggerUrl}`)
 
-      // Log system tags
-      context.logger.debug(`📋 Swagger tags configured (${SYSTEM_TAGS.length} tags):`, {
-        tags: SYSTEM_TAGS.map(t => t.name).join(', ')
-      })
-
-      // Try auto-discovery for debugging (to see if we can detect additional tags)
+      // Auto-discover tags from registered routes
       const discoveredTags = autoDiscoverTags(context.app)
-      if (discoveredTags.length > SYSTEM_TAGS.length) {
-        const newTags = discoveredTags.filter(dt => !SYSTEM_TAGS.find(st => st.name === dt.name))
-        if (newTags.length > 0) {
-          context.logger.debug(`📋 Additional tags detected from routes:`, {
-            tags: newTags.map(t => t.name).join(', ')
-          })
-        }
+      if (discoveredTags.length > 0) {
+        context.logger.debug(`📋 Swagger tags auto-discovered from routes (${discoveredTags.length} tags):`, {
+          tags: discoveredTags.map(t => t.name).join(', ')
+        })
+      } else {
+        context.logger.debug('📋 No tags discovered yet - tags will be shown as routes are added')
       }
     }
   }
@@ -235,22 +206,45 @@ export const swaggerPlugin: Plugin = {
 // 🏷️  AUTO-DISCOVERY OF TAGS
 // ==========================================
 //
-// The Swagger plugin automatically discovers tags from your routes!
-// Just define tags in your route definitions:
+// ✨ FULLY AUTOMATIC - No manual configuration needed!
 //
-// Example:
+// The Swagger plugin automatically discovers tags from your routes.
+// Just add tags to your route definitions and they appear in Swagger:
+//
+// Example 1 - Simple route with tags:
+// app.get('/products', handler, {
+//   detail: {
+//     tags: ['Products', 'Catalog']  // ✅ Automatically discovered!
+//   }
+// })
+//
+// Example 2 - Grouped routes:
 // export const usersRoutes = new Elysia({ prefix: '/users', tags: ['Users'] })
 //   .get('/', handler, {
 //     detail: {
-//       tags: ['Users', 'CRUD']  // These tags are auto-discovered!
+//       tags: ['Users', 'CRUD']  // ✅ Both tags auto-discovered!
 //     }
 //   })
 //
-// The plugin will:
-// 1. Scan all registered routes
-// 2. Extract unique tags
-// 3. Generate descriptions automatically
-// 4. Sort tags alphabetically
+// 📝 Custom Tag Descriptions (optional):
+// If you want custom descriptions instead of auto-generated ones,
+// add them to your app config (not in the core!):
+//
+// // config/plugins.config.ts (user file)
+// export const pluginsConfig = {
+//   swagger: {
+//     customTagDescriptions: {
+//       'Products': 'Product catalog and inventory management',
+//       'Orders': 'Order processing and fulfillment'
+//     }
+//   }
+// }
+//
+// How it works:
+// 1. Developer creates routes with tags
+// 2. Swagger automatically detects all tags
+// 3. Tags appear in Swagger UI instantly
+// 4. Auto-generated descriptions (or custom if configured)
 //
 // ==========================================
 // 🔐 SECURITY CONFIGURATION
