@@ -1,5 +1,7 @@
 import { swagger } from '@elysiajs/swagger'
 import type { FluxStack, PluginContext } from '@/core/plugins/types'
+import { appConfig } from '@/config/app.config'
+import { serverConfig } from '@/config/server.config'
 
 type Plugin = FluxStack.Plugin
 
@@ -114,7 +116,7 @@ export const swaggerPlugin: Plugin = {
       // Build servers list
       const servers = config.servers.length > 0 ? config.servers : [
         {
-          url: `http://${context.config.server.host}:${context.config.server.port}`,
+          url: `http://${serverConfig.server.host}:${serverConfig.server.port}`,
           description: 'Development server'
         }
       ]
@@ -131,9 +133,9 @@ export const swaggerPlugin: Plugin = {
         path: config.path,
         documentation: {
           info: {
-            title: config.title || context.config.app?.name || 'FluxStack API',
-            version: config.version || context.config.app?.version || '1.7.4',
-            description: config.description || context.config.app?.description || 'Modern full-stack TypeScript framework with type-safe API endpoints'
+            title: config.title || appConfig.name || 'FluxStack API',
+            version: config.version || appConfig.version || '1.7.4',
+            description: config.description || appConfig.description || 'Modern full-stack TypeScript framework with type-safe API endpoints'
           },
           tags: config.tags,
           servers,
@@ -175,20 +177,20 @@ export const swaggerPlugin: Plugin = {
 
   onServerStart: async (context: PluginContext) => {
     const config = getPluginConfig(context)
-    
+
     if (config.enabled) {
-      const swaggerUrl = `http://${context.config.server.host}:${context.config.server.port}${config.path}`
+      const swaggerUrl = `http://${serverConfig.server.host}:${serverConfig.server.port}${config.path}`
       context.logger.debug(`Swagger documentation available at: ${swaggerUrl}`)
     }
   }
 }
 
-// Helper function to get plugin config from context
-function getPluginConfig(context: PluginContext) {
-  // In a real implementation, this would get the config from the plugin context
-  // For now, merge default config with any provided config
-  const pluginConfig = context.config.plugins.config?.swagger || {}
-  return { ...swaggerPlugin.defaultConfig, ...pluginConfig }
+// Helper function to get plugin config
+function getPluginConfig(_context: PluginContext) {
+  // Use new declarative config system
+  // Note: Plugin-specific configs can be accessed from pluginsConfig
+  // For backward compatibility, we still merge with defaultConfig
+  return { ...swaggerPlugin.defaultConfig }
 }
 
 // Example usage for security configuration:

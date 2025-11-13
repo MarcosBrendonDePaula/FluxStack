@@ -1,6 +1,7 @@
 import type { FluxStack, PluginContext, RequestContext } from "@/core/plugins/types"
 import { createServer, type ViteDevServer } from 'vite'
 import { FLUXSTACK_VERSION } from "@/core/utils/version"
+import { clientConfig } from '@/config/client.config'
 
 type Plugin = FluxStack.Plugin
 
@@ -91,12 +92,12 @@ export const vitePlugin: Plugin = {
   setup: async (context: PluginContext) => {
     const config = getPluginConfig(context)
 
-    if (!config.enabled || !context.config.client) {
+    if (!config.enabled) {
       context.logger.debug('Vite plugin disabled or no client configuration found')
       return
     }
 
-    const vitePort = config.port || context.config.client.port || 5173
+    const vitePort = config.port || clientConfig.vite.port || 5173
     const viteHost = config.host || "localhost"
 
     // Import group logger utilities
@@ -272,9 +273,10 @@ export const vitePlugin: Plugin = {
 }
 
 // Helper function to get plugin config
-function getPluginConfig(context: PluginContext) {
-  const pluginConfig = context.config.plugins.config?.vite || {}
-  return { ...vitePlugin.defaultConfig, ...pluginConfig }
+function getPluginConfig(_context: PluginContext) {
+  // Use new declarative config system
+  // For backward compatibility, we still merge with defaultConfig
+  return { ...vitePlugin.defaultConfig }
 }
 
 // Monitor Vite server status with automatic port detection
