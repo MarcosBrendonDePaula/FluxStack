@@ -37,7 +37,8 @@ export const api = treaty<App>(getBaseUrl(), {
   },
 
   // Custom fetcher with logging and error handling
-  async fetcher(url, init) {
+  // Use 'as any' to bypass Bun's strict fetch type (includes preconnect property)
+  fetcher: (async (url, init) => {
     if (import.meta.env.DEV) {
       console.log(`🌐 ${init?.method ?? 'GET'} ${url}`)
     }
@@ -56,7 +57,7 @@ export const api = treaty<App>(getBaseUrl(), {
     }
 
     return res
-  }
+  }) as typeof fetch
 }).api // ← expose the generated API object
 
 /**
