@@ -18,7 +18,9 @@ export class UsersController {
    */
   static async getUsers() {
     return {
-      users
+      success: true,
+      users,
+      count: users.length
     }
   }
 
@@ -30,7 +32,10 @@ export class UsersController {
     if (!user) {
       return null
     }
-    return { user }
+    return {
+      success: true,
+      user
+    }
   }
 
   /**
@@ -75,12 +80,10 @@ export class UsersController {
       }
     }
 
-    const deletedUser = users[userIndex]
     users.splice(userIndex, 1)
 
     return {
       success: true,
-      user: deletedUser,
       message: 'Usuário deletado com sucesso'
     }
   }
