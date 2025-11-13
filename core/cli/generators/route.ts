@@ -62,7 +62,15 @@ const controller = new {{pascalName}}Controller()
 export const {{camelName}}Routes = new Elysia({ prefix: '/api/{{kebabName}}s' })
   .use(errorHandler)
   .onBeforeHandle(({ request }) => {
-    logger.request(request.method, new URL(request.url).pathname)
+    const url = (() => {
+      try {
+        return new URL(request.url)
+      } catch {
+        const host = request.headers.get('host') || 'localhost'
+        return new URL(request.url, \`http://\${host}\`)
+      }
+    })()
+    logger.request(request.method, url.pathname)
   })
   .get('/', async () => {
     return await controller.getAll()
@@ -309,7 +317,15 @@ const controller = new AuthController()
 export const authRoutes = new Elysia({ prefix: '/api/auth' })
   .use(errorHandler)
   .onBeforeHandle(({ request }) => {
-    logger.request(request.method, new URL(request.url).pathname)
+    const url = (() => {
+      try {
+        return new URL(request.url)
+      } catch {
+        const host = request.headers.get('host') || 'localhost'
+        return new URL(request.url, \`http://\${host}\`)
+      }
+    })()
+    logger.request(request.method, url.pathname)
   })
   .post('/register', async ({ body }) => {
     return await controller.register({ body })

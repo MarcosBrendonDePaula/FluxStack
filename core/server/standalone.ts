@@ -2,6 +2,21 @@
 import { FluxStackFramework } from "./index"
 import type { Plugin, PluginContext } from "../types"
 
+/**
+ * Helper to safely parse request.url which might be relative or absolute
+ */
+function parseRequestURL(request: Request): URL {
+  try {
+    // Try parsing as absolute URL first
+    return new URL(request.url)
+  } catch {
+    // If relative, use host from headers or default to localhost
+    const host = request.headers.get('host') || 'localhost'
+    const protocol = request.headers.get('x-forwarded-proto') || 'http'
+    return new URL(request.url, `${protocol}://${host}`)
+  }
+}
+
 export const createStandaloneServer = (userConfig: any = {}) => {
   const app = new FluxStackFramework({
     server: {
@@ -29,7 +44,7 @@ export const createStandaloneServer = (userConfig: any = {}) => {
       context.app.onRequest(({ request }: { request: Request }) => {
         // Log mais limpo para backend standalone
         const timestamp = new Date().toLocaleTimeString()
-        const path = new URL(request.url).pathname
+        const path = parseRequestURL(request).pathname
         console.log(`[${timestamp}] ${request.method} ${path}`)
       })
     }
