@@ -19,6 +19,21 @@ export class FluxStackFramework {
   private isStarted: boolean = false
   private requestTimings: Map<string, number> = new Map()
 
+  /**
+   * Helper to safely parse request.url which might be relative or absolute
+   */
+  private parseRequestURL(request: Request): URL {
+    try {
+      // Try parsing as absolute URL first
+      return new URL(request.url)
+    } catch {
+      // If relative, use host from headers or default to localhost
+      const host = request.headers.get('host') || 'localhost'
+      const protocol = request.headers.get('x-forwarded-proto') || 'http'
+      return new URL(request.url, `${protocol}://${host}`)
+    }
+  }
+
   constructor(config?: Partial<FluxStackConfig>) {
     // Load the full configuration
     const fullConfig = config ? { ...getConfigSync(), ...config } : getConfigSync()
@@ -160,7 +175,7 @@ export class FluxStackFramework {
   private setupHeadHandler() {
     // Global HEAD handler to prevent Elysia's automatic HEAD conversion bug
     this.app.head("*", ({ request, set }) => {
-      const url = new URL(request.url)
+      const url = this.parseRequestURL(request)
 
       // Handle API routes
       if (url.pathname.startsWith(this.context.config.server.apiPrefix)) {
@@ -234,7 +249,7 @@ export class FluxStackFramework {
     // Setup onRequest hook and onBeforeRoute hook
     this.app.onRequest(async ({ request, set }) => {
       const startTime = Date.now()
-      const url = new URL(request.url)
+      const url = this.parseRequestURL(request)
 
       // Store start time for duration calculation (using request URL as key)
       const requestKey = `${request.method}-${url.pathname}-${startTime}`
@@ -275,7 +290,7 @@ export class FluxStackFramework {
 
     // Setup onResponse hook
     this.app.onAfterHandle(async ({ request, response, set }) => {
-      const url = new URL(request.url)
+      const url = this.parseRequestURL(request)
 
       // Retrieve start time using the timing key
       const requestKey = set.headers['x-request-timing-key']
@@ -329,7 +344,7 @@ export class FluxStackFramework {
 
     this.app.onError(async ({ error, request, path, set }) => {
       const startTime = Date.now()
-      const url = new URL(request.url)
+      const url = this.parseRequestURL(request)
 
       const errorContext = {
         request,
@@ -448,7 +463,7 @@ export class FluxStackFramework {
 
   private async handleViteProxy(errorContext: any): Promise<Response> {
     const vitePort = this.context.config.client?.port || 5173
-    const url = new URL(errorContext.request.url)
+    const url = this.parseRequestURL(errorContext.request)
 
     try {
       const viteUrl = `http://localhost:${vitePort}${url.pathname}${url.search}`

@@ -174,7 +174,14 @@ export class MyPlugin implements FluxStackPlugin {
   // Intercept every request
   async onRequest(context: PluginContext, request: Request): Promise<void> {
     // Example: Add custom headers
-    const url = new URL(request.url)
+    const url = (() => {
+      try {
+        return new URL(request.url)
+      } catch {
+        const host = request.headers.get('host') || 'localhost'
+        return new URL(request.url, \`http://\${host}\`)
+      }
+    })()
     console.log(\`[\${this.name}] Request to: \${url.pathname}\`)
 
     // Example: Validate authentication

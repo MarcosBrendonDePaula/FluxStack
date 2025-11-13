@@ -6,6 +6,21 @@ type Plugin = FluxStack.Plugin
 
 let viteServer: ViteDevServer | null = null
 
+/**
+ * Helper to safely parse request.url which might be relative or absolute
+ */
+function parseRequestURL(request: Request): URL {
+  try {
+    // Try parsing as absolute URL first
+    return new URL(request.url)
+  } catch {
+    // If relative, use host from headers or default to localhost
+    const host = request.headers.get('host') || 'localhost'
+    const protocol = request.headers.get('x-forwarded-proto') || 'http'
+    return new URL(request.url, `${protocol}://${host}`)
+  }
+}
+
 export const vitePlugin: Plugin = {
   name: "vite",
   version: FLUXSTACK_VERSION,
@@ -186,7 +201,7 @@ export const vitePlugin: Plugin = {
       const vitePort = 5173
 
       try {
-        const url = new URL(requestContext.request.url)
+        const url = parseRequestURL(requestContext.request)
         const viteUrl = `http://${viteHost}:${vitePort}${requestContext.path}${url.search}`
 
         // Forward request to Vite
@@ -222,7 +237,7 @@ export const vitePlugin: Plugin = {
     const vitePort = 5173
 
     try {
-      const url = new URL(requestContext.request.url)
+      const url = parseRequestURL(requestContext.request)
       const viteUrl = `http://${viteHost}:${vitePort}${requestContext.path}${url.search}`
 
       // Forward request to Vite

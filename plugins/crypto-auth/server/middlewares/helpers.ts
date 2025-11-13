@@ -5,6 +5,21 @@
 
 import type { Logger } from '@/core/utils/logger'
 
+/**
+ * Helper to safely parse request.url which might be relative or absolute
+ */
+function parseRequestURL(request: Request): URL {
+  try {
+    // Try parsing as absolute URL first
+    return new URL(request.url)
+  } catch {
+    // If relative, use host from headers or default to localhost
+    const host = request.headers.get('host') || 'localhost'
+    const protocol = request.headers.get('x-forwarded-proto') || 'http'
+    return new URL(request.url, `${protocol}://${host}`)
+  }
+}
+
 export interface CryptoAuthUser {
   publicKey: string
   isAdmin: boolean
@@ -65,7 +80,7 @@ export function extractAuthHeaders(request: Request): {
  * Build message for signature verification
  */
 export function buildMessage(request: Request): string {
-  const url = new URL(request.url)
+  const url = parseRequestURL(request)
   return `${request.method}:${url.pathname}`
 }
 
