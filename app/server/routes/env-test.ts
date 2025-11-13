@@ -3,18 +3,62 @@
  * Displays current configuration for debugging purposes
  */
 
-import { Elysia } from 'elysia'
+import { Elysia, t } from 'elysia'
 import { appConfig } from '@/config/app.config'
 import { serverConfig } from '@/config/server.config'
 import { loggerConfig } from '@/config/logger.config'
 import { appRuntimeConfig } from '@/config/runtime.config'
 import { helpers } from '@/core/utils/env'
 
+// Response schema for environment test
+const EnvTestResponseSchema = t.Object({
+  message: t.String(),
+  timestamp: t.String(),
+  serverConfig: t.Object({
+    port: t.Number(),
+    host: t.String(),
+    apiPrefix: t.String(),
+    appName: t.String(),
+    appVersion: t.String(),
+    cors: t.Object({
+      origins: t.Array(t.String()),
+      methods: t.Array(t.String()),
+      credentials: t.Boolean()
+    }),
+    client: t.Object({
+      port: t.Number(),
+      target: t.String(),
+      sourceMaps: t.Boolean()
+    }),
+    features: t.Object({
+      enableSwagger: t.Boolean(),
+      enableMetrics: t.Boolean(),
+      enableMonitoring: t.Boolean()
+    })
+  }),
+  environment: t.Object({
+    NODE_ENV: t.String(),
+    DEBUG: t.Boolean(),
+    LOG_LEVEL: t.String()
+  }),
+  urls: t.Object({
+    server: t.String(),
+    client: t.String(),
+    swagger: t.String()
+  }),
+  system: t.Object({
+    version: t.String(),
+    features: t.Array(t.String())
+  })
+}, {
+  description: 'Environment and configuration information for debugging'
+})
+
 /**
  * Environment test endpoint
  * Shows declarative config system information
  */
-export const envTestRoute = new Elysia({ prefix: '/api' })
+export const envTestRoute = new Elysia({ prefix: '/api', tags: ['Development'] })
   .get('/env-test', () => {
     return {
       message: '⚡ Declarative Config System!',
@@ -56,4 +100,11 @@ export const envTestRoute = new Elysia({ prefix: '/api' })
         features: ['type-safe', 'validated', 'declarative', 'runtime-reload']
       }
     }
+  }, {
+    detail: {
+      summary: 'Environment Configuration Test',
+      description: 'Returns current environment configuration, server settings, and runtime features for debugging and validation',
+      tags: ['Development', 'Configuration', 'Debug']
+    },
+    response: EnvTestResponseSchema
   })
