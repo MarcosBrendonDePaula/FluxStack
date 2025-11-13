@@ -1,76 +1,14 @@
 import { Elysia, t } from 'elysia'
 import { UsersController } from '@/app/server/controllers/users.controller'
-
-// ===== Request/Response Schemas =====
-
-const UserSchema = t.Object({
-  id: t.Number(),
-  name: t.String(),
-  email: t.String()
-}, {
-  description: 'User object'
-})
-
-const CreateUserRequestSchema = t.Object({
-  name: t.String({ minLength: 2, description: 'User name (minimum 2 characters)' }),
-  email: t.String({ format: 'email', description: 'Valid email address' })
-}, {
-  description: 'Request body for creating a new user'
-})
-
-const CreateUserResponseSchema = t.Union([
-  t.Object({
-    success: t.Literal(true),
-    user: UserSchema,
-    message: t.Optional(t.String())
-  }),
-  t.Object({
-    success: t.Literal(false),
-    error: t.String()
-  })
-], {
-  description: 'Response after attempting to create a user'
-})
-
-const GetUsersResponseSchema = t.Object({
-  success: t.Boolean(),
-  users: t.Array(UserSchema),
-  count: t.Number()
-}, {
-  description: 'List of all users'
-})
-
-const GetUserResponseSchema = t.Union([
-  t.Object({
-    success: t.Literal(true),
-    user: UserSchema
-  }),
-  t.Object({
-    success: t.Literal(false),
-    error: t.String()
-  })
-], {
-  description: 'Single user or error'
-})
-
-const DeleteUserResponseSchema = t.Union([
-  t.Object({
-    success: t.Literal(true),
-    message: t.String()
-  }),
-  t.Object({
-    success: t.Literal(false),
-    message: t.String()
-  })
-], {
-  description: 'Result of delete operation'
-})
-
-const ErrorResponseSchema = t.Object({
-  error: t.String()
-}, {
-  description: 'Error response'
-})
+import type { CreateUserRequest } from '@/app/shared/types'
+import {
+  CreateUserRequestSchema,
+  GetUsersResponseSchema,
+  GetUserResponseSchema,
+  CreateUserResponseSchema,
+  DeleteUserResponseSchema,
+  ErrorResponseSchema
+} from '@/app/shared/schemas'
 
 /**
  * Users API Routes
@@ -123,36 +61,10 @@ export const usersRoutes = new Elysia({ prefix: '/users', tags: ['Users'] })
   })
 
   // POST /users - Create new user
-  .post('/', async ({ body, set }) => {
-    // Validate required fields
-    if (!body.name || !body.email) {
-      set.status = 400
-      return {
-        success: false,
-        error: 'Nome e email são obrigatórios'
-      }
-    }
-
-    // Validate name length
-    if (body.name.length < 2) {
-      set.status = 400
-      return {
-        success: false,
-        error: 'Nome deve ter pelo menos 2 caracteres'
-      }
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(body.email)) {
-      set.status = 400
-      return {
-        success: false,
-        error: 'Email inválido'
-      }
-    }
-
-    const result = await UsersController.createUser(body)
+  .post('/', async ({ body }) => {
+    // Schema validation is handled automatically by Elysia
+    // Body is validated against CreateUserRequestSchema
+    const result = await UsersController.createUser(body as CreateUserRequest)
 
     // If email is duplicate, still return 200 but with success: false
     if (!result.success) {

@@ -1,12 +1,4 @@
-import type { CreateUserRequest } from '@/app/shared/types'
-
-// User type
-export interface User {
-  id: number
-  name: string
-  email: string
-  createdAt: Date
-}
+import type { CreateUserRequest, User } from '@/app/shared/types'
 
 // In-memory storage for users (for testing purposes)
 let users: User[] = []
