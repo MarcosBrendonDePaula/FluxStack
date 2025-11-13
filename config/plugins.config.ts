@@ -28,7 +28,8 @@ const pluginsConfigSchema = {
   // Logger plugin (handled by logger.config.ts)
   loggerEnabled: config.boolean('LOGGER_PLUGIN_ENABLED', true),
 
-  // Swagger plugin (enable/disable via runtime.config.ts)
+  // Swagger plugin
+  swaggerEnabled: config.boolean('SWAGGER_ENABLED', true),
   swaggerTitle: config.string('SWAGGER_TITLE', 'FluxStack API'),
   swaggerVersion: config.string('SWAGGER_VERSION', FLUXSTACK_VERSION),
   swaggerDescription: config.string(
@@ -36,6 +37,21 @@ const pluginsConfigSchema = {
     'API documentation for FluxStack application'
   ),
   swaggerPath: config.string('SWAGGER_PATH', '/swagger'),
+
+  // Swagger advanced options
+  swaggerExcludePaths: config.array('SWAGGER_EXCLUDE_PATHS', []),
+
+  // Swagger servers (comma-separated list of URLs)
+  // Format: "url1|description1,url2|description2"
+  // Example: "https://api.prod.com|Production,https://api.staging.com|Staging"
+  swaggerServers: config.string('SWAGGER_SERVERS', ''),
+
+  // Swagger UI options
+  swaggerPersistAuthorization: config.boolean('SWAGGER_PERSIST_AUTH', true),
+  swaggerDisplayRequestDuration: config.boolean('SWAGGER_DISPLAY_DURATION', true),
+  swaggerEnableFilter: config.boolean('SWAGGER_ENABLE_FILTER', true),
+  swaggerShowExtensions: config.boolean('SWAGGER_SHOW_EXTENSIONS', true),
+  swaggerTryItOutEnabled: config.boolean('SWAGGER_TRY_IT_OUT', true),
 
   // Static files plugin
   staticFilesEnabled: config.boolean('STATIC_FILES_ENABLED', true),

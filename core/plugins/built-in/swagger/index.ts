@@ -6,15 +6,44 @@ import { pluginsConfig } from '@/config/plugins.config'
 
 type Plugin = FluxStack.Plugin
 
-// Default configuration values (can be overridden via env vars in pluginsConfig)
+/**
+ * Parse servers from config string
+ * Format: "url1|description1,url2|description2"
+ */
+function parseServersFromConfig(serversString: string): Array<{ url: string; description: string }> {
+  if (!serversString || serversString.trim() === '') {
+    return []
+  }
+
+  return serversString.split(',').map(server => {
+    const [url, description] = server.split('|').map(s => s.trim())
+    return {
+      url: url || '',
+      description: description || 'Server'
+    }
+  }).filter(s => s.url !== '')
+}
+
+// Configuration from config/plugins.config.ts (user editable)
 const DEFAULTS = {
-  enabled: true,
+  enabled: pluginsConfig.swaggerEnabled,
   path: pluginsConfig.swaggerPath,
   title: pluginsConfig.swaggerTitle,
   description: pluginsConfig.swaggerDescription,
   version: pluginsConfig.swaggerVersion,
-  servers: [] as Array<{ url: string; description: string }>,
-  excludePaths: [] as string[],
+  excludePaths: pluginsConfig.swaggerExcludePaths,
+  servers: parseServersFromConfig(pluginsConfig.swaggerServers),
+
+  // Swagger UI options
+  swaggerOptions: {
+    persistAuthorization: pluginsConfig.swaggerPersistAuthorization,
+    displayRequestDuration: pluginsConfig.swaggerDisplayRequestDuration,
+    filter: pluginsConfig.swaggerEnableFilter,
+    showExtensions: pluginsConfig.swaggerShowExtensions,
+    tryItOutEnabled: pluginsConfig.swaggerTryItOutEnabled
+  },
+
+  // Security (can be extended via env vars if needed)
   securitySchemes: {},
   globalSecurity: [] as Array<Record<string, any>>
 }
@@ -52,7 +81,7 @@ export const swaggerPlugin: Plugin = {
         })
       }
 
-      // Simple Swagger configuration - Elysia handles everything else automatically
+      // Simple Swagger configuration - all options from config/plugins.config.ts
       const swaggerConfig = {
         path: DEFAULTS.path,
         documentation: {
@@ -76,13 +105,7 @@ export const swaggerPlugin: Plugin = {
           })
         },
         exclude: DEFAULTS.excludePaths,
-        swaggerOptions: {
-          persistAuthorization: true,
-          displayRequestDuration: true,
-          filter: true,
-          showExtensions: true,
-          tryItOutEnabled: true
-        }
+        swaggerOptions: DEFAULTS.swaggerOptions
       }
 
       // That's it! Elysia Swagger auto-discovers everything else
@@ -108,12 +131,48 @@ export const swaggerPlugin: Plugin = {
 }
 
 // ==========================================
+// ⚙️  SWAGGER CONFIGURATION
+// ==========================================
+//
+// All Swagger options are configurable via:
+// 📁 config/plugins.config.ts (user editable)
+// 🌍 Environment variables (.env file)
+//
+// Available configurations:
+//
+// 1️⃣ Basic Settings:
+//   - SWAGGER_ENABLED (default: true)
+//   - SWAGGER_TITLE (default: 'FluxStack API')
+//   - SWAGGER_VERSION (default: app version)
+//   - SWAGGER_DESCRIPTION (default: 'API documentation...')
+//   - SWAGGER_PATH (default: '/swagger')
+//
+// 2️⃣ Advanced Options:
+//   - SWAGGER_EXCLUDE_PATHS (array, default: [])
+//   - SWAGGER_SERVERS (format: "url1|desc1,url2|desc2")
+//     Example: "https://api.prod.com|Production,https://staging.com|Staging"
+//
+// 3️⃣ Swagger UI Options:
+//   - SWAGGER_PERSIST_AUTH (default: true)
+//   - SWAGGER_DISPLAY_DURATION (default: true)
+//   - SWAGGER_ENABLE_FILTER (default: true)
+//   - SWAGGER_SHOW_EXTENSIONS (default: true)
+//   - SWAGGER_TRY_IT_OUT (default: true)
+//
+// Example .env configuration:
+// ```
+// SWAGGER_ENABLED=true
+// SWAGGER_TITLE=My API
+// SWAGGER_PATH=/api-docs
+// SWAGGER_SERVERS=https://api.myapp.com|Production,https://staging.myapp.com|Staging
+// SWAGGER_EXCLUDE_PATHS=/internal,/admin
+// ```
+//
+// ==========================================
 // 🏷️  AUTOMATIC TAG DISCOVERY
 // ==========================================
 //
-// ✨ 100% AUTOMATIC - Elysia Swagger handles everything!
-//
-// Just add tags to your routes and they appear in Swagger automatically:
+// ✨ 100% AUTOMATIC - Just add tags to your routes!
 //
 // Example 1 - Simple route:
 // app.get('/products', handler, {
@@ -132,7 +191,6 @@ export const swaggerPlugin: Plugin = {
 //     }
 //   })
 //
-// That's it! No configuration needed.
 // Elysia Swagger automatically:
 // - Discovers all tags from routes
 // - Organizes endpoints by tag
