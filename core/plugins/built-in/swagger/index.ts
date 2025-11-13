@@ -2,8 +2,26 @@ import { swagger } from '@elysiajs/swagger'
 import type { FluxStack, PluginContext } from '@/core/plugins/types'
 import { appConfig } from '@/config/app.config'
 import { serverConfig } from '@/config/server.config'
+import { pluginsConfig } from '@/config/plugins.config'
 
 type Plugin = FluxStack.Plugin
+
+// Default configuration values (can be overridden via env vars in pluginsConfig)
+const DEFAULTS = {
+  enabled: true,
+  path: pluginsConfig.swaggerPath,
+  title: pluginsConfig.swaggerTitle,
+  description: pluginsConfig.swaggerDescription,
+  version: pluginsConfig.swaggerVersion,
+  tags: [
+    { name: 'Health', description: 'Health check endpoints' },
+    { name: 'API', description: 'API endpoints' }
+  ],
+  servers: [] as Array<{ url: string; description: string }>,
+  excludePaths: [] as string[],
+  securitySchemes: {},
+  globalSecurity: [] as Array<Record<string, any>>
+}
 
 export const swaggerPlugin: Plugin = {
   name: 'swagger',
@@ -13,108 +31,17 @@ export const swaggerPlugin: Plugin = {
   priority: 500,
   category: 'documentation',
   tags: ['swagger', 'documentation', 'api'],
-  dependencies: [], // No dependencies
-  
-  configSchema: {
-    type: 'object',
-    properties: {
-      enabled: {
-        type: 'boolean',
-        description: 'Enable Swagger documentation'
-      },
-      path: {
-        type: 'string',
-        description: 'Swagger UI path'
-      },
-      title: {
-        type: 'string',
-        description: 'API documentation title'
-      },
-      description: {
-        type: 'string',
-        description: 'API documentation description'
-      },
-      version: {
-        type: 'string',
-        description: 'API version'
-      },
-      tags: {
-        type: 'array',
-        items: {
-          type: 'object',
-          properties: {
-            name: { type: 'string' },
-            description: { type: 'string' }
-          },
-          required: ['name']
-        },
-        description: 'API tags for grouping endpoints'
-      },
-      servers: {
-        type: 'array',
-        items: {
-          type: 'object',
-          properties: {
-            url: { type: 'string' },
-            description: { type: 'string' }
-          },
-          required: ['url']
-        },
-        description: 'API servers'
-      },
-      excludePaths: {
-        type: 'array',
-        items: { type: 'string' },
-        description: 'Paths to exclude from documentation'
-      },
-      securitySchemes: {
-        type: 'object',
-        description: 'Security schemes definition'
-      },
-      globalSecurity: {
-        type: 'array',
-        items: {
-          type: 'object'
-        },
-        description: 'Global security requirements'
-      }
-    },
-    additionalProperties: false
-  },
-  
-  defaultConfig: {
-    enabled: true,
-    path: '/swagger',
-    title: 'FluxStack API',
-    description: 'Modern full-stack TypeScript framework with type-safe API endpoints',
-    version: '1.7.4',
-    tags: [
-      { 
-        name: 'Health', 
-        description: 'Health check endpoints' 
-      },
-      { 
-        name: 'API', 
-        description: 'API endpoints' 
-      }
-    ],
-    servers: [],
-    excludePaths: [],
-    securitySchemes: {},
-    globalSecurity: []
-  },
+  dependencies: [],
 
   setup: async (context: PluginContext) => {
-    const config = getPluginConfig(context)
-    
-    if (!config.enabled) {
+    if (!DEFAULTS.enabled) {
       context.logger.debug('Swagger plugin disabled by configuration')
       return
     }
 
     try {
       // Build servers list
-      const servers = config.servers.length > 0 ? config.servers : [
+      const servers = DEFAULTS.servers.length > 0 ? DEFAULTS.servers : [
         {
           url: `http://${serverConfig.server.host}:${serverConfig.server.port}`,
           description: 'Development server'
@@ -130,29 +57,29 @@ export const swaggerPlugin: Plugin = {
       }
 
       const swaggerConfig = {
-        path: config.path,
+        path: DEFAULTS.path,
         documentation: {
           info: {
-            title: config.title || appConfig.name || 'FluxStack API',
-            version: config.version || appConfig.version || '1.7.4',
-            description: config.description || appConfig.description || 'Modern full-stack TypeScript framework with type-safe API endpoints'
+            title: DEFAULTS.title || appConfig.name || 'FluxStack API',
+            version: DEFAULTS.version || appConfig.version,
+            description: DEFAULTS.description || appConfig.description || 'Modern full-stack TypeScript framework with type-safe API endpoints'
           },
-          tags: config.tags,
+          tags: DEFAULTS.tags,
           servers,
-          
+
           // Add security schemes if defined
-          ...(Object.keys(config.securitySchemes).length > 0 && {
+          ...(Object.keys(DEFAULTS.securitySchemes).length > 0 && {
             components: {
-              securitySchemes: config.securitySchemes
+              securitySchemes: DEFAULTS.securitySchemes
             }
           }),
-          
+
           // Add global security if defined
-          ...(config.globalSecurity.length > 0 && {
-            security: config.globalSecurity
+          ...(DEFAULTS.globalSecurity.length > 0 && {
+            security: DEFAULTS.globalSecurity
           })
         },
-        exclude: config.excludePaths,
+        exclude: DEFAULTS.excludePaths,
         swaggerOptions: {
           persistAuthorization: true,
           displayRequestDuration: true,
@@ -163,8 +90,8 @@ export const swaggerPlugin: Plugin = {
       }
 
       context.app.use(swagger(swaggerConfig))
-      
-      context.logger.debug(`Swagger documentation enabled at ${config.path}`, {
+
+      context.logger.debug(`Swagger documentation enabled at ${DEFAULTS.path}`, {
         title: swaggerConfig.documentation.info.title,
         version: swaggerConfig.documentation.info.version,
         servers: servers.length
@@ -176,21 +103,11 @@ export const swaggerPlugin: Plugin = {
   },
 
   onServerStart: async (context: PluginContext) => {
-    const config = getPluginConfig(context)
-
-    if (config.enabled) {
-      const swaggerUrl = `http://${serverConfig.server.host}:${serverConfig.server.port}${config.path}`
+    if (DEFAULTS.enabled) {
+      const swaggerUrl = `http://${serverConfig.server.host}:${serverConfig.server.port}${DEFAULTS.path}`
       context.logger.debug(`Swagger documentation available at: ${swaggerUrl}`)
     }
   }
-}
-
-// Helper function to get plugin config
-function getPluginConfig(_context: PluginContext) {
-  // Use new declarative config system
-  // Note: Plugin-specific configs can be accessed from pluginsConfig
-  // For backward compatibility, we still merge with defaultConfig
-  return { ...swaggerPlugin.defaultConfig }
 }
 
 // Example usage for security configuration:
