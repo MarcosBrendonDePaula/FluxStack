@@ -1,4 +1,5 @@
 import { Elysia, t } from "elysia"
+import { usersRoutes } from "./users.routes"
 
 export const apiRoutes = new Elysia({ prefix: "/api" })
   .get("/", () => ({ message: "🔥 Hot Reload funcionando! FluxStack API v1.4.0 ⚡" }), {
@@ -31,3 +32,5 @@ export const apiRoutes = new Elysia({ prefix: "/api" })
       description: 'Returns the current health status of the API server'
     }
   })
+  // Register users routes
+  .use(usersRoutes)
