@@ -7,6 +7,18 @@ type Plugin = FluxStack.Plugin
 
 let viteServer: ViteDevServer | null = null
 
+// Default configuration values (uses clientConfig from /config)
+const DEFAULTS = {
+  enabled: true,
+  port: clientConfig.vite.port,
+  host: "localhost",
+  checkInterval: 2000,
+  maxRetries: 10,
+  timeout: 5000,
+  proxyPaths: [] as string[],
+  excludePaths: [] as string[]
+}
+
 /**
  * Helper to safely parse request.url which might be relative or absolute
  */
@@ -30,75 +42,16 @@ export const vitePlugin: Plugin = {
   priority: 800, // Should run early to setup proxying
   category: "development",
   tags: ["vite", "development", "hot-reload"],
-  dependencies: [], // No dependencies
-
-  configSchema: {
-    type: "object",
-    properties: {
-      enabled: {
-        type: "boolean",
-        description: "Enable Vite integration"
-      },
-      port: {
-        type: "number",
-        minimum: 1,
-        maximum: 65535,
-        description: "Vite development server port"
-      },
-      host: {
-        type: "string",
-        description: "Vite development server host"
-      },
-      checkInterval: {
-        type: "number",
-        minimum: 100,
-        description: "Interval to check if Vite is running (ms)"
-      },
-      maxRetries: {
-        type: "number",
-        minimum: 1,
-        description: "Maximum retries to connect to Vite"
-      },
-      timeout: {
-        type: "number",
-        minimum: 100,
-        description: "Timeout for Vite requests (ms)"
-      },
-      proxyPaths: {
-        type: "array",
-        items: { type: "string" },
-        description: "Paths to proxy to Vite (defaults to all non-API paths)"
-      },
-      excludePaths: {
-        type: "array",
-        items: { type: "string" },
-        description: "Paths to exclude from Vite proxying"
-      }
-    },
-    additionalProperties: false
-  },
-
-  defaultConfig: {
-    enabled: true,
-    port: 5173,
-    host: "localhost",
-    checkInterval: 2000,
-    maxRetries: 10,
-    timeout: 5000,
-    proxyPaths: [],
-    excludePaths: []
-  },
+  dependencies: [],
 
   setup: async (context: PluginContext) => {
-    const config = getPluginConfig(context)
-
-    if (!config.enabled) {
+    if (!DEFAULTS.enabled) {
       context.logger.debug('Vite plugin disabled or no client configuration found')
       return
     }
 
-    const vitePort = config.port || clientConfig.vite.port || 5173
-    const viteHost = config.host || "localhost"
+    const vitePort = DEFAULTS.port || clientConfig.vite.port || 5173
+    const viteHost = DEFAULTS.host || "localhost"
 
     // Import group logger utilities
     const { startGroup, endGroup, logInGroup } = await import('@/core/utils/logger/group-logger')
@@ -125,7 +78,6 @@ export const vitePlugin: Plugin = {
         ; (context as any).viteConfig = {
           port: vitePort,
           host: viteHost,
-          ...config,
           server: viteServer
         }
 
@@ -166,19 +118,17 @@ export const vitePlugin: Plugin = {
         // Fallback to monitoring if programmatic start fails
         ; (context as any).viteConfig = {
           port: vitePort,
-          host: viteHost,
-          ...config
+          host: viteHost
         }
-        monitorVite(context, viteHost, vitePort, config)
+        monitorVite(context, viteHost, vitePort)
       }
     }
   },
 
   onServerStart: async (context: PluginContext) => {
-    const config = getPluginConfig(context)
     const viteConfig = (context as any).viteConfig
 
-    if (config.enabled && viteConfig) {
+    if (DEFAULTS.enabled && viteConfig) {
       context.logger.debug(`Vite integration active - monitoring ${viteConfig.host}:${viteConfig.port}`)
     }
   },
@@ -272,19 +222,11 @@ export const vitePlugin: Plugin = {
   }
 }
 
-// Helper function to get plugin config
-function getPluginConfig(_context: PluginContext) {
-  // Use new declarative config system
-  // For backward compatibility, we still merge with defaultConfig
-  return { ...vitePlugin.defaultConfig }
-}
-
 // Monitor Vite server status with automatic port detection
 async function monitorVite(
   context: PluginContext,
   host: string,
-  initialPort: number,
-  config: any
+  initialPort: number
 ) {
   let retries = 0
   let isConnected = false
@@ -306,7 +248,7 @@ async function monitorVite(
         }
       }
 
-      const isRunning = await checkViteRunning(host, actualPort, config.timeout)
+      const isRunning = await checkViteRunning(host, actualPort, DEFAULTS.timeout)
 
       if (isRunning && !isConnected) {
         isConnected = true
@@ -325,14 +267,14 @@ async function monitorVite(
         actualPort = initialPort
       } else if (!isRunning) {
         retries++
-        if (retries <= config.maxRetries) {
+        if (retries <= DEFAULTS.maxRetries) {
           if (portDetected) {
-            context.logger.debug(`Waiting for Vite server on ${host}:${actualPort}... (${retries}/${config.maxRetries})`)
+            context.logger.debug(`Waiting for Vite server on ${host}:${actualPort}... (${retries}/${DEFAULTS.maxRetries})`)
           } else {
-            context.logger.debug(`Detecting Vite server port... (${retries}/${config.maxRetries})`)
+            context.logger.debug(`Detecting Vite server port... (${retries}/${DEFAULTS.maxRetries})`)
           }
-        } else if (retries === config.maxRetries + 1) {
-          context.logger.warn(`Vite server not found after ${config.maxRetries} attempts. Development features may be limited.`)
+        } else if (retries === DEFAULTS.maxRetries + 1) {
+          context.logger.warn(`Vite server not found after ${DEFAULTS.maxRetries} attempts. Development features may be limited.`)
         }
       }
     } catch (error) {
@@ -342,7 +284,7 @@ async function monitorVite(
     }
 
     // Continue monitoring
-    setTimeout(checkVite, config.checkInterval)
+    setTimeout(checkVite, DEFAULTS.checkInterval)
   }
 
   // Start monitoring after a brief delay

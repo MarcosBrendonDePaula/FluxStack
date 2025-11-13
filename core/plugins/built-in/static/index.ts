@@ -2,6 +2,13 @@ import { join } from "path"
 import { statSync, existsSync } from "fs"
 import type { Plugin, PluginContext } from "@/core/plugins"
 
+// Default configuration values
+const DEFAULTS = {
+  enabled: true,
+  publicDir: "./dist/client",
+  indexFile: "index.html"
+}
+
 export const staticPlugin: Plugin = {
   name: "static",
   version: "2.0.0",
@@ -12,41 +19,14 @@ export const staticPlugin: Plugin = {
   tags: ["static", "files", "spa"],
   dependencies: [],
 
-  configSchema: {
-    type: "object",
-    properties: {
-      enabled: {
-        type: "boolean",
-        description: "Enable static file serving"
-      },
-      publicDir: {
-        type: "string",
-        description: "Directory for static files"
-      },
-      indexFile: {
-        type: "string",
-        description: "Index file for SPA routing"
-      }
-    },
-    additionalProperties: false
-  },
-
-  defaultConfig: {
-    enabled: true,
-    publicDir: "./dist/client",
-    indexFile: "index.html"
-  },
-
   setup: async (context: PluginContext) => {
-    const config = getPluginConfig(context)
-
-    if (!config.enabled) {
+    if (!DEFAULTS.enabled) {
       context.logger.info('Static files plugin disabled')
       return
     }
 
     context.logger.info("Static files plugin activated", {
-      publicDir: config.publicDir
+      publicDir: DEFAULTS.publicDir
     })
 
     // Static fallback handler (runs last)
@@ -61,9 +41,9 @@ export const staticPlugin: Plugin = {
       const isDev = context.utils.isDevelopment()
       let baseDir: string
 
-      if (isDev && existsSync(config.publicDir)) {
+      if (isDev && existsSync(DEFAULTS.publicDir)) {
         // Development: use public directory
-        baseDir = config.publicDir
+        baseDir = DEFAULTS.publicDir
       } else {
         // Production: try paths in order of preference
         if (existsSync('client')) {
@@ -74,13 +54,13 @@ export const staticPlugin: Plugin = {
           baseDir = 'dist/client'
         } else {
           // Fallback to configured path
-          baseDir = config.publicDir
+          baseDir = DEFAULTS.publicDir
         }
       }
 
       // Root or empty path → index.html
       if (pathname === '/' || pathname === '') {
-        pathname = `/${config.indexFile}`
+        pathname = `/${DEFAULTS.indexFile}`
       }
 
       const filePath = join(baseDir, pathname)
@@ -97,7 +77,7 @@ export const staticPlugin: Plugin = {
       }
 
       // SPA fallback: serve index.html for non-file routes
-      const indexPath = join(baseDir, config.indexFile)
+      const indexPath = join(baseDir, DEFAULTS.indexFile)
       try {
         statSync(indexPath) // Ensure index exists
         return new Response(Bun.file(indexPath))
@@ -111,23 +91,13 @@ export const staticPlugin: Plugin = {
   },
 
   onServerStart: async (context: PluginContext) => {
-    const config = getPluginConfig(context)
-
-    if (config.enabled) {
+    if (DEFAULTS.enabled) {
       context.logger.info(`Static files plugin ready`, {
-        publicDir: config.publicDir,
-        indexFile: config.indexFile
+        publicDir: DEFAULTS.publicDir,
+        indexFile: DEFAULTS.indexFile
       })
     }
   }
 }
-
-// Helper function to get plugin config
-function getPluginConfig(_context: PluginContext) {
-  // Use new declarative config system
-  // For backward compatibility, we still merge with defaultConfig
-  return { ...staticPlugin.defaultConfig }
-}
-
 
 export default staticPlugin
