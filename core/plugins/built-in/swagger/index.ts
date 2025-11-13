@@ -7,34 +7,31 @@ import { pluginsConfig } from '@/config/plugins.config'
 type Plugin = FluxStack.Plugin
 
 /**
+ * Generates an automatic description for a tag based on its name
+ * @param tagName - The tag name
+ * @returns Auto-generated description
+ */
+function generateTagDescription(tagName: string): string {
+  // Convert PascalCase/camelCase to words
+  const words = tagName
+    .replace(/([A-Z])/g, ' $1')
+    .trim()
+    .toLowerCase()
+
+  return `${words.charAt(0).toUpperCase() + words.slice(1)} endpoints`
+}
+
+/**
  * Auto-discovers tags from registered routes in the Elysia app
  * @param app - The Elysia application instance
- * @returns Array of unique tags with auto-generated descriptions
+ * @param customDescriptions - Optional custom tag descriptions from config
+ * @returns Array of unique tags with descriptions
  */
-function autoDiscoverTags(app: any): Array<{ name: string; description: string }> {
+function autoDiscoverTags(
+  app: any,
+  customDescriptions: Record<string, string> = {}
+): Array<{ name: string; description: string }> {
   const tagMap = new Map<string, string>()
-
-  // Default tag descriptions (used as fallback)
-  const defaultDescriptions: Record<string, string> = {
-    'Health': 'Health check and system status endpoints',
-    'API': 'General API endpoints',
-    'Users': 'User management endpoints',
-    'Authentication': 'Authentication and authorization endpoints',
-    'Development': 'Development and debugging endpoints',
-    'Configuration': 'Configuration and settings endpoints',
-    'CRUD': 'Create, Read, Update, Delete operations',
-    'Static Files': 'Static file serving endpoints',
-    'Live Components': 'Real-time live components endpoints',
-    'WebSocket': 'WebSocket connection endpoints',
-    'Monitoring': 'Monitoring and metrics endpoints',
-    'Performance': 'Performance tracking endpoints',
-    'Security': 'Security-related endpoints',
-    'Crypto': 'Cryptographic operations endpoints',
-    'Debug': 'Debug and diagnostic endpoints',
-    'Connections': 'Connection management endpoints',
-    'Pools': 'Connection pool endpoints',
-    'Alerts': 'Alert management endpoints'
-  }
 
   try {
     // Try multiple ways to access routes from Elysia app
@@ -53,7 +50,8 @@ function autoDiscoverTags(app: any): Array<{ name: string; description: string }
         if (Array.isArray(tags)) {
           for (const tag of tags) {
             if (typeof tag === 'string' && !tagMap.has(tag)) {
-              const description = defaultDescriptions[tag] || `${tag} related endpoints`
+              // Use custom description if provided, otherwise auto-generate
+              const description = customDescriptions[tag] || generateTagDescription(tag)
               tagMap.set(tag, description)
             }
           }
@@ -67,7 +65,7 @@ function autoDiscoverTags(app: any): Array<{ name: string; description: string }
       if (Array.isArray(decoratorTags)) {
         for (const tag of decoratorTags) {
           if (typeof tag === 'string' && !tagMap.has(tag)) {
-            const description = defaultDescriptions[tag] || `${tag} related endpoints`
+            const description = customDescriptions[tag] || generateTagDescription(tag)
             tagMap.set(tag, description)
           }
         }
@@ -82,9 +80,6 @@ function autoDiscoverTags(app: any): Array<{ name: string; description: string }
     .map(([name, description]) => ({ name, description }))
     .sort((a, b) => a.name.localeCompare(b.name))
 
-  // If no tags were discovered, return empty array (Swagger will auto-discover from routes)
-  // This is intentional - Elysia Swagger already auto-discovers tags from routes
-  // We're just providing descriptions here
   return discoveredTags
 }
 
@@ -189,8 +184,8 @@ export const swaggerPlugin: Plugin = {
       const swaggerUrl = `http://${serverConfig.server.host}:${serverConfig.server.port}${DEFAULTS.path}`
       context.logger.debug(`Swagger documentation available at: ${swaggerUrl}`)
 
-      // Auto-discover tags from registered routes
-      const discoveredTags = autoDiscoverTags(context.app)
+      // Auto-discover tags from registered routes with custom descriptions (if any)
+      const discoveredTags = autoDiscoverTags(context.app, DEFAULTS.customTagDescriptions)
       if (discoveredTags.length > 0) {
         context.logger.debug(`📋 Swagger tags auto-discovered from routes (${discoveredTags.length} tags):`, {
           tags: discoveredTags.map(t => t.name).join(', ')
@@ -206,32 +201,39 @@ export const swaggerPlugin: Plugin = {
 // 🏷️  AUTO-DISCOVERY OF TAGS
 // ==========================================
 //
-// ✨ FULLY AUTOMATIC - No manual configuration needed!
+// ✨ 100% AUTOMATIC - Zero hardcoded configuration!
 //
-// The Swagger plugin automatically discovers tags from your routes.
-// Just add tags to your route definitions and they appear in Swagger:
+// The Swagger plugin automatically discovers tags from your routes and
+// generates descriptions intelligently based on tag names.
 //
 // Example 1 - Simple route with tags:
 // app.get('/products', handler, {
 //   detail: {
-//     tags: ['Products', 'Catalog']  // ✅ Automatically discovered!
+//     tags: ['Products', 'Catalog']
 //   }
 // })
+// Result: ✅ "Products endpoints", "Catalog endpoints"
 //
-// Example 2 - Grouped routes:
-// export const usersRoutes = new Elysia({ prefix: '/users', tags: ['Users'] })
-//   .get('/', handler, {
-//     detail: {
-//       tags: ['Users', 'CRUD']  // ✅ Both tags auto-discovered!
-//     }
-//   })
+// Example 2 - PascalCase tags (auto-formatted):
+// app.get('/users', handler, {
+//   detail: {
+//     tags: ['UserManagement', 'CRUD']
+//   }
+// })
+// Result: ✅ "User management endpoints", "C r u d endpoints"
+//
+// Example 3 - Grouped routes:
+// export const ordersRoutes = new Elysia({ prefix: '/orders', tags: ['Orders'] })
+//   .get('/', handler, { detail: { tags: ['Orders', 'Processing'] } })
+// Result: ✅ "Orders endpoints", "Processing endpoints"
 //
 // 📝 Custom Tag Descriptions (optional):
-// If you want custom descriptions instead of auto-generated ones,
-// add them to your app config (not in the core!):
+// If you want specific descriptions instead of auto-generated ones,
+// add them to your config (NOT in the core!):
 //
-// // config/plugins.config.ts (user file)
+// // config/plugins.config.ts (user editable file)
 // export const pluginsConfig = {
+//   // ... other configs
 //   swagger: {
 //     customTagDescriptions: {
 //       'Products': 'Product catalog and inventory management',
@@ -240,11 +242,14 @@ export const swaggerPlugin: Plugin = {
 //   }
 // }
 //
-// How it works:
-// 1. Developer creates routes with tags
-// 2. Swagger automatically detects all tags
-// 3. Tags appear in Swagger UI instantly
-// 4. Auto-generated descriptions (or custom if configured)
+// 🚀 How it works:
+// 1. Developer creates routes with tags (e.g., tags: ['MyFeature'])
+// 2. Swagger automatically discovers all tags from routes
+// 3. Descriptions auto-generated: 'MyFeature' → 'My feature endpoints'
+// 4. Custom descriptions override auto-generated ones (if configured)
+// 5. Tags appear in Swagger UI instantly with descriptions
+//
+// ✅ No need to edit core files - everything is automatic!
 //
 // ==========================================
 // 🔐 SECURITY CONFIGURATION
