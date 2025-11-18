@@ -56,7 +56,7 @@ export class PluginRegistry {
     }
 
     this.plugins.set(plugin.name, plugin)
-    
+
     if (manifest) {
       this.manifests.set(plugin.name, manifest)
     }
@@ -74,12 +74,58 @@ export class PluginRegistry {
       version: plugin.version,
       dependencies: plugin.dependencies
     })
+
+    // Execute onPluginRegister hooks on all registered plugins
+    await this.executePluginRegisterHooks(plugin)
+  }
+
+  /**
+   * Execute onPluginRegister hooks on all plugins
+   */
+  private async executePluginRegisterHooks(registeredPlugin: FluxStackPlugin): Promise<void> {
+    for (const plugin of this.plugins.values()) {
+      if (plugin.onPluginRegister && typeof plugin.onPluginRegister === 'function') {
+        try {
+          await plugin.onPluginRegister({
+            pluginName: registeredPlugin.name,
+            pluginVersion: registeredPlugin.version,
+            timestamp: Date.now(),
+            data: { plugin: registeredPlugin }
+          })
+        } catch (error) {
+          this.logger?.error(`Plugin '${plugin.name}' onPluginRegister hook failed`, {
+            error: error instanceof Error ? error.message : String(error)
+          })
+        }
+      }
+    }
+  }
+
+  /**
+   * Execute onPluginUnregister hooks on all plugins
+   */
+  private async executePluginUnregisterHooks(unregisteredPluginName: string, version?: string): Promise<void> {
+    for (const plugin of this.plugins.values()) {
+      if (plugin.onPluginUnregister && typeof plugin.onPluginUnregister === 'function') {
+        try {
+          await plugin.onPluginUnregister({
+            pluginName: unregisteredPluginName,
+            pluginVersion: version,
+            timestamp: Date.now()
+          })
+        } catch (error) {
+          this.logger?.error(`Plugin '${plugin.name}' onPluginUnregister hook failed`, {
+            error: error instanceof Error ? error.message : String(error)
+          })
+        }
+      }
+    }
   }
 
   /**
    * Unregister a plugin from the registry
    */
-  unregister(name: string): void {
+  async unregister(name: string): Promise<void> {
     if (!this.plugins.has(name)) {
       throw new FluxStackError(
         `Plugin '${name}' is not registered`,
@@ -98,12 +144,18 @@ export class PluginRegistry {
       )
     }
 
+    const plugin = this.plugins.get(name)
+    const version = plugin?.version
+
     this.plugins.delete(name)
     this.manifests.delete(name)
     this.dependencies.delete(name)
     this.loadOrder = this.loadOrder.filter(pluginName => pluginName !== name)
 
     this.logger?.debug(`Plugin '${name}' unregistered successfully`)
+
+    // Execute onPluginUnregister hooks on all remaining plugins
+    await this.executePluginUnregisterHooks(name, version)
   }
 
   /**

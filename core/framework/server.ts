@@ -566,6 +566,15 @@ export class FluxStackFramework {
         }
       }
 
+      // Call onBeforeServerStart hooks
+      for (const pluginName of loadOrder) {
+        const plugin = this.pluginRegistry.get(pluginName)!
+
+        if (plugin.onBeforeServerStart) {
+          await plugin.onBeforeServerStart(this.pluginContext)
+        }
+      }
+
       // Mount plugin routes if they have a plugin property
       for (const pluginName of loadOrder) {
         const plugin = this.pluginRegistry.get(pluginName)!
@@ -582,6 +591,15 @@ export class FluxStackFramework {
 
         if (plugin.onServerStart) {
           await plugin.onServerStart(this.pluginContext)
+        }
+      }
+
+      // Call onAfterServerStart hooks
+      for (const pluginName of loadOrder) {
+        const plugin = this.pluginRegistry.get(pluginName)!
+
+        if (plugin.onAfterServerStart) {
+          await plugin.onAfterServerStart(this.pluginContext)
         }
       }
 
@@ -602,9 +620,18 @@ export class FluxStackFramework {
     }
 
     try {
-      // Call onServerStop hooks in reverse order
+      // Call onBeforeServerStop hooks in reverse order
       const loadOrder = this.pluginRegistry.getLoadOrder().reverse()
 
+      for (const pluginName of loadOrder) {
+        const plugin = this.pluginRegistry.get(pluginName)!
+
+        if (plugin.onBeforeServerStop) {
+          await plugin.onBeforeServerStop(this.pluginContext)
+        }
+      }
+
+      // Call onServerStop hooks in reverse order
       for (const pluginName of loadOrder) {
         const plugin = this.pluginRegistry.get(pluginName)!
 
