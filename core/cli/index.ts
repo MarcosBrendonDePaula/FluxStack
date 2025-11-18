@@ -498,6 +498,106 @@ Examples:
       await builder.buildServer()
     }
   })
+
+  // Build:exe command (compile to executable)
+  cliRegistry.register({
+    name: 'build:exe',
+    description: 'Compile application to standalone executable',
+    category: 'Build',
+    usage: 'flux build:exe [options]',
+    examples: [
+      'flux build:exe                                    # Compile to CLauncher executable',
+      'flux build:exe --name MyApp                       # Compile with custom name',
+      'flux build:exe --windows-title "My Launcher"      # Set Windows executable title',
+      'flux build:exe --windows-hide-console             # Hide console window on Windows'
+    ],
+    options: [
+      {
+        name: 'name',
+        short: 'n',
+        description: 'Name for the executable file',
+        type: 'string',
+        default: 'CLauncher'
+      },
+      {
+        name: 'windows-hide-console',
+        description: 'Hide console window on Windows',
+        type: 'boolean',
+        default: false
+      },
+      {
+        name: 'windows-icon',
+        description: 'Path to .ico file for Windows executable',
+        type: 'string'
+      },
+      {
+        name: 'windows-title',
+        description: 'Product name for Windows executable',
+        type: 'string'
+      },
+      {
+        name: 'windows-publisher',
+        description: 'Company name for Windows executable',
+        type: 'string'
+      },
+      {
+        name: 'windows-version',
+        description: 'Version string for Windows executable (e.g. 1.2.3.4)',
+        type: 'string'
+      },
+      {
+        name: 'windows-description',
+        description: 'Description for Windows executable',
+        type: 'string'
+      },
+      {
+        name: 'windows-copyright',
+        description: 'Copyright string for Windows executable',
+        type: 'string'
+      }
+    ],
+    handler: async (args, options, context) => {
+      const config = getConfigSync()
+      const builder = new FluxStackBuilder(config)
+
+      // Build executable options from CLI args
+      const executableOptions: import("../types/build").BundleOptions = {
+        executable: {
+          windows: {
+            hideConsole: options['windows-hide-console'],
+            icon: options['windows-icon'],
+            title: options['windows-title'],
+            publisher: options['windows-publisher'],
+            version: options['windows-version'],
+            description: options['windows-description'],
+            copyright: options['windows-copyright']
+          }
+        }
+      }
+
+      const result = await builder.buildExecutable(options.name, executableOptions)
+
+      if (result.success) {
+        console.log(`\n✅ Executable created successfully: ${result.outputPath}`)
+
+        // Show applied Windows options
+        if (process.platform === 'win32' && Object.values(executableOptions.executable?.windows || {}).some(v => v)) {
+          console.log('\n📦 Windows executable options applied:')
+          const winOpts = executableOptions.executable?.windows
+          if (winOpts?.hideConsole) console.log('   • Console window hidden')
+          if (winOpts?.icon) console.log(`   • Icon: ${winOpts.icon}`)
+          if (winOpts?.title) console.log(`   • Title: ${winOpts.title}`)
+          if (winOpts?.publisher) console.log(`   • Publisher: ${winOpts.publisher}`)
+          if (winOpts?.version) console.log(`   • Version: ${winOpts.version}`)
+          if (winOpts?.description) console.log(`   • Description: ${winOpts.description}`)
+          if (winOpts?.copyright) console.log(`   • Copyright: ${winOpts.copyright}`)
+        }
+      } else {
+        console.error(`\n❌ Compilation failed: ${result.error}`)
+        process.exit(1)
+      }
+    }
+  })
 }
 
 // Main CLI logic

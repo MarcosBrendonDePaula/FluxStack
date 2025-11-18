@@ -131,7 +131,7 @@ export default {{camelName}}Config
                 },
                 {
                     path: 'plugins/{{name}}/index.ts',
-                    content: `import type { FluxStackPlugin, PluginContext } from '@/core/types/plugin'
+                    content: `import type { ErrorContext, FluxStack, PluginContext, RequestContext, ResponseContext } from "@/core/plugins/types"
 // ✅ Plugin imports its own configuration
 import { {{camelName}}Config } from './config'
 
@@ -139,7 +139,7 @@ import { {{camelName}}Config } from './config'
  * {{pascalName}} Plugin
  * {{description}}
  */
-export class {{pascalName}}Plugin implements FluxStackPlugin {
+export class {{pascalName}}Plugin implements FluxStack.Plugin {
   name = '{{name}}'
   version = '1.0.0'
 
@@ -173,7 +173,7 @@ export class {{pascalName}}Plugin implements FluxStackPlugin {
   /**
    * Request hook - called on each request
    */
-  async onRequest?(context: PluginContext, request: Request): Promise<void> {
+  async onRequest?(context: RequestContext): Promise<void> {
     if (!{{camelName}}Config.enabled) return
 
     // Add request processing logic
@@ -182,7 +182,7 @@ export class {{pascalName}}Plugin implements FluxStackPlugin {
   /**
    * Response hook - called on each response
    */
-  async onResponse?(context: PluginContext, response: Response): Promise<void> {
+  async onResponse?(context: ResponseContext): Promise<void> {
     if (!{{camelName}}Config.enabled) return
 
     // Add response processing logic
@@ -191,8 +191,8 @@ export class {{pascalName}}Plugin implements FluxStackPlugin {
   /**
    * Error hook - called when errors occur
    */
-  async onError?(context: PluginContext, error: Error): Promise<void> {
-    console.error(\`[{{name}}] Error:\`, error)
+  async onError?(context: ErrorContext): Promise<void> {
+    console.error(\`[{{name}}] Error:\`, context.error)
 
     // Add error handling logic
   }
