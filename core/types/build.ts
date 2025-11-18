@@ -83,6 +83,27 @@ export interface BundleOptions {
   external?: string[]
   minify?: boolean
   sourceMaps?: boolean
+  executable?: ExecutableOptions
+}
+
+/**
+ * Options for compiling standalone executables
+ * Note: Cross-platform compilation is limited - executables are built for the current platform.
+ * To build for different platforms, run the build on that platform.
+ */
+export interface ExecutableOptions {
+  // Windows-specific options
+  windows?: {
+    hideConsole?: boolean
+    icon?: string
+    title?: string
+    publisher?: string
+    version?: string
+    description?: string
+    copyright?: string
+  }
+  // Additional custom build arguments
+  customArgs?: string[]
 }
 
 export interface OptimizationOptions {

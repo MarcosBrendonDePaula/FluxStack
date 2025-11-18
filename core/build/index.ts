@@ -47,6 +47,10 @@ export class FluxStackBuilder {
     return await this.bundler.bundleServer("app/server/index.ts")
   }
 
+  async buildExecutable(outputName: string = "CLauncher", options?: import("../types/build").BundleOptions) {
+    return await this.bundler.compileToExecutable("app/server/index.ts", outputName, options)
+  }
+
   async createDockerFiles() {
     buildLogger.section('Docker Configuration', '🐳')
 

@@ -165,20 +165,20 @@ Plugins can intercept and modify requests using hooks:
 
 \`\`\`typescript
 // plugins/my-plugin/index.ts
-import type { FluxStackPlugin, PluginContext } from '@/core/types/plugin'
+import type { FluxStack, PluginContext, RequestContext, ResponseContext } from "@/core/plugins/types"
 
-export class MyPlugin implements FluxStackPlugin {
+export class MyPlugin implements FluxStack.Plugin {
   name = 'my-plugin'
   version = FLUXSTACK_VERSION
 
   // Intercept every request
-  async onRequest(context: PluginContext, request: Request): Promise<void> {
+  async onRequest(context: PluginContext): Promise<void> {
     // Example: Add custom headers
     const url = (() => {
       try {
-        return new URL(request.url)
+        return new URL(PluginContext.request.url)
       } catch {
-        const host = request.headers.get('host') || 'localhost'
+        const host = PluginContext.request.headers.get('host') || 'localhost'
         return new URL(request.url, \`http://\${host}\`)
       }
     })()
@@ -192,8 +192,8 @@ export class MyPlugin implements FluxStackPlugin {
   }
 
   // Intercept every response
-  async onResponse(context: PluginContext, response: Response): Promise<void> {
-    console.log(\`[\${this.name}] Response status: \${response.status}\`)
+  async onResponse(context: PluginContext): Promise<void> {
+    console.log(\`[\${this.name}] Response status: \${PluginContext.response.status}\`)
   }
 
   // Handle errors

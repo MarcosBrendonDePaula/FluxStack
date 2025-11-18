@@ -79,34 +79,18 @@ export class Bundler {
     let liveComponentsGenerator: any = null
 
     try {
-      // 🚀 PRE-BUILD: Auto-generate Live Components registration
-      const generatorModule = await import('./live-components-generator')
-      liveComponentsGenerator = generatorModule.liveComponentsGenerator
-      const discoveredComponents = await liveComponentsGenerator.preBuild()
+      // Run pre-build steps
+      liveComponentsGenerator = await this.runPreBuildSteps()
 
-      // 🔌 PRE-BUILD: Auto-generate FluxStack Plugins registration
-      const pluginsGeneratorModule = await import('./flux-plugins-generator')
-      const fluxPluginsGenerator = pluginsGeneratorModule.fluxPluginsGenerator
-      const discoveredPlugins = await fluxPluginsGenerator.preBuild()
-      
       // Ensure output directory exists
-      if (!existsSync(this.config.outDir)) {
-        mkdirSync(this.config.outDir, { recursive: true })
-      }
+      this.ensureOutputDirectory()
 
-      const external = [
-        "@tailwindcss/vite",
-        "tailwindcss", 
-        "lightningcss",
-        "vite",
-        "@vitejs/plugin-react",
-        ...(this.config.external || []),
-        ...(options.external || [])
-      ]
+      // Get external dependencies
+      const external = this.getExternalDependencies(options)
 
       const buildArgs = [
-        "bun", "build", 
-        entryPoint, 
+        "bun", "build",
+        entryPoint,
         "--outdir", this.config.outDir,
         "--target", this.config.target,
         ...external.flatMap(ext => ["--external", ext])
@@ -132,20 +116,12 @@ export class Bundler {
       const exitCode = await buildProcess.exited
       const duration = Date.now() - startTime
 
-      // 🧹 POST-BUILD: Handle auto-generated registration file
-      // (liveComponentsGenerator already available from above)
-
       if (exitCode === 0) {
         buildLogger.success(`Server bundle completed in ${buildLogger.formatDuration(duration)}`)
-        
-        // Keep generated files for production (they're now baked into bundle)
-        await liveComponentsGenerator.postBuild(false)
-        
-        // Cleanup plugins registry
-        const pluginsGeneratorModule = await import('./flux-plugins-generator')
-        const fluxPluginsGenerator = pluginsGeneratorModule.fluxPluginsGenerator
-        await fluxPluginsGenerator.postBuild(false)
-        
+
+        // Run post-build cleanup
+        await this.runPostBuildCleanup(liveComponentsGenerator)
+
         return {
           success: true,
           duration,
@@ -154,15 +130,10 @@ export class Bundler {
         }
       } else {
         buildLogger.error("Server bundle failed")
-        
-        // Restore original files since build failed
-        await liveComponentsGenerator.postBuild(false)
-        
-        // Restore plugins registry
-        const pluginsGeneratorModule = await import('./flux-plugins-generator')
-        const fluxPluginsGenerator = pluginsGeneratorModule.fluxPluginsGenerator
-        await fluxPluginsGenerator.postBuild(false)
-        
+
+        // Run post-build cleanup
+        await this.runPostBuildCleanup(liveComponentsGenerator)
+
         const stderr = await new Response(buildProcess.stderr).text()
         return {
           success: false,
@@ -172,27 +143,200 @@ export class Bundler {
       }
     } catch (error) {
       const duration = Date.now() - startTime
-      
+
       // 🧹 CLEANUP: Restore original files on error
       try {
-        if (liveComponentsGenerator) {
-          await liveComponentsGenerator.postBuild(false)
-        }
-        
-        // Cleanup plugins registry
-        const pluginsGeneratorModule = await import('./flux-plugins-generator')
-        const fluxPluginsGenerator = pluginsGeneratorModule.fluxPluginsGenerator
-        await fluxPluginsGenerator.postBuild(false)
+        await this.runPostBuildCleanup(liveComponentsGenerator)
       } catch (cleanupError) {
         buildLogger.warn(`Failed to cleanup generated files: ${cleanupError}`)
       }
-      
+
       return {
         success: false,
         duration,
         error: error instanceof Error ? error.message : "Unknown error"
       }
     }
+  }
+
+  async compileToExecutable(entryPoint: string, outputName: string = "app", options: BundleOptions = {}): Promise<BundleResult> {
+    buildLogger.section('Executable Build', '📦')
+
+    const startTime = Date.now()
+    let liveComponentsGenerator: any = null
+
+    try {
+      // Run pre-build steps
+      liveComponentsGenerator = await this.runPreBuildSteps()
+
+      // Ensure output directory exists
+      this.ensureOutputDirectory()
+
+      const outputPath = join(this.config.outDir, outputName)
+
+      // Get external dependencies
+      const external = this.getExternalDependencies(options)
+
+      const buildArgs = [
+        "bun", "build",
+        entryPoint,
+        "--compile",
+        "--outfile", outputPath,
+        "--target", this.config.target,
+        ...external.flatMap(ext => ["--external", ext])
+      ]
+
+      if (this.config.sourceMaps) {
+        buildArgs.push("--sourcemap")
+      }
+
+      if (this.config.minify) {
+        buildArgs.push("--minify")
+      }
+
+      // Add Windows-specific options if provided
+      if (options.executable?.windows) {
+        const winOpts = options.executable.windows
+        if (winOpts.hideConsole) {
+          buildArgs.push("--windows-hide-console")
+        }
+        if (winOpts.icon) {
+          buildArgs.push("--windows-icon", winOpts.icon)
+        }
+        if (winOpts.title) {
+          buildArgs.push("--windows-title", winOpts.title)
+        }
+        if (winOpts.publisher) {
+          buildArgs.push("--windows-publisher", winOpts.publisher)
+        }
+        if (winOpts.version) {
+          buildArgs.push("--windows-version", winOpts.version)
+        }
+        if (winOpts.description) {
+          buildArgs.push("--windows-description", winOpts.description)
+        }
+        if (winOpts.copyright) {
+          buildArgs.push("--windows-copyright", winOpts.copyright)
+        }
+      }
+
+      // Add custom build arguments if provided
+      if (options.executable?.customArgs) {
+        buildArgs.push(...options.executable.customArgs)
+      }
+
+      buildLogger.step(`Compiling ${entryPoint} to ${outputPath}...`)
+
+      const buildProcess = spawn({
+        cmd: buildArgs,
+        stdout: "pipe",
+        stderr: "pipe",
+        env: {
+          ...process.env,
+          NODE_ENV: 'production',
+          ...options.env
+        }
+      })
+
+      const exitCode = await buildProcess.exited
+      const duration = Date.now() - startTime
+
+      if (exitCode === 0) {
+        buildLogger.success(`Executable compiled in ${buildLogger.formatDuration(duration)}`)
+
+        // Run post-build cleanup
+        await this.runPostBuildCleanup(liveComponentsGenerator)
+
+        return {
+          success: true,
+          duration,
+          outputPath,
+          entryPoint: outputPath
+        }
+      } else {
+        buildLogger.error("Executable compilation failed")
+
+        // Run post-build cleanup
+        await this.runPostBuildCleanup(liveComponentsGenerator)
+
+        const stderr = await new Response(buildProcess.stderr).text()
+        return {
+          success: false,
+          duration,
+          error: stderr || "Executable compilation failed"
+        }
+      }
+    } catch (error) {
+      const duration = Date.now() - startTime
+
+      // 🧹 CLEANUP: Restore original files on error
+      try {
+        await this.runPostBuildCleanup(liveComponentsGenerator)
+      } catch (cleanupError) {
+        buildLogger.warn(`Failed to cleanup generated files: ${cleanupError}`)
+      }
+
+      return {
+        success: false,
+        duration,
+        error: error instanceof Error ? error.message : "Unknown error"
+      }
+    }
+  }
+
+  /**
+   * Get list of external dependencies that should not be bundled
+   */
+  private getExternalDependencies(options: BundleOptions = {}): string[] {
+    return [
+      "@tailwindcss/vite",
+      "tailwindcss",
+      "lightningcss",
+      "vite",
+      "@vitejs/plugin-react",
+      "rollup",
+      ...(this.config.external || []),
+      ...(options.external || [])
+    ]
+  }
+
+  /**
+   * Ensure output directory exists
+   */
+  private ensureOutputDirectory(): void {
+    if (!existsSync(this.config.outDir)) {
+      mkdirSync(this.config.outDir, { recursive: true })
+    }
+  }
+
+  /**
+   * Run pre-build steps (Live Components and Plugins generation)
+   */
+  private async runPreBuildSteps(): Promise<any> {
+    // 🚀 PRE-BUILD: Auto-generate Live Components registration
+    const generatorModule = await import('./live-components-generator')
+    const liveComponentsGenerator = generatorModule.liveComponentsGenerator
+    await liveComponentsGenerator.preBuild()
+
+    // 🔌 PRE-BUILD: Auto-generate FluxStack Plugins registration
+    const pluginsGeneratorModule = await import('./flux-plugins-generator')
+    const fluxPluginsGenerator = pluginsGeneratorModule.fluxPluginsGenerator
+    await fluxPluginsGenerator.preBuild()
+
+    return liveComponentsGenerator
+  }
+
+  /**
+   * Run post-build cleanup
+   */
+  private async runPostBuildCleanup(liveComponentsGenerator: any): Promise<void> {
+    if (liveComponentsGenerator) {
+      await liveComponentsGenerator.postBuild(false)
+    }
+
+    const pluginsGeneratorModule = await import('./flux-plugins-generator')
+    const fluxPluginsGenerator = pluginsGeneratorModule.fluxPluginsGenerator
+    await fluxPluginsGenerator.postBuild(false)
   }
 
   private async getClientAssets(): Promise<string[]> {
