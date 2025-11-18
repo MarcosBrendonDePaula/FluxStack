@@ -56,6 +56,10 @@ public/uploads/
 .next/
 .nuxt/
 
+# Browser data (FluxStack Desktop)
+chrome_data/
+test-*/
+
 # Temporary files
 tmp/
 temp/
