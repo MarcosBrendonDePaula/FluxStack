@@ -426,7 +426,7 @@ export class PluginManager extends EventEmitter {
    */
   private async discoverPlugins(): Promise<void> {
     try {
-      // Load built-in plugins first (handled by core system)
+      // Load built-in plugins first
       this.logger.debug('Loading built-in plugins...')
       const builtInResults = await this.registry.discoverPlugins({
         directories: [],
@@ -434,30 +434,13 @@ export class PluginManager extends EventEmitter {
         includeExternal: false
       })
 
-      // Try to use auto-generated registry for external plugins (if available from build)
-      let externalResults: any[] = []
-      try {
-        // @ts-expect-error - auto-registry is generated during build, may not exist in dev
-        const autoRegistryModule = await import('./auto-registry')
-        if (autoRegistryModule.discoveredPlugins && autoRegistryModule.registerDiscoveredPlugins) {
-          this.logger.debug('🚀 Using auto-generated external plugins registry')
-          await autoRegistryModule.registerDiscoveredPlugins(this.registry)
-          externalResults = autoRegistryModule.discoveredPlugins.map((plugin: any) => ({
-            success: true,
-            plugin
-          }))
-        }
-      } catch (error) {
-        this.logger.debug('Auto-generated external plugins registry not found, falling back to discovery', { error: (error as Error).message })
-
-        // Fallback to runtime discovery for external plugins
-        this.logger.debug('Discovering external plugins in directory: plugins')
-        externalResults = await this.registry.discoverPlugins({
-          directories: ['plugins'],
-          includeBuiltIn: false,
-          includeExternal: true
-        })
-      }
+      // Load external plugins from plugins/ directory
+      this.logger.debug('Discovering external plugins in directory: plugins')
+      const externalResults = await this.registry.discoverPlugins({
+        directories: ['plugins'],
+        includeBuiltIn: false,
+        includeExternal: true
+      })
 
       // Combine results
       const results = [...builtInResults, ...externalResults]

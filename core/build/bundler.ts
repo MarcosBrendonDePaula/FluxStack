@@ -310,18 +310,13 @@ export class Bundler {
   }
 
   /**
-   * Run pre-build steps (Live Components and Plugins generation)
+   * Run pre-build steps (Live Components generation)
    */
   private async runPreBuildSteps(): Promise<any> {
     // 🚀 PRE-BUILD: Auto-generate Live Components registration
     const generatorModule = await import('./live-components-generator')
     const liveComponentsGenerator = generatorModule.liveComponentsGenerator
     await liveComponentsGenerator.preBuild()
-
-    // 🔌 PRE-BUILD: Auto-generate FluxStack Plugins registration
-    const pluginsGeneratorModule = await import('./flux-plugins-generator')
-    const fluxPluginsGenerator = pluginsGeneratorModule.fluxPluginsGenerator
-    await fluxPluginsGenerator.preBuild()
 
     return liveComponentsGenerator
   }
@@ -333,10 +328,6 @@ export class Bundler {
     if (liveComponentsGenerator) {
       await liveComponentsGenerator.postBuild(false)
     }
-
-    const pluginsGeneratorModule = await import('./flux-plugins-generator')
-    const fluxPluginsGenerator = pluginsGeneratorModule.fluxPluginsGenerator
-    await fluxPluginsGenerator.postBuild(false)
   }
 
   private async getClientAssets(): Promise<string[]> {
