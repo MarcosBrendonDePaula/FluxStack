@@ -31,7 +31,6 @@ import { appInstance } from "./app"
 // The generator creates this file in core/ to prevent accidental user modifications
 // This ensures components are registered before the plugin tries to use them
 import "@/core/server/live/auto-generated-components"
-import FluxStackDesktop from "@/plugins/Fluxstack-Desktop/index"
 
 // ===== Startup Logging =====
 DEBUG('🔧 Loading declarative configuration...')
@@ -107,7 +106,6 @@ app.routes(appInstance)
 // Swagger documentation (must be last to discover all routes)
 app.use(swaggerPlugin)
 
-app.use(FluxStackDesktop)
 // ===== Start Server =====
 // Banner will be displayed automatically by the framework
 app.listen()
