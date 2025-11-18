@@ -9,7 +9,7 @@ FluxStack é um gerador e runtime full-stack sobre o ecossistema Bun, composto p
 
 O repositório serve tanto como template quanto como referência de integração completa (API + SPA + documentação).
 
-## Destaques da Versão 1.8
+## Destaques da Versão 1.9
 - Eden Treaty nativo (sem wrappers) com inferência 100% funcional.
 - Sistema declarativo de configuração (`fluxstack.config.ts` na raiz + `config/*.config.ts`).
 - Plugins core revisados: Vite (dev proxy), Swagger, arquivos estáticos, Live Components, Monitoring (opt-in).

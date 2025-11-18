@@ -26,7 +26,7 @@
 
 **FluxStack** é um framework full-stack TypeScript moderno que combina:
 
-### 🛠️ **Stack Tecnológica (Janeiro 2025)**
+### 🛠️ **Stack Tecnológica (Novembro 2024)**
 - **Runtime**: Bun >= 1.2.0 (3x mais rápido que Node.js)
 - **Backend**: Elysia.js 1.4.6 (ultra-performático)
 - **Frontend**: React 19.1.0 + Vite 7.1.7
@@ -56,12 +56,18 @@ FluxStack/
 │   ├── types/              # Types do framework
 │   └── build/              # Sistema de build
 ├── config/                  # ⚙️ CONFIGURAÇÕES DA APLICAÇÃO
-│   ├── app.config.ts       # Configuração principal
-│   ├── server.config.ts    # Servidor e CORS
-│   ├── logger.config.ts    # Sistema de logs
-│   ├── database.config.ts  # Banco de dados
-│   ├── system.config.ts    # Informações do sistema
-│   └── index.ts            # Exports centralizados
+│   ├── app.config.ts        # Configuração da aplicação
+│   ├── client.config.ts     # Configuração do cliente/frontend
+│   ├── database.config.ts   # Banco de dados
+│   ├── fluxstack.config.ts  # Configuração principal do FluxStack
+│   ├── logger.config.ts     # Sistema de logs
+│   ├── monitoring.config.ts # Monitoramento e métricas
+│   ├── plugins.config.ts    # Configuração de plugins
+│   ├── runtime.config.ts    # Configuração de runtime
+│   ├── server.config.ts     # Servidor e CORS
+│   ├── services.config.ts   # Configuração de serviços
+│   ├── system.config.ts     # Informações do sistema
+│   └── index.ts             # Exports centralizados
 ├── app/                     # 👨‍💻 CÓDIGO DA APLICAÇÃO
 │   ├── server/             # Backend (controllers, routes)
 │   │   ├── controllers/    # Lógica de negócio
@@ -132,12 +138,18 @@ FluxStack usa um sistema de configuração declarativa com validação automáti
 #### 📁 **Estrutura de Configuração**
 ```
 config/
-├── app.config.ts       # Configuração da aplicação
-├── server.config.ts    # Configuração do servidor
-├── logger.config.ts    # Configuração de logs
-├── database.config.ts  # Configuração do banco de dados
-├── system.config.ts    # Informações do sistema
-└── index.ts           # Exports centralizados
+├── app.config.ts         # Configuração da aplicação
+├── client.config.ts      # Configuração do cliente/frontend
+├── database.config.ts    # Configuração do banco de dados
+├── fluxstack.config.ts   # Configuração principal do FluxStack
+├── logger.config.ts      # Configuração de logs
+├── monitoring.config.ts  # Configuração de monitoramento e métricas
+├── plugins.config.ts     # Configuração de plugins
+├── runtime.config.ts     # Configuração de runtime
+├── server.config.ts      # Configuração do servidor
+├── services.config.ts    # Configuração de serviços
+├── system.config.ts      # Informações do sistema
+└── index.ts             # Exports centralizados
 ```
 
 #### 🎯 **Como Usar**
@@ -313,19 +325,24 @@ curl http://localhost:3000/api/health  # ✅ Health check
 - **🩺 Health Check**: http://localhost:3000/api/health
 - **👥 Users API**: http://localhost:3000/api/users
 
-## 🔥 **Mudanças Importantes v1.7→v1.8**
+## 🔥 **Mudanças Importantes v1.8→v1.9**
 
-### **✅ Centralização da App Instance (Janeiro 2025)**
+### **✅ Correção de Vazamento de Dados do Navegador (Novembro 2024)**
+- **Problema resolvido**: Dados do navegador vazando no pacote npm
+- **Solução implementada**: Correção de segurança aplicada
+- **Resultado**: Pacote npm seguro e sem vazamento de dados
+
+### **✅ Centralização da App Instance (v1.8)**
 - **Problema resolvido**: Multiple exports da app instance causavam inconsistências
 - **Solução implementada**: App instance como fonte única de verdade
 - **Resultado**: Arquitetura mais limpa e previne bugs de sincronização
 
-### **✅ CI/CD Arithmetic Safety (Janeiro 2025)**
+### **✅ CI/CD Arithmetic Safety (v1.8)**
 - **Problema resolvido**: Exit codes inconsistentes em workflows
 - **Solução implementada**: Arithmetic safety aplicado em todos os workflows CI/CD
 - **Resultado**: Pipeline mais confiável e previsível
 
-### **✅ Regra de Instalação Automática do Bun (Janeiro 2025)**
+### **✅ Regra de Instalação Automática do Bun (v1.8)**
 - **Problema resolvido**: LLMs não sabiam como proceder quando Bun não estava instalado
 - **Solução implementada**: Instrução clara no CLAUDE.md para instalar Bun automaticamente
 - **Resultado**: Onboarding mais fluido e menos erros de "command not found"
@@ -339,7 +356,7 @@ curl http://localhost:3000/api/health  # ✅ Health check
 
 ## 📋 **Histórico de Versões Anteriores**
 
-### **v1.5→v1.6 (Janeiro 2025)**
+### **v1.5→v1.6 (v1.6)**
 
 #### **✅ Limpeza e Organização do Projeto**
 - **Problema resolvido**: Arquivos markdown duplicados e desorganizados na raiz
@@ -409,4 +426,4 @@ curl http://localhost:3000/api/health  # ✅ Health check
 
 **🎯 Objetivo**: Capacitar LLMs a trabalhar eficientemente com FluxStack, seguindo padrões estabelecidos e garantindo código de alta qualidade com type safety automática.
 
-**📅 Última atualização**: Janeiro 2025 - v1.8.3 - Nova versão para publicação.
+**📅 Última atualização**: Novembro 2024 - v1.9.1 - Correção de vazamento de dados do navegador no pacote npm.
