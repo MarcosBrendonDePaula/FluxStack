@@ -143,6 +143,29 @@ export class FluxStackFramework {
   private async initializeAutomaticPlugins() {
     try {
       await this.pluginManager.initialize()
+
+      // Sync discovered plugins from PluginManager to main registry
+      const discoveredPlugins = this.pluginManager.getRegistry().getAll()
+      for (const plugin of discoveredPlugins) {
+        if (!this.pluginRegistry.has(plugin.name)) {
+          // Register in main registry (synchronously, will call setup in start())
+          (this.pluginRegistry as any).plugins.set(plugin.name, plugin)
+          if (plugin.dependencies) {
+            (this.pluginRegistry as any).dependencies.set(plugin.name, plugin.dependencies)
+          }
+        }
+      }
+
+      // Update load order
+      try {
+        (this.pluginRegistry as any).updateLoadOrder()
+      } catch (error) {
+        // Fallback: create basic load order
+        const plugins = (this.pluginRegistry as any).plugins as Map<string, FluxStack.Plugin>
+        const loadOrder = Array.from(plugins.keys())
+        ;(this.pluginRegistry as any).loadOrder = loadOrder
+      }
+
       const stats = this.pluginManager.getRegistry().getStats()
       logger.debug('Automatic plugins loaded successfully', {
         pluginCount: stats.totalPlugins,
