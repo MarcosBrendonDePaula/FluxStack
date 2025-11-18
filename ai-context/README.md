@@ -58,7 +58,7 @@ Guia otimizado para assistentes compreenderem rapidamente o FluxStack, sua arqui
 - Centralizar tipos compartilhados em `app/shared/`.
 - Validar alterações com `bun run dev` e os testes disponíveis.
 
-## Estado Atual (v1.8+)
+## Estado Atual (v1.9+)
 
 - Eden Treaty nativo com inferência completa.
 - Sistema declarativo de configuração (`fluxstack.config.ts` na raiz + `config/*.config.ts`).
