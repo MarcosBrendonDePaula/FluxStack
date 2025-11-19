@@ -104,9 +104,9 @@ export class FileUploadManager {
       const progress = (upload.receivedChunks.size / totalChunks) * 100
       const bytesUploaded = upload.receivedChunks.size * (upload.fileSize / totalChunks)
 
-      // Check if upload is complete
+      // Log completion status (but don't finalize until COMPLETE message)
       if (upload.receivedChunks.size === totalChunks) {
-        await this.finalizeUpload(upload)
+        console.log(`✅ All chunks received for upload ${uploadId}, waiting for COMPLETE message`)
       }
 
       return {

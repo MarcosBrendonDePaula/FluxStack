@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { api } from './lib/eden-api'
-import { FaFire, FaBook, FaGithub, FaClock } from 'react-icons/fa'
+import { FaFire, FaBook, FaGithub, FaClock, FaImage } from 'react-icons/fa'
 import { LiveComponentsProvider, useHybridLiveComponent } from '@/core/client'
+import { ImageUploadExample } from './components/ImageUploadExample'
 
 interface LiveClockState {
   currentTime: string
@@ -44,6 +45,7 @@ function MinimalLiveClock() {
 
 function AppContent() {
   const [apiStatus, setApiStatus] = useState<'checking' | 'online' | 'offline'>('checking')
+  const [showDemo, setShowDemo] = useState(false)
 
   useEffect(() => {
     checkApiStatus()
@@ -56,6 +58,31 @@ function AppContent() {
     } catch {
       setApiStatus('offline')
     }
+  }
+
+  // If demo mode is active, show demo content
+  if (showDemo) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        <div className="container mx-auto px-4 py-8">
+          {/* Header with back button */}
+          <div className="flex items-center gap-4 mb-8">
+            <button
+              onClick={() => setShowDemo(false)}
+              className="px-4 py-2 bg-white/10 backdrop-blur-sm border border-white/20 text-white rounded-lg font-medium hover:bg-white/20 transition-all"
+            >
+              ← Back
+            </button>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+              FluxStack Demos
+            </h1>
+          </div>
+
+          {/* Demo Content */}
+          <ImageUploadExample />
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -130,6 +157,13 @@ function AppContent() {
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-4 justify-center">
+          <button
+            onClick={() => setShowDemo(true)}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-emerald-500/50 transition-all"
+          >
+            <FaImage />
+            View Demos
+          </button>
           <a
             href="http://localhost:3000/swagger"
             target="_blank"
