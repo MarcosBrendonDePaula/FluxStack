@@ -192,45 +192,57 @@ export const hooksDemo: Plugin = {
   },
 
   onBeforeResponse: async (context: ResponseContext) => {
-    console.log(`📤 [hooks-demo] onBeforeResponse - Status: ${context.statusCode}`)
+    const statusCode = isNaN(context.statusCode) ? 200 : context.statusCode
+    console.log(`📤 [hooks-demo] onBeforeResponse - Status: ${statusCode}`)
+
+    // Verificar se response existe antes de processar
+    if (!context.response) {
+      console.log(`   ⚠️  Response não disponível`)
+      return
+    }
 
     // Exemplo: Adicionar headers customizados
     // Note: Response headers são imutáveis em Elysia, então precisamos criar uma nova Response
-    if (context.response) {
-      try {
-        const newHeaders = new Headers(context.response.headers)
-        newHeaders.set('X-Response-Time', `${context.duration}ms`)
-        newHeaders.set('X-Powered-By', 'FluxStack')
-        newHeaders.set('X-Plugin', 'hooks-demo')
+    try {
+      const newHeaders = new Headers(context.response.headers)
+      newHeaders.set('X-Response-Time', `${context.duration}ms`)
+      newHeaders.set('X-Powered-By', 'FluxStack')
+      newHeaders.set('X-Plugin', 'hooks-demo')
 
-        // Clonar o body da response original
-        const body = await context.response.clone().arrayBuffer()
+      // Clonar o body da response original
+      const body = await context.response.clone().arrayBuffer()
 
-        // Criar nova Response com headers modificados
-        context.response = new Response(body, {
-          status: context.response.status,
-          statusText: context.response.statusText,
-          headers: newHeaders
-        })
-        console.log(`   ✅ Headers customizados adicionados`)
-      } catch (error) {
-        console.log(`   ⚠️  Não foi possível modificar headers`)
-      }
+      // Criar nova Response com headers modificados
+      context.response = new Response(body, {
+        status: context.response.status,
+        statusText: context.response.statusText,
+        headers: newHeaders
+      })
+      console.log(`   ✅ Headers customizados adicionados`)
+    } catch (error) {
+      console.log(`   ⚠️  Não foi possível modificar headers: ${error}`)
     }
   },
 
   onResponseTransform: async (context: TransformContext) => {
     console.log(`🔄 [hooks-demo] onResponseTransform`)
 
+    // Verificar se response existe antes de processar
+    if (!context.response) {
+      console.log(`   ⚠️  Response não disponível para transformação`)
+      return
+    }
+
     // Exemplo: Adicionar wrapper em JSON responses
-    const contentType = context.response?.headers.get('content-type')
+    const contentType = context.response.headers.get('content-type')
     if (contentType?.includes('application/json')) {
       try {
         const originalData = await context.response.clone().json()
+        const statusCode = isNaN(context.statusCode) ? 200 : context.statusCode
 
         // Adicionar metadata
         const transformed = {
-          success: context.statusCode >= 200 && context.statusCode < 300,
+          success: statusCode >= 200 && statusCode < 300,
           data: originalData,
           meta: {
             timestamp: new Date().toISOString(),
@@ -241,7 +253,7 @@ export const hooksDemo: Plugin = {
 
         context.originalResponse = context.response
         context.response = new Response(JSON.stringify(transformed), {
-          status: context.statusCode,
+          status: statusCode,
           headers: context.response.headers
         })
         context.transformed = true
