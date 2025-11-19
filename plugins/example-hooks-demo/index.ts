@@ -30,6 +30,9 @@ const metrics = {
   cacheMisses: 0
 }
 
+// Cache de demonstração (module-level, não global)
+const demoCache = new Map<string, { data: string; expires: number }>()
+
 export const hooksDemo: Plugin = {
   name: 'hooks-demo',
   version: '1.0.0',
@@ -58,8 +61,8 @@ export const hooksDemo: Plugin = {
     console.log('🔧 [hooks-demo] setup - Plugin inicializando')
     context.logger.info('Hooks Demo Plugin configurado com sucesso')
 
-    // Exemplo: Inicializar cache
-    ;(global as any).demoCache = new Map()
+    // Cache já inicializado no module-level
+    console.log('   Cache inicializado e pronto para uso')
   },
 
   onBeforeServerStart: async (context: PluginContext) => {
@@ -137,8 +140,7 @@ export const hooksDemo: Plugin = {
 
     // Exemplo: Verificar cache para GET requests
     if (context.method === 'GET') {
-      const cache = (global as any).demoCache as Map<string, any>
-      const cached = cache.get(context.path)
+      const cached = demoCache.get(context.path)
 
       if (cached && cached.expires > Date.now()) {
         console.log(`   ✅ Cache HIT para ${context.path}`)
@@ -193,11 +195,27 @@ export const hooksDemo: Plugin = {
     console.log(`📤 [hooks-demo] onBeforeResponse - Status: ${context.statusCode}`)
 
     // Exemplo: Adicionar headers customizados
+    // Note: Response headers são imutáveis em Elysia, então precisamos criar uma nova Response
     if (context.response) {
-      const duration = Date.now() - context.startTime
-      context.response.headers.set('X-Response-Time', `${duration}ms`)
-      context.response.headers.set('X-Powered-By', 'FluxStack')
-      context.response.headers.set('X-Plugin', 'hooks-demo')
+      try {
+        const newHeaders = new Headers(context.response.headers)
+        newHeaders.set('X-Response-Time', `${context.duration}ms`)
+        newHeaders.set('X-Powered-By', 'FluxStack')
+        newHeaders.set('X-Plugin', 'hooks-demo')
+
+        // Clonar o body da response original
+        const body = await context.response.clone().arrayBuffer()
+
+        // Criar nova Response com headers modificados
+        context.response = new Response(body, {
+          status: context.response.status,
+          statusText: context.response.statusText,
+          headers: newHeaders
+        })
+        console.log(`   ✅ Headers customizados adicionados`)
+      } catch (error) {
+        console.log(`   ⚠️  Não foi possível modificar headers`)
+      }
     }
   },
 
@@ -245,9 +263,8 @@ export const hooksDemo: Plugin = {
     if (context.method === 'GET' && context.statusCode === 200) {
       try {
         const body = await context.response.clone().text()
-        const cache = (global as any).demoCache as Map<string, any>
 
-        cache.set(context.path, {
+        demoCache.set(context.path, {
           data: body,
           expires: Date.now() + 30000 // 30 segundos
         })
