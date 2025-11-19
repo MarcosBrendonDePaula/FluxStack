@@ -3,7 +3,6 @@ import { api } from './lib/eden-api'
 import { FaFire, FaBook, FaGithub, FaClock, FaImage } from 'react-icons/fa'
 import { LiveComponentsProvider, useHybridLiveComponent } from '@/core/client'
 import { ImageUploadExample } from './components/ImageUploadExample'
-import { QuickUploadTest } from './components/QuickUploadTest'
 
 interface LiveClockState {
   currentTime: string
@@ -154,11 +153,6 @@ function AppContent() {
             </div>
             <MinimalLiveClock />
           </div>
-        </div>
-
-        {/* Upload Test Card */}
-        <div className="w-full max-w-md mb-12">
-          <QuickUploadTest />
         </div>
 
         {/* Action Buttons */}
