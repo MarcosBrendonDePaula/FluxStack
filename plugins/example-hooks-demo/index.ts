@@ -344,6 +344,70 @@ export const hooksDemo: Plugin = {
   },
 
   // ===========================
+  // BUILD PIPELINE
+  // ===========================
+
+  onBeforeBuild: async (context: BuildContext) => {
+    console.log(`\n🏗️  [hooks-demo] onBeforeBuild - ${context.mode}`)
+    console.log(`   Target: ${context.target}`)
+    console.log(`   Output: ${context.outDir}`)
+
+    // Exemplo: Validar ambiente antes de build
+    if (context.mode === 'production') {
+      console.log(`   ✅ Production build validated`)
+    }
+  },
+
+  onBuild: async (context: BuildContext) => {
+    console.log(`⚙️  [hooks-demo] onBuild - Compilando...`)
+    console.log(`   Mode: ${context.mode}`)
+
+    // Exemplo: Gerar arquivos customizados durante build
+    // await generateCustomFiles(context.outDir)
+  },
+
+  onBuildAsset: async (context: BuildAssetContext) => {
+    console.log(`📦 [hooks-demo] onBuildAsset - ${context.assetType}: ${context.assetPath.split('/').pop()}`)
+    console.log(`   Size: ${(context.size / 1024).toFixed(2)} KB`)
+
+    // Exemplo: Processar assets específicos
+    if (context.assetType === 'image' && context.size > 100000) {
+      console.log(`   ⚠️  Large image detected (>${(100000 / 1024).toFixed(0)}KB)`)
+    }
+
+    if (context.assetType === 'js' && context.size > 500000) {
+      console.log(`   ⚠️  Large JavaScript bundle (>${(500000 / 1024).toFixed(0)}KB)`)
+    }
+  },
+
+  onBuildComplete: async (context: BuildContext) => {
+    console.log(`\n✅ [hooks-demo] onBuildComplete - Build finalizado com sucesso!`)
+    console.log(`   Output: ${context.outDir}`)
+    console.log(`   Mode: ${context.mode}`)
+
+    // Exemplo: Deploy automático em produção
+    if (context.mode === 'production') {
+      console.log(`   📤 Ready for deployment`)
+      // await deployToProduction(context.outDir)
+    }
+  },
+
+  onBuildError: async (context: BuildErrorContext) => {
+    console.log(`\n💥 [hooks-demo] onBuildError - Build falhou`)
+    console.log(`   Error: ${context.error.message}`)
+
+    if (context.file) {
+      console.log(`   File: ${context.file}:${context.line}:${context.column}`)
+    }
+
+    // Exemplo: Notificar time sobre falha no build
+    // await sendBuildFailureNotification({
+    //   error: context.error.message,
+    //   file: context.file
+    // })
+  },
+
+  // ===========================
   // SHUTDOWN
   // ===========================
 

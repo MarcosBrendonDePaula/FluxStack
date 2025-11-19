@@ -1,4 +1,4 @@
-import { copyFileSync, writeFileSync, existsSync, mkdirSync, readFileSync } from "fs"
+import { copyFileSync, writeFileSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync } from "fs"
 import { join } from "path"
 import type { FluxStackConfig } from "../config"
 import type { BuildResult, BuildManifest } from "../types/build"
@@ -6,14 +6,18 @@ import { Bundler } from "./bundler"
 import { Optimizer } from "./optimizer"
 import { FLUXSTACK_VERSION } from "../utils/version"
 import { buildLogger } from "../utils/build-logger"
+import type { PluginRegistry } from "../plugins/registry"
+import type { BuildContext, BuildAssetContext, BuildErrorContext } from "../plugins/types"
 
 export class FluxStackBuilder {
   private config: FluxStackConfig
   private bundler: Bundler
   private optimizer: Optimizer
+  private pluginRegistry?: PluginRegistry
 
-  constructor(config: FluxStackConfig) {
+  constructor(config: FluxStackConfig, pluginRegistry?: PluginRegistry) {
     this.config = config
+    this.pluginRegistry = pluginRegistry
 
     // Initialize bundler with configuration
     this.bundler = new Bundler({
@@ -238,7 +242,17 @@ MONITORING_ENABLED=true
 
     const startTime = Date.now()
 
+    const buildContext: BuildContext = {
+      target: this.config.build.target,
+      outDir: this.config.build.outDir,
+      mode: (this.config.build.mode || 'production') as 'development' | 'production',
+      config: this.config
+    }
+
     try {
+      // Execute onBeforeBuild hooks
+      await this.executePluginHooks('onBeforeBuild', buildContext)
+
       // Pre-build checks (version sync, etc.)
       await this.runPreBuildChecks()
 
@@ -250,6 +264,9 @@ MONITORING_ENABLED=true
         await this.clean()
       }
 
+      // Execute onBuild hooks
+      await this.executePluginHooks('onBuild', buildContext)
+
       // Build client and server
       const clientResult = await this.buildClient()
       const serverResult = await this.buildServer()
@@ -257,6 +274,16 @@ MONITORING_ENABLED=true
       // Check if builds were successful
       if (!clientResult.success || !serverResult.success) {
         const errorMessage = clientResult.error || serverResult.error || "Build failed"
+
+        // Execute onBuildError hooks
+        const buildErrorContext: BuildErrorContext = {
+          error: new Error(errorMessage),
+          file: undefined,
+          line: undefined,
+          column: undefined
+        }
+        await this.executePluginHooks('onBuildError', buildErrorContext)
+
         return {
           success: false,
           duration: Date.now() - startTime,
@@ -277,6 +304,9 @@ MONITORING_ENABLED=true
         }
       }
 
+      // Process assets and execute onBuildAsset hooks
+      await this.processAssets(this.config.build.outDir)
+
       // Optimize build if enabled
       let optimizationResult
       if (this.config.build.optimize) {
@@ -290,6 +320,9 @@ MONITORING_ENABLED=true
       const manifest = await this.generateManifest(clientResult, serverResult, optimizationResult)
 
       const duration = Date.now() - startTime
+
+      // Execute onBuildComplete hooks
+      await this.executePluginHooks('onBuildComplete', buildContext)
 
       // Print build summary
       buildLogger.summary('Build Completed Successfully', [
@@ -322,6 +355,15 @@ MONITORING_ENABLED=true
       const errorMessage = error instanceof Error ? error.message : "Unknown build error"
 
       buildLogger.error(`Build failed: ${errorMessage}`)
+
+      // Execute onBuildError hooks
+      const buildErrorContext: BuildErrorContext = {
+        error: error instanceof Error ? error : new Error(errorMessage),
+        file: undefined,
+        line: undefined,
+        column: undefined
+      }
+      await this.executePluginHooks('onBuildError', buildErrorContext)
 
       return {
         success: false,
@@ -412,5 +454,81 @@ MONITORING_ENABLED=true
         assetCount: clientResult.assets?.length || 0
       }
     }
+  }
+
+  /**
+   * Execute plugin hooks for build process
+   */
+  private async executePluginHooks(hookName: string, context: any): Promise<void> {
+    if (!this.pluginRegistry) return
+
+    const loadOrder = this.pluginRegistry.getLoadOrder()
+
+    for (const pluginName of loadOrder) {
+      const plugin = this.pluginRegistry.get(pluginName)
+      if (!plugin) continue
+
+      const hookFn = (plugin as any)[hookName]
+      if (typeof hookFn === 'function') {
+        try {
+          await hookFn(context)
+        } catch (error) {
+          buildLogger.error(`Plugin '${pluginName}' ${hookName} hook failed: ${error instanceof Error ? error.message : String(error)}`)
+        }
+      }
+    }
+  }
+
+  /**
+   * Process build assets and execute onBuildAsset hooks
+   */
+  private async processAssets(outDir: string): Promise<void> {
+    if (!this.pluginRegistry) return
+    if (!existsSync(outDir)) return
+
+    try {
+      const processDirectory = async (dir: string) => {
+        const entries = readdirSync(dir, { withFileTypes: true })
+
+        for (const entry of entries) {
+          const fullPath = join(dir, entry.name)
+
+          if (entry.isDirectory()) {
+            await processDirectory(fullPath)
+          } else if (entry.isFile()) {
+            const stat = statSync(fullPath)
+            const assetType = this.getAssetType(entry.name)
+
+            const assetContext: BuildAssetContext = {
+              assetPath: fullPath,
+              assetType,
+              size: stat.size,
+              content: undefined // Could read file if plugins need it
+            }
+
+            await this.executePluginHooks('onBuildAsset', assetContext)
+          }
+        }
+      }
+
+      await processDirectory(outDir)
+    } catch (error) {
+      buildLogger.warn(`Failed to process assets: ${error instanceof Error ? error.message : String(error)}`)
+    }
+  }
+
+  /**
+   * Determine asset type from file extension
+   */
+  private getAssetType(filename: string): 'js' | 'css' | 'html' | 'image' | 'font' | 'other' {
+    const ext = filename.split('.').pop()?.toLowerCase()
+
+    if (ext === 'js' || ext === 'mjs' || ext === 'cjs') return 'js'
+    if (ext === 'css') return 'css'
+    if (ext === 'html' || ext === 'htm') return 'html'
+    if (ext === 'png' || ext === 'jpg' || ext === 'jpeg' || ext === 'gif' || ext === 'svg' || ext === 'webp') return 'image'
+    if (ext === 'woff' || ext === 'woff2' || ext === 'ttf' || ext === 'eot' || ext === 'otf') return 'font'
+
+    return 'other'
   }
 }
