@@ -619,11 +619,17 @@ async function handleFileUploadStart(ws: any, message: FileUploadStartMessage) {
 
 async function handleFileUploadChunk(ws: any, message: FileUploadChunkMessage) {
   console.log(`📦 Receiving chunk ${message.chunkIndex + 1} for upload ${message.uploadId}`)
-  
+
   const progressResponse = await fileUploadManager.receiveChunk(message, ws)
-  
+
   if (progressResponse) {
-    ws.send(JSON.stringify(progressResponse))
+    // Add requestId to response so client can correlate it
+    const responseWithRequestId = {
+      ...progressResponse,
+      requestId: message.requestId,
+      success: true
+    }
+    ws.send(JSON.stringify(responseWithRequestId))
   } else {
     // Send error response
     const errorResponse = {
@@ -632,6 +638,7 @@ async function handleFileUploadChunk(ws: any, message: FileUploadChunkMessage) {
       uploadId: message.uploadId,
       error: 'Failed to process chunk',
       requestId: message.requestId,
+      success: false,
       timestamp: Date.now()
     }
     ws.send(JSON.stringify(errorResponse))
@@ -640,7 +647,14 @@ async function handleFileUploadChunk(ws: any, message: FileUploadChunkMessage) {
 
 async function handleFileUploadComplete(ws: any, message: FileUploadCompleteMessage) {
   console.log('✅ Completing file upload:', message.uploadId)
-  
+
   const completeResponse = await fileUploadManager.completeUpload(message)
-  ws.send(JSON.stringify(completeResponse))
+
+  // Add requestId to response so client can correlate it
+  const responseWithRequestId = {
+    ...completeResponse,
+    requestId: message.requestId
+  }
+
+  ws.send(JSON.stringify(responseWithRequestId))
 }
