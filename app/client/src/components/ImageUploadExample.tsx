@@ -30,7 +30,7 @@ export function ImageUploadExample() {
     maxImages: 10
   })
 
-  // Setup Chunked Upload Hook
+  // Setup Chunked Upload Hook with Adaptive Chunking
   const {
     uploading,
     progress,
@@ -41,10 +41,21 @@ export function ImageUploadExample() {
     bytesUploaded,
     totalBytes
   } = useChunkedUpload(componentId || '', {
-    chunkSize: 64 * 1024, // 64KB chunks
+    chunkSize: 64 * 1024, // 64KB initial chunk size
     maxFileSize: 10 * 1024 * 1024, // 10MB max
     allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'],
     sendMessageAndWait,
+
+    // Enable Adaptive Chunking for optimal upload speed
+    adaptiveChunking: true,
+    adaptiveConfig: {
+      minChunkSize: 16 * 1024,   // 16KB minimum
+      maxChunkSize: 512 * 1024,  // 512KB maximum (safer for web)
+      initialChunkSize: 64 * 1024, // 64KB start
+      targetLatency: 200,        // Target 200ms per chunk
+      adjustmentFactor: 1.5,     // Moderate adjustment
+      measurementWindow: 3       // Measure last 3 chunks
+    },
 
     onProgress: (progress, uploaded, total) => {
       console.log(`📤 Upload progress: ${progress.toFixed(1)}% (${uploaded}/${total} bytes)`)
@@ -284,12 +295,14 @@ export function ImageUploadExample() {
       <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
         <h4 className="font-semibold text-gray-900 mb-2">📋 Technical Details</h4>
         <ul className="text-sm text-gray-600 space-y-1">
-          <li>✅ <strong>Chunk Size:</strong> 64KB per chunk</li>
+          <li>✅ <strong>Adaptive Chunking:</strong> Enabled (16KB - 512KB)</li>
+          <li>✅ <strong>Initial Chunk Size:</strong> 64KB</li>
           <li>✅ <strong>Max File Size:</strong> 10MB</li>
           <li>✅ <strong>Allowed Types:</strong> JPEG, PNG, WebP, GIF</li>
           <li>✅ <strong>Real-time Progress:</strong> Shows bytes uploaded and percentage</li>
           <li>✅ <strong>State Sync:</strong> Uploaded images synced via Live Component</li>
           <li>✅ <strong>Component ID:</strong> {componentId || 'Not connected'}</li>
+          <li>🚀 <strong>Optimization:</strong> Chunk size adjusts based on connection speed</li>
         </ul>
       </div>
     </div>

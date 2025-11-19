@@ -20,7 +20,12 @@ export type {
 export { useWebSocket } from './hooks/useWebSocket'
 export { useHybridLiveComponent } from './hooks/useHybridLiveComponent'
 export { useChunkedUpload } from './hooks/useChunkedUpload'
+export { AdaptiveChunkSizer } from './hooks/AdaptiveChunkSizer'
 export { StateValidator } from './hooks/state-validator'
+
+// Hook types
+export type { AdaptiveChunkConfig, ChunkMetrics } from './hooks/AdaptiveChunkSizer'
+export type { ChunkedUploadOptions, ChunkedUploadState } from './hooks/useChunkedUpload'
 
 // Re-export types from core/types/types.ts for convenience
 export type {
