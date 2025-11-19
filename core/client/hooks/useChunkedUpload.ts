@@ -1,20 +1,24 @@
 import { useState, useCallback, useRef } from 'react'
-import type { 
-  FileUploadStartMessage, 
-  FileUploadChunkMessage, 
+import { AdaptiveChunkSizer, type AdaptiveChunkConfig } from './AdaptiveChunkSizer'
+import type {
+  FileUploadStartMessage,
+  FileUploadChunkMessage,
   FileUploadCompleteMessage,
   FileUploadProgressResponse,
   FileUploadCompleteResponse
 } from '@/core/types/types'
 
 export interface ChunkedUploadOptions {
-  chunkSize?: number // Default 64KB
+  chunkSize?: number // Default 64KB (used as initial if adaptive is enabled)
   maxFileSize?: number // Default 50MB
   allowedTypes?: string[]
   sendMessageAndWait?: (message: any, timeout?: number) => Promise<any> // WebSocket send function
   onProgress?: (progress: number, bytesUploaded: number, totalBytes: number) => void
   onComplete?: (response: FileUploadCompleteResponse) => void
   onError?: (error: string) => void
+  // Adaptive chunking options
+  adaptiveChunking?: boolean // Enable adaptive chunk sizing (default: false)
+  adaptiveConfig?: Partial<AdaptiveChunkConfig> // Adaptive chunking configuration
 }
 
 export interface ChunkedUploadState {
@@ -27,7 +31,7 @@ export interface ChunkedUploadState {
 }
 
 export function useChunkedUpload(componentId: string, options: ChunkedUploadOptions = {}) {
-  
+
   const [state, setState] = useState<ChunkedUploadState>({
     uploading: false,
     progress: 0,
@@ -44,42 +48,23 @@ export function useChunkedUpload(componentId: string, options: ChunkedUploadOpti
     sendMessageAndWait,
     onProgress,
     onComplete,
-    onError
+    onError,
+    adaptiveChunking = false,
+    adaptiveConfig
   } = options
 
   const abortControllerRef = useRef<AbortController | null>(null)
+  const adaptiveSizerRef = useRef<AdaptiveChunkSizer | null>(null)
 
-  // Convert file to base64 chunks
-  const fileToChunks = useCallback(async (file: File): Promise<string[]> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      
-      reader.onload = () => {
-        const arrayBuffer = reader.result as ArrayBuffer
-        const uint8Array = new Uint8Array(arrayBuffer)
-        
-        // Split binary data into chunks first, then convert each chunk to base64
-        const chunks: string[] = []
-        for (let i = 0; i < uint8Array.length; i += chunkSize) {
-          const chunkEnd = Math.min(i + chunkSize, uint8Array.length)
-          const chunkBytes = uint8Array.slice(i, chunkEnd)
-          
-          // Convert chunk to base64
-          let binary = ''
-          for (let j = 0; j < chunkBytes.length; j++) {
-            binary += String.fromCharCode(chunkBytes[j])
-          }
-          const base64Chunk = btoa(binary)
-          chunks.push(base64Chunk)
-        }
-        
-        resolve(chunks)
-      }
-      
-      reader.onerror = () => reject(new Error('Failed to read file'))
-      reader.readAsArrayBuffer(file)
+  // Initialize adaptive chunk sizer if enabled
+  if (adaptiveChunking && !adaptiveSizerRef.current) {
+    adaptiveSizerRef.current = new AdaptiveChunkSizer({
+      initialChunkSize: chunkSize,
+      minChunkSize: 16 * 1024,  // 16KB min
+      maxChunkSize: 1024 * 1024, // 1MB max
+      ...adaptiveConfig
     })
-  }, [chunkSize])
+  }
 
   // Start chunked upload
   const uploadFile = useCallback(async (file: File) => {
@@ -120,13 +105,22 @@ export function useChunkedUpload(componentId: string, options: ChunkedUploadOpti
         totalBytes: file.size
       })
 
-      console.log('🚀 Starting chunked upload:', { uploadId, filename: file.name, size: file.size })
+      console.log('🚀 Starting chunked upload:', {
+        uploadId,
+        filename: file.name,
+        size: file.size,
+        adaptiveChunking
+      })
 
-      // Convert file to chunks
-      const chunks = await fileToChunks(file)
-      const totalChunks = chunks.length
+      // Reset adaptive sizer for new upload
+      if (adaptiveSizerRef.current) {
+        adaptiveSizerRef.current.reset()
+      }
 
-      console.log(`📦 File split into ${totalChunks} chunks of ~${chunkSize} bytes each`)
+      // Get initial chunk size (adaptive or fixed)
+      const initialChunkSize = adaptiveSizerRef.current?.getChunkSize() ?? chunkSize
+
+      console.log(`📦 Initial chunk size: ${initialChunkSize} bytes${adaptiveChunking ? ' (adaptive)' : ''}`)
 
       // Start upload
       const startMessage: FileUploadStartMessage = {
@@ -147,35 +141,92 @@ export function useChunkedUpload(componentId: string, options: ChunkedUploadOpti
 
       console.log('✅ Upload started successfully')
 
-      // Send chunks sequentially
-      for (let i = 0; i < chunks.length; i++) {
+      // Read file as ArrayBuffer for dynamic chunking
+      const fileArrayBuffer = await file.arrayBuffer()
+      const fileData = new Uint8Array(fileArrayBuffer)
+
+      let offset = 0
+      let chunkIndex = 0
+      const estimatedTotalChunks = Math.ceil(file.size / initialChunkSize)
+
+      // Send chunks dynamically with adaptive sizing
+      while (offset < fileData.length) {
         if (abortControllerRef.current?.signal.aborted) {
           throw new Error('Upload cancelled')
         }
+
+        // Get current chunk size (adaptive or fixed)
+        const currentChunkSize = adaptiveSizerRef.current?.getChunkSize() ?? chunkSize
+        const chunkEnd = Math.min(offset + currentChunkSize, fileData.length)
+        const chunkBytes = fileData.slice(offset, chunkEnd)
+
+        // Convert chunk to base64
+        let binary = ''
+        for (let j = 0; j < chunkBytes.length; j++) {
+          binary += String.fromCharCode(chunkBytes[j])
+        }
+        const base64Chunk = btoa(binary)
+
+        // Record chunk start time for adaptive sizing
+        const chunkStartTime = adaptiveSizerRef.current?.recordChunkStart(chunkIndex) ?? 0
 
         const chunkMessage: FileUploadChunkMessage = {
           type: 'FILE_UPLOAD_CHUNK',
           componentId,
           uploadId,
-          chunkIndex: i,
-          totalChunks,
-          data: chunks[i],
-          requestId: `chunk-${uploadId}-${i}`
+          chunkIndex,
+          totalChunks: estimatedTotalChunks, // Approximate, will be recalculated
+          data: base64Chunk,
+          requestId: `chunk-${uploadId}-${chunkIndex}`
         }
 
-        console.log(`📤 Sending chunk ${i + 1}/${totalChunks}`)
+        console.log(`📤 Sending chunk ${chunkIndex + 1} (size: ${chunkBytes.length} bytes)`)
 
-        // Send chunk and wait for progress response
-        const progressResponse = await sendMessageAndWait(chunkMessage, 10000) as FileUploadProgressResponse
-        
-        if (progressResponse) {
-          const { progress, bytesUploaded } = progressResponse
-          setState(prev => ({ ...prev, progress, bytesUploaded }))
-          onProgress?.(progress, bytesUploaded, file.size)
+        try {
+          // Send chunk and wait for progress response
+          const progressResponse = await sendMessageAndWait(chunkMessage, 10000) as FileUploadProgressResponse
+
+          if (progressResponse) {
+            const { progress, bytesUploaded } = progressResponse
+            setState(prev => ({ ...prev, progress, bytesUploaded }))
+            onProgress?.(progress, bytesUploaded, file.size)
+          }
+
+          // Record successful chunk upload for adaptive sizing
+          if (adaptiveSizerRef.current) {
+            adaptiveSizerRef.current.recordChunkComplete(
+              chunkIndex,
+              chunkBytes.length,
+              chunkStartTime,
+              true
+            )
+          }
+        } catch (error) {
+          // Record failed chunk for adaptive sizing
+          if (adaptiveSizerRef.current) {
+            adaptiveSizerRef.current.recordChunkComplete(
+              chunkIndex,
+              chunkBytes.length,
+              chunkStartTime,
+              false
+            )
+          }
+          throw error
         }
 
-        // Small delay to prevent overwhelming the server
-        await new Promise(resolve => setTimeout(resolve, 10))
+        offset += chunkBytes.length
+        chunkIndex++
+
+        // Small delay to prevent overwhelming the server (only for fixed chunking)
+        if (!adaptiveChunking) {
+          await new Promise(resolve => setTimeout(resolve, 10))
+        }
+      }
+
+      // Log final adaptive stats
+      if (adaptiveSizerRef.current) {
+        const stats = adaptiveSizerRef.current.getStats()
+        console.log('📊 Final Adaptive Chunking Stats:', stats)
       }
 
       // Complete upload
@@ -219,10 +270,10 @@ export function useChunkedUpload(componentId: string, options: ChunkedUploadOpti
     maxFileSize,
     chunkSize,
     sendMessageAndWait,
-    fileToChunks,
     onProgress,
     onComplete,
-    onError
+    onError,
+    adaptiveChunking
   ])
 
   // Cancel upload

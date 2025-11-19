@@ -560,6 +560,400 @@ export function Chat({ roomId, userId }: { roomId: string; userId: string }) {
 }
 ```
 
+### Exemplo 4: Upload de Arquivos com Chunking Adaptativo
+
+O FluxStack inclui um sistema robusto de upload via chunks que se integra perfeitamente com Live Components. Este sistema divide arquivos grandes em pedaços menores e ajusta dinamicamente o tamanho dos chunks com base na velocidade da conexão.
+
+#### Quando usar?
+
+- Upload de imagens, vídeos ou documentos grandes
+- Situações onde a conexão pode ser instável (upload continuará após reconexão)
+- Quando você precisa de progresso em tempo real do upload
+- Múltiplos usuários fazendo upload simultaneamente com isolamento completo
+
+#### Componente Servidor
+
+**Arquivo**: `app/server/live/LiveImageUploadComponent.ts`
+
+```typescript
+import { LiveComponent } from '@/core/types/types'
+
+interface ImageUploadState {
+  uploadedImages: Array<{
+    id: string
+    filename: string
+    url: string
+    uploadedAt: number
+  }>
+  maxImages: number
+}
+
+export class LiveImageUploadComponent extends LiveComponent<ImageUploadState> {
+  constructor(initialState: ImageUploadState, ws: any, options?: { room?: string; userId?: string }) {
+    super({
+      uploadedImages: [],
+      maxImages: 10,
+      ...initialState
+    }, ws, options)
+  }
+
+  /**
+   * Chamado após upload bem-sucedido via useChunkedUpload
+   */
+  async onFileUploaded(payload: { filename: string; fileUrl: string }): Promise<void> {
+    const { filename, fileUrl } = payload
+
+    // Criar registro da imagem
+    const newImage = {
+      id: `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      filename,
+      url: fileUrl,
+      uploadedAt: Date.now()
+    }
+
+    // Adicionar à lista, limitando ao máximo
+    const updatedImages = [newImage, ...this.state.uploadedImages].slice(0, this.state.maxImages)
+
+    // Atualizar estado - setState() emite STATE_UPDATE automaticamente
+    this.setState({
+      uploadedImages: updatedImages
+    })
+  }
+
+  async removeImage(payload: { imageId: string }): Promise<void> {
+    this.setState({
+      uploadedImages: this.state.uploadedImages.filter(img => img.id !== payload.imageId)
+    })
+  }
+
+  async clearAll(): Promise<void> {
+    this.setState({
+      uploadedImages: []
+    })
+  }
+}
+```
+
+#### Componente Cliente
+
+**Arquivo**: `app/client/src/components/ImageUploadExample.tsx`
+
+```typescript
+import { useState, useRef } from 'react'
+import { useHybridLiveComponent, useChunkedUpload, useLiveComponents } from '@/core/client'
+
+interface ImageUploadState {
+  uploadedImages: Array<{
+    id: string
+    filename: string
+    url: string
+    uploadedAt: number
+  }>
+  maxImages: number
+}
+
+export function ImageUploadExample() {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+
+  // Obter sendMessageAndWait do contexto LiveComponents
+  const { sendMessageAndWait } = useLiveComponents()
+
+  // Configurar Live Component
+  const {
+    state,
+    call,
+    componentId,
+    connected
+  } = useHybridLiveComponent<ImageUploadState>('LiveImageUpload', {
+    uploadedImages: [],
+    maxImages: 10
+  })
+
+  // Configurar Upload com Chunking Adaptativo
+  const {
+    uploading,
+    progress,
+    error: uploadError,
+    uploadFile,
+    cancelUpload,
+    reset: resetUpload,
+    bytesUploaded,
+    totalBytes
+  } = useChunkedUpload(componentId || '', {
+    chunkSize: 64 * 1024,              // Tamanho inicial: 64KB
+    maxFileSize: 10 * 1024 * 1024,     // Máximo: 10MB
+    allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'],
+    sendMessageAndWait,
+
+    // ✨ Adaptive Chunking - Ajusta tamanho dos chunks dinamicamente
+    adaptiveChunking: true,
+    adaptiveConfig: {
+      minChunkSize: 16 * 1024,       // 16KB mínimo
+      maxChunkSize: 512 * 1024,      // 512KB máximo (seguro para web)
+      initialChunkSize: 64 * 1024,   // Começa com 64KB
+      targetLatency: 200,            // Alvo: 200ms por chunk
+      adjustmentFactor: 1.5,         // Ajuste moderado
+      measurementWindow: 3           // Mede últimos 3 chunks
+    },
+
+    // Callback de progresso
+    onProgress: (progress, uploaded, total) => {
+      console.log(`📤 Upload: ${progress.toFixed(1)}% (${uploaded}/${total} bytes)`)
+    },
+
+    // Callback de conclusão
+    onComplete: async (response) => {
+      console.log('✅ Upload completo:', response)
+
+      // Notificar Live Component sobre o upload bem-sucedido
+      if (selectedFile) {
+        await call('onFileUploaded', {
+          filename: selectedFile.name,
+          fileUrl: response.fileUrl
+        })
+      }
+
+      // Resetar estado
+      setSelectedFile(null)
+      resetUpload()
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    },
+
+    // Callback de erro
+    onError: (error) => {
+      console.error('❌ Erro no upload:', error)
+    }
+  })
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setSelectedFile(file)
+      resetUpload()
+    }
+  }
+
+  const handleUpload = async () => {
+    if (!selectedFile) return
+    await uploadFile(selectedFile)
+  }
+
+  const handleRemoveImage = async (imageId: string) => {
+    await call('removeImage', { imageId })
+  }
+
+  if (!connected) {
+    return <div>🔌 Conectando...</div>
+  }
+
+  const remainingSlots = state.maxImages - state.uploadedImages.length
+
+  return (
+    <div className="upload-container">
+      {/* File Input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileSelect}
+        disabled={uploading || remainingSlots === 0}
+      />
+
+      {/* Progress Bar */}
+      {uploading && (
+        <div className="progress">
+          <div className="progress-bar" style={{ width: `${progress}%` }} />
+          <span>{progress.toFixed(1)}% ({bytesUploaded}/{totalBytes} bytes)</span>
+        </div>
+      )}
+
+      {/* Error Display */}
+      {uploadError && <div className="error">❌ {uploadError}</div>}
+
+      {/* Buttons */}
+      <button onClick={handleUpload} disabled={!selectedFile || uploading}>
+        {uploading ? '⏳ Enviando...' : '📤 Upload'}
+      </button>
+
+      {uploading && (
+        <button onClick={cancelUpload}>❌ Cancelar</button>
+      )}
+
+      {/* Uploaded Images */}
+      <div className="image-grid">
+        {state.uploadedImages.map((image) => (
+          <div key={image.id} className="image-card">
+            <img src={image.url} alt={image.filename} />
+            <p>{image.filename}</p>
+            <button onClick={() => handleRemoveImage(image.id)}>🗑️ Remover</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+```
+
+#### Como Funciona o Chunking Adaptativo
+
+O sistema de chunking adaptativo mede a latência de cada chunk enviado e ajusta dinamicamente o tamanho:
+
+**1. Conexão Rápida**:
+- Latência baixa (< 200ms) → Aumenta chunk size (64KB → 128KB → 256KB → 512KB)
+- Resultado: Upload mais rápido, menos overhead de requests
+
+**2. Conexão Lenta**:
+- Latência alta (> 200ms) → Diminui chunk size (64KB → 32KB → 16KB)
+- Resultado: Chunks menores têm menos chance de timeout
+
+**3. Conexão Instável**:
+- Erros frequentes → Reduz chunk size drasticamente
+- Após sucessos consecutivos → Aumenta gradualmente
+
+#### Hooks Disponíveis
+
+O `useChunkedUpload` oferece os seguintes callbacks:
+
+```typescript
+useChunkedUpload(componentId, {
+  // ... outras opções ...
+
+  onProgress: (progress: number, bytesUploaded: number, totalBytes: number) => {
+    // Chamado a cada chunk enviado
+    console.log(`Progresso: ${progress}%`)
+  },
+
+  onComplete: async (response: { fileUrl: string; uploadId: string }) => {
+    // Chamado quando upload termina com sucesso
+    console.log('Upload completo:', response.fileUrl)
+
+    // Aqui você pode chamar o Live Component para atualizar o estado
+    await call('onFileUploaded', {
+      filename: file.name,
+      fileUrl: response.fileUrl
+    })
+  },
+
+  onError: (error: string) => {
+    // Chamado em caso de erro
+    console.error('Erro:', error)
+  }
+})
+```
+
+#### Isolamento de Componentes
+
+Cada instância de Live Component tem um `componentId` único. Isso garante isolamento completo:
+
+```typescript
+// Usuário A - componentId: "live-abc123"
+const userA = useChunkedUpload("live-abc123", { ... })
+
+// Usuário B - componentId: "live-xyz789"
+const userB = useChunkedUpload("live-xyz789", { ... })
+
+// ✅ Uploads completamente isolados
+// ✅ Progresso individual para cada um
+// ✅ Estados separados no servidor
+```
+
+Mesmo que múltiplos usuários façam upload simultaneamente, cada um vê apenas seu próprio progresso e lista de imagens.
+
+#### Validação Server-Side
+
+O sistema valida automaticamente:
+
+- **Tamanho do arquivo**: Comparado com `maxFileSize`
+- **Tipo de arquivo**: Verificado contra `allowedTypes`
+- **Integridade**: Valida que todos os bytes foram recebidos (não conta chunks)
+- **Upload completo**: `bytesReceived === fileSize`
+
+```typescript
+// FileUploadManager.ts valida bytes recebidos, não número de chunks
+if (upload.bytesReceived !== upload.fileSize) {
+  const bytesShort = upload.fileSize - upload.bytesReceived
+  throw new Error(`Upload incompleto: ${bytesShort} bytes faltando`)
+}
+```
+
+Isso é crucial para adaptive chunking, pois o número de chunks varia dinamicamente.
+
+#### Configuração Recomendada
+
+```typescript
+// Para imagens e arquivos médios (< 10MB)
+adaptiveConfig: {
+  minChunkSize: 16 * 1024,      // 16KB
+  maxChunkSize: 512 * 1024,     // 512KB (seguro para web)
+  initialChunkSize: 64 * 1024,  // 64KB
+  targetLatency: 200,           // 200ms
+  adjustmentFactor: 1.5,        // Ajuste moderado
+  measurementWindow: 3          // Mede 3 chunks
+}
+
+// Para arquivos muito grandes (> 50MB)
+adaptiveConfig: {
+  minChunkSize: 64 * 1024,      // 64KB
+  maxChunkSize: 1024 * 1024,    // 1MB
+  initialChunkSize: 256 * 1024, // 256KB
+  targetLatency: 500,           // 500ms (mais tolerante)
+  adjustmentFactor: 2.0,        // Ajuste mais agressivo
+  measurementWindow: 5          // Mede 5 chunks
+}
+```
+
+#### Cancelamento de Upload
+
+O usuário pode cancelar o upload a qualquer momento:
+
+```typescript
+const { cancelUpload, uploading } = useChunkedUpload(...)
+
+{uploading && (
+  <button onClick={cancelUpload}>❌ Cancelar Upload</button>
+)}
+```
+
+Quando cancelado:
+- Upload é interrompido imediatamente
+- Chunks parciais são descartados no servidor
+- Estado é resetado automaticamente
+- Nenhum callback `onComplete` é chamado
+
+#### Tratamento de Erros
+
+Erros comuns e como tratá-los:
+
+```typescript
+onError: (error) => {
+  if (error.includes('File too large')) {
+    alert('Arquivo muito grande! Máximo: 10MB')
+  } else if (error.includes('Invalid file type')) {
+    alert('Tipo de arquivo não permitido. Use apenas imagens.')
+  } else if (error.includes('timeout')) {
+    alert('Timeout no upload. Verifique sua conexão.')
+  } else {
+    alert('Erro no upload: ' + error)
+  }
+}
+```
+
+#### Exemplo Completo Funcional
+
+Você pode ver um exemplo completo e funcional em:
+- **Componente Server**: `app/server/live/LiveImageUploadComponent.ts`
+- **Componente Client**: `app/client/src/components/ImageUploadExample.tsx`
+
+Para testar:
+```bash
+bun run dev
+# Acesse http://localhost:5173
+# Clique em "View Demos" para ver o exemplo de upload
+```
+
 ---
 
 ## Boas Práticas

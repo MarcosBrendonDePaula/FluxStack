@@ -52,6 +52,7 @@ export class FileUploadManager {
         fileSize,
         totalChunks,
         receivedChunks: new Map(),
+        bytesReceived: 0, // Track actual bytes for adaptive chunking
         startTime: Date.now(),
         lastChunkTime: Date.now()
       }
@@ -97,16 +98,20 @@ export class FileUploadManager {
         upload.receivedChunks.set(chunkIndex, data)
         upload.lastChunkTime = Date.now()
 
-        console.log(`📦 Received chunk ${chunkIndex + 1}/${totalChunks} for upload ${uploadId}`)
+        // Track actual bytes received (decode base64 to get real size)
+        const chunkBytes = Buffer.from(data, 'base64').length
+        upload.bytesReceived += chunkBytes
+
+        console.log(`📦 Received chunk ${chunkIndex + 1}/${totalChunks} for upload ${uploadId} (${chunkBytes} bytes, total: ${upload.bytesReceived}/${upload.fileSize})`)
       }
 
-      // Calculate progress
-      const progress = (upload.receivedChunks.size / totalChunks) * 100
-      const bytesUploaded = upload.receivedChunks.size * (upload.fileSize / totalChunks)
+      // Calculate progress based on actual bytes received (supports adaptive chunking)
+      const progress = (upload.bytesReceived / upload.fileSize) * 100
+      const bytesUploaded = upload.bytesReceived
 
-      // Check if upload is complete
-      if (upload.receivedChunks.size === totalChunks) {
-        await this.finalizeUpload(upload)
+      // Log completion status (but don't finalize until COMPLETE message)
+      if (upload.bytesReceived >= upload.fileSize) {
+        console.log(`✅ All bytes received for upload ${uploadId} (${upload.bytesReceived}/${upload.fileSize}), waiting for COMPLETE message`)
       }
 
       return {
@@ -152,19 +157,16 @@ export class FileUploadManager {
         throw new Error(`Upload ${uploadId} not found`)
       }
 
-      console.log(`✅ Upload completed: ${uploadId}`)
+      console.log(`✅ Upload completion requested: ${uploadId}`)
 
-      // Check for missing chunks
-      const missingChunks: number[] = []
-      for (let i = 0; i < upload.totalChunks; i++) {
-        if (!upload.receivedChunks.has(i)) {
-          missingChunks.push(i)
-        }
+      // Validate bytes received (supports adaptive chunking)
+      if (upload.bytesReceived !== upload.fileSize) {
+        const bytesShort = upload.fileSize - upload.bytesReceived
+        throw new Error(`Incomplete upload: received ${upload.bytesReceived}/${upload.fileSize} bytes (${bytesShort} bytes short)`)
       }
 
-      if (missingChunks.length > 0) {
-        throw new Error(`Missing chunks: ${missingChunks.join(', ')}`)
-      }
+      console.log(`✅ Upload validation passed: ${uploadId} (${upload.bytesReceived} bytes)`)
+
 
       // Assemble file from chunks
       const fileUrl = await this.assembleFile(upload)
