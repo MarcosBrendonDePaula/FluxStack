@@ -2,13 +2,14 @@
 import { useState, useRef } from 'react'
 import { useHybridLiveComponent, useChunkedUpload } from '@/core/client'
 
-interface UploadTestState {
-  lastUpload: {
+interface ImageUploadState {
+  uploadedImages: Array<{
+    id: string
     filename: string
-    size: number
     url: string
-    timestamp: number
-  } | null
+    uploadedAt: number
+  }>
+  maxImages: number
 }
 
 export function QuickUploadTest() {
@@ -22,8 +23,9 @@ export function QuickUploadTest() {
     sendMessageAndWait,
     componentId,
     isConnected
-  } = useHybridLiveComponent<UploadTestState>('LiveImageUpload', {
-    lastUpload: null
+  } = useHybridLiveComponent<ImageUploadState>('LiveImageUpload', {
+    uploadedImages: [],
+    maxImages: 10
   })
 
   // Setup Chunked Upload with Adaptive Chunking
@@ -174,10 +176,10 @@ export function QuickUploadTest() {
         </div>
 
         {/* Last Upload Info */}
-        {state.lastUpload && !uploading && (
+        {state.uploadedImages.length > 0 && !uploading && (
           <div className="pt-3 border-t border-white/10">
             <div className="text-xs text-green-400">
-              ✅ Last: {state.lastUpload.filename} ({formatBytes(state.lastUpload.size)})
+              ✅ Last: {state.uploadedImages[0].filename}
             </div>
           </div>
         )}
