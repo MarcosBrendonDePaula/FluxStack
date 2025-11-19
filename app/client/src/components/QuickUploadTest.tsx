@@ -1,6 +1,6 @@
 // 🚀 Quick Upload Test - Compact upload tester for home page
 import { useState, useRef } from 'react'
-import { useHybridLiveComponent, useChunkedUpload } from '@/core/client'
+import { useHybridLiveComponent, useChunkedUpload, useLiveComponents } from '@/core/client'
 
 interface ImageUploadState {
   uploadedImages: Array<{
@@ -16,13 +16,15 @@ export function QuickUploadTest() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
 
+  // Get sendMessageAndWait from LiveComponents context
+  const { sendMessageAndWait } = useLiveComponents()
+
   // Setup Live Component
   const {
     state,
-    callAction,
-    sendMessageAndWait,
+    call,
     componentId,
-    isConnected
+    connected
   } = useHybridLiveComponent<ImageUploadState>('LiveImageUpload', {
     uploadedImages: [],
     maxImages: 10
@@ -57,7 +59,7 @@ export function QuickUploadTest() {
 
     onComplete: async (response) => {
       if (selectedFile) {
-        await callAction('onFileUploaded', {
+        await call('onFileUploaded', {
           filename: selectedFile.name,
           fileUrl: response.fileUrl
         })
@@ -95,7 +97,7 @@ export function QuickUploadTest() {
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
   }
 
-  if (!isConnected) {
+  if (!connected) {
     return (
       <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
         <div className="text-yellow-400 text-sm">🔌 Connecting...</div>

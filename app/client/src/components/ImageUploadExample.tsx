@@ -1,6 +1,6 @@
 // 🖼️ Image Upload Example - Demonstrates chunked file upload with Live Components
 import { useState, useRef } from 'react'
-import { useHybridLiveComponent, useChunkedUpload } from '@/core/client'
+import { useHybridLiveComponent, useChunkedUpload, useLiveComponents } from '@/core/client'
 
 interface ImageData {
   id: string
@@ -18,13 +18,15 @@ export function ImageUploadExample() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
 
+  // Get sendMessageAndWait from LiveComponents context
+  const { sendMessageAndWait } = useLiveComponents()
+
   // Setup Live Component
   const {
     state,
-    callAction,
-    sendMessageAndWait,
+    call,
     componentId,
-    isConnected
+    connected
   } = useHybridLiveComponent<ImageUploadState>('LiveImageUpload', {
     uploadedImages: [],
     maxImages: 10
@@ -66,7 +68,7 @@ export function ImageUploadExample() {
 
       // Notify the Live Component about the successful upload
       if (selectedFile) {
-        await callAction('onFileUploaded', {
+        await call('onFileUploaded', {
           filename: selectedFile.name,
           fileUrl: response.fileUrl
         })
@@ -99,11 +101,11 @@ export function ImageUploadExample() {
   }
 
   const handleRemoveImage = async (imageId: string) => {
-    await callAction('removeImage', { imageId })
+    await call('removeImage', { imageId })
   }
 
   const handleClearAll = async () => {
-    await callAction('clearAll', {})
+    await call('clearAll', {})
   }
 
   const formatBytes = (bytes: number): string => {
@@ -114,7 +116,7 @@ export function ImageUploadExample() {
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
   }
 
-  if (!isConnected) {
+  if (!connected) {
     return (
       <div className="p-6 bg-yellow-50 border border-yellow-200 rounded-lg">
         <p className="text-yellow-800">🔌 Connecting to Live Components...</p>
