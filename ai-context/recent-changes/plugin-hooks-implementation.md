@@ -330,3 +330,27 @@ This implementation gives developers:
 - **Production-ready** error handling and validation
 
 The plugin system is now on par with major frameworks like Elysia, Fastify, and Express in terms of extensibility while maintaining FluxStack's type safety and developer experience.
+
+---
+
+## 🐛 Bug Fixes (v1.9.1)
+
+After implementation, 5 critical bugs were identified and fixed in the example plugin:
+
+1. **Global Cache Undefined** - Fixed by using module-level variables instead of global
+2. **Response Headers Immutability** - Fixed by creating new Response objects
+3. **Missing context.startTime** - Fixed by using context.duration instead
+4. **NaN StatusCode** - Fixed by defaulting to 200 when NaN
+5. **Response Object Type Mismatch** - Fixed with defensive type checking
+
+**Commits**:
+```
+f098daf docs: add comprehensive plugin hooks bugfixes documentation
+d2097fb fix: add robust type checking for Response objects in hooks
+e563454 fix: add defensive checks for undefined response and NaN statusCode
+e256fcd fix: resolve plugin hooks demo bugs
+```
+
+**Testing**: All hooks now work without errors in production. Validation returns proper 400 errors, cache system works correctly, and hooks gracefully handle framework variations.
+
+See [`plugin-hooks-bugfixes.md`](./plugin-hooks-bugfixes.md) for detailed analysis of each bug and fix.
