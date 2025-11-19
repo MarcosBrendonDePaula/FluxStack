@@ -317,6 +317,7 @@ export interface ActiveUpload {
   fileSize: number
   totalChunks: number
   receivedChunks: Map<number, string>
+  bytesReceived: number // Track actual bytes received for adaptive chunking
   startTime: number
   lastChunkTime: number
   tempFilePath?: string
