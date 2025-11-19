@@ -1,0 +1,46 @@
+{
+  "name": "@fluxstack/plugin-hooks-demo",
+  "version": "1.0.0",
+  "description": "FluxStack plugin demonstrating all available hooks",
+  "type": "module",
+  "main": "index.ts",
+  "keywords": [
+    "fluxstack",
+    "plugin",
+    "hooks",
+    "example",
+    "demo"
+  ],
+  "author": "FluxStack Team",
+  "license": "MIT",
+  "fluxstack": {
+    "version": "^1.9.0",
+    "hooks": [
+      "onConfigLoad",
+      "setup",
+      "onBeforeServerStart",
+      "onServerStart",
+      "onAfterServerStart",
+      "onRequest",
+      "onBeforeRoute",
+      "onAfterRoute",
+      "onRequestValidation",
+      "onBeforeResponse",
+      "onResponseTransform",
+      "onResponse",
+      "onError",
+      "onBeforeBuild",
+      "onBuild",
+      "onBuildAsset",
+      "onBuildComplete",
+      "onBuildError",
+      "onPluginRegister",
+      "onPluginUnregister",
+      "onPluginError",
+      "onBeforeServerStop",
+      "onServerStop"
+    ],
+    "category": "examples",
+    "tags": ["demo", "hooks", "example"]
+  }
+}

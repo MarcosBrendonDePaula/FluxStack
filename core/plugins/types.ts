@@ -1,16 +1,35 @@
 import type { FluxStackConfig } from "@/core/config/schema"
 import type { Logger } from "@/core/utils/logger/index"
 
-export type PluginHook = 
+export type PluginHook =
+  // Lifecycle hooks
   | 'setup'
+  | 'onConfigLoad'
+  | 'onBeforeServerStart'
   | 'onServerStart'
+  | 'onAfterServerStart'
+  | 'onBeforeServerStop'
   | 'onServerStop'
+  // Request/Response pipeline hooks
   | 'onRequest'
   | 'onBeforeRoute'
+  | 'onAfterRoute'
+  | 'onBeforeResponse'
   | 'onResponse'
+  | 'onRequestValidation'
+  | 'onResponseTransform'
+  // Error handling hooks
   | 'onError'
+  // Build pipeline hooks
+  | 'onBeforeBuild'
   | 'onBuild'
+  | 'onBuildAsset'
   | 'onBuildComplete'
+  | 'onBuildError'
+  // Plugin system hooks
+  | 'onPluginRegister'
+  | 'onPluginUnregister'
+  | 'onPluginError'
 
 export type PluginPriority = 'highest' | 'high' | 'normal' | 'low' | 'lowest' | number
 
@@ -68,6 +87,49 @@ export interface BuildContext {
   config: FluxStackConfig
 }
 
+export interface ConfigLoadContext {
+  config: FluxStackConfig
+  envVars: Record<string, string | undefined>
+  configPath?: string
+}
+
+export interface RouteContext extends RequestContext {
+  route?: string
+  handler?: Function
+  params: Record<string, string>
+}
+
+export interface ValidationContext extends RequestContext {
+  errors: Array<{ field: string; message: string; code: string }>
+  isValid: boolean
+}
+
+export interface TransformContext extends ResponseContext {
+  transformed: boolean
+  originalResponse?: Response
+}
+
+export interface BuildAssetContext {
+  assetPath: string
+  assetType: 'js' | 'css' | 'html' | 'image' | 'font' | 'other'
+  size: number
+  content?: string | Buffer
+}
+
+export interface BuildErrorContext {
+  error: Error
+  file?: string
+  line?: number
+  column?: number
+}
+
+export interface PluginEventContext {
+  pluginName: string
+  pluginVersion?: string
+  timestamp: number
+  data?: any
+}
+
 export interface PluginConfigSchema {
   type: 'object'
   properties: Record<string, any>
@@ -85,17 +147,39 @@ export namespace FluxStack {
   priority?: number | PluginPriority
   category?: string
   tags?: string[]
-  
+
   // Lifecycle hooks
   setup?: (context: PluginContext) => void | Promise<void>
+  onConfigLoad?: (context: ConfigLoadContext) => void | Promise<void>
+  onBeforeServerStart?: (context: PluginContext) => void | Promise<void>
   onServerStart?: (context: PluginContext) => void | Promise<void>
+  onAfterServerStart?: (context: PluginContext) => void | Promise<void>
+  onBeforeServerStop?: (context: PluginContext) => void | Promise<void>
   onServerStop?: (context: PluginContext) => void | Promise<void>
+
+  // Request/Response pipeline hooks
   onRequest?: (context: RequestContext) => void | Promise<void>
   onBeforeRoute?: (context: RequestContext) => void | Promise<void>
+  onAfterRoute?: (context: RouteContext) => void | Promise<void>
+  onBeforeResponse?: (context: ResponseContext) => void | Promise<void>
   onResponse?: (context: ResponseContext) => void | Promise<void>
+  onRequestValidation?: (context: ValidationContext) => void | Promise<void>
+  onResponseTransform?: (context: TransformContext) => void | Promise<void>
+
+  // Error handling hooks
   onError?: (context: ErrorContext) => void | Promise<void>
+
+  // Build pipeline hooks
+  onBeforeBuild?: (context: BuildContext) => void | Promise<void>
   onBuild?: (context: BuildContext) => void | Promise<void>
+  onBuildAsset?: (context: BuildAssetContext) => void | Promise<void>
   onBuildComplete?: (context: BuildContext) => void | Promise<void>
+  onBuildError?: (context: BuildErrorContext) => void | Promise<void>
+
+  // Plugin system hooks
+  onPluginRegister?: (context: PluginEventContext) => void | Promise<void>
+  onPluginUnregister?: (context: PluginEventContext) => void | Promise<void>
+  onPluginError?: (context: PluginEventContext & { error: Error }) => void | Promise<void>
 
   // Configuration
   /**

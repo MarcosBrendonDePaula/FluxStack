@@ -212,8 +212,37 @@ Examples:
     ],
     handler: async (args, options, context) => {
       const config = getConfigSync()
-      const builder = new FluxStackBuilder(config)
-      
+
+      // Load plugins for build hooks
+      const { PluginRegistry } = await import('../plugins/registry')
+      const { PluginManager } = await import('../plugins/manager')
+      const pluginRegistry = new PluginRegistry({ config, logger: context.logger })
+      const pluginManager = new PluginManager({ config, logger: context.logger })
+
+      try {
+        await pluginManager.initialize()
+        // Sync plugins to registry (same as framework does)
+        const discoveredPlugins = pluginManager.getRegistry().getAll()
+        for (const plugin of discoveredPlugins) {
+          if (!pluginRegistry.has(plugin.name)) {
+            (pluginRegistry as any).plugins.set(plugin.name, plugin)
+            if (plugin.dependencies) {
+              (pluginRegistry as any).dependencies.set(plugin.name, plugin.dependencies)
+            }
+          }
+        }
+        try {
+          (pluginRegistry as any).updateLoadOrder()
+        } catch (error) {
+          const plugins = (pluginRegistry as any).plugins as Map<string, any>
+          ;(pluginRegistry as any).loadOrder = Array.from(plugins.keys())
+        }
+      } catch (error) {
+        context.logger.warn('Failed to load plugins for build hooks', { error })
+      }
+
+      const builder = new FluxStackBuilder(config, pluginRegistry)
+
       if (options['frontend-only']) {
         await builder.buildClient()
       } else if (options['backend-only']) {

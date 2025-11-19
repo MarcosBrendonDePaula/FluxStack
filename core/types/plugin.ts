@@ -13,7 +13,15 @@ export type {
   PluginUtils,
   RequestContext,
   ResponseContext,
-  ErrorContext
+  ErrorContext,
+  BuildContext,
+  ConfigLoadContext,
+  RouteContext,
+  ValidationContext,
+  TransformContext,
+  BuildAssetContext,
+  BuildErrorContext,
+  PluginEventContext
 } from "../plugins/types"
 
 // Export Plugin as a standalone type for convenience
