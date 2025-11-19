@@ -573,26 +573,26 @@ O FluxStack inclui um sistema robusto de upload via chunks que se integra perfei
 
 #### Componente Servidor
 
-**Arquivo**: `app/server/live/LiveImageUploadComponent.ts`
+**Arquivo**: `app/server/live/LiveFileUploadComponent.ts`
 
 ```typescript
 import { LiveComponent } from '@/core/types/types'
 
-interface ImageUploadState {
-  uploadedImages: Array<{
+interface FileUploadState {
+  uploadedFiles: Array<{
     id: string
     filename: string
     url: string
     uploadedAt: number
   }>
-  maxImages: number
+  maxFiles: number
 }
 
-export class LiveImageUploadComponent extends LiveComponent<ImageUploadState> {
-  constructor(initialState: ImageUploadState, ws: any, options?: { room?: string; userId?: string }) {
+export class LiveFileUploadComponent extends LiveComponent<FileUploadState> {
+  constructor(initialState: FileUploadState, ws: any, options?: { room?: string; userId?: string }) {
     super({
-      uploadedImages: [],
-      maxImages: 10,
+      uploadedFiles: [],
+      maxFiles: 10,
       ...initialState
     }, ws, options)
   }
@@ -603,32 +603,32 @@ export class LiveImageUploadComponent extends LiveComponent<ImageUploadState> {
   async onFileUploaded(payload: { filename: string; fileUrl: string }): Promise<void> {
     const { filename, fileUrl } = payload
 
-    // Criar registro da imagem
-    const newImage = {
-      id: `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    // Criar registro do arquivo
+    const newFile = {
+      id: `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       filename,
       url: fileUrl,
       uploadedAt: Date.now()
     }
 
     // Adicionar à lista, limitando ao máximo
-    const updatedImages = [newImage, ...this.state.uploadedImages].slice(0, this.state.maxImages)
+    const updatedFiles = [newFile, ...this.state.uploadedFiles].slice(0, this.state.maxFiles)
 
     // Atualizar estado - setState() emite STATE_UPDATE automaticamente
     this.setState({
-      uploadedImages: updatedImages
+      uploadedFiles: updatedFiles
     })
   }
 
-  async removeImage(payload: { imageId: string }): Promise<void> {
+  async removeFile(payload: { fileId: string }): Promise<void> {
     this.setState({
-      uploadedImages: this.state.uploadedImages.filter(img => img.id !== payload.imageId)
+      uploadedFiles: this.state.uploadedFiles.filter(file => file.id !== payload.fileId)
     })
   }
 
   async clearAll(): Promise<void> {
     this.setState({
-      uploadedImages: []
+      uploadedFiles: []
     })
   }
 }
@@ -636,23 +636,23 @@ export class LiveImageUploadComponent extends LiveComponent<ImageUploadState> {
 
 #### Componente Cliente
 
-**Arquivo**: `app/client/src/components/ImageUploadExample.tsx`
+**Arquivo**: `app/client/src/components/FileUploadExample.tsx`
 
 ```typescript
 import { useState, useRef } from 'react'
 import { useHybridLiveComponent, useChunkedUpload, useLiveComponents } from '@/core/client'
 
-interface ImageUploadState {
-  uploadedImages: Array<{
+interface FileUploadState {
+  uploadedFiles: Array<{
     id: string
     filename: string
     url: string
     uploadedAt: number
   }>
-  maxImages: number
+  maxFiles: number
 }
 
-export function ImageUploadExample() {
+export function FileUploadExample() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
 
@@ -665,9 +665,9 @@ export function ImageUploadExample() {
     call,
     componentId,
     connected
-  } = useHybridLiveComponent<ImageUploadState>('LiveImageUpload', {
-    uploadedImages: [],
-    maxImages: 10
+  } = useHybridLiveComponent<FileUploadState>('LiveFileUpload', {
+    uploadedFiles: [],
+    maxFiles: 10
   })
 
   // Configurar Upload com Chunking Adaptativo
@@ -944,8 +944,10 @@ onError: (error) => {
 #### Exemplo Completo Funcional
 
 Você pode ver um exemplo completo e funcional em:
-- **Componente Server**: `app/server/live/LiveImageUploadComponent.ts`
-- **Componente Client**: `app/client/src/components/ImageUploadExample.tsx`
+- **Componente Server**: `app/server/live/LiveFileUploadComponent.ts`
+- **Componente Client**: `app/client/src/components/FileUploadExample.tsx`
+
+O sistema suporta upload universal de arquivos (todos os tipos, até 500MB) com chunking adaptativo.
 
 Para testar:
 ```bash
