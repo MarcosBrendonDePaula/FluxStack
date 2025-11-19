@@ -195,9 +195,15 @@ export const hooksDemo: Plugin = {
     const statusCode = isNaN(context.statusCode) ? 200 : context.statusCode
     console.log(`📤 [hooks-demo] onBeforeResponse - Status: ${statusCode}`)
 
-    // Verificar se response existe antes de processar
-    if (!context.response) {
-      console.log(`   ⚠️  Response não disponível`)
+    // Verificar se response existe e é um objeto Response válido
+    if (!context.response || typeof context.response !== 'object') {
+      console.log(`   ⚠️  Response não disponível ou inválida`)
+      return
+    }
+
+    // Verificar se tem o método clone (Response padrão)
+    if (typeof (context.response as any).clone !== 'function') {
+      console.log(`   ℹ️  Response não suporta modificação (sem método clone)`)
       return
     }
 
@@ -220,48 +226,56 @@ export const hooksDemo: Plugin = {
       })
       console.log(`   ✅ Headers customizados adicionados`)
     } catch (error) {
-      console.log(`   ⚠️  Não foi possível modificar headers: ${error}`)
+      console.log(`   ⚠️  Erro ao modificar headers: ${error}`)
     }
   },
 
   onResponseTransform: async (context: TransformContext) => {
     console.log(`🔄 [hooks-demo] onResponseTransform`)
 
-    // Verificar se response existe antes de processar
-    if (!context.response) {
+    // Verificar se response existe e é válida
+    if (!context.response || typeof context.response !== 'object') {
       console.log(`   ⚠️  Response não disponível para transformação`)
       return
     }
 
+    // Verificar se tem métodos necessários
+    if (!context.response.headers || typeof (context.response as any).clone !== 'function') {
+      console.log(`   ℹ️  Response não suporta transformação`)
+      return
+    }
+
     // Exemplo: Adicionar wrapper em JSON responses
-    const contentType = context.response.headers.get('content-type')
-    if (contentType?.includes('application/json')) {
-      try {
-        const originalData = await context.response.clone().json()
-        const statusCode = isNaN(context.statusCode) ? 200 : context.statusCode
-
-        // Adicionar metadata
-        const transformed = {
-          success: statusCode >= 200 && statusCode < 300,
-          data: originalData,
-          meta: {
-            timestamp: new Date().toISOString(),
-            duration: context.duration,
-            plugin: 'hooks-demo'
-          }
-        }
-
-        context.originalResponse = context.response
-        context.response = new Response(JSON.stringify(transformed), {
-          status: statusCode,
-          headers: context.response.headers
-        })
-        context.transformed = true
-
-        console.log(`   ✅ Response transformada`)
-      } catch (error) {
-        console.log(`   ⚠️  Não foi possível transformar response`)
+    try {
+      const contentType = context.response.headers.get('content-type')
+      if (!contentType?.includes('application/json')) {
+        return  // Não é JSON, não transformar
       }
+
+      const originalData = await context.response.clone().json()
+      const statusCode = isNaN(context.statusCode) ? 200 : context.statusCode
+
+      // Adicionar metadata
+      const transformed = {
+        success: statusCode >= 200 && statusCode < 300,
+        data: originalData,
+        meta: {
+          timestamp: new Date().toISOString(),
+          duration: context.duration,
+          plugin: 'hooks-demo'
+        }
+      }
+
+      context.originalResponse = context.response
+      context.response = new Response(JSON.stringify(transformed), {
+        status: statusCode,
+        headers: context.response.headers
+      })
+      context.transformed = true
+
+      console.log(`   ✅ Response transformada`)
+    } catch (error) {
+      console.log(`   ⚠️  Erro ao transformar response: ${error}`)
     }
   },
 
