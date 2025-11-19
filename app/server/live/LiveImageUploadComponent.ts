@@ -38,37 +38,28 @@ export class LiveImageUploadComponent extends LiveComponent<ImageUploadState> {
     // Limit to maxImages
     const updatedImages = [newImage, ...this.state.uploadedImages].slice(0, this.state.maxImages)
 
-    this.state = {
-      ...this.state,
+    // Update state and broadcast to all clients
+    this.setState({
       uploadedImages: updatedImages
-    }
-
-    // Broadcast updated state to all clients
-    this.broadcastStateUpdate()
+    })
   }
 
   /**
    * Remove an uploaded image
    */
   async removeImage(payload: { imageId: string }): Promise<void> {
-    this.state = {
-      ...this.state,
+    this.setState({
       uploadedImages: this.state.uploadedImages.filter(img => img.id !== payload.imageId)
-    }
-
-    this.broadcastStateUpdate()
+    })
   }
 
   /**
    * Clear all uploaded images
    */
   async clearAll(): Promise<void> {
-    this.state = {
-      ...this.state,
+    this.setState({
       uploadedImages: []
-    }
-
-    this.broadcastStateUpdate()
+    })
   }
 
   /**
