@@ -12,9 +12,9 @@ import type {
 
 export class FileUploadManager {
   private activeUploads = new Map<string, ActiveUpload>()
-  private readonly maxUploadSize = 50 * 1024 * 1024 // 50MB max
+  private readonly maxUploadSize = 500 * 1024 * 1024 // 500MB max (aceita qualquer arquivo)
   private readonly chunkTimeout = 30000 // 30 seconds timeout per chunk
-  private readonly allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
+  private readonly allowedTypes: string[] = [] // Array vazio = aceita todos os tipos de arquivo
 
   constructor() {
     // Cleanup stale uploads every 5 minutes
@@ -25,12 +25,7 @@ export class FileUploadManager {
     try {
       const { uploadId, componentId, filename, fileType, fileSize, chunkSize = 64 * 1024 } = message
 
-      // Validate file type
-      if (!this.allowedTypes.includes(fileType)) {
-        throw new Error(`Invalid file type: ${fileType}. Allowed: ${this.allowedTypes.join(', ')}`)
-      }
-
-      // Validate file size
+      // Validate file size (sem restrição de tipo)
       if (fileSize > this.maxUploadSize) {
         throw new Error(`File too large: ${fileSize} bytes. Max: ${this.maxUploadSize} bytes`)
       }

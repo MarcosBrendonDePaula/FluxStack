@@ -3,7 +3,7 @@
 // Generated at: 2025-11-19T01:37:07.126Z
 
 import { LiveClockComponent } from "@/app/server/live/LiveClockComponent"
-import { LiveImageUploadComponent } from "@/app/server/live/LiveImageUploadComponent"
+import { LiveFileUploadComponent } from "@/app/server/live/LiveFileUploadComponent"
 import { componentRegistry } from "@/core/server/live/ComponentRegistry"
 
 // Register all components statically for production bundle
@@ -11,8 +11,8 @@ function registerAllComponents() {
   try {
     // Auto-generated component registrations
     componentRegistry.registerComponentClass('LiveClock', LiveClockComponent)
-    componentRegistry.registerComponentClass('LiveImageUpload', LiveImageUploadComponent)
-    
+    componentRegistry.registerComponentClass('LiveFileUpload', LiveFileUploadComponent)
+
     console.log('📝 Live components registered successfully! (2 components)')
   } catch (error) {
     console.warn('⚠️ Error registering components:', error)
@@ -23,7 +23,7 @@ function registerAllComponents() {
 registerAllComponents()
 
 // Export all components to ensure they're included in the bundle
-export { 
+export {
   LiveClockComponent,
-  LiveImageUploadComponent
+  LiveFileUploadComponent
 }

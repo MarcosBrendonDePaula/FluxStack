@@ -2,14 +2,14 @@
 import { useState, useRef } from 'react'
 import { useHybridLiveComponent, useChunkedUpload, useLiveComponents } from '@/core/client'
 
-interface ImageUploadState {
-  uploadedImages: Array<{
+interface FileUploadState {
+  uploadedFiles: Array<{
     id: string
     filename: string
     url: string
     uploadedAt: number
   }>
-  maxImages: number
+  maxFiles: number
 }
 
 export function QuickUploadTest() {
@@ -25,9 +25,9 @@ export function QuickUploadTest() {
     call,
     componentId,
     connected
-  } = useHybridLiveComponent<ImageUploadState>('LiveImageUpload', {
-    uploadedImages: [],
-    maxImages: 10
+  } = useHybridLiveComponent<FileUploadState>('LiveFileUpload', {
+    uploadedFiles: [],
+    maxFiles: 10
   })
 
   // Setup Chunked Upload with Adaptive Chunking
@@ -42,8 +42,8 @@ export function QuickUploadTest() {
     totalBytes
   } = useChunkedUpload(componentId || '', {
     chunkSize: 64 * 1024,
-    maxFileSize: 10 * 1024 * 1024,
-    allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'],
+    maxFileSize: 500 * 1024 * 1024,
+    allowedTypes: [], // Aceita todos os tipos
     sendMessageAndWait,
 
     // Enable Adaptive Chunking
@@ -120,7 +120,6 @@ export function QuickUploadTest() {
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*"
           onChange={handleFileSelect}
           disabled={uploading}
           className="block w-full text-sm text-gray-300 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700 disabled:opacity-50 cursor-pointer"
@@ -178,10 +177,10 @@ export function QuickUploadTest() {
         </div>
 
         {/* Last Upload Info */}
-        {state.uploadedImages.length > 0 && !uploading && (
+        {state.uploadedFiles.length > 0 && !uploading && (
           <div className="pt-3 border-t border-white/10">
             <div className="text-xs text-green-400">
-              ✅ Last: {state.uploadedImages[0].filename}
+              ✅ Last: {state.uploadedFiles[0].filename}
             </div>
           </div>
         )}
@@ -191,7 +190,8 @@ export function QuickUploadTest() {
           <div className="text-xs text-gray-400 space-y-1">
             <div>🚀 Adaptive: 16KB - 512KB</div>
             <div>📊 Target: 200ms/chunk</div>
-            <div>💾 Max: 10MB</div>
+            <div>💾 Max: 500MB</div>
+            <div>📁 All file types</div>
           </div>
         </div>
       </div>

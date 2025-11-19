@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { api } from './lib/eden-api'
 import { FaFire, FaBook, FaGithub, FaClock, FaImage } from 'react-icons/fa'
 import { LiveComponentsProvider, useHybridLiveComponent } from '@/core/client'
-import { ImageUploadExample } from './components/ImageUploadExample'
+import { FileUploadExample } from './components/FileUploadExample'
 
 interface LiveClockState {
   currentTime: string
@@ -79,7 +79,7 @@ function AppContent() {
           </div>
 
           {/* Demo Content */}
-          <ImageUploadExample />
+          <FileUploadExample />
         </div>
       </div>
     )

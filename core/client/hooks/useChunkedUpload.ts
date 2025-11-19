@@ -75,8 +75,8 @@ export function useChunkedUpload(componentId: string, options: ChunkedUploadOpti
       return
     }
 
-    // Validate file
-    if (!allowedTypes.includes(file.type)) {
+    // Validate file type (skip if allowedTypes is empty = accept all)
+    if (allowedTypes.length > 0 && !allowedTypes.includes(file.type)) {
       const error = `Invalid file type: ${file.type}. Allowed: ${allowedTypes.join(', ')}`
       setState(prev => ({ ...prev, error }))
       onError?.(error)
