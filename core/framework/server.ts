@@ -50,6 +50,9 @@ export class FluxStackFramework {
     this.app = new Elysia()
     this.pluginRegistry = new PluginRegistry()
 
+    // Execute onConfigLoad hooks will be called during plugin initialization
+    // We defer this until plugins are loaded in initializeAutomaticPlugins()
+
 
 
     // Create plugin utilities
@@ -164,6 +167,27 @@ export class FluxStackFramework {
         const plugins = (this.pluginRegistry as any).plugins as Map<string, FluxStack.Plugin>
         const loadOrder = Array.from(plugins.keys())
         ;(this.pluginRegistry as any).loadOrder = loadOrder
+      }
+
+      // Execute onConfigLoad hooks for all plugins
+      const configLoadContext = {
+        config: this.context.config,
+        envVars: process.env as Record<string, string | undefined>,
+        configPath: undefined
+      }
+
+      const loadOrder = this.pluginRegistry.getLoadOrder()
+      for (const pluginName of loadOrder) {
+        const plugin = this.pluginRegistry.get(pluginName)
+        if (plugin && plugin.onConfigLoad) {
+          try {
+            await plugin.onConfigLoad(configLoadContext)
+          } catch (error) {
+            logger.error(`Plugin '${pluginName}' onConfigLoad hook failed`, {
+              error: error instanceof Error ? error.message : String(error)
+            })
+          }
+        }
       }
 
       const stats = this.pluginManager.getRegistry().getStats()
@@ -294,13 +318,45 @@ export class FluxStackFramework {
         })(),
         query: Object.fromEntries(url.searchParams.entries()),
         params: {},
+        body: undefined, // Will be populated if request has body
         startTime,
         handled: false,
         response: undefined
       }
 
+      // Try to parse body for validation
+      try {
+        if (request.method !== 'GET' && request.method !== 'HEAD') {
+          const contentType = request.headers.get('content-type')
+          if (contentType?.includes('application/json')) {
+            requestContext.body = await request.clone().json().catch(() => undefined)
+          }
+        }
+      } catch (error) {
+        // Ignore body parsing errors for now
+      }
+
       // Execute onRequest hooks for all plugins first (logging, auth, etc.)
       await this.executePluginHooks('onRequest', requestContext)
+
+      // Execute onRequestValidation hooks (for custom validation)
+      const validationContext = {
+        ...requestContext,
+        errors: [] as Array<{ field: string; message: string; code: string }>,
+        isValid: true
+      }
+      await this.executePluginHooks('onRequestValidation', validationContext)
+
+      // If validation failed, return error response
+      if (!validationContext.isValid && validationContext.errors.length > 0) {
+        return new Response(JSON.stringify({
+          success: false,
+          errors: validationContext.errors
+        }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        })
+      }
 
       // Execute onBeforeRoute hooks - allow plugins to handle requests before routing
       const handledResponse = await this.executePluginBeforeRouteHooks(requestContext)
@@ -311,8 +367,8 @@ export class FluxStackFramework {
       }
     })
 
-    // Setup onResponse hook
-    this.app.onAfterHandle(async ({ request, response, set }) => {
+    // Setup onAfterHandle hook (covers onBeforeResponse, onResponseTransform, onResponse)
+    this.app.onAfterHandle(async ({ request, response, set, path }) => {
       const url = this.parseRequestURL(request)
 
       // Retrieve start time using the timing key
@@ -325,6 +381,9 @@ export class FluxStackFramework {
         this.requestTimings.delete(String(requestKey))
       }
 
+      let currentResponse = response
+
+      // Create response context
       const responseContext = {
         request,
         path: url.pathname,
@@ -338,10 +397,37 @@ export class FluxStackFramework {
         })(),
         query: Object.fromEntries(url.searchParams.entries()),
         params: {},
-        response,
-        statusCode: Number((response as any)?.status || set.status || 200),
+        response: currentResponse,
+        statusCode: Number((currentResponse as any)?.status || set.status || 200),
         duration,
         startTime
+      }
+
+      // Execute onAfterRoute hooks (route was matched, params available)
+      const routeContext = {
+        ...responseContext,
+        route: path || url.pathname,
+        handler: undefined
+      }
+      await this.executePluginHooks('onAfterRoute', routeContext)
+
+      // Execute onBeforeResponse hooks (can modify headers, response)
+      await this.executePluginHooks('onBeforeResponse', responseContext)
+      currentResponse = responseContext.response
+
+      // Execute onResponseTransform hooks (can transform response body)
+      const transformContext = {
+        ...responseContext,
+        response: currentResponse,
+        transformed: false,
+        originalResponse: currentResponse
+      }
+      await this.executePluginHooks('onResponseTransform', transformContext)
+
+      // Use transformed response if any plugin transformed it
+      if (transformContext.transformed && transformContext.response) {
+        currentResponse = transformContext.response
+        responseContext.response = currentResponse
       }
 
       // Log the request automatically (if not disabled in config)
@@ -354,8 +440,11 @@ export class FluxStackFramework {
         logger.request(request.method, url.pathname, status, duration)
       }
 
-      // Execute onResponse hooks for all plugins
+      // Execute onResponse hooks for all plugins (final logging, metrics)
       await this.executePluginHooks('onResponse', responseContext)
+
+      // Return the potentially transformed response
+      return currentResponse
     })
   }
 
@@ -416,8 +505,39 @@ export class FluxStackFramework {
         try {
           await hookFn(context)
         } catch (error) {
+          const err = error instanceof Error ? error : new Error(String(error))
           logger.error(`Plugin '${pluginName}' ${hookName} hook failed`, {
-            error: (error as Error).message
+            error: err.message
+          })
+
+          // Execute onPluginError hooks on all plugins (except the one that failed)
+          await this.executePluginErrorHook(pluginName, plugin.version, err)
+        }
+      }
+    }
+  }
+
+  private async executePluginErrorHook(pluginName: string, pluginVersion: string | undefined, error: Error): Promise<void> {
+    const loadOrder = this.pluginRegistry.getLoadOrder()
+
+    for (const otherPluginName of loadOrder) {
+      if (otherPluginName === pluginName) continue // Don't notify the plugin that failed
+
+      const otherPlugin = this.pluginRegistry.get(otherPluginName)
+      if (!otherPlugin) continue
+
+      const hookFn = (otherPlugin as any).onPluginError
+      if (typeof hookFn === 'function') {
+        try {
+          await hookFn({
+            pluginName,
+            pluginVersion,
+            timestamp: Date.now(),
+            error
+          })
+        } catch (hookError) {
+          logger.error(`Plugin '${otherPluginName}' onPluginError hook failed`, {
+            error: hookError instanceof Error ? hookError.message : String(hookError)
           })
         }
       }
