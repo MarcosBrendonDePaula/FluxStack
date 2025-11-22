@@ -34,7 +34,11 @@ export class ComponentRegistry {
       const path = await import('path')
       
       if (!fs.existsSync(componentsPath)) {
-        console.log(`⚠️ Components path not found: ${componentsPath}`)
+        // In production, components are already bundled - no need to auto-discover
+        const { appConfig } = await import('@/config/app.config')
+        if (appConfig.env !== 'production') {
+          console.log(`⚠️ Components path not found: ${componentsPath}`)
+        }
         return
       }
 

@@ -154,7 +154,11 @@ export class ComponentRegistry {
       const { startGroup, endGroup, logInGroup, groupSummary } = await import('@/core/utils/logger/group-logger')
 
       if (!fs.existsSync(componentsPath)) {
-        console.log(`⚠️ Components path not found: ${componentsPath}`)
+        // In production, components are already bundled - no need to auto-discover
+        const { appConfig } = await import('@/config/app.config')
+        if (appConfig.env !== 'production') {
+          console.log(`⚠️ Components path not found: ${componentsPath}`)
+        }
         return
       }
 
@@ -186,10 +190,8 @@ export class ComponentRegistry {
         }
       }
 
-      // Display components in a compact single line format
-      if (components.length > 0) {
-        console.log(`\nLive Components (${components.length}): ${components.join(', ')}\n`)
-      }
+      // Components are now displayed in the startup banner
+      // No need to log here to avoid duplication
     } catch (error) {
       console.error('❌ Auto-discovery failed:', error)
     }
