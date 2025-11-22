@@ -1,10 +1,11 @@
 import type { FluxStack, PluginContext, RequestContext } from "@/core/plugins/types"
-import { createServer, type ViteDevServer } from 'vite'
 import { FLUXSTACK_VERSION } from "@/core/utils/version"
 import { clientConfig } from '@/config/client.config'
 
 type Plugin = FluxStack.Plugin
 
+// Dynamic import type for vite
+type ViteDevServer = Awaited<ReturnType<typeof import('vite')['createServer']>>
 let viteServer: ViteDevServer | null = null
 
 // Default configuration values (uses clientConfig from /config)
@@ -57,6 +58,9 @@ export const vitePlugin: Plugin = {
     const { startGroup, endGroup, logInGroup } = await import('@/core/utils/logger/group-logger')
 
     try {
+      // Dynamic import of vite to avoid bundling in production
+      const { createServer } = await import('vite')
+
       // Start Vite dev server programmatically (silently)
       viteServer = await createServer({
         configFile: './vite.config.ts',
