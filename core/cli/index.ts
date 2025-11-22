@@ -535,9 +535,9 @@ Examples:
     category: 'Build',
     usage: 'flux build:exe [options]',
     examples: [
-      'flux build:exe                                    # Compile to CLauncher executable',
+      'flux build:exe                                    # Compile for all Windows targets (x64 + baseline)',
+      'flux build:exe --target bun-windows-x64           # Compile for specific target',
       'flux build:exe --name MyApp                       # Compile with custom name',
-      'flux build:exe --windows-title "My Launcher"      # Set Windows executable title',
       'flux build:exe --windows-hide-console             # Hide console window on Windows'
     ],
     options: [
@@ -547,6 +547,21 @@ Examples:
         description: 'Name for the executable file',
         type: 'string',
         default: 'CLauncher'
+      },
+      {
+        name: 'target',
+        short: 't',
+        description: 'Target platform (if not specified, builds all Windows targets)',
+        type: 'string',
+        choices: [
+          'bun-windows-x64',
+          'bun-windows-x64-baseline',
+          'bun-linux-x64',
+          'bun-linux-x64-baseline',
+          'bun-linux-arm64',
+          'bun-darwin-x64',
+          'bun-darwin-arm64'
+        ]
       },
       {
         name: 'windows-hide-console',
@@ -589,40 +604,100 @@ Examples:
       const config = getConfigSync()
       const builder = new FluxStackBuilder(config)
 
-      // Build executable options from CLI args
-      const executableOptions: import("../types/build").BundleOptions = {
-        executable: {
-          windows: {
-            hideConsole: options['windows-hide-console'],
-            icon: options['windows-icon'],
-            title: options['windows-title'],
-            publisher: options['windows-publisher'],
-            version: options['windows-version'],
-            description: options['windows-description'],
-            copyright: options['windows-copyright']
-          }
+      // Build executable options from CLI args with smart defaults
+      const appName = config.app.name || 'CLauncher'
+      const appVersion = config.app.version || '1.0.0'
+      const currentYear = new Date().getFullYear()
+
+      // Convert semver to Windows version format (1.0.0 -> 1.0.0.0)
+      const windowsVersion = options['windows-version'] ||
+        (appVersion.split('.').length === 3 ? `${appVersion}.0` : appVersion)
+
+      // Determine targets to build
+      const targets: string[] = options.target
+        ? [options.target]
+        : ['bun-windows-x64', 'bun-windows-x64-baseline'] // Default: build both Windows targets
+
+      const results: Array<{ target: string; success: boolean; outputPath?: string; error?: string }> = []
+
+      for (const target of targets) {
+        // Determine if this is a Windows target
+        const isWindowsTarget = target.includes('windows')
+
+        // Build executable options for this target
+        const executableOptions: import("../types/build").BundleOptions = {
+          target,
+          executable: isWindowsTarget ? {
+            windows: {
+              hideConsole: options['windows-hide-console'],
+              icon: options['windows-icon'],
+              title: options['windows-title'] || appName,
+              publisher: options['windows-publisher'] || appName,
+              version: windowsVersion,
+              description: options['windows-description'] || `${appName} Application`,
+              copyright: options['windows-copyright'] || `Copyright © ${currentYear} ${appName}`
+            }
+          } : {}
+        }
+
+        // Generate output name with target suffix
+        const baseName = options.name || appName
+        const targetSuffix = target.replace('bun-', '').replace(/-/g, '_')
+        const outputName = targets.length > 1 ? `${baseName}_${targetSuffix}` : baseName
+
+        console.log(`\n🔨 Building for ${target}...`)
+        const result = await builder.buildExecutable(outputName, executableOptions)
+
+        results.push({
+          target,
+          success: result.success,
+          outputPath: result.outputPath,
+          error: result.error
+        })
+
+        if (result.success) {
+          console.log(`✅ ${target}: ${result.outputPath}`)
+        } else {
+          console.error(`❌ ${target}: ${result.error}`)
         }
       }
 
-      const result = await builder.buildExecutable(options.name, executableOptions)
+      // Summary
+      const successful = results.filter(r => r.success)
+      const failed = results.filter(r => !r.success)
 
-      if (result.success) {
-        console.log(`\n✅ Executable created successfully: ${result.outputPath}`)
+      console.log('\n' + '═'.repeat(50))
+      console.log('📊 Build Summary')
+      console.log('═'.repeat(50))
 
-        // Show applied Windows options
-        if (process.platform === 'win32' && Object.values(executableOptions.executable?.windows || {}).some(v => v)) {
-          console.log('\n📦 Windows executable options applied:')
-          const winOpts = executableOptions.executable?.windows
-          if (winOpts?.hideConsole) console.log('   • Console window hidden')
-          if (winOpts?.icon) console.log(`   • Icon: ${winOpts.icon}`)
-          if (winOpts?.title) console.log(`   • Title: ${winOpts.title}`)
-          if (winOpts?.publisher) console.log(`   • Publisher: ${winOpts.publisher}`)
-          if (winOpts?.version) console.log(`   • Version: ${winOpts.version}`)
-          if (winOpts?.description) console.log(`   • Description: ${winOpts.description}`)
-          if (winOpts?.copyright) console.log(`   • Copyright: ${winOpts.copyright}`)
+      if (successful.length > 0) {
+        console.log(`\n✅ Successful (${successful.length}):`)
+        for (const r of successful) {
+          console.log(`   • ${r.target} → ${r.outputPath}`)
         }
-      } else {
-        console.error(`\n❌ Compilation failed: ${result.error}`)
+      }
+
+      if (failed.length > 0) {
+        console.log(`\n❌ Failed (${failed.length}):`)
+        for (const r of failed) {
+          console.log(`   • ${r.target}: ${r.error}`)
+        }
+      }
+
+      // Show Windows metadata if any Windows target was built
+      const hasWindowsTarget = targets.some(t => t.includes('windows'))
+      if (hasWindowsTarget && successful.length > 0) {
+        console.log('\n📦 Windows executable metadata:')
+        if (options['windows-hide-console']) console.log('   • Console window: hidden')
+        if (options['windows-icon']) console.log(`   • Icon: ${options['windows-icon']}`)
+        console.log(`   • Title: ${options['windows-title'] || appName}`)
+        console.log(`   • Publisher: ${options['windows-publisher'] || appName}`)
+        console.log(`   • Version: ${windowsVersion}`)
+        console.log(`   • Description: ${options['windows-description'] || `${appName} Application`}`)
+        console.log(`   • Copyright: ${options['windows-copyright'] || `Copyright © ${currentYear} ${appName}`}`)
+      }
+
+      if (failed.length > 0) {
         process.exit(1)
       }
     }

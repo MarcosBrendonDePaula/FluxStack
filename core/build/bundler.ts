@@ -177,12 +177,15 @@ export class Bundler {
       // Get external dependencies
       const external = this.getExternalDependencies(options)
 
+      // Use target from options or fall back to config
+      const target = options.target || this.config.target
+
       const buildArgs = [
         "bun", "build",
         entryPoint,
         "--compile",
         "--outfile", outputPath,
-        "--target", this.config.target,
+        "--target", target,
         ...external.flatMap(ext => ["--external", ext])
       ]
 

@@ -83,6 +83,7 @@ export interface BundleOptions {
   external?: string[]
   minify?: boolean
   sourceMaps?: boolean
+  target?: string
   executable?: ExecutableOptions
 }
 
