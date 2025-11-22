@@ -5,7 +5,6 @@
 
 // ===== Core Framework =====
 import { FluxStackFramework } from "@/core/server"
-import { isDevelopment } from "@/core/utils/helpers"
 import { DEBUG } from "@/core/utils/logger"
 import { helpers } from "@/core/utils/env"
 
@@ -17,7 +16,6 @@ import { serverConfig } from "@/config/server.config"
 import {
   vitePlugin,
   swaggerPlugin,
-  staticPlugin,
   liveComponentsPlugin,
   staticFilesPlugin
 } from "@/core/server"
@@ -31,6 +29,9 @@ import { appInstance } from "./app"
 // The generator creates this file in core/ to prevent accidental user modifications
 // This ensures components are registered before the plugin tries to use them
 import "@/core/server/live/auto-generated-components"
+// Trigger restart for new component registration
+
+
 
 // ===== Startup Logging =====
 DEBUG('🔧 Loading declarative configuration...')
@@ -84,12 +85,8 @@ const app = new FluxStackFramework(createFrameworkConfig())
 // 1. Authentication plugin (must be registered first)
 app.use(cryptoAuthPlugin)
 
-// 2. Development/Production plugins (conditional)
-if (isDevelopment()) {
-  app.use(vitePlugin)  // Development: Vite dev server
-} else {
-  app.use(staticPlugin)  // Production: Static file serving
-}
+// 2. Client serving (auto-detects dev/prod)
+app.use(vitePlugin)  // Dev: Vite server | Prod: Static files
 
 // 3. Static files (after Vite, before Live Components to avoid conflicts)
 app.use(staticFilesPlugin)

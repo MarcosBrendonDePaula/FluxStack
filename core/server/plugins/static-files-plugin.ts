@@ -1,260 +1,69 @@
-// 🔥 FluxStack Static Files Plugin - Serve Public Files
+// 🔥 FluxStack Static Files Plugin - Serve Public Files & Uploads
 
 import { existsSync, statSync } from 'fs'
-import { join, extname, resolve } from 'path'
-import type { FluxStack, PluginContext, Plugin } from '../../plugins/types'
-import { t } from 'elysia'
-
-// Response schema for static files info endpoint
-const StaticFilesInfoSchema = t.Object({
-  success: t.Boolean(),
-  config: t.Object({
-    publicDir: t.String(),
-    uploadsDir: t.String(),
-    enablePublic: t.Boolean(),
-    enableUploads: t.Boolean(),
-    cacheMaxAge: t.Number()
-  }),
-  paths: t.Object({
-    publicPath: t.String(),
-    uploadsPath: t.String(),
-    publicUrl: t.String(),
-    uploadsUrl: t.String()
-  }),
-  timestamp: t.String()
-}, {
-  description: 'Static files configuration and paths information'
-})
-
-export interface StaticFilesConfig {
-  publicDir?: string // Default: 'public'
-  uploadsDir?: string // Default: 'uploads'
-  cacheMaxAge?: number // Default: 1 year in seconds
-  enableUploads?: boolean // Default: true
-  enablePublic?: boolean // Default: true
-  publicRoute?: string // Default: '/public' (can be '/static' in dev)
-  uploadsRoute?: string // Default: '/uploads'
-}
+import { mkdir } from 'fs/promises'
+import { resolve } from 'path'
+import type { Plugin, PluginContext } from '../../plugins/types'
 
 export const staticFilesPlugin: Plugin = {
   name: 'static-files',
-  description: 'Serve static files and uploads with proper caching and security',
+  description: 'Serve static files and uploads',
   author: 'FluxStack Team',
   priority: 'normal',
   category: 'core',
-  tags: ['static', 'files', 'uploads', 'public'],
-  
+  tags: ['static', 'files', 'uploads'],
+
   setup: async (context: PluginContext) => {
-    context.logger.debug('📁 Setting up Static Files plugin...')
-    
-    const config: StaticFilesConfig = {
-      publicDir: 'public',
-      uploadsDir: 'uploads', 
-      cacheMaxAge: 31536000, // 1 year
-      enableUploads: true,
-      enablePublic: true,
-      publicRoute: '/api/static', // Use /api/static in dev to avoid Vite conflicts
-      uploadsRoute: '/api/uploads',
-      ...context.config.staticFiles
-    }
-    
     const projectRoot = process.cwd()
-    const publicPath = resolve(projectRoot, config.publicDir!)
-    const uploadsPath = resolve(projectRoot, config.uploadsDir!)
-    
-    // MIME types mapping
-    const getMimeType = (extension: string): string => {
-      const mimeTypes: Record<string, string> = {
-        // Images
-        '.jpg': 'image/jpeg',
-        '.jpeg': 'image/jpeg', 
-        '.png': 'image/png',
-        '.gif': 'image/gif',
-        '.webp': 'image/webp',
-        '.svg': 'image/svg+xml',
-        '.ico': 'image/x-icon',
-        
-        // Documents
-        '.pdf': 'application/pdf',
-        '.txt': 'text/plain',
-        '.json': 'application/json',
-        '.xml': 'application/xml',
-        
-        // Web assets
-        '.css': 'text/css',
-        '.js': 'application/javascript',
-        '.html': 'text/html',
-        '.htm': 'text/html',
-        
-        // Fonts
-        '.woff': 'font/woff',
-        '.woff2': 'font/woff2',
-        '.ttf': 'font/ttf',
-        '.otf': 'font/otf',
-        
-        // Audio/Video
-        '.mp3': 'audio/mpeg',
-        '.mp4': 'video/mp4',
-        '.webm': 'video/webm',
-        '.ogg': 'audio/ogg'
+    const publicDir = resolve(projectRoot, 'public')
+    const uploadsDir = resolve(projectRoot, 'uploads')
+
+    // Create directories if they don't exist
+    await mkdir(publicDir, { recursive: true })
+    await mkdir(uploadsDir, { recursive: true })
+    await mkdir(resolve(uploadsDir, 'avatars'), { recursive: true })
+
+    // Helper to serve files from a directory
+    const serveFile = (baseDir: string) => ({ params, set }: any) => {
+      const requestedPath = params['*'] || ''
+      const filePath = resolve(baseDir, requestedPath)
+
+      // Path traversal protection
+      if (!filePath.startsWith(baseDir)) {
+        set.status = 400
+        return { error: 'Invalid path' }
       }
-      
-      return mimeTypes[extension.toLowerCase()] || 'application/octet-stream'
-    }
-    
-    // Security check for path traversal
-    const isPathSafe = (filePath: string, basePath: string): boolean => {
-      const resolvedPath = resolve(basePath, filePath)
-      return resolvedPath.startsWith(basePath)
-    }
-    
-    // Generic file serving function
-    const serveFile = async (filePath: string, set: any) => {
+
+      // Check if file exists
+      if (!existsSync(filePath)) {
+        set.status = 404
+        return { error: 'File not found' }
+      }
+
+      // Check if it's a file (not directory)
       try {
-        if (!existsSync(filePath)) {
-          set.status = 404
-          return { 
-            error: 'File not found',
-            path: filePath.replace(projectRoot, ''),
-            timestamp: new Date().toISOString()
-          }
-        }
-        
-        const stats = statSync(filePath)
-        if (!stats.isFile()) {
+        if (!statSync(filePath).isFile()) {
           set.status = 404
           return { error: 'Not a file' }
         }
-        
-        // Set appropriate headers
-        const extension = extname(filePath).toLowerCase()
-        const mimeType = getMimeType(extension)
-        
-        set.headers['content-type'] = mimeType
-        set.headers['content-length'] = stats.size.toString()
-        set.headers['last-modified'] = stats.mtime.toUTCString()
-        set.headers['cache-control'] = `public, max-age=${config.cacheMaxAge}`
-        set.headers['etag'] = `"${stats.mtime.getTime()}-${stats.size}"`
-        
-        // Security headers for images
-        if (mimeType.startsWith('image/')) {
-          set.headers['x-content-type-options'] = 'nosniff'
-        }
-        
-        context.logger.debug(`📁 Serving file: ${filePath.replace(projectRoot, '')}`, {
-          size: stats.size,
-          mimeType,
-          lastModified: stats.mtime
-        })
-        
-        return Bun.file(filePath)
-        
-      } catch (error: any) {
-        context.logger.error('❌ File serving error:', error.message)
-        set.status = 500
-        return { error: 'Failed to serve file' }
+      } catch {
+        set.status = 404
+        return { error: 'File not found' }
       }
-    }
-    
-    // Add static file routes
-    if (config.enablePublic) {
-      const publicRoutePattern = `${config.publicRoute}/*`
-      context.app.get(publicRoutePattern, ({ params, set }) => {
-        const filePath = params['*'] || ''
-        
-        if (!isPathSafe(filePath, publicPath)) {
-          set.status = 400
-          return { error: 'Invalid file path' }
-        }
-        
-        const fullPath = join(publicPath, filePath)
-        return serveFile(fullPath, set)
-      })
-      
-      context.logger.debug(`📁 Public files route enabled: ${publicRoutePattern} → ${config.publicDir}`)
-    }
-    
-    if (config.enableUploads) {
-      const uploadsRoutePattern = `${config.uploadsRoute}/*`
-      context.app.get(uploadsRoutePattern, ({ params, set }) => {
-        const filePath = params['*'] || ''
-        
-        if (!isPathSafe(filePath, uploadsPath)) {
-          set.status = 400
-          return { error: 'Invalid file path' }
-        }
-        
-        const fullPath = join(uploadsPath, filePath)
-        return serveFile(fullPath, set)
-      })
-      
-      context.logger.debug(`📁 Uploads route enabled: ${uploadsRoutePattern} → ${config.uploadsDir}`)
-    }
-    
-    // Static files info endpoint
-    context.app.get('/api/static/info', () => {
-      return {
-        success: true,
-        config: {
-          publicDir: config.publicDir,
-          uploadsDir: config.uploadsDir,
-          enablePublic: config.enablePublic,
-          enableUploads: config.enableUploads,
-          cacheMaxAge: config.cacheMaxAge
-        },
-        paths: {
-          publicPath,
-          uploadsPath,
-          publicUrl: config.publicRoute,
-          uploadsUrl: config.uploadsRoute
-        },
-        timestamp: new Date().toISOString()
-      }
-    }, {
-      detail: {
-        summary: 'Static Files Configuration',
-        description: 'Returns configuration and paths for static files and uploads serving',
-        tags: ['Static Files', 'Configuration']
-      },
-      response: StaticFilesInfoSchema
-    })
-    
-    // Create directories if they don't exist
-    const { mkdir } = await import('fs/promises')
-    
-    if (config.enablePublic && !existsSync(publicPath)) {
-      await mkdir(publicPath, { recursive: true })
-      context.logger.debug(`📁 Created public directory: ${publicPath}`)
-    }
-    
-    if (config.enableUploads && !existsSync(uploadsPath)) {
-      await mkdir(uploadsPath, { recursive: true })
-      await mkdir(join(uploadsPath, 'avatars'), { recursive: true })
-      context.logger.debug(`📁 Created uploads directory: ${uploadsPath}`)
-    }
-    
-    context.logger.debug('📁 Static Files plugin setup complete', {
-      publicEnabled: config.enablePublic,
-      uploadsEnabled: config.enableUploads,
-      publicPath: config.enablePublic ? publicPath : 'disabled',
-      uploadsPath: config.enableUploads ? uploadsPath : 'disabled'
-    })
-  },
 
-  onServerStart: async (context: PluginContext) => {
-    const config = {
-      enablePublic: true,
-      enableUploads: true,
-      publicRoute: '/api/static',
-      uploadsRoute: '/api/uploads',
-      ...context.config.staticFiles
+      // Set cache header (1 year)
+      set.headers['cache-control'] = 'public, max-age=31536000'
+
+      // Bun.file() handles: content-type, content-length, streaming
+      return Bun.file(filePath)
     }
-    context.logger.debug('📁 Static Files plugin ready', {
-      routes: [
-        config.enablePublic ? `${config.publicRoute}/*` : null,
-        config.enableUploads ? `${config.uploadsRoute}/*` : null,
-        '/api/static/info'
-      ].filter(Boolean)
+
+    // Register routes
+    context.app.get('/api/static/*', serveFile(publicDir))
+    context.app.get('/api/uploads/*', serveFile(uploadsDir))
+
+    context.logger.debug('📁 Static files plugin ready', {
+      routes: ['/api/static/*', '/api/uploads/*']
     })
   }
 }

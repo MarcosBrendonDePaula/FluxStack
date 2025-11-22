@@ -8,14 +8,16 @@
 // Import all built-in plugins
 import { swaggerPlugin } from './swagger'
 import { vitePlugin } from './vite'
-import { staticPlugin } from './static'
 import { monitoringPlugin } from './monitoring'
 
 // Export individual plugins
 export { swaggerPlugin } from './swagger'
 export { vitePlugin } from './vite'
-export { staticPlugin } from './static'
 export { monitoringPlugin } from './monitoring'
+
+// Deprecated: staticPlugin is now merged into vitePlugin (auto-detects dev/prod)
+/** @deprecated Use vitePlugin instead - it now handles both dev and prod */
+export const staticPlugin = vitePlugin
 
 // Export as a collection
 export const builtInPlugins = {
@@ -35,7 +37,7 @@ export const builtInPluginsList = [
 
 // Plugin categories
 export const pluginCategories = {
-  core: [staticPlugin],
+  core: [vitePlugin], // vitePlugin now handles both dev (Vite) and prod (static)
   development: [vitePlugin],
   documentation: [swaggerPlugin],
   monitoring: [monitoringPlugin]
@@ -94,11 +96,12 @@ export const defaultPluginConfig = {
  * Get default plugins for a specific environment
  */
 export function getDefaultPlugins(environment: 'development' | 'production' | 'test' = 'development') {
-  const basePlugins = [staticPlugin]
+  // vitePlugin now auto-detects dev/prod and serves appropriately
+  const basePlugins = [vitePlugin]
 
   switch (environment) {
     case 'development':
-      return [...basePlugins, vitePlugin, swaggerPlugin, monitoringPlugin]
+      return [...basePlugins, swaggerPlugin, monitoringPlugin]
     case 'production':
       return [...basePlugins, monitoringPlugin]
     case 'test':

@@ -137,5 +137,6 @@ dist
 
 
 chrome_data
+.chromium
 core/server/live/auto-generated-components.ts
 Fluxstack-Desktop

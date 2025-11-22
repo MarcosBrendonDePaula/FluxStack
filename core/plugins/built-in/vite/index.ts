@@ -1,6 +1,9 @@
 import type { FluxStack, PluginContext, RequestContext } from "@/core/plugins/types"
 import { FLUXSTACK_VERSION } from "@/core/utils/version"
 import { clientConfig } from '@/config/client.config'
+import { isDevelopment } from "@/core/utils/helpers"
+import { join } from "path"
+import { statSync, existsSync } from "fs"
 
 type Plugin = FluxStack.Plugin
 
@@ -12,12 +15,15 @@ let viteServer: ViteDevServer | null = null
 const DEFAULTS = {
   enabled: true,
   port: clientConfig.vite.port,
-  host: "localhost",
+  host: clientConfig.vite.host,
   checkInterval: 2000,
   maxRetries: 10,
   timeout: 5000,
   proxyPaths: [] as string[],
-  excludePaths: [] as string[]
+  excludePaths: [] as string[],
+  // Static file serving (production) - uses clientConfig
+  publicDir: clientConfig.build.outDir,
+  indexFile: "index.html"
 }
 
 /**
@@ -51,6 +57,69 @@ export const vitePlugin: Plugin = {
       return
     }
 
+    // Production mode: setup static file serving
+    if (!isDevelopment()) {
+      context.logger.debug("Production mode: static file serving enabled", {
+        publicDir: DEFAULTS.publicDir
+      })
+
+      // Static fallback handler (runs last)
+      const staticFallback = (c: any) => {
+        const req = c.request
+        if (!req) return
+
+        const url = new URL(req.url)
+        let pathname = decodeURIComponent(url.pathname)
+
+        // Determine base directory using path discovery
+        let baseDir: string
+
+        // Production: try paths in order of preference
+        if (existsSync('client')) {
+          // Found client/ in current directory (running from dist/)
+          baseDir = 'client'
+        } else if (existsSync('dist/client')) {
+          // Found dist/client/ (running from project root)
+          baseDir = 'dist/client'
+        } else {
+          // Fallback to configured path
+          baseDir = DEFAULTS.publicDir
+        }
+
+        // Root or empty path → index.html
+        if (pathname === '/' || pathname === '') {
+          pathname = `/${DEFAULTS.indexFile}`
+        }
+
+        const filePath = join(baseDir, pathname)
+
+        try {
+          const info = statSync(filePath)
+
+          // File exists → serve it
+          if (info.isFile()) {
+            return Bun.file(filePath)
+          }
+        } catch (_) {
+          // File not found → continue
+        }
+
+        // SPA fallback: serve index.html for non-file routes
+        const indexPath = join(baseDir, DEFAULTS.indexFile)
+        try {
+          statSync(indexPath) // Ensure index exists
+          return Bun.file(indexPath)
+        } catch (_) {
+          // Index not found → let request continue (404)
+        }
+      }
+
+      // Register as catch-all fallback (runs after all other routes)
+      context.app.all('*', staticFallback)
+      return
+    }
+
+    // Development mode: Vite dev server
     const vitePort = DEFAULTS.port || clientConfig.vite.port || 5173
     const viteHost = DEFAULTS.host || "localhost"
 
@@ -130,14 +199,26 @@ export const vitePlugin: Plugin = {
   },
 
   onServerStart: async (context: PluginContext) => {
-    const viteConfig = (context as any).viteConfig
+    if (!DEFAULTS.enabled) return
 
-    if (DEFAULTS.enabled && viteConfig) {
+    if (!isDevelopment()) {
+      context.logger.debug(`Static files ready`, {
+        publicDir: DEFAULTS.publicDir,
+        indexFile: DEFAULTS.indexFile
+      })
+      return
+    }
+
+    const viteConfig = (context as any).viteConfig
+    if (viteConfig) {
       context.logger.debug(`Vite integration active - monitoring ${viteConfig.host}:${viteConfig.port}`)
     }
   },
 
   onBeforeRoute: async (requestContext: RequestContext) => {
+    // Production mode: static serving handled by catch-all route in setup
+    if (!isDevelopment()) return
+
     // Skip API routes and swagger - let them be handled by backend
     if (requestContext.path.startsWith("/api") || requestContext.path.startsWith("/swagger")) {
       return

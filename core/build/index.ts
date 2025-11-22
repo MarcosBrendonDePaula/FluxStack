@@ -51,8 +51,10 @@ export class FluxStackBuilder {
     return await this.bundler.bundleServer("app/server/index.ts")
   }
 
-  async buildExecutable(outputName: string = "CLauncher", options?: import("../types/build").BundleOptions) {
-    return await this.bundler.compileToExecutable("app/server/index.ts", outputName, options)
+  async buildExecutable(outputName?: string, options?: import("../types/build").BundleOptions) {
+    // Use app name from config as default, fallback to "FluxStack"
+    const name = outputName || this.config.app.name || "FluxStack"
+    return await this.bundler.compileToExecutable("app/server/index.ts", name, options)
   }
 
   async createDockerFiles() {
