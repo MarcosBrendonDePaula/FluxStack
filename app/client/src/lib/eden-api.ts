@@ -8,13 +8,8 @@ import type { App } from '../../../server/app'
 export const getBaseUrl = () => {
   if (typeof window === 'undefined') return 'http://localhost:3000'
 
-  // Production: use current origin
-  if (window.location.hostname !== 'localhost') {
-    return window.location.origin
-  }
-
-  // Development: use backend server
-  return 'http://localhost:3000'
+  // Always use current origin - works for both dev and production
+  return window.location.origin
 }
 
 /**

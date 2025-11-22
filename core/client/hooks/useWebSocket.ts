@@ -32,22 +32,10 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
   // Get WebSocket URL dynamically based on current environment
   const getWebSocketUrl = () => {
     if (typeof window === 'undefined') return 'ws://localhost:3000/api/live/ws'
-    
-    const hostname = window.location.hostname
-    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1'
-    
-    // In production, use current origin with ws/wss protocol
-    if (!isLocalhost) {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-      const url = `${protocol}//${window.location.host}/api/live/ws`
-      console.log('🔗 [WebSocket] Production URL:', url)
-      return url
-    }
-    
-    // In development, use backend server (port 3000 for integrated mode)
-    const url = 'ws://localhost:3000/api/live/ws'
-    console.log('🔗 [WebSocket] Development URL:', url)
-    return url
+
+    // Always use current host - works for both dev and production
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    return `${protocol}//${window.location.host}/api/live/ws`
   }
 
   const {

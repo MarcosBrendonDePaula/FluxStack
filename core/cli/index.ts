@@ -3,6 +3,8 @@
 import { FluxStackBuilder } from "@/core/build"
 import { ProjectCreator } from "@/core/templates/create-project"
 import { getConfigSync } from "@/core/config"
+import { serverConfig } from "@/config/server.config"
+import { clientConfig } from "@/config/client.config"
 import { cliRegistry } from "./command-registry"
 import { pluginDiscovery } from "./plugin-discovery"
 import { generateCommand, interactiveGenerateCommand } from "./generators/index"
@@ -125,13 +127,13 @@ Examples:
         short: 'p',
         description: 'Port for backend server',
         type: 'number',
-        default: 3000
+        default: serverConfig.server.port
       },
       {
         name: 'frontend-port',
         description: 'Port for frontend server',
         type: 'number',
-        default: 5173
+        default: clientConfig.vite.port
       }
     ],
     handler: async (args, options, context) => {

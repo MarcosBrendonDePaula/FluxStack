@@ -56,15 +56,9 @@ export function LiveComponentsProvider({
     if (url) return url
     if (typeof window === 'undefined') return 'ws://localhost:3000/api/live/ws'
 
-    const hostname = window.location.hostname
-    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1'
-
-    if (!isLocalhost) {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-      return `${protocol}//${window.location.host}/api/live/ws`
-    }
-
-    return 'ws://localhost:3000/api/live/ws'
+    // Always use current host - works for both dev and production
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    return `${protocol}//${window.location.host}/api/live/ws`
   }
 
   const wsUrl = getWebSocketUrl()

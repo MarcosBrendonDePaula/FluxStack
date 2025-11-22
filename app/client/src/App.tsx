@@ -165,7 +165,7 @@ function AppContent() {
             View Demos
           </button>
           <a
-            href="http://localhost:3000/swagger"
+            href="/swagger"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all"
@@ -183,7 +183,7 @@ function AppContent() {
             GitHub
           </a>
           <a
-            href="http://localhost:3000/api"
+            href="/api"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 backdrop-blur-sm border border-white/20 text-white rounded-xl font-medium hover:bg-white/20 transition-all"
