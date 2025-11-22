@@ -6,6 +6,7 @@ import { PluginManager } from "@/core/plugins/manager"
 import { getConfigSync, getEnvironmentInfo } from "@/core/config"
 import { logger } from "@/core/utils/logger"
 import { displayStartupBanner, type StartupInfo } from "@/core/utils/logger/startup-banner"
+import { componentRegistry } from "@/core/server/live/ComponentRegistry"
 import { createErrorHandler } from "@/core/utils/errors/handlers"
 import { createTimer, formatBytes, isProduction, isDevelopment } from "@/core/utils/helpers"
 import type { Plugin } from "@/core/plugins"
@@ -819,12 +820,14 @@ export class FluxStackFramework {
       // Prepare startup info for banner or callback
       const startupInfo: StartupInfo = {
         port,
+        host: this.context.config.server.host || 'localhost',
         apiPrefix,
         environment: this.context.environment,
         pluginCount: this.pluginRegistry.getAll().length,
         vitePort: this.context.config.client?.port,
         viteEmbedded: vitePluginActive, // Vite is embedded when plugin is active
-        swaggerPath: '/swagger' // TODO: Get from swagger plugin config
+        swaggerPath: '/swagger', // TODO: Get from swagger plugin config
+        liveComponents: componentRegistry.getRegisteredComponentNames()
       }
 
       // Display banner if enabled

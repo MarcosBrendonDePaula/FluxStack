@@ -14,12 +14,14 @@ import { FLUXSTACK_VERSION } from '../version'
 
 export interface StartupInfo {
   port: number
+  host?: string
   apiPrefix?: string
   environment: string
   pluginCount?: number
   vitePort?: number
   viteEmbedded?: boolean // true when Vite runs programmatically with backend
   swaggerPath?: string
+  liveComponents?: string[]
 }
 
 /**
@@ -28,22 +30,36 @@ export interface StartupInfo {
 export function displayStartupBanner(info: StartupInfo): void {
   const {
     port,
+    host = 'localhost',
     apiPrefix = '/api',
     environment,
     pluginCount = 0,
     vitePort,
     viteEmbedded = false,
+    liveComponents = [],
   } = info
+
+  // Build server URL
+  const displayHost = host === '0.0.0.0' ? 'localhost' : host
+  const serverUrl = `http://${displayHost}:${port}`
+
+  // Simple ready message with URL
+  console.log(chalk.green('\nServer ready!') + chalk.gray(` Environment: ${environment}${viteEmbedded ? ' | Vite: embedded' : ''}`))
+  console.log(chalk.cyan(`  → ${serverUrl}`))
+
+  // Display Live Components
+  if (liveComponents.length > 0) {
+    console.log(chalk.gray(`  Live Components (${liveComponents.length}): `) + chalk.yellow(liveComponents.join(', ')))
+  }
 
   // Display plugins in compact format
   const plugins = (global as any).__fluxstackPlugins || []
   if (plugins.length > 0) {
-    const pluginList = plugins.map((p: any) => `${p.name} (${p.details})`).join(', ')
-    console.log(`Plugins (${plugins.length}): ${pluginList}\n`)
+    const pluginList = plugins.map((p: any) => p.name).join(', ')
+    console.log(chalk.gray(`  Plugins (${plugins.length}): `) + chalk.magenta(pluginList))
   }
 
-  // Simple ready message
-  console.log(chalk.green('Server ready!') + chalk.gray(` Environment: ${environment}${viteEmbedded ? ' | Vite: embedded' : ''}\n`))
+  console.log('') // Empty line at the end
 }
 
 /**

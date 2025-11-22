@@ -11,10 +11,8 @@ import { serverConfig } from "@/config/server.config"
 // Plugins
 import { vitePlugin, swaggerPlugin, liveComponentsPlugin, staticFilesPlugin } from "@/core/server"
 import cryptoAuthPlugin from "@/plugins/crypto-auth"
-
 // Routes & Components
 import { appInstance } from "./app"
-import "@/core/server/live/auto-generated-components"
 
 // Server
 const app = new FluxStackFramework({

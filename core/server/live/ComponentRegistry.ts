@@ -729,6 +729,13 @@ export class ComponentRegistry {
     }
   }
 
+  // Get registered component names
+  getRegisteredComponentNames(): string[] {
+    const definitionNames = Array.from(this.definitions.keys())
+    const autoDiscoveredNames = Array.from(this.autoDiscoveredComponents.keys())
+    return [...new Set([...definitionNames, ...autoDiscoveredNames])]
+  }
+
   // Get component by ID
   getComponent(componentId: string): LiveComponent | undefined {
     return this.components.get(componentId)
