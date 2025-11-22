@@ -535,8 +535,8 @@ Examples:
     category: 'Build',
     usage: 'flux build:exe [options]',
     examples: [
-      'flux build:exe                                    # Compile for all Windows targets (x64 + baseline)',
-      'flux build:exe --target bun-windows-x64           # Compile for specific target',
+      'flux build:exe                                    # Compile for current platform (auto-detected)',
+      'flux build:exe --target bun-linux-x64             # Compile for specific target',
       'flux build:exe --name MyApp                       # Compile with custom name',
       'flux build:exe --windows-hide-console             # Hide console window on Windows'
     ],
@@ -613,10 +613,32 @@ Examples:
       const windowsVersion = options['windows-version'] ||
         (appVersion.split('.').length === 3 ? `${appVersion}.0` : appVersion)
 
-      // Determine targets to build
+      // Determine targets to build based on current platform
+      const getDefaultTargets = (): string[] => {
+        const platform = process.platform
+        const arch = process.arch
+
+        if (platform === 'win32') {
+          return ['bun-windows-x64', 'bun-windows-x64-baseline']
+        } else if (platform === 'linux') {
+          if (arch === 'arm64') {
+            return ['bun-linux-arm64']
+          }
+          return ['bun-linux-x64', 'bun-linux-x64-baseline']
+        } else if (platform === 'darwin') {
+          if (arch === 'arm64') {
+            return ['bun-darwin-arm64']
+          }
+          return ['bun-darwin-x64']
+        }
+
+        // Fallback to current platform
+        return [`bun-${platform}-${arch}`]
+      }
+
       const targets: string[] = options.target
         ? [options.target]
-        : ['bun-windows-x64', 'bun-windows-x64-baseline'] // Default: build both Windows targets
+        : getDefaultTargets()
 
       const results: Array<{ target: string; success: boolean; outputPath?: string; error?: string }> = []
 
