@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { api } from './lib/eden-api'
 import { FaFire, FaBook, FaGithub, FaClock, FaImage } from 'react-icons/fa'
 import { LiveComponentsProvider } from '@/core/client'
-import { FileUploadExample } from './components/FileUploadExample'
+import { FileUploadExample } from './live/FileUploadExample'
 import { MinimalLiveClock } from './live/MinimalLiveClock'
 
 function AppContent() {
