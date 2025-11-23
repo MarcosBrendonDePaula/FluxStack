@@ -499,7 +499,6 @@ const getClientTemplate = (componentName: string, type: string, room?: string) =
   switch (type) {
     case 'counter':
       return `// 🔥 ${componentName} - Counter Client Component
-import React from 'react';
 import { useTypedLiveComponent } from '@/core/client';
 import type { InferComponentState } from '@/core/client';
 
@@ -616,7 +615,6 @@ export function ${componentName}() {
 
     case 'form':
       return `// 🔥 ${componentName} - Form Client Component
-import React from 'react';
 import { useTypedLiveComponent } from '@/core/client';
 import type { InferComponentState } from '@/core/client';
 
@@ -941,7 +939,6 @@ export function ${componentName}() {
 
     default: // basic
       return `// 🔥 ${componentName} - Client Component
-import React from 'react';
 import { useTypedLiveComponent } from '@/core/client';
 import type { InferComponentState } from '@/core/client';
 
@@ -1004,24 +1001,24 @@ export function ${componentName}() {
           </button>
           
           <button
-            onClick={() => call('incrementCounter')}
+            onClick={() => call('incrementCounter', {})}
             disabled={loading}
             className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             ➕ Increment
           </button>
-          
+
           <button
-            onClick={() => call('resetData')}
+            onClick={() => call('resetData', {})}
             disabled={loading}
             className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             🔄 Reset
           </button>
-          
+
           <button
             onClick={async () => {
-              const result = await call('getData');
+              const result = await call('getData', {});
               console.log('Component data:', result);
               alert('Data logged to console');
             }}

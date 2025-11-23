@@ -7,20 +7,6 @@ import { FileUploadExample } from './components/FileUploadExample'
 // Import component types DIRECTLY from backend - no duplication needed!
 // TypeScript uses these for type inference only (not bundled)
 import type { LiveClockComponent } from '@/server/live/LiveClockComponent'
-import type { InferComponentState } from '@/core/client'
-
-// State type is inferred from the component
-type LiveClockState = InferComponentState<LiveClockComponent>
-
-const initialClockState: LiveClockState = {
-  currentTime: "Loading...",
-  timeZone: "America/Sao_Paulo",
-  format: "24h",
-  showSeconds: true,
-  showDate: true,
-  lastSync: new Date(),
-  serverUptime: 0,
-}
 
 // Minimal Live Clock Component with full type inference
 function MinimalLiveClock() {
@@ -28,7 +14,15 @@ function MinimalLiveClock() {
   // call and callAndWait have full type inference for action names and payloads
   const { state, setValue } = useTypedLiveComponent<LiveClockComponent>(
     'LiveClock',
-    initialClockState,
+    {
+      currentTime: "Loading...",
+      timeZone: "America/Sao_Paulo",
+      format: "24h",
+      showSeconds: true,
+      showDate: true,
+      lastSync: new Date(),
+      serverUptime: 0,
+    },
     {
       // Called after fresh mount (no prior state)
       onMount: () => {
