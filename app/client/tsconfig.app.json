@@ -26,6 +26,7 @@
       "@/lib/*": ["./src/lib/*"],
       "@/types/*": ["./src/types/*"],
       "@/shared/*": ["../shared/*"],
+      "@/server/*": ["../server/*"],
       "@/core/*": ["../../core/*"],
       "@/config/*": ["../../config/*"],
       "fluxstack": ["../../core/client/fluxstack"],

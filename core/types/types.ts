@@ -125,6 +125,14 @@ export interface HybridComponentOptions {
   userId?: string
   autoMount?: boolean
   debug?: boolean
+
+  // Component lifecycle callbacks
+  onConnect?: () => void      // Called when WebSocket connects (can happen multiple times on reconnect)
+  onMount?: () => void        // Called after fresh mount (no prior state)
+  onRehydrate?: () => void    // Called after successful rehydration (restoring prior state)
+  onDisconnect?: () => void   // Called when WebSocket disconnects
+  onError?: (error: string) => void
+  onStateChange?: (newState: any, oldState: any) => void
 }
 
 export abstract class LiveComponent<TState = ComponentState> {
@@ -148,6 +156,14 @@ export abstract class LiveComponent<TState = ComponentState> {
     const newUpdates = typeof updates === 'function' ? updates(this.state) : updates
     this.state = { ...this.state, ...newUpdates }
     this.emit('STATE_UPDATE', { state: this.state })
+  }
+
+  // Generic setValue action - set any state key with type safety
+  public async setValue<K extends keyof TState>(payload: { key: K; value: TState[K] }): Promise<{ success: true; key: K; value: TState[K] }> {
+    const { key, value } = payload
+    const update = { [key]: value } as unknown as Partial<TState>
+    this.setState(update)
+    return { success: true, key, value }
   }
 
   // Execute action safely
@@ -240,6 +256,126 @@ export type ComponentProps<T extends LiveComponent> = T extends LiveComponent<in
 export type ActionParameters<T, K extends keyof T> = T[K] extends (...args: infer P) => any ? P : never
 
 export type ActionReturnType<T, K extends keyof T> = T[K] extends (...args: any[]) => infer R ? R : never
+
+// 🔥 Type Inference System for Live Components
+// Similar to Eden Treaty - automatic type inference for actions
+
+/**
+ * Extract all public action methods from a LiveComponent class
+ * Excludes constructor, destroy, lifecycle methods, and inherited methods
+ */
+export type ExtractActions<T extends LiveComponent<any>> = {
+  [K in keyof T as K extends string
+    ? T[K] extends (payload?: any) => Promise<any>
+      ? K extends 'executeAction' | 'destroy' | 'getSerializableState' | 'setState'
+        ? never
+        : K
+      : never
+    : never]: T[K]
+}
+
+/**
+ * Get all action names from a component
+ */
+export type ActionNames<T extends LiveComponent<any>> = keyof ExtractActions<T>
+
+/**
+ * Get the payload type for a specific action
+ * Extracts the first parameter type from the action method
+ */
+export type ActionPayload<
+  T extends LiveComponent<any>,
+  K extends ActionNames<T>
+> = ExtractActions<T>[K] extends (payload: infer P) => any
+  ? P
+  : ExtractActions<T>[K] extends () => any
+    ? undefined
+    : never
+
+/**
+ * Get the return type for a specific action (unwrapped from Promise)
+ */
+export type ActionReturn<
+  T extends LiveComponent<any>,
+  K extends ActionNames<T>
+> = ExtractActions<T>[K] extends (...args: any[]) => Promise<infer R>
+  ? R
+  : ExtractActions<T>[K] extends (...args: any[]) => infer R
+    ? R
+    : never
+
+/**
+ * Get the state type from a LiveComponent class
+ */
+export type InferComponentState<T extends LiveComponent<any>> = T extends LiveComponent<infer S> ? S : never
+
+/**
+ * Type-safe call signature for a component
+ * Provides autocomplete for action names and validates payload types
+ */
+export type TypedCall<T extends LiveComponent<any>> = <K extends ActionNames<T>>(
+  action: K,
+  ...args: ActionPayload<T, K> extends undefined
+    ? []
+    : [payload: ActionPayload<T, K>]
+) => Promise<void>
+
+/**
+ * Type-safe callAndWait signature for a component
+ * Provides autocomplete and returns the correct type
+ */
+export type TypedCallAndWait<T extends LiveComponent<any>> = <K extends ActionNames<T>>(
+  action: K,
+  ...args: ActionPayload<T, K> extends undefined
+    ? [payload?: undefined, timeout?: number]
+    : [payload: ActionPayload<T, K>, timeout?: number]
+) => Promise<ActionReturn<T, K>>
+
+/**
+ * Type-safe setValue signature for a component
+ * Convenience helper for setting individual state values
+ */
+export type TypedSetValue<T extends LiveComponent<any>> = <K extends keyof InferComponentState<T>>(
+  key: K,
+  value: InferComponentState<T>[K]
+) => Promise<void>
+
+/**
+ * Return type for useTypedLiveComponent hook
+ * Provides full type inference for state and actions
+ */
+export interface UseTypedLiveComponentReturn<T extends LiveComponent<any>> {
+  // Server-driven state (read-only from frontend perspective)
+  state: InferComponentState<T>
+
+  // Status information
+  loading: boolean
+  error: string | null
+  connected: boolean
+  componentId: string | null
+
+  // Connection status with all possible states
+  status: 'synced' | 'disconnected' | 'connecting' | 'reconnecting' | 'loading' | 'mounting' | 'error'
+
+  // Type-safe actions
+  call: TypedCall<T>
+  callAndWait: TypedCallAndWait<T>
+
+  // Convenience helper for setting individual state values
+  setValue: TypedSetValue<T>
+
+  // Lifecycle
+  mount: () => Promise<void>
+  unmount: () => Promise<void>
+
+  // Helper for temporary input state
+  useControlledField: <K extends keyof InferComponentState<T>>(field: K, action?: string) => {
+    value: InferComponentState<T>[K]
+    setValue: (value: InferComponentState<T>[K]) => void
+    commit: (value?: InferComponentState<T>[K]) => Promise<void>
+    isDirty: boolean
+  }
+}
 
 // File Upload Types for Chunked WebSocket Upload
 export interface FileChunkData {

@@ -1,47 +1,9 @@
 import { useState, useEffect } from 'react'
 import { api } from './lib/eden-api'
 import { FaFire, FaBook, FaGithub, FaClock, FaImage } from 'react-icons/fa'
-import { LiveComponentsProvider, useHybridLiveComponent } from '@/core/client'
+import { LiveComponentsProvider } from '@/core/client'
 import { FileUploadExample } from './components/FileUploadExample'
-
-interface LiveClockState {
-  currentTime: string
-  timeZone: string
-  format: '12h' | '24h'
-  showSeconds: boolean
-  showDate: boolean
-  lastSync: Date
-  serverUptime: number
-}
-
-const initialClockState: LiveClockState = {
-  currentTime: "Loading...",
-  timeZone: "America/Sao_Paulo",
-  format: "24h",
-  showSeconds: true,
-  showDate: true,
-  lastSync: new Date(),
-  serverUptime: 0,
-}
-
-// Minimal Live Clock Component
-function MinimalLiveClock() {
-  const { state } = useHybridLiveComponent<LiveClockState>(
-    'LiveClock',
-    initialClockState
-  )
-
-  return (
-    <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-xl p-4 border border-blue-400/20">
-      <div className="text-4xl font-mono font-bold text-white text-center tracking-wider">
-        {state.currentTime}
-      </div>
-      <div className="text-center mt-2">
-        <span className="text-xs text-gray-400">{state.timeZone}</span>
-      </div>
-    </div>
-  )
-}
+import { MinimalLiveClock } from './live/MinimalLiveClock'
 
 function AppContent() {
   const [apiStatus, setApiStatus] = useState<'checking' | 'online' | 'offline'>('checking')

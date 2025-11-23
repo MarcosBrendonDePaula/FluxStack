@@ -499,15 +499,14 @@ const getClientTemplate = (componentName: string, type: string, room?: string) =
   switch (type) {
     case 'counter':
       return `// 🔥 ${componentName} - Counter Client Component
-import React from 'react';
-import { useHybridLiveComponent } from 'fluxstack';
+import { useTypedLiveComponent } from '@/core/client';
+import type { InferComponentState } from '@/core/client';
 
-interface ${componentName}State {
-  count: number;
-  title: string;
-  step: number;
-  lastUpdated: Date;
-}
+// Import component type DIRECTLY from backend - full type inference!
+import type { ${componentName}Component } from '@/server/live/${componentName}Component';
+
+// State type inferred from backend component
+type ${componentName}State = InferComponentState<${componentName}Component>;
 
 const initialState: ${componentName}State = {
   count: 0,
@@ -517,7 +516,7 @@ const initialState: ${componentName}State = {
 };
 
 export function ${componentName}() {
-  const { state, call, connected, loading } = useHybridLiveComponent<${componentName}State>('${componentName}', initialState${roomProps});
+  const { state, call, connected, loading } = useTypedLiveComponent<${componentName}Component>('${componentName}', initialState${roomProps});
 
   if (!connected) {
     return (
@@ -550,23 +549,23 @@ export function ${componentName}() {
       
       <div className="flex gap-2 justify-center mb-4">
         <button
-          onClick={() => call('decrement')}
+          onClick={() => call('decrement', {})}
           disabled={loading || state.count <= 0}
           className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           ➖ Decrement
         </button>
-        
+
         <button
-          onClick={() => call('increment')}
+          onClick={() => call('increment', {})}
           disabled={loading}
           className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           ➕ Increment
         </button>
-        
+
         <button
-          onClick={() => call('reset')}
+          onClick={() => call('reset', {})}
           disabled={loading}
           className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
         >
@@ -616,16 +615,14 @@ export function ${componentName}() {
 
     case 'form':
       return `// 🔥 ${componentName} - Form Client Component
-import React from 'react';
-import { useHybridLiveComponent } from 'fluxstack';
+import { useTypedLiveComponent } from '@/core/client';
+import type { InferComponentState } from '@/core/client';
 
-interface ${componentName}State {
-  formData: Record<string, any>;
-  errors: Record<string, string>;
-  isSubmitting: boolean;
-  isValid: boolean;
-  lastUpdated: Date;
-}
+// Import component type DIRECTLY from backend - full type inference!
+import type { ${componentName}Component } from '@/server/live/${componentName}Component';
+
+// State type inferred from backend component
+type ${componentName}State = InferComponentState<${componentName}Component>;
 
 const initialState: ${componentName}State = {
   formData: {},
@@ -636,7 +633,7 @@ const initialState: ${componentName}State = {
 };
 
 export function ${componentName}() {
-  const { state, call, connected, loading } = useHybridLiveComponent<${componentName}State>('${componentName}', initialState${roomProps});
+  const { state, call, connected, loading } = useTypedLiveComponent<${componentName}Component>('${componentName}', initialState${roomProps});
 
   if (!connected) {
     return (
@@ -656,7 +653,7 @@ export function ${componentName}() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const result = await call('submitForm');
+      const result = await call('submitForm', {});
       if (result?.success) {
         alert('Form submitted successfully!');
       }
@@ -666,7 +663,7 @@ export function ${componentName}() {
   };
 
   const handleReset = () => {
-    call('resetForm');
+    call('resetForm', {});
   };
 
   return (
@@ -772,23 +769,14 @@ export function ${componentName}() {
     case 'chat':
       return `// 🔥 ${componentName} - Chat Client Component
 import React, { useState, useEffect, useRef } from 'react';
-import { useHybridLiveComponent } from 'fluxstack';
+import { useTypedLiveComponent } from '@/core/client';
+import type { InferComponentState } from '@/core/client';
 
-interface Message {
-  id: string;
-  text: string;
-  userId: string;
-  username: string;
-  timestamp: Date;
-}
+// Import component type DIRECTLY from backend - full type inference!
+import type { ${componentName}Component } from '@/server/live/${componentName}Component';
 
-interface ${componentName}State {
-  messages: Message[];
-  users: Record<string, { username: string; isOnline: boolean }>;
-  currentMessage: string;
-  isTyping: Record<string, boolean>;
-  lastUpdated: Date;
-}
+// State type inferred from backend component
+type ${componentName}State = InferComponentState<${componentName}Component>;
 
 const initialState: ${componentName}State = {
   messages: [],
@@ -799,7 +787,7 @@ const initialState: ${componentName}State = {
 };
 
 export function ${componentName}() {
-  const { state, call, connected, loading } = useHybridLiveComponent<${componentName}State>('${componentName}', initialState${roomProps});
+  const { state, call, connected, loading } = useTypedLiveComponent<${componentName}Component>('${componentName}', initialState${roomProps});
   const [username, setUsername] = useState(\`User\${Math.random().toString(36).substr(2, 4)}\`);
   const [hasJoined, setHasJoined] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -951,14 +939,14 @@ export function ${componentName}() {
 
     default: // basic
       return `// 🔥 ${componentName} - Client Component
-import React from 'react';
-import { useHybridLiveComponent } from 'fluxstack';
+import { useTypedLiveComponent } from '@/core/client';
+import type { InferComponentState } from '@/core/client';
 
-interface ${componentName}State {
-  message: string;
-  count: number;
-  lastUpdated: Date;
-}
+// Import component type DIRECTLY from backend - full type inference!
+import type { ${componentName}Component } from '@/server/live/${componentName}Component';
+
+// State type inferred from backend component
+type ${componentName}State = InferComponentState<${componentName}Component>;
 
 const initialState: ${componentName}State = {
   message: "Loading...",
@@ -967,7 +955,7 @@ const initialState: ${componentName}State = {
 };
 
 export function ${componentName}() {
-  const { state, call, connected, loading } = useHybridLiveComponent<${componentName}State>('${componentName}', initialState${roomProps});
+  const { state, call, connected, loading } = useTypedLiveComponent<${componentName}Component>('${componentName}', initialState${roomProps});
 
   if (!connected) {
     return (
@@ -1013,24 +1001,24 @@ export function ${componentName}() {
           </button>
           
           <button
-            onClick={() => call('incrementCounter')}
+            onClick={() => call('incrementCounter', {})}
             disabled={loading}
             className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             ➕ Increment
           </button>
-          
+
           <button
-            onClick={() => call('resetData')}
+            onClick={() => call('resetData', {})}
             disabled={loading}
             className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             🔄 Reset
           </button>
-          
+
           <button
             onClick={async () => {
-              const result = await call('getData');
+              const result = await call('getData', {});
               console.log('Component data:', result);
               alert('Data logged to console');
             }}
@@ -1125,7 +1113,7 @@ export const createLiveComponentCommand: CliCommand = {
 
     // File paths
     const serverFilePath = path.join(context.workingDir, "app", "server", "live", `${componentName}Component.ts`);
-    const clientFilePath = path.join(context.workingDir, "app", "client", "src", "components", `${componentName}.tsx`);
+    const clientFilePath = path.join(context.workingDir, "app", "client", "src", "live", `${componentName}.tsx`);
 
     try {
       // Check if files exist (unless force flag is used)
@@ -1165,7 +1153,7 @@ export const createLiveComponentCommand: CliCommand = {
       context.logger.info("📁 Files created:");
       context.logger.info(`   🔥 Server: app/server/live/${componentName}Component.ts`);
       if (!noClient) {
-        context.logger.info(`   ⚛️ Client: app/client/src/components/${componentName}.tsx`);
+        context.logger.info(`   ⚛️ Client: app/client/src/live/${componentName}.tsx`);
       }
       
       context.logger.info("");
@@ -1173,7 +1161,7 @@ export const createLiveComponentCommand: CliCommand = {
       context.logger.info("   1. Start dev server: bun run dev");
       if (!noClient) {
         context.logger.info(`   2. Import component in your App.tsx:`);
-        context.logger.info(`      import { ${componentName} } from './components/${componentName}'`);
+        context.logger.info(`      import { ${componentName} } from './live/${componentName}'`);
         context.logger.info(`   3. Add component to your JSX: <${componentName} />`);
       }
       
@@ -1186,12 +1174,16 @@ export const createLiveComponentCommand: CliCommand = {
       }
 
       context.logger.info("");
-      context.logger.info("📚 Import guide:");
-      context.logger.info("   # Use the fluxstack library (recommended):");
-      context.logger.info("   import { useHybridLiveComponent } from 'fluxstack';");
+      context.logger.info("📚 Import guide (Type Inference):");
+      context.logger.info("   # Import typed hook and type helpers:");
+      context.logger.info("   import { useTypedLiveComponent } from '@/core/client';");
+      context.logger.info("   import type { InferComponentState } from '@/core/client';");
       context.logger.info("");
-      context.logger.info("   # Alternative - Direct core import:");
-      context.logger.info("   import { useHybridLiveComponent } from '@/core/client';");
+      context.logger.info("   # Import backend component type for full inference:");
+      context.logger.info(`   import type { ${componentName}Component } from '@/server/live/${componentName}Component';`);
+      context.logger.info("");
+      context.logger.info("   # Use with automatic type inference:");
+      context.logger.info(`   const { state, call } = useTypedLiveComponent<${componentName}Component>(...);`);
 
     } catch (error) {
       context.logger.error(`❌ Failed to create component files: ${error instanceof Error ? error.message : String(error)}`);

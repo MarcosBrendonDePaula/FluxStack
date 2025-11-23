@@ -165,7 +165,13 @@ export function useHybridLiveComponent<T = any>(
     room,
     userId,
     autoMount = true,
-    debug = false
+    debug = false,
+    onConnect,
+    onMount,
+    onDisconnect,
+    onRehydrate,
+    onError,
+    onStateChange
   } = options
 
   // Use Live Components context (singleton WebSocket connection)
@@ -226,8 +232,12 @@ export function useHybridLiveComponent<T = any>(
         case 'STATE_UPDATE':
           if (message.payload?.state) {
             const newState = message.payload.state
+            const oldState = stateData
             updateState(newState, 'server')
             setLastServerState(newState)
+
+            // Call onStateChange callback
+            onStateChange?.(newState, oldState)
 
             if (message.payload?.signedState) {
               setCurrentSignedState(message.payload.signedState)
@@ -255,6 +265,9 @@ export function useHybridLiveComponent<T = any>(
 
             setRehydrating(false)
             setError(null)
+
+            // Call onRehydrate callback
+            onRehydrate?.()
           }
           break
 
@@ -266,10 +279,17 @@ export function useHybridLiveComponent<T = any>(
             lastKnownComponentIdRef.current = message.result.newComponentId
             setRehydrating(false)
             setError(null)
+
+            // Call onRehydrate callback
+            onRehydrate?.()
           } else if (!message.success) {
             log('❌ Re-hydration failed', message.error)
             setRehydrating(false)
-            setError(message.error || 'Re-hydration failed')
+            const errorMessage = message.error || 'Re-hydration failed'
+            setError(errorMessage)
+
+            // Call onError callback
+            onError?.(errorMessage)
           }
           break
 
@@ -283,14 +303,16 @@ export function useHybridLiveComponent<T = any>(
           break
 
         case 'ERROR':
-          const errorMessage = message.payload?.error || 'Unknown error'
-          if (errorMessage.includes('COMPONENT_REHYDRATION_REQUIRED')) {
+          const errorMsg = message.payload?.error || 'Unknown error'
+          if (errorMsg.includes('COMPONENT_REHYDRATION_REQUIRED')) {
             log('🔄 Component re-hydration required from ERROR')
             if (!rehydrating) {
               attemptRehydration()
             }
           } else {
-            setError(errorMessage)
+            setError(errorMsg)
+            // Call onError callback
+            onError?.(errorMsg)
           }
           break
 
@@ -305,7 +327,7 @@ export function useHybridLiveComponent<T = any>(
       log('🗑️ Unregistering component from WebSocket context')
       unregister()
     }
-  }, [componentId, registerComponent, unregisterComponent, log, updateState, componentName, room, userId, rehydrating])
+  }, [componentId, registerComponent, unregisterComponent, log, updateState, componentName, room, userId, rehydrating, stateData, onStateChange, onRehydrate, onError])
 
   // Automatic re-hydration on reconnection
   const attemptRehydration = useCallback(async () => {
@@ -361,10 +383,20 @@ export function useHybridLiveComponent<T = any>(
         if (response?.success && response?.result?.newComponentId) {
           setComponentId(response.result.newComponentId)
           lastKnownComponentIdRef.current = response.result.newComponentId
+          mountedRef.current = true
+
+          // Call onRehydrate callback after React has processed the state update
+          // This ensures the component is registered to receive messages before the callback runs
+          setTimeout(() => {
+            onRehydrate?.()
+          }, 0)
+
           return true
         } else {
           clearPersistedState(componentName)
-          setError(response?.error || 'Re-hydration failed')
+          const errorMsg = response?.error || 'Re-hydration failed'
+          setError(errorMsg)
+          onError?.(errorMsg)
           return false
         }
 
@@ -383,7 +415,7 @@ export function useHybridLiveComponent<T = any>(
     globalRehydrationAttempts.set(componentName, rehydrationPromise)
 
     return await rehydrationPromise
-  }, [connected, rehydrating, componentName, contextSendMessageAndWait, log])
+  }, [connected, rehydrating, componentName, contextSendMessageAndWait, log, onRehydrate, onError])
 
   // Mount component
   const mount = useCallback(async () => {
@@ -412,6 +444,7 @@ export function useHybridLiveComponent<T = any>(
       if (response?.success && response?.result?.componentId) {
         const newComponentId = response.result.componentId
         setComponentId(newComponentId)
+        lastKnownComponentIdRef.current = newComponentId
         mountedRef.current = true
 
         if (response.result.signedState) {
@@ -425,6 +458,12 @@ export function useHybridLiveComponent<T = any>(
         }
 
         log('✅ Component mounted successfully', { componentId: newComponentId })
+
+        // Call onMount callback after React has processed the state update
+        // This ensures the component is registered to receive messages before the callback runs
+        setTimeout(() => {
+          onMount?.()
+        }, 0)
       } else {
         throw new Error(response?.error || 'No component ID returned from server')
       }
@@ -433,6 +472,9 @@ export function useHybridLiveComponent<T = any>(
       setError(errorMessage)
       log('❌ Mount failed', err)
 
+      // Call onError callback
+      onError?.(errorMessage)
+
       if (!fallbackToLocal) {
         throw err
       }
@@ -440,7 +482,7 @@ export function useHybridLiveComponent<T = any>(
       setMountLoading(false)
       mountingRef.current = false
     }
-  }, [connected, componentName, initialState, room, userId, contextSendMessageAndWait, log, fallbackToLocal, updateState])
+  }, [connected, componentName, initialState, room, userId, contextSendMessageAndWait, log, fallbackToLocal, updateState, onMount, onError])
 
   // Unmount component
   const unmount = useCallback(async () => {
@@ -465,14 +507,16 @@ export function useHybridLiveComponent<T = any>(
 
   // Server-only actions
   const call = useCallback(async (action: string, payload?: any): Promise<void> => {
-    if (!componentId || !connected) {
+    // Use ref as fallback for componentId (handles timing issues after rehydration)
+    const currentComponentId = componentId || lastKnownComponentIdRef.current
+    if (!currentComponentId || !connected) {
       throw new Error('Component not mounted or WebSocket not connected')
     }
 
     try {
       const message: WebSocketMessage = {
         type: 'CALL_ACTION',
-        componentId,
+        componentId: currentComponentId,
         action,
         payload
       }
@@ -482,10 +526,11 @@ export function useHybridLiveComponent<T = any>(
       if (!response.success && response.error?.includes?.('COMPONENT_REHYDRATION_REQUIRED')) {
         const rehydrated = await attemptRehydration()
         if (rehydrated) {
-          // Retry action
+          // Use updated ref for retry
+          const retryComponentId = lastKnownComponentIdRef.current || currentComponentId
           const retryMessage: WebSocketMessage = {
             type: 'CALL_ACTION',
-            componentId,
+            componentId: retryComponentId,
             action,
             payload
           }
@@ -505,14 +550,16 @@ export function useHybridLiveComponent<T = any>(
 
   // Call action and wait for specific return value
   const callAndWait = useCallback(async (action: string, payload?: any, timeout?: number): Promise<any> => {
-    if (!componentId || !connected) {
+    // Use ref as fallback for componentId (handles timing issues after rehydration)
+    const currentComponentId = componentId || lastKnownComponentIdRef.current
+    if (!currentComponentId || !connected) {
       throw new Error('Component not mounted or WebSocket not connected')
     }
 
     try {
       const message: WebSocketMessage = {
         type: 'CALL_ACTION',
-        componentId,
+        componentId: currentComponentId,
         action,
         payload
       }
@@ -550,24 +597,31 @@ export function useHybridLiveComponent<T = any>(
     if (wasConnected && !isConnected && mountedRef.current) {
       mountedRef.current = false
       setComponentId(null)
+      // Call onDisconnect callback
+      onDisconnect?.()
     }
 
-    if (!wasConnected && isConnected && !mountedRef.current && !mountingRef.current && !rehydrating) {
-      setTimeout(() => {
-        if (!mountedRef.current && !mountingRef.current && !rehydrating) {
-          const persistedState = getPersistedState(componentName)
+    if (!wasConnected && isConnected) {
+      // Call onConnect callback when WebSocket connects
+      onConnect?.()
 
-          if (persistedState?.signedState) {
-            attemptRehydration()
-          } else {
-            mount()
+      if (!mountedRef.current && !mountingRef.current && !rehydrating) {
+        setTimeout(() => {
+          if (!mountedRef.current && !mountingRef.current && !rehydrating) {
+            const persistedState = getPersistedState(componentName)
+
+            if (persistedState?.signedState) {
+              attemptRehydration()
+            } else {
+              mount()
+            }
           }
-        }
-      }, 100)
+        }, 100)
+      }
     }
 
     prevConnectedRef.current = connected
-  }, [connected, mount, componentId, attemptRehydration, componentName, rehydrating])
+  }, [connected, mount, componentId, attemptRehydration, componentName, rehydrating, onDisconnect, onConnect])
 
   // Unmount on cleanup
   useEffect(() => {

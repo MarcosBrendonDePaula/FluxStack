@@ -1,18 +1,9 @@
 // 📤 File Upload Example - Demonstrates chunked file upload with Live Components
 import { useState, useRef } from 'react'
-import { useHybridLiveComponent, useChunkedUpload, useLiveComponents } from '@/core/client'
+import { useTypedLiveComponent, useChunkedUpload, useLiveComponents } from '@/core/client'
 
-interface FileData {
-  id: string
-  filename: string
-  url: string
-  uploadedAt: number
-}
-
-interface FileUploadState {
-  uploadedFiles: FileData[]
-  maxFiles: number
-}
+// Import component type DIRECTLY from backend - full type inference!
+import type { LiveFileUploadComponent } from '@/server/live/LiveFileUploadComponent'
 
 export function FileUploadExample() {
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -21,13 +12,13 @@ export function FileUploadExample() {
   // Get sendMessageAndWait from LiveComponents context
   const { sendMessageAndWait } = useLiveComponents()
 
-  // Setup Live Component
+  // Setup Live Component with full type inference
   const {
     state,
     call,
     componentId,
     connected
-  } = useHybridLiveComponent<FileUploadState>('LiveFileUpload', {
+  } = useTypedLiveComponent<LiveFileUploadComponent>('LiveFileUpload', {
     uploadedFiles: [],
     maxFiles: 10
   })
@@ -67,7 +58,7 @@ export function FileUploadExample() {
       console.log('✅ Upload complete:', response)
 
       // Notify the Live Component about the successful upload
-      if (selectedFile) {
+      if (selectedFile && response.fileUrl) {
         await call('onFileUploaded', {
           filename: selectedFile.name,
           fileUrl: response.fileUrl
