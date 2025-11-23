@@ -4,9 +4,13 @@ import { FaFire, FaBook, FaGithub, FaClock, FaImage } from 'react-icons/fa'
 import { LiveComponentsProvider, useTypedLiveComponent } from '@/core/client'
 import { FileUploadExample } from './components/FileUploadExample'
 
-// Import component types from shared for full type inference
-// These types mirror the backend component structure
-import type { LiveClockComponent, LiveClockState } from '@/shared/types/live-components'
+// Import component types DIRECTLY from backend - no duplication needed!
+// TypeScript uses these for type inference only (not bundled)
+import type { LiveClockComponent } from '@/server/live/LiveClockComponent'
+import type { InferComponentState } from '@/core/client'
+
+// State type is inferred from the component
+type LiveClockState = InferComponentState<LiveClockComponent>
 
 const initialClockState: LiveClockState = {
   currentTime: "Loading...",
