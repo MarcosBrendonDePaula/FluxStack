@@ -499,14 +499,16 @@ export function useHybridLiveComponent<T = any>(
 
   // Server-only actions
   const call = useCallback(async (action: string, payload?: any): Promise<void> => {
-    if (!componentId || !connected) {
+    // Use ref as fallback for componentId (handles timing issues after rehydration)
+    const currentComponentId = componentId || lastKnownComponentIdRef.current
+    if (!currentComponentId || !connected) {
       throw new Error('Component not mounted or WebSocket not connected')
     }
 
     try {
       const message: WebSocketMessage = {
         type: 'CALL_ACTION',
-        componentId,
+        componentId: currentComponentId,
         action,
         payload
       }
@@ -516,10 +518,11 @@ export function useHybridLiveComponent<T = any>(
       if (!response.success && response.error?.includes?.('COMPONENT_REHYDRATION_REQUIRED')) {
         const rehydrated = await attemptRehydration()
         if (rehydrated) {
-          // Retry action
+          // Use updated ref for retry
+          const retryComponentId = lastKnownComponentIdRef.current || currentComponentId
           const retryMessage: WebSocketMessage = {
             type: 'CALL_ACTION',
-            componentId,
+            componentId: retryComponentId,
             action,
             payload
           }
@@ -539,14 +542,16 @@ export function useHybridLiveComponent<T = any>(
 
   // Call action and wait for specific return value
   const callAndWait = useCallback(async (action: string, payload?: any, timeout?: number): Promise<any> => {
-    if (!componentId || !connected) {
+    // Use ref as fallback for componentId (handles timing issues after rehydration)
+    const currentComponentId = componentId || lastKnownComponentIdRef.current
+    if (!currentComponentId || !connected) {
       throw new Error('Component not mounted or WebSocket not connected')
     }
 
     try {
       const message: WebSocketMessage = {
         type: 'CALL_ACTION',
-        componentId,
+        componentId: currentComponentId,
         action,
         payload
       }
