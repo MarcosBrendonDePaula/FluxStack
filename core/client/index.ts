@@ -72,6 +72,7 @@ export type {
   InferComponentState,
   TypedCall,
   TypedCallAndWait,
+  TypedSetValue,
   UseTypedLiveComponentReturn
 } from '../types/types'
 

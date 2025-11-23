@@ -30,7 +30,7 @@ function MinimalLiveClock() {
     'LiveClock',
     initialClockState
   )
-
+  
   // Example usage (uncomment to use):
   // await _call('setTimeFormat', { format: '12h' }) // ✅ Autocomplete works!
   // await _call('setTimeFormat', { format: 'invalid' }) // ❌ Type error!

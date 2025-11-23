@@ -150,6 +150,14 @@ export abstract class LiveComponent<TState = ComponentState> {
     this.emit('STATE_UPDATE', { state: this.state })
   }
 
+  // Generic setValue action - set any state key with type safety
+  public async setValue<K extends keyof TState>(payload: { key: K; value: TState[K] }): Promise<{ success: true; key: K; value: TState[K] }> {
+    const { key, value } = payload
+    const update = { [key]: value } as unknown as Partial<TState>
+    this.setState(update)
+    return { success: true, key, value }
+  }
+
   // Execute action safely
   public async executeAction(action: string, payload: any): Promise<any> {
     try {
@@ -316,6 +324,15 @@ export type TypedCallAndWait<T extends LiveComponent<any>> = <K extends ActionNa
 ) => Promise<ActionReturn<T, K>>
 
 /**
+ * Type-safe setValue signature for a component
+ * Convenience helper for setting individual state values
+ */
+export type TypedSetValue<T extends LiveComponent<any>> = <K extends keyof InferComponentState<T>>(
+  key: K,
+  value: InferComponentState<T>[K]
+) => Promise<void>
+
+/**
  * Return type for useTypedLiveComponent hook
  * Provides full type inference for state and actions
  */
@@ -335,6 +352,9 @@ export interface UseTypedLiveComponentReturn<T extends LiveComponent<any>> {
   // Type-safe actions
   call: TypedCall<T>
   callAndWait: TypedCallAndWait<T>
+
+  // Convenience helper for setting individual state values
+  setValue: TypedSetValue<T>
 
   // Lifecycle
   mount: () => Promise<void>

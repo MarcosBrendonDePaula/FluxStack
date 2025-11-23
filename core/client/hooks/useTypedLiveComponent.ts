@@ -52,9 +52,20 @@ export function useTypedLiveComponent<T extends LiveComponent<any>>(
     options
   )
 
-  // Return with typed call functions
+  // Create convenience setValue helper
+  const setValue = async <K extends keyof InferComponentState<T>>(
+    key: K,
+    value: InferComponentState<T>[K]
+  ): Promise<void> => {
+    await result.call('setValue', { key, value })
+  }
+
+  // Return with typed call functions and setValue helper
   // The types are enforced at compile time, runtime behavior is the same
-  return result as unknown as UseTypedLiveComponentReturn<T>
+  return {
+    ...result,
+    setValue
+  } as unknown as UseTypedLiveComponentReturn<T>
 }
 
 /**
