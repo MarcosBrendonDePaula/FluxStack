@@ -26,17 +26,22 @@ const initialClockState: LiveClockState = {
 function MinimalLiveClock() {
   // 🔥 Using typed hook - full autocomplete for actions!
   // call and callAndWait have full type inference for action names and payloads
-  const { state, call: _call, callAndWait: _callAndWait, setValue } = useTypedLiveComponent<LiveClockComponent>(
+  const { state, setValue } = useTypedLiveComponent<LiveClockComponent>(
     'LiveClock',
-    initialClockState
+    initialClockState,
+    {
+      // When connected (fresh mount), change format to 12h
+      onConnect: () => {
+        console.log('onConnect called - changing format to 12h')
+        setValue('format', '12h')
+      },
+      // When reconnected (rehydration), also change format to 12h
+      onReconnect: () => {
+        console.log('onReconnect called - changing format to 12h')
+        setValue('format', '12h')
+      }
+    }
   )
-  
-
-  // Example usage (uncomment to use):
-  // await _call('setTimeFormat', { format: '12h' }) // ✅ Autocomplete works!
-  // await _call('setTimeFormat', { format: 'invalid' }) // ❌ Type error!
-  // const result = await _callAndWait('getServerInfo') // ✅ Return type inferred!
-  void _call; void _callAndWait; // Silence unused warnings for demo
 
   return (
     <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-xl p-4 border border-blue-400/20">
@@ -44,7 +49,7 @@ function MinimalLiveClock() {
         {state.currentTime}
       </div>
       <div className="text-center mt-2">
-        <span className="text-xs text-gray-400">{state.timeZone}</span>
+        <span className="text-xs text-gray-400">{state.timeZone} ({state.format})</span>
       </div>
     </div>
   )

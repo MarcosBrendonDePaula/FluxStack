@@ -382,10 +382,17 @@ export function useHybridLiveComponent<T = any>(
         if (response?.success && response?.result?.newComponentId) {
           setComponentId(response.result.newComponentId)
           lastKnownComponentIdRef.current = response.result.newComponentId
+          mountedRef.current = true
+
+          // Call onReconnect callback after successful rehydration
+          onReconnect?.()
+
           return true
         } else {
           clearPersistedState(componentName)
-          setError(response?.error || 'Re-hydration failed')
+          const errorMsg = response?.error || 'Re-hydration failed'
+          setError(errorMsg)
+          onError?.(errorMsg)
           return false
         }
 
@@ -404,7 +411,7 @@ export function useHybridLiveComponent<T = any>(
     globalRehydrationAttempts.set(componentName, rehydrationPromise)
 
     return await rehydrationPromise
-  }, [connected, rehydrating, componentName, contextSendMessageAndWait, log])
+  }, [connected, rehydrating, componentName, contextSendMessageAndWait, log, onReconnect, onError])
 
   // Mount component
   const mount = useCallback(async () => {
