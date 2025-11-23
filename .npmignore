@@ -58,6 +58,7 @@ public/uploads/
 
 # Browser data (FluxStack Desktop)
 chrome_data/
+.chromium/
 test-*/
 
 # Temporary files
