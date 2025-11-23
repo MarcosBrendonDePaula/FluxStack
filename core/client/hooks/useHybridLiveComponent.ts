@@ -165,7 +165,12 @@ export function useHybridLiveComponent<T = any>(
     room,
     userId,
     autoMount = true,
-    debug = false
+    debug = false,
+    onConnect,
+    onDisconnect,
+    onReconnect,
+    onError,
+    onStateChange
   } = options
 
   // Use Live Components context (singleton WebSocket connection)
@@ -226,8 +231,12 @@ export function useHybridLiveComponent<T = any>(
         case 'STATE_UPDATE':
           if (message.payload?.state) {
             const newState = message.payload.state
+            const oldState = stateData
             updateState(newState, 'server')
             setLastServerState(newState)
+
+            // Call onStateChange callback
+            onStateChange?.(newState, oldState)
 
             if (message.payload?.signedState) {
               setCurrentSignedState(message.payload.signedState)
@@ -255,6 +264,9 @@ export function useHybridLiveComponent<T = any>(
 
             setRehydrating(false)
             setError(null)
+
+            // Call onReconnect callback
+            onReconnect?.()
           }
           break
 
@@ -266,10 +278,17 @@ export function useHybridLiveComponent<T = any>(
             lastKnownComponentIdRef.current = message.result.newComponentId
             setRehydrating(false)
             setError(null)
+
+            // Call onReconnect callback
+            onReconnect?.()
           } else if (!message.success) {
             log('❌ Re-hydration failed', message.error)
             setRehydrating(false)
-            setError(message.error || 'Re-hydration failed')
+            const errorMessage = message.error || 'Re-hydration failed'
+            setError(errorMessage)
+
+            // Call onError callback
+            onError?.(errorMessage)
           }
           break
 
@@ -283,14 +302,16 @@ export function useHybridLiveComponent<T = any>(
           break
 
         case 'ERROR':
-          const errorMessage = message.payload?.error || 'Unknown error'
-          if (errorMessage.includes('COMPONENT_REHYDRATION_REQUIRED')) {
+          const errorMsg = message.payload?.error || 'Unknown error'
+          if (errorMsg.includes('COMPONENT_REHYDRATION_REQUIRED')) {
             log('🔄 Component re-hydration required from ERROR')
             if (!rehydrating) {
               attemptRehydration()
             }
           } else {
-            setError(errorMessage)
+            setError(errorMsg)
+            // Call onError callback
+            onError?.(errorMsg)
           }
           break
 
@@ -305,7 +326,7 @@ export function useHybridLiveComponent<T = any>(
       log('🗑️ Unregistering component from WebSocket context')
       unregister()
     }
-  }, [componentId, registerComponent, unregisterComponent, log, updateState, componentName, room, userId, rehydrating])
+  }, [componentId, registerComponent, unregisterComponent, log, updateState, componentName, room, userId, rehydrating, stateData, onStateChange, onReconnect, onError])
 
   // Automatic re-hydration on reconnection
   const attemptRehydration = useCallback(async () => {
@@ -425,6 +446,9 @@ export function useHybridLiveComponent<T = any>(
         }
 
         log('✅ Component mounted successfully', { componentId: newComponentId })
+
+        // Call onConnect callback
+        onConnect?.()
       } else {
         throw new Error(response?.error || 'No component ID returned from server')
       }
@@ -433,6 +457,9 @@ export function useHybridLiveComponent<T = any>(
       setError(errorMessage)
       log('❌ Mount failed', err)
 
+      // Call onError callback
+      onError?.(errorMessage)
+
       if (!fallbackToLocal) {
         throw err
       }
@@ -440,7 +467,7 @@ export function useHybridLiveComponent<T = any>(
       setMountLoading(false)
       mountingRef.current = false
     }
-  }, [connected, componentName, initialState, room, userId, contextSendMessageAndWait, log, fallbackToLocal, updateState])
+  }, [connected, componentName, initialState, room, userId, contextSendMessageAndWait, log, fallbackToLocal, updateState, onConnect, onError])
 
   // Unmount component
   const unmount = useCallback(async () => {
@@ -550,6 +577,8 @@ export function useHybridLiveComponent<T = any>(
     if (wasConnected && !isConnected && mountedRef.current) {
       mountedRef.current = false
       setComponentId(null)
+      // Call onDisconnect callback
+      onDisconnect?.()
     }
 
     if (!wasConnected && isConnected && !mountedRef.current && !mountingRef.current && !rehydrating) {
@@ -567,7 +596,7 @@ export function useHybridLiveComponent<T = any>(
     }
 
     prevConnectedRef.current = connected
-  }, [connected, mount, componentId, attemptRehydration, componentName, rehydrating])
+  }, [connected, mount, componentId, attemptRehydration, componentName, rehydrating, onDisconnect])
 
   // Unmount on cleanup
   useEffect(() => {

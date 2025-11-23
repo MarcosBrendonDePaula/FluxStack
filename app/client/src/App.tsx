@@ -26,11 +26,12 @@ const initialClockState: LiveClockState = {
 function MinimalLiveClock() {
   // 🔥 Using typed hook - full autocomplete for actions!
   // call and callAndWait have full type inference for action names and payloads
-  const { state, call: _call, callAndWait: _callAndWait } = useTypedLiveComponent<LiveClockComponent>(
+  const { state, call: _call, callAndWait: _callAndWait, setValue } = useTypedLiveComponent<LiveClockComponent>(
     'LiveClock',
     initialClockState
   )
   
+
   // Example usage (uncomment to use):
   // await _call('setTimeFormat', { format: '12h' }) // ✅ Autocomplete works!
   // await _call('setTimeFormat', { format: 'invalid' }) // ❌ Type error!

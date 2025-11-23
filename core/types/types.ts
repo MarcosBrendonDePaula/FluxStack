@@ -125,6 +125,13 @@ export interface HybridComponentOptions {
   userId?: string
   autoMount?: boolean
   debug?: boolean
+
+  // Connection lifecycle callbacks
+  onConnect?: () => void
+  onDisconnect?: () => void
+  onReconnect?: () => void
+  onError?: (error: string) => void
+  onStateChange?: (newState: any, oldState: any) => void
 }
 
 export abstract class LiveComponent<TState = ComponentState> {
