@@ -10,7 +10,7 @@ export function MinimalLiveClock() {
     {
       currentTime: "Loading...",
       timeZone: "America/Sao_Paulo",
-      format: "24h",
+      format: "12h",
       showSeconds: true,
       showDate: true,
       lastSync: new Date(),
