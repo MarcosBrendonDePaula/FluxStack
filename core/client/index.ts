@@ -19,6 +19,7 @@ export type {
 // Hooks
 export { useWebSocket } from './hooks/useWebSocket'
 export { useHybridLiveComponent } from './hooks/useHybridLiveComponent'
+export { useTypedLiveComponent, createTypedLiveComponentHook } from './hooks/useTypedLiveComponent'
 export { useChunkedUpload } from './hooks/useChunkedUpload'
 export { AdaptiveChunkSizer } from './hooks/AdaptiveChunkSizer'
 export { StateValidator } from './hooks/state-validator'
@@ -61,8 +62,19 @@ export type {
   ComponentActions,
   ComponentProps,
   ActionParameters,
-  ActionReturnType
+  ActionReturnType,
+
+  // Type inference system (similar to Eden Treaty)
+  ExtractActions,
+  ActionNames,
+  ActionPayload,
+  ActionReturn,
+  InferComponentState,
+  TypedCall,
+  TypedCallAndWait,
+  UseTypedLiveComponentReturn
 } from '../types/types'
 
 // Hook return types
 export type { UseHybridLiveComponentReturn } from './hooks/useHybridLiveComponent'
+export type { ComponentRegistry } from './hooks/useTypedLiveComponent'

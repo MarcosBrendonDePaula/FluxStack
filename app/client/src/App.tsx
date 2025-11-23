@@ -1,18 +1,12 @@
 import { useState, useEffect } from 'react'
 import { api } from './lib/eden-api'
 import { FaFire, FaBook, FaGithub, FaClock, FaImage } from 'react-icons/fa'
-import { LiveComponentsProvider, useHybridLiveComponent } from '@/core/client'
+import { LiveComponentsProvider, useTypedLiveComponent } from '@/core/client'
 import { FileUploadExample } from './components/FileUploadExample'
 
-interface LiveClockState {
-  currentTime: string
-  timeZone: string
-  format: '12h' | '24h'
-  showSeconds: boolean
-  showDate: boolean
-  lastSync: Date
-  serverUptime: number
-}
+// Import component types from shared for full type inference
+// These types mirror the backend component structure
+import type { LiveClockComponent, LiveClockState } from '@/shared/types/live-components'
 
 const initialClockState: LiveClockState = {
   currentTime: "Loading...",
@@ -24,12 +18,20 @@ const initialClockState: LiveClockState = {
   serverUptime: 0,
 }
 
-// Minimal Live Clock Component
+// Minimal Live Clock Component with full type inference
 function MinimalLiveClock() {
-  const { state } = useHybridLiveComponent<LiveClockState>(
+  // 🔥 Using typed hook - full autocomplete for actions!
+  // call and callAndWait have full type inference for action names and payloads
+  const { state, call: _call, callAndWait: _callAndWait } = useTypedLiveComponent<LiveClockComponent>(
     'LiveClock',
     initialClockState
   )
+
+  // Example usage (uncomment to use):
+  // await _call('setTimeFormat', { format: '12h' }) // ✅ Autocomplete works!
+  // await _call('setTimeFormat', { format: 'invalid' }) // ❌ Type error!
+  // const result = await _callAndWait('getServerInfo') // ✅ Return type inferred!
+  void _call; void _callAndWait; // Silence unused warnings for demo
 
   return (
     <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-xl p-4 border border-blue-400/20">
