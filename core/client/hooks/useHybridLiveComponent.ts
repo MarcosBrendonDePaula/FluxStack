@@ -443,6 +443,7 @@ export function useHybridLiveComponent<T = any>(
       if (response?.success && response?.result?.componentId) {
         const newComponentId = response.result.componentId
         setComponentId(newComponentId)
+        lastKnownComponentIdRef.current = newComponentId
         mountedRef.current = true
 
         if (response.result.signedState) {
