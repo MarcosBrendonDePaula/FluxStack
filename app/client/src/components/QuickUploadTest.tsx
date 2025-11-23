@@ -1,16 +1,9 @@
 // 🚀 Quick Upload Test - Compact upload tester for home page
 import { useState, useRef } from 'react'
-import { useHybridLiveComponent, useChunkedUpload, useLiveComponents } from '@/core/client'
+import { useTypedLiveComponent, useChunkedUpload, useLiveComponents } from '@/core/client'
 
-interface FileUploadState {
-  uploadedFiles: Array<{
-    id: string
-    filename: string
-    url: string
-    uploadedAt: number
-  }>
-  maxFiles: number
-}
+// Import component type DIRECTLY from backend - full type inference!
+import type { LiveFileUploadComponent } from '@/server/live/LiveFileUploadComponent'
 
 export function QuickUploadTest() {
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -19,13 +12,13 @@ export function QuickUploadTest() {
   // Get sendMessageAndWait from LiveComponents context
   const { sendMessageAndWait } = useLiveComponents()
 
-  // Setup Live Component
+  // Setup Live Component with full type inference
   const {
     state,
     call,
     componentId,
     connected
-  } = useHybridLiveComponent<FileUploadState>('LiveFileUpload', {
+  } = useTypedLiveComponent<LiveFileUploadComponent>('LiveFileUpload', {
     uploadedFiles: [],
     maxFiles: 10
   })
@@ -58,7 +51,7 @@ export function QuickUploadTest() {
     },
 
     onComplete: async (response) => {
-      if (selectedFile) {
+      if (selectedFile && response.fileUrl) {
         await call('onFileUploaded', {
           filename: selectedFile.name,
           fileUrl: response.fileUrl
