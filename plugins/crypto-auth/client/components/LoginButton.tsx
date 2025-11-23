@@ -3,7 +3,8 @@
  * Componente React para autenticação criptográfica baseada em keypair
  */
 
-import React, { useState, useEffect } from 'react'
+import type React from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { CryptoAuthClient, type KeyPair } from '../CryptoAuthClient'
 
 export interface LoginButtonProps {
@@ -25,18 +26,14 @@ export const LoginButton: React.FC<LoginButtonProps> = ({
   loginText = 'Gerar Chaves',
   logoutText = 'Limpar Chaves',
   loadingText = 'Carregando...',
-  authClient
+  authClient,
 }) => {
   const [client] = useState(() => authClient || new CryptoAuthClient({ autoInit: false }))
   const [hasKeys, setHasKeys] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [keys, setKeys] = useState<KeyPair | null>(null)
 
-  useEffect(() => {
-    checkKeysStatus()
-  }, [])
-
-  const checkKeysStatus = () => {
+  const checkKeysStatus = useCallback(() => {
     try {
       const existingKeys = client.getKeys()
       if (existingKeys) {
@@ -51,7 +48,11 @@ export const LoginButton: React.FC<LoginButtonProps> = ({
       setHasKeys(false)
       setKeys(null)
     }
-  }
+  }, [client])
+
+  useEffect(() => {
+    checkKeysStatus()
+  }, [checkKeysStatus])
 
   const handleLogin = () => {
     setIsLoading(true)
@@ -94,6 +95,7 @@ export const LoginButton: React.FC<LoginButtonProps> = ({
   if (isLoading) {
     return (
       <button
+        type="button"
         disabled
         className={`${baseClassName} bg-gray-400 text-white cursor-not-allowed ${className}`}
       >
@@ -107,15 +109,14 @@ export const LoginButton: React.FC<LoginButtonProps> = ({
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-          <span className="text-sm text-gray-600">
-            Autenticado
-          </span>
+          <span className="text-sm text-gray-600">Autenticado</span>
           <code className="text-xs bg-gray-100 px-2 py-1 rounded">
             {keys.publicKey.substring(0, 16)}...
           </code>
         </div>
 
         <button
+          type="button"
           onClick={handleLogout}
           className={`${baseClassName} bg-red-600 hover:bg-red-700 text-white focus:ring-red-500 ${className}`}
         >
@@ -127,6 +128,7 @@ export const LoginButton: React.FC<LoginButtonProps> = ({
 
   return (
     <button
+      type="button"
       onClick={handleLogin}
       className={`${baseClassName} bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500 ${className}`}
     >

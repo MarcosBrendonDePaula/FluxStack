@@ -41,9 +41,12 @@ export class CryptoAuthService {
     this.logger = config.logger
 
     // Limpar nonces antigos a cada 5 minutos
-    setInterval(() => {
-      this.cleanupOldNonces()
-    }, 5 * 60 * 1000)
+    setInterval(
+      () => {
+        this.cleanupOldNonces()
+      },
+      5 * 60 * 1000,
+    )
   }
 
   /**
@@ -58,13 +61,13 @@ export class CryptoAuthService {
     message?: string
   }): Promise<AuthResult> {
     try {
-      const { publicKey, timestamp, nonce, signature, message = "" } = data
+      const { publicKey, timestamp, nonce, signature, message = '' } = data
 
       // Validar chave pública
       if (!this.isValidPublicKey(publicKey)) {
         return {
           success: false,
-          error: "Chave pública inválida"
+          error: 'Chave pública inválida',
         }
       }
 
@@ -74,7 +77,7 @@ export class CryptoAuthService {
       if (timeDrift > this.config.maxTimeDrift) {
         return {
           success: false,
-          error: "Timestamp inválido ou expirado"
+          error: 'Timestamp inválido ou expirado',
         }
       }
 
@@ -83,7 +86,7 @@ export class CryptoAuthService {
       if (this.usedNonces.has(nonceKey)) {
         return {
           success: false,
-          error: "Nonce já utilizado (possível replay attack)"
+          error: 'Nonce já utilizado (possível replay attack)',
         }
       }
 
@@ -98,12 +101,12 @@ export class CryptoAuthService {
       const isValidSignature = ed25519.verify(signatureBytes, messageHash, publicKeyBytes)
 
       if (!isValidSignature) {
-        this.logger?.warn("Assinatura inválida", {
-          publicKey: publicKey.substring(0, 8) + "..."
+        this.logger?.warn('Assinatura inválida', {
+          publicKey: `${publicKey.substring(0, 8)}...`,
         })
         return {
           success: false,
-          error: "Assinatura inválida"
+          error: 'Assinatura inválida',
         }
       }
 
@@ -114,10 +117,10 @@ export class CryptoAuthService {
       const isAdmin = this.config.adminKeys.includes(publicKey)
       const permissions = isAdmin ? ['admin', 'read', 'write', 'delete'] : ['read']
 
-      this.logger?.debug("Requisição autenticada", {
-        publicKey: publicKey.substring(0, 8) + "...",
+      this.logger?.debug('Requisição autenticada', {
+        publicKey: `${publicKey.substring(0, 8)}...`,
         isAdmin,
-        permissions
+        permissions,
       })
 
       return {
@@ -125,14 +128,14 @@ export class CryptoAuthService {
         user: {
           publicKey,
           isAdmin,
-          permissions
-        }
+          permissions,
+        },
       }
     } catch (error) {
-      this.logger?.error("Erro ao validar requisição", { error })
+      this.logger?.error('Erro ao validar requisição', { error })
       return {
         success: false,
-        error: "Erro interno ao validar requisição"
+        error: 'Erro interno ao validar requisição',
       }
     }
   }
@@ -145,7 +148,7 @@ export class CryptoAuthService {
       if (publicKey.length !== 64) {
         return false
       }
-      
+
       const bytes = hexToBytes(publicKey)
       return bytes.length === 32
     } catch {
@@ -180,7 +183,7 @@ export class CryptoAuthService {
     return {
       usedNoncesCount: this.usedNonces.size,
       adminKeys: this.config.adminKeys.length,
-      maxTimeDrift: this.config.maxTimeDrift
+      maxTimeDrift: this.config.maxTimeDrift,
     }
   }
 }

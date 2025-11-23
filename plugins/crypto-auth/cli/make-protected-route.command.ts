@@ -3,9 +3,9 @@
  * Gera rotas protegidas automaticamente
  */
 
-import type { CliCommand, CliContext } from '@/core/plugins/types'
-import { writeFileSync, existsSync, mkdirSync } from 'fs'
-import { join } from 'path'
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
+import type { CliCommand } from '@/core/plugins/types'
 
 const ROUTE_TEMPLATES = {
   required: (name: string, pascalName: string) => `/**
@@ -236,13 +236,13 @@ export const ${name}Routes = new Elysia({ prefix: '/${name}' })
     id: params.id,
     message: 'Detalhes de ${name}'
   }))
-`
+`,
 }
 
 function toPascalCase(str: string): string {
   return str
     .split(/[-_]/)
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join('')
 }
 
@@ -257,8 +257,8 @@ export const makeProtectedRouteCommand: CliCommand = {
       name: 'name',
       description: 'Nome da rota (ex: posts, users, admin)',
       required: true,
-      type: 'string'
-    }
+      type: 'string',
+    },
   ],
 
   options: [
@@ -268,29 +268,29 @@ export const makeProtectedRouteCommand: CliCommand = {
       description: 'Tipo de autenticação (required, admin, optional, public)',
       type: 'string',
       default: 'required',
-      choices: ['required', 'admin', 'optional', 'public']
+      choices: ['required', 'admin', 'optional', 'public'],
     },
     {
       name: 'output',
       short: 'o',
       description: 'Diretório de saída (padrão: app/server/routes)',
       type: 'string',
-      default: 'app/server/routes'
+      default: 'app/server/routes',
     },
     {
       name: 'force',
       short: 'f',
       description: 'Sobrescrever arquivo existente',
       type: 'boolean',
-      default: false
-    }
+      default: false,
+    },
   ],
 
   examples: [
     'flux crypto-auth:make:route posts',
     'flux crypto-auth:make:route admin --auth admin',
     'flux crypto-auth:make:route feed --auth optional',
-    'flux crypto-auth:make:route articles --auth required --force'
+    'flux crypto-auth:make:route articles --auth required --force',
   ],
 
   handler: async (args, options, context) => {
@@ -351,24 +351,14 @@ export const makeProtectedRouteCommand: CliCommand = {
         `GET    /api/${name}/:id`,
         `POST   /api/${name}`,
         `PUT    /api/${name}/:id`,
-        `DELETE /api/${name}/:id`
+        `DELETE /api/${name}/:id`,
       ],
-      admin: [
-        `GET    /api/${name}`,
-        `POST   /api/${name}`,
-        `DELETE /api/${name}/:id`
-      ],
-      optional: [
-        `GET    /api/${name}`,
-        `GET    /api/${name}/:id`
-      ],
-      public: [
-        `GET    /api/${name}`,
-        `GET    /api/${name}/:id`
-      ]
+      admin: [`GET    /api/${name}`, `POST   /api/${name}`, `DELETE /api/${name}/:id`],
+      optional: [`GET    /api/${name}`, `GET    /api/${name}/:id`],
+      public: [`GET    /api/${name}`, `GET    /api/${name}/:id`],
     }
 
-    routes[auth].forEach(route => console.log(`   ${route}`))
+    routes[auth].forEach((route) => console.log(`   ${route}`))
 
     console.log(`\n4. Testar (sem auth):`)
     console.log(`   curl http://localhost:3000/api/${name}`)
@@ -379,5 +369,5 @@ export const makeProtectedRouteCommand: CliCommand = {
     }
 
     console.log(`\n🚀 Pronto! Inicie o servidor com: bun run dev`)
-  }
+  },
 }

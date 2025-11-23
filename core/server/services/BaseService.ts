@@ -1,7 +1,7 @@
 /**
  * Base Service Class
  * Core FluxStack service infrastructure
- * 
+ *
  * Provides common functionality for all services including:
  * - Logging with service context
  * - Configuration access
@@ -67,9 +67,9 @@ export abstract class BaseService {
    * Execute operation with logging
    */
   protected async executeWithLogging<T>(
-    operation: string, 
+    operation: string,
     fn: () => Promise<T> | T,
-    metadata?: any
+    metadata?: any,
   ): Promise<T> {
     this.logOperation(`Starting ${operation}`, metadata)
     try {

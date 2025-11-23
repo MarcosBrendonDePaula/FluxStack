@@ -1,11 +1,11 @@
-import type { CliCommand } from "@/core/plugins/types";
-import { promises as fs } from "fs";
-import path from "path";
+import { promises as fs } from 'node:fs'
+import path from 'node:path'
+import type { CliCommand } from '@/core/plugins/types'
 
 // Component templates for different types
 const getServerTemplate = (componentName: string, type: string, room?: string) => {
-  const roomComment = room ? `\n    // Default room: ${room}` : '';
-  const roomInit = room ? `\n      this.room = '${room}';` : '';
+  const roomComment = room ? `\n    // Default room: ${room}` : ''
+  const roomInit = room ? `\n      this.room = '${room}';` : ''
 
   switch (type) {
     case 'counter':
@@ -110,7 +110,7 @@ export class ${componentName}Component extends LiveComponent<${componentName}Sta
     
     return { success: true, title: newTitle };
   }
-}`;
+}`
 
     case 'form':
       return `// 🔥 ${componentName} - Form Live Component
@@ -238,7 +238,7 @@ export class ${componentName}Component extends LiveComponent<${componentName}Sta
   private sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
-}`;
+}`
 
     case 'chat':
       return `// 🔥 ${componentName} - Chat Live Component
@@ -402,7 +402,7 @@ export class ${componentName}Component extends LiveComponent<${componentName}Sta
     this.leaveRoom();
     super.destroy();
   }
-}`;
+}`
 
     default: // basic
       return `// 🔥 ${componentName} - Live Component
@@ -489,12 +489,12 @@ export class ${componentName}Component extends LiveComponent<${componentName}Sta
       }
     };
   }
-}`;
+}`
   }
-};
+}
 
 const getClientTemplate = (componentName: string, type: string, room?: string) => {
-  const roomProps = room ? `, { room: '${room}' }` : '';
+  const roomProps = room ? `, { room: '${room}' }` : ''
 
   switch (type) {
     case 'counter':
@@ -611,7 +611,7 @@ export function ${componentName}() {
       )}
     </div>
   );
-}`;
+}`
 
     case 'form':
       return `// 🔥 ${componentName} - Form Client Component
@@ -764,7 +764,7 @@ export function ${componentName}() {
       </div>
     </div>
   );
-}`;
+}`
 
     case 'chat':
       return `// 🔥 ${componentName} - Chat Client Component
@@ -935,7 +935,7 @@ export function ${componentName}() {
       </form>
     </div>
   );
-}`;
+}`
 
     default: // basic
       return `// 🔥 ${componentName} - Client Component
@@ -1041,153 +1041,181 @@ export function ${componentName}() {
       )}
     </div>
   );
-}`;
+}`
   }
-};
+}
 
 export const createLiveComponentCommand: CliCommand = {
-  name: "make:component",
-  description: "Create a new Live Component with server and client files",
-  category: "Live Components",
-  aliases: ["make:live", "create:component", "create:live-component"],
-  usage: "flux make:component <ComponentName> [options]",
+  name: 'make:component',
+  description: 'Create a new Live Component with server and client files',
+  category: 'Live Components',
+  aliases: ['make:live', 'create:component', 'create:live-component'],
+  usage: 'flux make:component <ComponentName> [options]',
   examples: [
-    "flux make:component UserProfile                # Basic component",
-    "flux make:component TodoCounter --type=counter # Counter component",  
-    "flux make:component ContactForm --type=form    # Form component",
-    "flux make:component LiveChat --type=chat       # Chat component",
-    "flux make:component ServerOnly --no-client     # Server-only component",
-    "flux make:component MultiUser --room=lobby     # Component with room support"
+    'flux make:component UserProfile                # Basic component',
+    'flux make:component TodoCounter --type=counter # Counter component',
+    'flux make:component ContactForm --type=form    # Form component',
+    'flux make:component LiveChat --type=chat       # Chat component',
+    'flux make:component ServerOnly --no-client     # Server-only component',
+    'flux make:component MultiUser --room=lobby     # Component with room support',
   ],
   arguments: [
     {
-      name: "ComponentName",
-      description: "The name of the component in PascalCase (e.g., UserProfile, TodoCounter)",
+      name: 'ComponentName',
+      description: 'The name of the component in PascalCase (e.g., UserProfile, TodoCounter)',
       required: true,
-      type: "string"
+      type: 'string',
     },
   ],
   options: [
     {
-      name: "type",
-      short: "t",
-      description: "Type of component template to generate",
-      type: "string",
-      default: "basic",
-      choices: ["basic", "counter", "form", "chat"]
+      name: 'type',
+      short: 't',
+      description: 'Type of component template to generate',
+      type: 'string',
+      default: 'basic',
+      choices: ['basic', 'counter', 'form', 'chat'],
     },
     {
-      name: "no-client",
-      description: "Generate only server component (no client file)",
-      type: "boolean"
+      name: 'no-client',
+      description: 'Generate only server component (no client file)',
+      type: 'boolean',
     },
     {
-      name: "room",
-      short: "r",
-      description: "Default room name for multi-user features",
-      type: "string"
+      name: 'room',
+      short: 'r',
+      description: 'Default room name for multi-user features',
+      type: 'string',
     },
     {
-      name: "force",
-      short: "f",
-      description: "Overwrite existing files if they exist",
-      type: "boolean"
-    }
+      name: 'force',
+      short: 'f',
+      description: 'Overwrite existing files if they exist',
+      type: 'boolean',
+    },
   ],
   handler: async (args, options, context) => {
-    const [componentName] = args;
-    const { type = 'basic', 'no-client': noClient, room, force } = options;
+    const [componentName] = args
+    const { type = 'basic', 'no-client': noClient, room, force } = options
 
     // Validation
     if (!componentName || !/^[A-Z][a-zA-Z0-9]*$/.test(componentName)) {
-      context.logger.error("❌ Invalid component name. It must be in PascalCase (e.g., UserProfile, TodoCounter).");
-      context.logger.info("Examples: UserProfile, TodoCounter, ContactForm, LiveChat");
-      return;
+      context.logger.error(
+        '❌ Invalid component name. It must be in PascalCase (e.g., UserProfile, TodoCounter).',
+      )
+      context.logger.info('Examples: UserProfile, TodoCounter, ContactForm, LiveChat')
+      return
     }
 
     if (!['basic', 'counter', 'form', 'chat'].includes(type)) {
-      context.logger.error(`❌ Invalid component type: ${type}`);
-      context.logger.info("Available types: basic, counter, form, chat");
-      return;
+      context.logger.error(`❌ Invalid component type: ${type}`)
+      context.logger.info('Available types: basic, counter, form, chat')
+      return
     }
 
     // File paths
-    const serverFilePath = path.join(context.workingDir, "app", "server", "live", `${componentName}Component.ts`);
-    const clientFilePath = path.join(context.workingDir, "app", "client", "src", "live", `${componentName}.tsx`);
+    const serverFilePath = path.join(
+      context.workingDir,
+      'app',
+      'server',
+      'live',
+      `${componentName}Component.ts`,
+    )
+    const clientFilePath = path.join(
+      context.workingDir,
+      'app',
+      'client',
+      'src',
+      'live',
+      `${componentName}.tsx`,
+    )
 
     try {
       // Check if files exist (unless force flag is used)
       if (!force) {
-        const serverExists = await fs.access(serverFilePath).then(() => true).catch(() => false);
-        const clientExists = !noClient && await fs.access(clientFilePath).then(() => true).catch(() => false);
-        
+        const serverExists = await fs
+          .access(serverFilePath)
+          .then(() => true)
+          .catch(() => false)
+        const clientExists =
+          !noClient &&
+          (await fs
+            .access(clientFilePath)
+            .then(() => true)
+            .catch(() => false))
+
         if (serverExists || clientExists) {
-          context.logger.error(`❌ Component files already exist. Use --force to overwrite.`);
-          if (serverExists) context.logger.info(`   Server: ${serverFilePath}`);
-          if (clientExists) context.logger.info(`   Client: ${clientFilePath}`);
-          return;
+          context.logger.error(`❌ Component files already exist. Use --force to overwrite.`)
+          if (serverExists) context.logger.info(`   Server: ${serverFilePath}`)
+          if (clientExists) context.logger.info(`   Client: ${clientFilePath}`)
+          return
         }
       }
 
       // Ensure directories exist
-      await fs.mkdir(path.dirname(serverFilePath), { recursive: true });
+      await fs.mkdir(path.dirname(serverFilePath), { recursive: true })
       if (!noClient) {
-        await fs.mkdir(path.dirname(clientFilePath), { recursive: true });
+        await fs.mkdir(path.dirname(clientFilePath), { recursive: true })
       }
 
       // Generate server component
-      context.logger.info(`🔥 Creating server component: ${componentName}Component.ts`);
-      const serverTemplate = getServerTemplate(componentName, type, room);
-      await fs.writeFile(serverFilePath, serverTemplate);
+      context.logger.info(`🔥 Creating server component: ${componentName}Component.ts`)
+      const serverTemplate = getServerTemplate(componentName, type, room)
+      await fs.writeFile(serverFilePath, serverTemplate)
 
       // Generate client component (unless --no-client)
       if (!noClient) {
-        context.logger.info(`⚛️ Creating client component: ${componentName}.tsx`);
-        const clientTemplate = getClientTemplate(componentName, type, room);
-        await fs.writeFile(clientFilePath, clientTemplate);
+        context.logger.info(`⚛️ Creating client component: ${componentName}.tsx`)
+        const clientTemplate = getClientTemplate(componentName, type, room)
+        await fs.writeFile(clientFilePath, clientTemplate)
       }
 
       // Success message
-      context.logger.info(`✅ Successfully created '${componentName}' live component!`);
-      context.logger.info("");
-      context.logger.info("📁 Files created:");
-      context.logger.info(`   🔥 Server: app/server/live/${componentName}Component.ts`);
+      context.logger.info(`✅ Successfully created '${componentName}' live component!`)
+      context.logger.info('')
+      context.logger.info('📁 Files created:')
+      context.logger.info(`   🔥 Server: app/server/live/${componentName}Component.ts`)
       if (!noClient) {
-        context.logger.info(`   ⚛️ Client: app/client/src/live/${componentName}.tsx`);
+        context.logger.info(`   ⚛️ Client: app/client/src/live/${componentName}.tsx`)
       }
-      
-      context.logger.info("");
-      context.logger.info("🚀 Next steps:");
-      context.logger.info("   1. Start dev server: bun run dev");
+
+      context.logger.info('')
+      context.logger.info('🚀 Next steps:')
+      context.logger.info('   1. Start dev server: bun run dev')
       if (!noClient) {
-        context.logger.info(`   2. Import component in your App.tsx:`);
-        context.logger.info(`      import { ${componentName} } from './live/${componentName}'`);
-        context.logger.info(`   3. Add component to your JSX: <${componentName} />`);
+        context.logger.info(`   2. Import component in your App.tsx:`)
+        context.logger.info(`      import { ${componentName} } from './live/${componentName}'`)
+        context.logger.info(`   3. Add component to your JSX: <${componentName} />`)
       }
-      
+
       if (room) {
-        context.logger.info(`   4. Component supports multi-user features with room: ${room}`);
+        context.logger.info(`   4. Component supports multi-user features with room: ${room}`)
       }
-      
+
       if (type !== 'basic') {
-        context.logger.info(`   5. Template type '${type}' includes specialized functionality`);
+        context.logger.info(`   5. Template type '${type}' includes specialized functionality`)
       }
 
-      context.logger.info("");
-      context.logger.info("📚 Import guide (Type Inference):");
-      context.logger.info("   # Import typed hook and type helpers:");
-      context.logger.info("   import { useTypedLiveComponent } from '@/core/client';");
-      context.logger.info("   import type { InferComponentState } from '@/core/client';");
-      context.logger.info("");
-      context.logger.info("   # Import backend component type for full inference:");
-      context.logger.info(`   import type { ${componentName}Component } from '@/server/live/${componentName}Component';`);
-      context.logger.info("");
-      context.logger.info("   # Use with automatic type inference:");
-      context.logger.info(`   const { state, call } = useTypedLiveComponent<${componentName}Component>(...);`);
-
+      context.logger.info('')
+      context.logger.info('📚 Import guide (Type Inference):')
+      context.logger.info('   # Import typed hook and type helpers:')
+      context.logger.info("   import { useTypedLiveComponent } from '@/core/client';")
+      context.logger.info("   import type { InferComponentState } from '@/core/client';")
+      context.logger.info('')
+      context.logger.info('   # Import backend component type for full inference:')
+      context.logger.info(
+        `   import type { ${componentName}Component } from '@/server/live/${componentName}Component';`,
+      )
+      context.logger.info('')
+      context.logger.info('   # Use with automatic type inference:')
+      context.logger.info(
+        `   const { state, call } = useTypedLiveComponent<${componentName}Component>(...);`,
+      )
     } catch (error) {
-      context.logger.error(`❌ Failed to create component files: ${error instanceof Error ? error.message : String(error)}`);
-      throw error;
+      context.logger.error(
+        `❌ Failed to create component files: ${error instanceof Error ? error.message : String(error)}`,
+      )
+      throw error
     }
   },
-};
+}

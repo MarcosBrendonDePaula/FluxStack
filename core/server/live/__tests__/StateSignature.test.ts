@@ -1,6 +1,6 @@
 // 🧪 StateSignature Tests
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { StateSignature } from '../StateSignature'
 
 describe('StateSignature', () => {
@@ -34,11 +34,11 @@ describe('StateSignature', () => {
       const componentId = 'test-component'
       const largeState = {
         data: 'x'.repeat(2000), // Large enough to trigger compression
-        items: Array.from({ length: 100 }, (_, i) => ({ id: i, value: `item-${i}` }))
+        items: Array.from({ length: 100 }, (_, i) => ({ id: i, value: `item-${i}` })),
       }
 
       const signedState = await stateSignature.signState(componentId, largeState, 1, {
-        compress: true
+        compress: true,
       })
 
       expect(signedState.compressed).toBe(true)
@@ -50,7 +50,7 @@ describe('StateSignature', () => {
       const sensitiveState = { password: 'secret123', apiKey: 'key-123' }
 
       const signedState = await stateSignature.signState(componentId, sensitiveState, 1, {
-        encrypt: true
+        encrypt: true,
       })
 
       expect(signedState.encrypted).toBe(true)
@@ -62,11 +62,11 @@ describe('StateSignature', () => {
       const state = { important: 'data' }
 
       const signedState = await stateSignature.signState(componentId, state, 1, {
-        backup: true
+        backup: true,
       })
 
       expect(signedState).toHaveProperty('signature')
-      
+
       // Check if backup was created
       const backups = stateSignature.getComponentBackups(componentId)
       expect(backups.length).toBe(1)
@@ -91,7 +91,7 @@ describe('StateSignature', () => {
       const state = { count: 5 }
 
       const signedState = await stateSignature.signState(componentId, state)
-      
+
       // Tamper with the signature to simulate tampering
       signedState.signature = 'tampered-signature'
 
@@ -106,9 +106,9 @@ describe('StateSignature', () => {
       const state = { count: 5 }
 
       const signedState = await stateSignature.signState(componentId, state)
-      
+
       // Make the state appear old
-      signedState.timestamp = Date.now() - (25 * 60 * 60 * 1000) // 25 hours ago
+      signedState.timestamp = Date.now() - 25 * 60 * 60 * 1000 // 25 hours ago
 
       const validation = await stateSignature.validateState(signedState)
 
@@ -121,9 +121,9 @@ describe('StateSignature', () => {
       const state = { count: 5 }
 
       const signedState = await stateSignature.signState(componentId, state)
-      
+
       // Make the state 2 hours old
-      signedState.timestamp = Date.now() - (2 * 60 * 60 * 1000)
+      signedState.timestamp = Date.now() - 2 * 60 * 60 * 1000
 
       const validation = await stateSignature.validateState(signedState, 60 * 60 * 1000) // 1 hour max age
 
@@ -147,13 +147,13 @@ describe('StateSignature', () => {
       const componentId = 'test-component'
       const originalState = {
         data: 'x'.repeat(2000),
-        items: Array.from({ length: 50 }, (_, i) => ({ id: i, value: `item-${i}` }))
+        items: Array.from({ length: 50 }, (_, i) => ({ id: i, value: `item-${i}` })),
       }
 
       const signedState = await stateSignature.signState(componentId, originalState, 1, {
-        compress: true
+        compress: true,
       })
-      
+
       const extractedData = await stateSignature.extractData(signedState)
 
       expect(extractedData).toEqual(originalState)
@@ -164,9 +164,9 @@ describe('StateSignature', () => {
       const originalState = { secret: 'confidential-data' }
 
       const signedState = await stateSignature.signState(componentId, originalState, 1, {
-        encrypt: true
+        encrypt: true,
       })
-      
+
       const extractedData = await stateSignature.extractData(signedState)
 
       expect(extractedData).toEqual(originalState)
@@ -179,7 +179,7 @@ describe('StateSignature', () => {
       stateSignature.registerMigration('1', '2', (state: any) => ({
         ...state,
         version: 2,
-        newField: 'added in v2'
+        newField: 'added in v2',
       }))
     })
 
@@ -244,20 +244,20 @@ describe('StateSignature', () => {
       const state = { data: 'test' }
 
       await stateSignature.signState(componentId, state, 1, { backup: true })
-      
+
       const backups = stateSignature.getComponentBackups(componentId)
       const backup = backups[0]
-      
+
       const isValid = stateSignature.verifyBackup(backup)
       expect(isValid).toBe(true)
     })
 
     it('should cleanup old backups', () => {
-      const componentId = 'test-component'
-      
+      const _componentId = 'test-component'
+
       // This would normally create old backups, but for testing we'll just call cleanup
       stateSignature.cleanupBackups(1000) // 1 second max age
-      
+
       // Should not throw any errors
       expect(true).toBe(true)
     })

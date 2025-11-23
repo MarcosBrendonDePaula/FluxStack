@@ -1,12 +1,12 @@
-import { useState, useCallback, useRef } from 'react'
-import { AdaptiveChunkSizer, type AdaptiveChunkConfig } from './AdaptiveChunkSizer'
+import { useCallback, useRef, useState } from 'react'
 import type {
-  FileUploadStartMessage,
   FileUploadChunkMessage,
   FileUploadCompleteMessage,
+  FileUploadCompleteResponse,
   FileUploadProgressResponse,
-  FileUploadCompleteResponse
+  FileUploadStartMessage,
 } from '@/core/types/types'
+import { type AdaptiveChunkConfig, AdaptiveChunkSizer } from './AdaptiveChunkSizer'
 
 export interface ChunkedUploadOptions {
   chunkSize?: number // Default 64KB (used as initial if adaptive is enabled)
@@ -31,14 +31,13 @@ export interface ChunkedUploadState {
 }
 
 export function useChunkedUpload(componentId: string, options: ChunkedUploadOptions = {}) {
-
   const [state, setState] = useState<ChunkedUploadState>({
     uploading: false,
     progress: 0,
     error: null,
     uploadId: null,
     bytesUploaded: 0,
-    totalBytes: 0
+    totalBytes: 0,
   })
 
   const {
@@ -50,7 +49,7 @@ export function useChunkedUpload(componentId: string, options: ChunkedUploadOpti
     onComplete,
     onError,
     adaptiveChunking = false,
-    adaptiveConfig
+    adaptiveConfig,
   } = options
 
   const abortControllerRef = useRef<AbortController | null>(null)
@@ -60,230 +59,240 @@ export function useChunkedUpload(componentId: string, options: ChunkedUploadOpti
   if (adaptiveChunking && !adaptiveSizerRef.current) {
     adaptiveSizerRef.current = new AdaptiveChunkSizer({
       initialChunkSize: chunkSize,
-      minChunkSize: 16 * 1024,  // 16KB min
+      minChunkSize: 16 * 1024, // 16KB min
       maxChunkSize: 1024 * 1024, // 1MB max
-      ...adaptiveConfig
+      ...adaptiveConfig,
     })
   }
 
   // Start chunked upload
-  const uploadFile = useCallback(async (file: File) => {
-    if (!sendMessageAndWait) {
-      const error = 'No sendMessageAndWait function provided'
-      setState(prev => ({ ...prev, error }))
-      onError?.(error)
-      return
-    }
-
-    // Validate file type (skip if allowedTypes is empty = accept all)
-    if (allowedTypes.length > 0 && !allowedTypes.includes(file.type)) {
-      const error = `Invalid file type: ${file.type}. Allowed: ${allowedTypes.join(', ')}`
-      setState(prev => ({ ...prev, error }))
-      onError?.(error)
-      return
-    }
-
-    if (file.size > maxFileSize) {
-      const error = `File too large: ${file.size} bytes. Max: ${maxFileSize} bytes`
-      setState(prev => ({ ...prev, error }))
-      onError?.(error)
-      return
-    }
-
-    try {
-      const uploadId = `upload-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`
-      
-      // Create abort controller for this upload
-      abortControllerRef.current = new AbortController()
-      
-      setState({
-        uploading: true,
-        progress: 0,
-        error: null,
-        uploadId,
-        bytesUploaded: 0,
-        totalBytes: file.size
-      })
-
-      console.log('🚀 Starting chunked upload:', {
-        uploadId,
-        filename: file.name,
-        size: file.size,
-        adaptiveChunking
-      })
-
-      // Reset adaptive sizer for new upload
-      if (adaptiveSizerRef.current) {
-        adaptiveSizerRef.current.reset()
+  const uploadFile = useCallback(
+    async (file: File) => {
+      if (!sendMessageAndWait) {
+        const error = 'No sendMessageAndWait function provided'
+        setState((prev) => ({ ...prev, error }))
+        onError?.(error)
+        return
       }
 
-      // Get initial chunk size (adaptive or fixed)
-      const initialChunkSize = adaptiveSizerRef.current?.getChunkSize() ?? chunkSize
-
-      console.log(`📦 Initial chunk size: ${initialChunkSize} bytes${adaptiveChunking ? ' (adaptive)' : ''}`)
-
-      // Start upload
-      const startMessage: FileUploadStartMessage = {
-        type: 'FILE_UPLOAD_START',
-        componentId,
-        uploadId,
-        filename: file.name,
-        fileType: file.type,
-        fileSize: file.size,
-        chunkSize,
-        requestId: `start-${uploadId}`
+      // Validate file type (skip if allowedTypes is empty = accept all)
+      if (allowedTypes.length > 0 && !allowedTypes.includes(file.type)) {
+        const error = `Invalid file type: ${file.type}. Allowed: ${allowedTypes.join(', ')}`
+        setState((prev) => ({ ...prev, error }))
+        onError?.(error)
+        return
       }
 
-      const startResponse = await sendMessageAndWait(startMessage, 10000)
-      if (!startResponse?.success) {
-        throw new Error(startResponse?.error || 'Failed to start upload')
+      if (file.size > maxFileSize) {
+        const error = `File too large: ${file.size} bytes. Max: ${maxFileSize} bytes`
+        setState((prev) => ({ ...prev, error }))
+        onError?.(error)
+        return
       }
 
-      console.log('✅ Upload started successfully')
+      try {
+        const uploadId = `upload-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`
 
-      // Read file as ArrayBuffer for dynamic chunking
-      const fileArrayBuffer = await file.arrayBuffer()
-      const fileData = new Uint8Array(fileArrayBuffer)
+        // Create abort controller for this upload
+        abortControllerRef.current = new AbortController()
 
-      let offset = 0
-      let chunkIndex = 0
-      const estimatedTotalChunks = Math.ceil(file.size / initialChunkSize)
+        setState({
+          uploading: true,
+          progress: 0,
+          error: null,
+          uploadId,
+          bytesUploaded: 0,
+          totalBytes: file.size,
+        })
 
-      // Send chunks dynamically with adaptive sizing
-      while (offset < fileData.length) {
-        if (abortControllerRef.current?.signal.aborted) {
-          throw new Error('Upload cancelled')
+        console.log('🚀 Starting chunked upload:', {
+          uploadId,
+          filename: file.name,
+          size: file.size,
+          adaptiveChunking,
+        })
+
+        // Reset adaptive sizer for new upload
+        if (adaptiveSizerRef.current) {
+          adaptiveSizerRef.current.reset()
         }
 
-        // Get current chunk size (adaptive or fixed)
-        const currentChunkSize = adaptiveSizerRef.current?.getChunkSize() ?? chunkSize
-        const chunkEnd = Math.min(offset + currentChunkSize, fileData.length)
-        const chunkBytes = fileData.slice(offset, chunkEnd)
+        // Get initial chunk size (adaptive or fixed)
+        const initialChunkSize = adaptiveSizerRef.current?.getChunkSize() ?? chunkSize
 
-        // Convert chunk to base64
-        let binary = ''
-        for (let j = 0; j < chunkBytes.length; j++) {
-          binary += String.fromCharCode(chunkBytes[j])
-        }
-        const base64Chunk = btoa(binary)
+        console.log(
+          `📦 Initial chunk size: ${initialChunkSize} bytes${adaptiveChunking ? ' (adaptive)' : ''}`,
+        )
 
-        // Record chunk start time for adaptive sizing
-        const chunkStartTime = adaptiveSizerRef.current?.recordChunkStart(chunkIndex) ?? 0
-
-        const chunkMessage: FileUploadChunkMessage = {
-          type: 'FILE_UPLOAD_CHUNK',
+        // Start upload
+        const startMessage: FileUploadStartMessage = {
+          type: 'FILE_UPLOAD_START',
           componentId,
           uploadId,
-          chunkIndex,
-          totalChunks: estimatedTotalChunks, // Approximate, will be recalculated
-          data: base64Chunk,
-          requestId: `chunk-${uploadId}-${chunkIndex}`
+          filename: file.name,
+          fileType: file.type,
+          fileSize: file.size,
+          chunkSize,
+          requestId: `start-${uploadId}`,
         }
 
-        console.log(`📤 Sending chunk ${chunkIndex + 1} (size: ${chunkBytes.length} bytes)`)
-
-        try {
-          // Send chunk and wait for progress response
-          const progressResponse = await sendMessageAndWait(chunkMessage, 10000) as FileUploadProgressResponse
-
-          if (progressResponse) {
-            const { progress, bytesUploaded } = progressResponse
-            setState(prev => ({ ...prev, progress, bytesUploaded }))
-            onProgress?.(progress, bytesUploaded, file.size)
-          }
-
-          // Record successful chunk upload for adaptive sizing
-          if (adaptiveSizerRef.current) {
-            adaptiveSizerRef.current.recordChunkComplete(
-              chunkIndex,
-              chunkBytes.length,
-              chunkStartTime,
-              true
-            )
-          }
-        } catch (error) {
-          // Record failed chunk for adaptive sizing
-          if (adaptiveSizerRef.current) {
-            adaptiveSizerRef.current.recordChunkComplete(
-              chunkIndex,
-              chunkBytes.length,
-              chunkStartTime,
-              false
-            )
-          }
-          throw error
+        const startResponse = await sendMessageAndWait(startMessage, 10000)
+        if (!startResponse?.success) {
+          throw new Error(startResponse?.error || 'Failed to start upload')
         }
 
-        offset += chunkBytes.length
-        chunkIndex++
+        console.log('✅ Upload started successfully')
 
-        // Small delay to prevent overwhelming the server (only for fixed chunking)
-        if (!adaptiveChunking) {
-          await new Promise(resolve => setTimeout(resolve, 10))
+        // Read file as ArrayBuffer for dynamic chunking
+        const fileArrayBuffer = await file.arrayBuffer()
+        const fileData = new Uint8Array(fileArrayBuffer)
+
+        let offset = 0
+        let chunkIndex = 0
+        const estimatedTotalChunks = Math.ceil(file.size / initialChunkSize)
+
+        // Send chunks dynamically with adaptive sizing
+        while (offset < fileData.length) {
+          if (abortControllerRef.current?.signal.aborted) {
+            throw new Error('Upload cancelled')
+          }
+
+          // Get current chunk size (adaptive or fixed)
+          const currentChunkSize = adaptiveSizerRef.current?.getChunkSize() ?? chunkSize
+          const chunkEnd = Math.min(offset + currentChunkSize, fileData.length)
+          const chunkBytes = fileData.slice(offset, chunkEnd)
+
+          // Convert chunk to base64
+          let binary = ''
+          for (let j = 0; j < chunkBytes.length; j++) {
+            binary += String.fromCharCode(chunkBytes[j])
+          }
+          const base64Chunk = btoa(binary)
+
+          // Record chunk start time for adaptive sizing
+          const chunkStartTime = adaptiveSizerRef.current?.recordChunkStart(chunkIndex) ?? 0
+
+          const chunkMessage: FileUploadChunkMessage = {
+            type: 'FILE_UPLOAD_CHUNK',
+            componentId,
+            uploadId,
+            chunkIndex,
+            totalChunks: estimatedTotalChunks, // Approximate, will be recalculated
+            data: base64Chunk,
+            requestId: `chunk-${uploadId}-${chunkIndex}`,
+          }
+
+          console.log(`📤 Sending chunk ${chunkIndex + 1} (size: ${chunkBytes.length} bytes)`)
+
+          try {
+            // Send chunk and wait for progress response
+            const progressResponse = (await sendMessageAndWait(
+              chunkMessage,
+              10000,
+            )) as FileUploadProgressResponse
+
+            if (progressResponse) {
+              const { progress, bytesUploaded } = progressResponse
+              setState((prev) => ({ ...prev, progress, bytesUploaded }))
+              onProgress?.(progress, bytesUploaded, file.size)
+            }
+
+            // Record successful chunk upload for adaptive sizing
+            if (adaptiveSizerRef.current) {
+              adaptiveSizerRef.current.recordChunkComplete(
+                chunkIndex,
+                chunkBytes.length,
+                chunkStartTime,
+                true,
+              )
+            }
+          } catch (error) {
+            // Record failed chunk for adaptive sizing
+            if (adaptiveSizerRef.current) {
+              adaptiveSizerRef.current.recordChunkComplete(
+                chunkIndex,
+                chunkBytes.length,
+                chunkStartTime,
+                false,
+              )
+            }
+            throw error
+          }
+
+          offset += chunkBytes.length
+          chunkIndex++
+
+          // Small delay to prevent overwhelming the server (only for fixed chunking)
+          if (!adaptiveChunking) {
+            await new Promise((resolve) => setTimeout(resolve, 10))
+          }
         }
-      }
 
-      // Log final adaptive stats
-      if (adaptiveSizerRef.current) {
-        const stats = adaptiveSizerRef.current.getStats()
-        console.log('📊 Final Adaptive Chunking Stats:', stats)
-      }
+        // Log final adaptive stats
+        if (adaptiveSizerRef.current) {
+          const stats = adaptiveSizerRef.current.getStats()
+          console.log('📊 Final Adaptive Chunking Stats:', stats)
+        }
 
-      // Complete upload
-      const completeMessage: FileUploadCompleteMessage = {
-        type: 'FILE_UPLOAD_COMPLETE',
-        componentId,
-        uploadId,
-        requestId: `complete-${uploadId}`
-      }
+        // Complete upload
+        const completeMessage: FileUploadCompleteMessage = {
+          type: 'FILE_UPLOAD_COMPLETE',
+          componentId,
+          uploadId,
+          requestId: `complete-${uploadId}`,
+        }
 
-      console.log('🏁 Completing upload...')
+        console.log('🏁 Completing upload...')
 
-      const completeResponse = await sendMessageAndWait(completeMessage, 10000) as FileUploadCompleteResponse
+        const completeResponse = (await sendMessageAndWait(
+          completeMessage,
+          10000,
+        )) as FileUploadCompleteResponse
 
-      if (completeResponse?.success) {
-        setState(prev => ({ 
-          ...prev, 
-          uploading: false, 
-          progress: 100,
-          bytesUploaded: file.size
+        if (completeResponse?.success) {
+          setState((prev) => ({
+            ...prev,
+            uploading: false,
+            progress: 100,
+            bytesUploaded: file.size,
+          }))
+
+          console.log('🎉 Upload completed successfully:', completeResponse.fileUrl)
+          onComplete?.(completeResponse)
+        } else {
+          throw new Error(completeResponse?.error || 'Upload completion failed')
+        }
+      } catch (error: any) {
+        console.error('❌ Chunked upload failed:', error.message)
+        setState((prev) => ({
+          ...prev,
+          uploading: false,
+          error: error.message,
         }))
-        
-        console.log('🎉 Upload completed successfully:', completeResponse.fileUrl)
-        onComplete?.(completeResponse)
-      } else {
-        throw new Error(completeResponse?.error || 'Upload completion failed')
+        onError?.(error.message)
       }
-
-    } catch (error: any) {
-      console.error('❌ Chunked upload failed:', error.message)
-      setState(prev => ({ 
-        ...prev, 
-        uploading: false, 
-        error: error.message 
-      }))
-      onError?.(error.message)
-    }
-  }, [
-    componentId,
-    allowedTypes,
-    maxFileSize,
-    chunkSize,
-    sendMessageAndWait,
-    onProgress,
-    onComplete,
-    onError,
-    adaptiveChunking
-  ])
+    },
+    [
+      componentId,
+      allowedTypes,
+      maxFileSize,
+      chunkSize,
+      sendMessageAndWait,
+      onProgress,
+      onComplete,
+      onError,
+      adaptiveChunking,
+    ],
+  )
 
   // Cancel upload
   const cancelUpload = useCallback(() => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort()
-      setState(prev => ({ 
-        ...prev, 
-        uploading: false, 
-        error: 'Upload cancelled' 
+      setState((prev) => ({
+        ...prev,
+        uploading: false,
+        error: 'Upload cancelled',
       }))
     }
   }, [])
@@ -296,7 +305,7 @@ export function useChunkedUpload(componentId: string, options: ChunkedUploadOpti
       error: null,
       uploadId: null,
       bytesUploaded: 0,
-      totalBytes: 0
+      totalBytes: 0,
     })
   }, [])
 
@@ -304,6 +313,6 @@ export function useChunkedUpload(componentId: string, options: ChunkedUploadOpti
     ...state,
     uploadFile,
     cancelUpload,
-    reset
+    reset,
   }
 }

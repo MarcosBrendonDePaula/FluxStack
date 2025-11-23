@@ -3,13 +3,12 @@
  * FluxStack state utilities exports
  */
 
-export { 
-  createFluxStore, 
-  createUserStore 
+export type {
+  BaseUser,
+  BaseUserStore,
+  StoreOptions,
 } from './createStore'
-
-export type { 
-  StoreOptions, 
-  BaseUser, 
-  BaseUserStore 
+export {
+  createFluxStore,
+  createUserStore,
 } from './createStore'

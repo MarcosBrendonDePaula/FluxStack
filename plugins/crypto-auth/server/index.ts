@@ -2,21 +2,19 @@
  * Exportações do servidor de autenticação
  */
 
-export { CryptoAuthService } from './CryptoAuthService'
-export type { AuthResult, CryptoAuthConfig } from './CryptoAuthService'
-
-export { AuthMiddleware } from './AuthMiddleware'
 export type { AuthMiddlewareConfig, AuthMiddlewareResult } from './AuthMiddleware'
-
+export { AuthMiddleware } from './AuthMiddleware'
+export type { AuthResult, CryptoAuthConfig } from './CryptoAuthService'
+export { CryptoAuthService } from './CryptoAuthService'
+export type { CryptoAuthMiddlewareOptions, CryptoAuthUser } from './middlewares'
 // Middlewares Elysia
 export {
-  cryptoAuthRequired,
   cryptoAuthAdmin,
-  cryptoAuthPermissions,
   cryptoAuthOptional,
+  cryptoAuthPermissions,
+  cryptoAuthRequired,
   getCryptoAuthUser,
-  isCryptoAuthAuthenticated,
+  hasCryptoAuthPermission,
   isCryptoAuthAdmin,
-  hasCryptoAuthPermission
+  isCryptoAuthAuthenticated,
 } from './middlewares'
-export type { CryptoAuthUser, CryptoAuthMiddlewareOptions } from './middlewares'

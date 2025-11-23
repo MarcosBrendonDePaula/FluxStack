@@ -3,7 +3,7 @@
  * Declarative monitoring, metrics and profiling configuration
  */
 
-import { defineConfig, defineNestedConfig, config } from '@/core/utils/config-schema'
+import { config, defineNestedConfig } from '@/core/utils/config-schema'
 import { helpers } from '@/core/utils/env'
 
 /**
@@ -21,7 +21,7 @@ const metricsSchema = {
         return 'Metrics interval must be at least 1000ms'
       }
       return true
-    }
+    },
   },
 
   httpMetrics: config.boolean('HTTP_METRICS', true),
@@ -42,7 +42,7 @@ const metricsSchema = {
   // Metric storage
   retentionPeriod: config.number('METRICS_RETENTION_PERIOD', 3600000), // 1 hour in ms
 
-  maxDataPoints: config.number('METRICS_MAX_DATA_POINTS', 1000)
+  maxDataPoints: config.number('METRICS_MAX_DATA_POINTS', 1000),
 } as const
 
 /**
@@ -60,7 +60,7 @@ const profilingSchema = {
         return 'Sample rate must be between 0 and 1'
       }
       return true
-    }
+    },
   },
 
   memoryProfiling: config.boolean('MEMORY_PROFILING', false),
@@ -72,7 +72,7 @@ const profilingSchema = {
   // Profiling output
   outputDir: config.string('PROFILING_OUTPUT_DIR', 'profiling'),
 
-  maxProfiles: config.number('PROFILING_MAX_PROFILES', 10)
+  maxProfiles: config.number('PROFILING_MAX_PROFILES', 10),
 } as const
 
 /**
@@ -92,7 +92,7 @@ const monitoringSchema = {
   // Alerting
   enableAlerts: config.boolean('ENABLE_ALERTS', false),
 
-  alertWebhook: config.string('ALERT_WEBHOOK')
+  alertWebhook: config.string('ALERT_WEBHOOK'),
 } as const
 
 /**
@@ -101,7 +101,7 @@ const monitoringSchema = {
 export const monitoringConfig = defineNestedConfig({
   monitoring: monitoringSchema,
   metrics: metricsSchema,
-  profiling: profilingSchema
+  profiling: profilingSchema,
 })
 
 // Export types

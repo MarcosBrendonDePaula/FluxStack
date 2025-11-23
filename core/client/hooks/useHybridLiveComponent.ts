@@ -1,18 +1,17 @@
 // 🔥 Hybrid Live Component Hook v2 - Uses Single WebSocket Connection
 // Refactored to use LiveComponentsProvider context instead of creating its own connection
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
+import type {
+  HybridComponentOptions,
+  HybridState,
+  WebSocketMessage,
+  WebSocketResponse,
+} from '@/core/types/types'
 import { useLiveComponents } from '../LiveComponentsProvider'
 import { StateValidator } from './state-validator'
-import type {
-  HybridState,
-  StateConflict,
-  HybridComponentOptions,
-  WebSocketMessage,
-  WebSocketResponse
-} from '@/core/types/types'
 
 // Client-side state persistence for reconnection
 interface PersistedComponentState {
@@ -30,14 +29,19 @@ const STATE_MAX_AGE = 24 * 60 * 60 * 1000 // 24 hours
 const globalRehydrationAttempts = new Map<string, Promise<boolean>>()
 
 // Utility functions for state persistence
-const persistComponentState = (componentName: string, signedState: any, room?: string, userId?: string) => {
+const persistComponentState = (
+  componentName: string,
+  signedState: any,
+  room?: string,
+  userId?: string,
+) => {
   try {
     const persistedState: PersistedComponentState = {
       componentName,
       signedState,
       room,
       userId,
-      lastUpdate: Date.now()
+      lastUpdate: Date.now(),
     }
 
     const key = `${STORAGE_KEY_PREFIX}${componentName}`
@@ -98,7 +102,14 @@ export interface UseHybridLiveComponentReturn<T> {
   componentId: string | null
 
   // Connection status with all possible states
-  status: 'synced' | 'disconnected' | 'connecting' | 'reconnecting' | 'loading' | 'mounting' | 'error'
+  status:
+    | 'synced'
+    | 'disconnected'
+    | 'connecting'
+    | 'reconnecting'
+    | 'loading'
+    | 'mounting'
+    | 'error'
 
   // Actions (all go to server)
   call: (action: string, payload?: any) => Promise<void>
@@ -107,7 +118,10 @@ export interface UseHybridLiveComponentReturn<T> {
   unmount: () => Promise<void>
 
   // Helper for temporary input state
-  useControlledField: <K extends keyof T>(field: K, action?: string) => {
+  useControlledField: <K extends keyof T>(
+    field: K,
+    action?: string,
+  ) => {
     value: T[K]
     setValue: (value: T[K]) => void
     commit: (value?: T[K]) => Promise<void>
@@ -120,23 +134,23 @@ export interface UseHybridLiveComponentReturn<T> {
  */
 function createHybridStore<T>(initialState: T) {
   return create<HybridStore<T>>()(
-    subscribeWithSelector((set, get) => ({
+    subscribeWithSelector((set, _get) => ({
       hybridState: {
         data: initialState,
         validation: StateValidator.createValidation(initialState, 'mount'),
         conflicts: [],
-        status: 'disconnected' as const
+        status: 'disconnected' as const,
       },
 
       updateState: (newState: T, source: 'server' | 'mount' = 'server') => {
-        set((state) => {
+        set((_state) => {
           return {
             hybridState: {
               data: newState,
               validation: StateValidator.createValidation(newState, source),
               conflicts: [],
-              status: 'synced'
-            }
+              status: 'synced',
+            },
           }
         })
       },
@@ -147,18 +161,18 @@ function createHybridStore<T>(initialState: T) {
             data: initialState,
             validation: StateValidator.createValidation(initialState, 'mount'),
             conflicts: [],
-            status: 'disconnected'
-          }
+            status: 'disconnected',
+          },
         })
-      }
-    }))
+      },
+    })),
   )
 }
 
 export function useHybridLiveComponent<T = any>(
   componentName: string,
   initialState: T,
-  options: HybridComponentOptions = {}
+  options: HybridComponentOptions = {},
 ): UseHybridLiveComponentReturn<T> {
   const {
     fallbackToLocal = true,
@@ -171,7 +185,7 @@ export function useHybridLiveComponent<T = any>(
     onDisconnect,
     onRehydrate,
     onError,
-    onStateChange
+    onStateChange,
   } = options
 
   // Use Live Components context (singleton WebSocket connection)
@@ -180,11 +194,13 @@ export function useHybridLiveComponent<T = any>(
     sendMessage: contextSendMessage,
     sendMessageAndWait: contextSendMessageAndWait,
     registerComponent,
-    unregisterComponent
+    unregisterComponent: _unregisterComponent,
   } = useLiveComponents()
 
   // Create unique instance ID
-  const instanceId = useRef(`${componentName}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`)
+  const instanceId = useRef(
+    `${componentName}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+  )
   const logPrefix = `${instanceId.current}${room ? `[${room}]` : ''}`
 
   // Create Zustand store instance (one per component instance)
@@ -201,20 +217,23 @@ export function useHybridLiveComponent<T = any>(
 
   // Component state
   const [componentId, setComponentId] = useState<string | null>(null)
-  const [lastServerState, setLastServerState] = useState<T | null>(null)
+  const [_lastServerState, setLastServerState] = useState<T | null>(null)
   const [mountLoading, setMountLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [rehydrating, setRehydrating] = useState(false)
-  const [currentSignedState, setCurrentSignedState] = useState<any>(null)
+  const [_currentSignedState, setCurrentSignedState] = useState<any>(null)
   const mountedRef = useRef(false)
   const mountingRef = useRef(false)
   const lastKnownComponentIdRef = useRef<string | null>(null)
 
-  const log = useCallback((message: string, data?: any) => {
-    if (debug) {
-      console.log(`[${logPrefix}] ${message}`, data)
-    }
-  }, [debug, logPrefix])
+  const log = useCallback(
+    (message: string, data?: any) => {
+      if (debug) {
+        console.log(`[${logPrefix}] ${message}`, data)
+      }
+    },
+    [debug, logPrefix],
+  )
 
   // Prevent multiple simultaneous re-hydration attempts
   const rehydrationAttemptRef = useRef<Promise<boolean> | null>(null)
@@ -302,7 +321,7 @@ export function useHybridLiveComponent<T = any>(
           }
           break
 
-        case 'ERROR':
+        case 'ERROR': {
           const errorMsg = message.payload?.error || 'Unknown error'
           if (errorMsg.includes('COMPONENT_REHYDRATION_REQUIRED')) {
             log('🔄 Component re-hydration required from ERROR')
@@ -315,6 +334,7 @@ export function useHybridLiveComponent<T = any>(
             onError?.(errorMsg)
           }
           break
+        }
 
         case 'COMPONENT_PONG':
           log('🏓 Received pong from server')
@@ -327,7 +347,21 @@ export function useHybridLiveComponent<T = any>(
       log('🗑️ Unregistering component from WebSocket context')
       unregister()
     }
-  }, [componentId, registerComponent, unregisterComponent, log, updateState, componentName, room, userId, rehydrating, stateData, onStateChange, onRehydrate, onError])
+  }, [
+    componentId,
+    registerComponent,
+    log,
+    updateState,
+    componentName,
+    room,
+    userId,
+    rehydrating,
+    stateData,
+    onStateChange,
+    onRehydrate,
+    onError,
+    attemptRehydration,
+  ])
 
   // Automatic re-hydration on reconnection
   const attemptRehydration = useCallback(async () => {
@@ -356,7 +390,7 @@ export function useHybridLiveComponent<T = any>(
     if (stateAge > ONE_HOUR) {
       log('⏰ Persisted state too old, clearing and skipping rehydration', {
         age: stateAge,
-        ageMinutes: Math.floor(stateAge / 60000)
+        ageMinutes: Math.floor(stateAge / 60000),
       })
       clearPersistedState(componentName)
       return false
@@ -369,16 +403,19 @@ export function useHybridLiveComponent<T = any>(
       try {
         const tempComponentId = lastKnownComponentIdRef.current || instanceId.current
 
-        const response = await contextSendMessageAndWait({
-          type: 'COMPONENT_REHYDRATE',
-          componentId: tempComponentId,
-          payload: {
-            componentName,
-            signedState: persistedState.signedState,
-            room: persistedState.room,
-            userId: persistedState.userId
-          }
-        }, 2000) // Reduced from 10s to 2s - fast fail for invalid states
+        const response = await contextSendMessageAndWait(
+          {
+            type: 'COMPONENT_REHYDRATE',
+            componentId: tempComponentId,
+            payload: {
+              componentName,
+              signedState: persistedState.signedState,
+              room: persistedState.room,
+              userId: persistedState.userId,
+            },
+          },
+          2000,
+        ) // Reduced from 10s to 2s - fast fail for invalid states
 
         if (response?.success && response?.result?.newComponentId) {
           setComponentId(response.result.newComponentId)
@@ -399,7 +436,6 @@ export function useHybridLiveComponent<T = any>(
           onError?.(errorMsg)
           return false
         }
-
       } catch (error: any) {
         clearPersistedState(componentName)
         setError(error.message)
@@ -435,8 +471,8 @@ export function useHybridLiveComponent<T = any>(
           component: componentName,
           props: initialState,
           room,
-          userId
-        }
+          userId,
+        },
       }
 
       const response = await contextSendMessageAndWait(message, 5000) // 5s for mount is enough
@@ -482,7 +518,19 @@ export function useHybridLiveComponent<T = any>(
       setMountLoading(false)
       mountingRef.current = false
     }
-  }, [connected, componentName, initialState, room, userId, contextSendMessageAndWait, log, fallbackToLocal, updateState, onMount, onError])
+  }, [
+    connected,
+    componentName,
+    initialState,
+    room,
+    userId,
+    contextSendMessageAndWait,
+    log,
+    fallbackToLocal,
+    updateState,
+    onMount,
+    onError,
+  ])
 
   // Unmount component
   const unmount = useCallback(async () => {
@@ -493,7 +541,7 @@ export function useHybridLiveComponent<T = any>(
     try {
       await contextSendMessage({
         type: 'COMPONENT_UNMOUNT',
-        componentId
+        componentId,
       })
 
       setComponentId(null)
@@ -506,85 +554,100 @@ export function useHybridLiveComponent<T = any>(
   }, [componentId, connected, contextSendMessage, log])
 
   // Server-only actions
-  const call = useCallback(async (action: string, payload?: any): Promise<void> => {
-    // Use ref as fallback for componentId (handles timing issues after rehydration)
-    const currentComponentId = componentId || lastKnownComponentIdRef.current
-    if (!currentComponentId || !connected) {
-      throw new Error('Component not mounted or WebSocket not connected')
-    }
-
-    try {
-      const message: WebSocketMessage = {
-        type: 'CALL_ACTION',
-        componentId: currentComponentId,
-        action,
-        payload
+  const call = useCallback(
+    async (action: string, payload?: any): Promise<void> => {
+      // Use ref as fallback for componentId (handles timing issues after rehydration)
+      const currentComponentId = componentId || lastKnownComponentIdRef.current
+      if (!currentComponentId || !connected) {
+        throw new Error('Component not mounted or WebSocket not connected')
       }
 
-      const response = await contextSendMessageAndWait(message, 5000)
-
-      if (!response.success && response.error?.includes?.('COMPONENT_REHYDRATION_REQUIRED')) {
-        const rehydrated = await attemptRehydration()
-        if (rehydrated) {
-          // Use updated ref for retry
-          const retryComponentId = lastKnownComponentIdRef.current || currentComponentId
-          const retryMessage: WebSocketMessage = {
-            type: 'CALL_ACTION',
-            componentId: retryComponentId,
-            action,
-            payload
-          }
-          await contextSendMessageAndWait(retryMessage, 5000)
-        } else {
-          throw new Error('Component lost connection and could not be recovered')
+      try {
+        const message: WebSocketMessage = {
+          type: 'CALL_ACTION',
+          componentId: currentComponentId,
+          action,
+          payload,
         }
-      } else if (!response.success) {
-        throw new Error(response.error || 'Action failed')
+
+        const response = await contextSendMessageAndWait(message, 5000)
+
+        if (!response.success && response.error?.includes?.('COMPONENT_REHYDRATION_REQUIRED')) {
+          const rehydrated = await attemptRehydration()
+          if (rehydrated) {
+            // Use updated ref for retry
+            const retryComponentId = lastKnownComponentIdRef.current || currentComponentId
+            const retryMessage: WebSocketMessage = {
+              type: 'CALL_ACTION',
+              componentId: retryComponentId,
+              action,
+              payload,
+            }
+            await contextSendMessageAndWait(retryMessage, 5000)
+          } else {
+            throw new Error('Component lost connection and could not be recovered')
+          }
+        } else if (!response.success) {
+          throw new Error(response.error || 'Action failed')
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Action failed'
+        setError(errorMessage)
+        throw err
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Action failed'
-      setError(errorMessage)
-      throw err
-    }
-  }, [componentId, connected, contextSendMessageAndWait, attemptRehydration])
+    },
+    [componentId, connected, contextSendMessageAndWait, attemptRehydration],
+  )
 
   // Call action and wait for specific return value
-  const callAndWait = useCallback(async (action: string, payload?: any, timeout?: number): Promise<any> => {
-    // Use ref as fallback for componentId (handles timing issues after rehydration)
-    const currentComponentId = componentId || lastKnownComponentIdRef.current
-    if (!currentComponentId || !connected) {
-      throw new Error('Component not mounted or WebSocket not connected')
-    }
-
-    try {
-      const message: WebSocketMessage = {
-        type: 'CALL_ACTION',
-        componentId: currentComponentId,
-        action,
-        payload
+  const callAndWait = useCallback(
+    async (action: string, payload?: any, timeout?: number): Promise<any> => {
+      // Use ref as fallback for componentId (handles timing issues after rehydration)
+      const currentComponentId = componentId || lastKnownComponentIdRef.current
+      if (!currentComponentId || !connected) {
+        throw new Error('Component not mounted or WebSocket not connected')
       }
 
-      const result = await contextSendMessageAndWait(message, timeout)
-      return result
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Action failed'
-      setError(errorMessage)
-      throw err
-    }
-  }, [componentId, connected, contextSendMessageAndWait])
+      try {
+        const message: WebSocketMessage = {
+          type: 'CALL_ACTION',
+          componentId: currentComponentId,
+          action,
+          payload,
+        }
+
+        const result = await contextSendMessageAndWait(message, timeout)
+        return result
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Action failed'
+        setError(errorMessage)
+        throw err
+      }
+    },
+    [componentId, connected, contextSendMessageAndWait],
+  )
 
   // Auto-mount with re-hydration attempt
   useEffect(() => {
-    if (connected && autoMount && !mountedRef.current && !componentId && !mountingRef.current && !rehydrating) {
-      attemptRehydration().then(rehydrated => {
-        if (!rehydrated && !mountedRef.current && !componentId && !mountingRef.current) {
-          mount()
-        }
-      }).catch(() => {
-        if (!mountedRef.current && !componentId && !mountingRef.current) {
-          mount()
-        }
-      })
+    if (
+      connected &&
+      autoMount &&
+      !mountedRef.current &&
+      !componentId &&
+      !mountingRef.current &&
+      !rehydrating
+    ) {
+      attemptRehydration()
+        .then((rehydrated) => {
+          if (!rehydrated && !mountedRef.current && !componentId && !mountingRef.current) {
+            mount()
+          }
+        })
+        .catch(() => {
+          if (!mountedRef.current && !componentId && !mountingRef.current) {
+            mount()
+          }
+        })
     }
   }, [connected, autoMount, mount, componentId, rehydrating, attemptRehydration])
 
@@ -621,7 +684,7 @@ export function useHybridLiveComponent<T = any>(
     }
 
     prevConnectedRef.current = connected
-  }, [connected, mount, componentId, attemptRehydration, componentName, rehydrating, onDisconnect, onConnect])
+  }, [connected, mount, attemptRehydration, componentName, rehydrating, onDisconnect, onConnect])
 
   // Unmount on cleanup
   useEffect(() => {
@@ -633,28 +696,31 @@ export function useHybridLiveComponent<T = any>(
   }, [unmount])
 
   // Helper for controlled inputs
-  const useControlledField = useCallback(<K extends keyof T>(
-    field: K,
-    action: string = 'updateField'
-  ) => {
-    const [tempValue, setTempValue] = useState<T[K]>(stateData[field])
+  const useControlledField = useCallback(
+    <K extends keyof T>(field: K, action: string = 'updateField') => {
+      const [tempValue, setTempValue] = useState<T[K]>(stateData[field])
 
-    useEffect(() => {
-      setTempValue(stateData[field])
-    }, [stateData[field]])
+      useEffect(() => {
+        setTempValue(stateData[field])
+      }, [field])
 
-    const commitValue = useCallback(async (value?: T[K]) => {
-      const valueToCommit = value !== undefined ? value : tempValue
-      await call(action, { field, value: valueToCommit })
-    }, [tempValue, field, action])
+      const commitValue = useCallback(
+        async (value?: T[K]) => {
+          const valueToCommit = value !== undefined ? value : tempValue
+          await call(action, { field, value: valueToCommit })
+        },
+        [tempValue, field, action],
+      )
 
-    return {
-      value: tempValue,
-      setValue: setTempValue,
-      commit: commitValue,
-      isDirty: JSON.stringify(tempValue) !== JSON.stringify(stateData[field])
-    }
-  }, [stateData, call])
+      return {
+        value: tempValue,
+        setValue: setTempValue,
+        commit: commitValue,
+        isDirty: JSON.stringify(tempValue) !== JSON.stringify(stateData[field]),
+      }
+    },
+    [stateData, call],
+  )
 
   // Calculate status
   const getStatus = () => {
@@ -680,6 +746,6 @@ export function useHybridLiveComponent<T = any>(
     callAndWait,
     mount,
     unmount,
-    useControlledField
+    useControlledField,
   }
 }

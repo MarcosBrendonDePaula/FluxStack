@@ -1,7 +1,7 @@
 // 🔌 FluxStack Enhanced WebSocket Connection Manager
 // Advanced connection management with pooling, load balancing, and health monitoring
 
-import { EventEmitter } from 'events'
+import { EventEmitter } from 'node:events'
 
 export interface ConnectionConfig {
   maxConnections: number
@@ -66,7 +66,7 @@ export class WebSocketConnectionManager extends EventEmitter {
 
   constructor(config?: Partial<ConnectionConfig>) {
     super()
-    
+
     this.config = {
       maxConnections: 10000,
       connectionTimeout: 30000,
@@ -79,9 +79,9 @@ export class WebSocketConnectionManager extends EventEmitter {
       healthCheckInterval: 60000,
       messageQueueSize: 1000,
       offlineQueueEnabled: true,
-      ...config
+      ...config,
     }
-    
+
     this.setupHealthMonitoring()
     this.setupHeartbeat()
   }
@@ -105,7 +105,7 @@ export class WebSocketConnectionManager extends EventEmitter {
       latency: 0,
       status: 'connected',
       errorCount: 0,
-      reconnectCount: 0
+      reconnectCount: 0,
     }
 
     this.connections.set(connectionId, ws)
@@ -148,7 +148,7 @@ export class WebSocketConnectionManager extends EventEmitter {
       metrics.messagesReceived++
       metrics.lastActivity = new Date()
       metrics.bytesTransferred += Buffer.byteLength(data)
-      
+
       this.emit('messageReceived', { connectionId, data })
     })
 
@@ -183,7 +183,7 @@ export class WebSocketConnectionManager extends EventEmitter {
     if (!this.connectionPools.has(poolId)) {
       this.connectionPools.set(poolId, new Set())
     }
-    
+
     this.connectionPools.get(poolId)!.add(connectionId)
     console.log(`🏊 Connection ${connectionId} added to pool ${poolId}`)
   }
@@ -205,9 +205,9 @@ export class WebSocketConnectionManager extends EventEmitter {
    * Send message with load balancing and queuing
    */
   async sendMessage(
-    message: any, 
+    message: any,
     target?: { connectionId?: string; poolId?: string },
-    options?: { priority?: number; maxRetries?: number; queueIfOffline?: boolean }
+    options?: { priority?: number; maxRetries?: number; queueIfOffline?: boolean },
   ): Promise<boolean> {
     const { priority = 1, maxRetries = 3, queueIfOffline = true } = options || {}
 
@@ -230,9 +230,9 @@ export class WebSocketConnectionManager extends EventEmitter {
       const success = await this.sendToConnection(connectionId, message, {
         priority,
         maxRetries,
-        queueIfOffline
+        queueIfOffline,
       })
-      
+
       if (success) successCount++
     }
 
@@ -243,9 +243,9 @@ export class WebSocketConnectionManager extends EventEmitter {
    * Send message to specific connection
    */
   private async sendToConnection(
-    connectionId: string, 
+    connectionId: string,
     message: any,
-    options: { priority: number; maxRetries: number; queueIfOffline: boolean }
+    options: { priority: number; maxRetries: number; queueIfOffline: boolean },
   ): Promise<boolean> {
     const ws = this.connections.get(connectionId)
     const metrics = this.connectionMetrics.get(connectionId)
@@ -255,7 +255,8 @@ export class WebSocketConnectionManager extends EventEmitter {
     }
 
     // Check if connection is ready
-    if (ws.readyState !== 1) { // WebSocket.OPEN
+    if (ws.readyState !== 1) {
+      // WebSocket.OPEN
       if (options.queueIfOffline && this.config.offlineQueueEnabled) {
         return this.queueMessage(connectionId, message, options)
       }
@@ -265,7 +266,7 @@ export class WebSocketConnectionManager extends EventEmitter {
     try {
       const serializedMessage = JSON.stringify(message)
       ws.send(serializedMessage)
-      
+
       // Update metrics
       metrics.messagesSent++
       metrics.lastActivity = new Date()
@@ -274,12 +275,12 @@ export class WebSocketConnectionManager extends EventEmitter {
       return true
     } catch (error) {
       console.error(`❌ Failed to send message to ${connectionId}:`, error)
-      
+
       // Queue message for retry if enabled
       if (options.queueIfOffline) {
         return this.queueMessage(connectionId, message, options)
       }
-      
+
       return false
     }
   }
@@ -288,9 +289,9 @@ export class WebSocketConnectionManager extends EventEmitter {
    * Queue message for offline delivery
    */
   private queueMessage(
-    connectionId: string, 
+    connectionId: string,
     message: any,
-    options: { priority: number; maxRetries: number }
+    options: { priority: number; maxRetries: number },
   ): boolean {
     const queue = this.messageQueues.get(connectionId)
     if (!queue) return false
@@ -298,7 +299,7 @@ export class WebSocketConnectionManager extends EventEmitter {
     // Check queue size limit
     if (queue.length >= this.config.messageQueueSize) {
       // Remove oldest low-priority message
-      const lowPriorityIndex = queue.findIndex(msg => msg.priority <= options.priority)
+      const lowPriorityIndex = queue.findIndex((msg) => msg.priority <= options.priority)
       if (lowPriorityIndex !== -1) {
         queue.splice(lowPriorityIndex, 1)
       } else {
@@ -312,11 +313,11 @@ export class WebSocketConnectionManager extends EventEmitter {
       timestamp: Date.now(),
       priority: options.priority,
       retryCount: 0,
-      maxRetries: options.maxRetries
+      maxRetries: options.maxRetries,
     }
 
     // Insert message in priority order
-    const insertIndex = queue.findIndex(msg => msg.priority < options.priority)
+    const insertIndex = queue.findIndex((msg) => msg.priority < options.priority)
     if (insertIndex === -1) {
       queue.push(queuedMessage)
     } else {
@@ -333,7 +334,7 @@ export class WebSocketConnectionManager extends EventEmitter {
   private async processMessageQueue(connectionId: string): Promise<void> {
     const queue = this.messageQueues.get(connectionId)
     const ws = this.connections.get(connectionId)
-    
+
     if (!queue || !ws || ws.readyState !== 1) return
 
     const messagesToProcess = [...queue]
@@ -344,7 +345,7 @@ export class WebSocketConnectionManager extends EventEmitter {
         const success = await this.sendToConnection(connectionId, queuedMessage.message, {
           priority: queuedMessage.priority,
           maxRetries: queuedMessage.maxRetries - queuedMessage.retryCount,
-          queueIfOffline: false
+          queueIfOffline: false,
         })
 
         if (!success) {
@@ -371,7 +372,7 @@ export class WebSocketConnectionManager extends EventEmitter {
     const pool = this.connectionPools.get(poolId)
     if (!pool || pool.size === 0) return []
 
-    const availableConnections = Array.from(pool).filter(connectionId => {
+    const availableConnections = Array.from(pool).filter((connectionId) => {
       const ws = this.connections.get(connectionId)
       return ws && ws.readyState === 1 // WebSocket.OPEN
     })
@@ -381,13 +382,13 @@ export class WebSocketConnectionManager extends EventEmitter {
     switch (this.config.loadBalancing) {
       case 'round-robin':
         return this.roundRobinSelection(availableConnections, count)
-      
+
       case 'least-connections':
         return this.leastConnectionsSelection(availableConnections, count)
-      
+
       case 'random':
         return this.randomSelection(availableConnections, count)
-      
+
       default:
         return this.roundRobinSelection(availableConnections, count)
     }
@@ -398,12 +399,12 @@ export class WebSocketConnectionManager extends EventEmitter {
    */
   private roundRobinSelection(connections: string[], count: number): string[] {
     const selected: string[] = []
-    
+
     for (let i = 0; i < count && i < connections.length; i++) {
       const index = (this.loadBalancerIndex + i) % connections.length
       selected.push(connections[index])
     }
-    
+
     this.loadBalancerIndex = (this.loadBalancerIndex + count) % connections.length
     return selected
   }
@@ -412,17 +413,17 @@ export class WebSocketConnectionManager extends EventEmitter {
    * Least connections load balancing
    */
   private leastConnectionsSelection(connections: string[], count: number): string[] {
-    const connectionLoads = connections.map(connectionId => {
+    const connectionLoads = connections.map((connectionId) => {
       const metrics = this.connectionMetrics.get(connectionId)
       const queueSize = this.messageQueues.get(connectionId)?.length || 0
       return {
         connectionId,
-        load: (metrics?.messagesSent || 0) + queueSize
+        load: (metrics?.messagesSent || 0) + queueSize,
       }
     })
 
     connectionLoads.sort((a, b) => a.load - b.load)
-    return connectionLoads.slice(0, count).map(item => item.connectionId)
+    return connectionLoads.slice(0, count).map((item) => item.connectionId)
   }
 
   /**
@@ -438,7 +439,7 @@ export class WebSocketConnectionManager extends EventEmitter {
    */
   private handleConnectionClose(connectionId: string): void {
     console.log(`🔌 Connection closed: ${connectionId}`)
-    
+
     // Update metrics
     const metrics = this.connectionMetrics.get(connectionId)
     if (metrics) {
@@ -460,7 +461,7 @@ export class WebSocketConnectionManager extends EventEmitter {
    */
   private handleConnectionError(connectionId: string, error: Error): void {
     console.error(`❌ Connection error for ${connectionId}:`, error.message)
-    
+
     const metrics = this.connectionMetrics.get(connectionId)
     if (metrics) {
       metrics.errorCount++
@@ -492,9 +493,10 @@ export class WebSocketConnectionManager extends EventEmitter {
    */
   private sendHeartbeat(): void {
     for (const [connectionId, ws] of this.connections) {
-      if (ws.readyState === 1) { // WebSocket.OPEN
+      if (ws.readyState === 1) {
+        // WebSocket.OPEN
         try {
-          (ws as any)._pingTime = Date.now()
+          ;(ws as any)._pingTime = Date.now()
           ws.ping()
         } catch (error) {
           console.error(`❌ Heartbeat failed for ${connectionId}:`, error)
@@ -535,7 +537,8 @@ export class WebSocketConnectionManager extends EventEmitter {
       }
 
       // Check latency
-      if (metrics.latency > 5000) { // 5 seconds
+      if (metrics.latency > 5000) {
+        // 5 seconds
         issues.push('High latency detected')
         status = status === 'healthy' ? 'degraded' : status
       }
@@ -545,12 +548,12 @@ export class WebSocketConnectionManager extends EventEmitter {
         status,
         lastCheck: new Date(),
         issues,
-        metrics: { ...metrics }
+        metrics: { ...metrics },
       })
     }
 
     // Handle unhealthy connections
-    const unhealthyConnections = healthChecks.filter(hc => hc.status === 'unhealthy')
+    const unhealthyConnections = healthChecks.filter((hc) => hc.status === 'unhealthy')
     for (const unhealthy of unhealthyConnections) {
       await this.handleUnhealthyConnection(unhealthy.id)
     }
@@ -563,7 +566,7 @@ export class WebSocketConnectionManager extends EventEmitter {
    */
   private async handleUnhealthyConnection(connectionId: string): Promise<void> {
     console.warn(`⚠️ Handling unhealthy connection: ${connectionId}`)
-    
+
     const ws = this.connections.get(connectionId)
     if (ws) {
       try {
@@ -620,7 +623,7 @@ export class WebSocketConnectionManager extends EventEmitter {
     if (!pool) return null
 
     const connections = Array.from(pool)
-    const activeConnections = connections.filter(connectionId => {
+    const activeConnections = connections.filter((connectionId) => {
       const ws = this.connections.get(connectionId)
       return ws && ws.readyState === 1
     })
@@ -641,7 +644,7 @@ export class WebSocketConnectionManager extends EventEmitter {
       totalConnections: connections.length,
       activeConnections: activeConnections.length,
       averageLatency: activeConnections.length > 0 ? totalLatency / activeConnections.length : 0,
-      messageDistribution
+      messageDistribution,
     }
   }
 
@@ -650,9 +653,14 @@ export class WebSocketConnectionManager extends EventEmitter {
    */
   getSystemStats() {
     const totalConnections = this.connections.size
-    const activeConnections = Array.from(this.connections.values()).filter(ws => ws.readyState === 1).length
+    const activeConnections = Array.from(this.connections.values()).filter(
+      (ws) => ws.readyState === 1,
+    ).length
     const totalPools = this.connectionPools.size
-    const totalQueuedMessages = Array.from(this.messageQueues.values()).reduce((sum, queue) => sum + queue.length, 0)
+    const totalQueuedMessages = Array.from(this.messageQueues.values()).reduce(
+      (sum, queue) => sum + queue.length,
+      0,
+    )
 
     return {
       totalConnections,
@@ -660,7 +668,7 @@ export class WebSocketConnectionManager extends EventEmitter {
       totalPools,
       totalQueuedMessages,
       maxConnections: this.config.maxConnections,
-      connectionUtilization: (totalConnections / this.config.maxConnections) * 100
+      connectionUtilization: (totalConnections / this.config.maxConnections) * 100,
     }
   }
 
@@ -669,7 +677,7 @@ export class WebSocketConnectionManager extends EventEmitter {
    */
   shutdown(): void {
     console.log('🔌 Shutting down WebSocket Connection Manager...')
-    
+
     // Clear intervals
     if (this.healthCheckInterval) {
       clearInterval(this.healthCheckInterval)

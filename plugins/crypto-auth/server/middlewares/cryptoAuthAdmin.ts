@@ -6,7 +6,7 @@
 import { Elysia } from 'elysia'
 import { createGuard } from '@/core/server/middleware/elysia-helpers'
 import type { Logger } from '@/core/utils/logger'
-import { validateAuthSync, type CryptoAuthUser } from './helpers'
+import { type CryptoAuthUser, validateAuthSync } from './helpers'
 
 export interface CryptoAuthMiddlewareOptions {
   logger?: Logger
@@ -28,7 +28,7 @@ export const cryptoAuthAdmin = (options: CryptoAuthMiddlewareOptions = {}) => {
         name: 'crypto-auth-admin-check',
         check: ({ request }) => {
           const user = (request as any).user as CryptoAuthUser | undefined
-          return user && user.isAdmin
+          return user?.isAdmin
         },
         onFail: (set, { request }) => {
           const user = (request as any).user as CryptoAuthUser | undefined
@@ -39,14 +39,14 @@ export const cryptoAuthAdmin = (options: CryptoAuthMiddlewareOptions = {}) => {
               error: {
                 message: 'Authentication required',
                 code: 'CRYPTO_AUTH_REQUIRED',
-                statusCode: 401
-              }
+                statusCode: 401,
+              },
             }
           }
 
           options.logger?.warn('Admin access denied', {
-            publicKey: user.publicKey.substring(0, 8) + '...',
-            permissions: user.permissions
+            publicKey: `${user.publicKey.substring(0, 8)}...`,
+            permissions: user.permissions,
           })
 
           set.status = 403
@@ -55,11 +55,10 @@ export const cryptoAuthAdmin = (options: CryptoAuthMiddlewareOptions = {}) => {
               message: 'Admin privileges required',
               code: 'ADMIN_REQUIRED',
               statusCode: 403,
-              yourPermissions: user.permissions
-            }
+              yourPermissions: user.permissions,
+            },
           }
-        }
-      })
+        },
+      }),
     )
-
 }

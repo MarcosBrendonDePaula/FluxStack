@@ -17,9 +17,8 @@ export interface Response {
   [key: string]: any
 }
 
-export interface NextFunction {
-  (error?: any): void
-}
+export type NextFunction = (error?: any) => void
+
 import type { Logger } from '@/core/utils/logger/index'
 
 export interface ErrorHandlingOptions {
@@ -40,7 +39,7 @@ export interface FluxStackError extends Error {
 export function errorHandlingMiddleware(options: ErrorHandlingOptions = {}) {
   const { logger, includeStack = false, customErrorHandler } = options
 
-  return (error: FluxStackError, req: Request, res: Response, next: NextFunction) => {
+  return (error: FluxStackError, req: Request, res: Response, _next: NextFunction) => {
     // Log the error
     if (logger) {
       logger.error('Request error', {
@@ -48,7 +47,7 @@ export function errorHandlingMiddleware(options: ErrorHandlingOptions = {}) {
         stack: error.stack,
         url: req.url,
         method: req.method,
-        statusCode: error.statusCode || 500
+        statusCode: error.statusCode || 500,
       })
     }
 
@@ -70,8 +69,8 @@ export function errorHandlingMiddleware(options: ErrorHandlingOptions = {}) {
       error: {
         message: error.message || 'Internal Server Error',
         code: error.code || 'INTERNAL_ERROR',
-        statusCode
-      }
+        statusCode,
+      },
     }
 
     // Include stack trace in development
@@ -94,12 +93,12 @@ export function errorHandlingMiddleware(options: ErrorHandlingOptions = {}) {
 export function notFoundMiddleware(options: { logger?: Logger } = {}) {
   const { logger } = options
 
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, res: Response, _next: NextFunction) => {
     if (logger) {
       logger.warn('Route not found', {
         url: req.url,
         method: req.method,
-        ip: req.ip
+        ip: req.ip,
       })
     }
 
@@ -109,8 +108,8 @@ export function notFoundMiddleware(options: { logger?: Logger } = {}) {
         code: 'NOT_FOUND',
         statusCode: 404,
         path: req.url,
-        method: req.method
-      }
+        method: req.method,
+      },
     })
   }
 }
@@ -119,10 +118,10 @@ export function notFoundMiddleware(options: { logger?: Logger } = {}) {
  * Create a FluxStack error
  */
 export function createError(
-  message: string, 
-  statusCode: number = 500, 
-  code?: string, 
-  details?: any
+  message: string,
+  statusCode: number = 500,
+  code?: string,
+  details?: any,
 ): FluxStackError {
   const error = new Error(message) as FluxStackError
   error.statusCode = statusCode

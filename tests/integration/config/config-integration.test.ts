@@ -3,13 +3,13 @@
  * Tests for config module integration and unified exports
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { config } from '@/config'
 import { appConfig } from '@/config/app.config'
-import { serverConfig } from '@/config/server.config'
 import { clientConfig } from '@/config/client.config'
-import { pluginsConfig } from '@/config/plugins.config'
 import { monitoringConfig } from '@/config/monitoring.config'
+import { pluginsConfig } from '@/config/plugins.config'
+import { serverConfig } from '@/config/server.config'
 
 describe('Config Integration', () => {
   describe('Unified Config Export', () => {

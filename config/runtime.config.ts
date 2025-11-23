@@ -3,7 +3,7 @@
  * Configs that can be reloaded without server restart
  */
 
-import { defineReactiveConfig, config } from '@/core/utils/config-schema'
+import { config, defineReactiveConfig } from '@/core/utils/config-schema'
 
 /**
  * Runtime app configuration
@@ -23,14 +23,14 @@ export const appRuntimeConfig = defineReactiveConfig({
     type: 'number' as const,
     env: 'RATE_LIMIT_MAX',
     default: 100,
-    validate: (value: number) => value > 0 || 'Rate limit must be positive'
+    validate: (value: number) => value > 0 || 'Rate limit must be positive',
   },
 
   rateLimitWindow: {
     type: 'number' as const,
     env: 'RATE_LIMIT_WINDOW',
     default: 60000,
-    description: 'Rate limit window in milliseconds'
+    description: 'Rate limit window in milliseconds',
   },
 
   // Request timeout
@@ -38,7 +38,7 @@ export const appRuntimeConfig = defineReactiveConfig({
     type: 'number' as const,
     env: 'REQUEST_TIMEOUT',
     default: 30000,
-    validate: (value: number) => value > 0 || 'Timeout must be positive'
+    validate: (value: number) => value > 0 || 'Timeout must be positive',
   },
 
   // Max upload size
@@ -46,7 +46,7 @@ export const appRuntimeConfig = defineReactiveConfig({
     type: 'number' as const,
     env: 'MAX_UPLOAD_SIZE',
     default: 10485760, // 10MB
-    validate: (value: number) => value > 0 || 'Max upload size must be positive'
+    validate: (value: number) => value > 0 || 'Max upload size must be positive',
   },
 
   // Maintenance mode
@@ -54,8 +54,8 @@ export const appRuntimeConfig = defineReactiveConfig({
 
   maintenanceMessage: config.string(
     'MAINTENANCE_MESSAGE',
-    'System is under maintenance. Please try again later.'
-  )
+    'System is under maintenance. Please try again later.',
+  ),
 })
 
 /**

@@ -12,7 +12,7 @@ declare global {
 }
 
 // Fix for unknown types
-declare module "*" {
+declare module '*' {
   const content: any
   export = content
 }

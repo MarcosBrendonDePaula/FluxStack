@@ -1,67 +1,68 @@
-import type { Generator } from "./index"
-import type { GeneratorContext, GeneratorOptions, Template } from "./types"
-import { templateEngine } from "./template-engine"
-import { join } from "path"
+import type { Generator } from './index'
+import { templateEngine } from './template-engine'
+import type { GeneratorContext, GeneratorOptions, Template } from './types'
 
 export class PluginGenerator implements Generator {
-    name = 'plugin'
-    description = 'Generate a new FluxStack plugin'
+  name = 'plugin'
+  description = 'Generate a new FluxStack plugin'
 
-    async generate(context: GeneratorContext, options: GeneratorOptions): Promise<void> {
-        const template = this.getTemplate(options.template)
+  async generate(context: GeneratorContext, options: GeneratorOptions): Promise<void> {
+    const template = this.getTemplate(options.template)
 
-        if (template.hooks?.beforeGenerate) {
-            await template.hooks.beforeGenerate(context, options)
-        }
-
-        const files = await templateEngine.processTemplate(template, context, options)
-
-        if (options.dryRun) {
-            console.log(`\n📋 Would generate plugin '${options.name}':\n`)
-            for (const file of files) {
-                console.log(`${file.action === 'create' ? '📄' : '✏️'} ${file.path}`)
-            }
-            return
-        }
-
-        await templateEngine.generateFiles(files, options.dryRun)
-
-        if (template.hooks?.afterGenerate) {
-            const filePaths = files.map(f => f.path)
-            await template.hooks.afterGenerate(context, options, filePaths)
-        }
-
-        console.log(`\n✅ Generated plugin '${options.name}' with ${files.length} files`)
-        console.log(`\n📦 Next steps:`)
-        console.log(`   1. Configure plugin in plugins/${options.name}/config/index.ts`)
-        console.log(`   2. Set environment variables (optional): ${options.name.toUpperCase().replace(/-/g, '_')}_*`)
-        console.log(`   3. Implement your plugin logic in plugins/${options.name}/index.ts`)
-        console.log(`   4. Add server-side code in plugins/${options.name}/server/ (optional)`)
-        console.log(`   5. Add client-side code in plugins/${options.name}/client/ (optional)`)
-        console.log(`   6. Run: bun run dev`)
+    if (template.hooks?.beforeGenerate) {
+      await template.hooks.beforeGenerate(context, options)
     }
 
-    private getTemplate(templateName?: string): Template {
-        switch (templateName) {
-            case 'full':
-                return this.getFullTemplate()
-            case 'server':
-                return this.getServerOnlyTemplate()
-            case 'client':
-                return this.getClientOnlyTemplate()
-            default:
-                return this.getBasicTemplate()
-        }
+    const files = await templateEngine.processTemplate(template, context, options)
+
+    if (options.dryRun) {
+      console.log(`\n📋 Would generate plugin '${options.name}':\n`)
+      for (const file of files) {
+        console.log(`${file.action === 'create' ? '📄' : '✏️'} ${file.path}`)
+      }
+      return
     }
 
-    private getBasicTemplate(): Template {
-        return {
-            name: 'basic-plugin',
-            description: 'Basic plugin template with essential files',
-            files: [
-                {
-                    path: 'plugins/{{name}}/package.json',
-                    content: `{
+    await templateEngine.generateFiles(files, options.dryRun)
+
+    if (template.hooks?.afterGenerate) {
+      const filePaths = files.map((f) => f.path)
+      await template.hooks.afterGenerate(context, options, filePaths)
+    }
+
+    console.log(`\n✅ Generated plugin '${options.name}' with ${files.length} files`)
+    console.log(`\n📦 Next steps:`)
+    console.log(`   1. Configure plugin in plugins/${options.name}/config/index.ts`)
+    console.log(
+      `   2. Set environment variables (optional): ${options.name.toUpperCase().replace(/-/g, '_')}_*`,
+    )
+    console.log(`   3. Implement your plugin logic in plugins/${options.name}/index.ts`)
+    console.log(`   4. Add server-side code in plugins/${options.name}/server/ (optional)`)
+    console.log(`   5. Add client-side code in plugins/${options.name}/client/ (optional)`)
+    console.log(`   6. Run: bun run dev`)
+  }
+
+  private getTemplate(templateName?: string): Template {
+    switch (templateName) {
+      case 'full':
+        return this.getFullTemplate()
+      case 'server':
+        return this.getServerOnlyTemplate()
+      case 'client':
+        return this.getClientOnlyTemplate()
+      default:
+        return this.getBasicTemplate()
+    }
+  }
+
+  private getBasicTemplate(): Template {
+    return {
+      name: 'basic-plugin',
+      description: 'Basic plugin template with essential files',
+      files: [
+        {
+          path: 'plugins/{{name}}/package.json',
+          content: `{
   "name": "@fluxstack/{{name}}-plugin",
   "version": "1.0.0",
   "description": "{{description}}",
@@ -101,11 +102,11 @@ export class PluginGenerator implements Generator {
     "tags": ["{{name}}"]
   }
 }
-`
-                },
-                {
-                    path: 'plugins/{{name}}/config/index.ts',
-                    content: `/**
+`,
+        },
+        {
+          path: 'plugins/{{name}}/config/index.ts',
+          content: `/**
  * {{pascalName}} Plugin Configuration
  * Declarative config using FluxStack config system
  */
@@ -127,11 +128,11 @@ export const {{camelName}}Config = defineConfig({{camelName}}ConfigSchema)
 
 export type {{pascalName}}Config = typeof {{camelName}}Config
 export default {{camelName}}Config
-`
-                },
-                {
-                    path: 'plugins/{{name}}/index.ts',
-                    content: `import type { ErrorContext, FluxStack, PluginContext, RequestContext, ResponseContext } from "@/core/plugins/types"
+`,
+        },
+        {
+          path: 'plugins/{{name}}/index.ts',
+          content: `import type { ErrorContext, FluxStack, PluginContext, RequestContext, ResponseContext } from "@/core/plugins/types"
 // ✅ Plugin imports its own configuration
 import { {{camelName}}Config } from './config'
 
@@ -200,11 +201,11 @@ export class {{pascalName}}Plugin implements FluxStack.Plugin {
 
 // Export plugin instance
 export default new {{pascalName}}Plugin()
-`
-                },
-                {
-                    path: 'plugins/{{name}}/README.md',
-                    content: `# {{pascalName}} Plugin
+`,
+        },
+        {
+          path: 'plugins/{{name}}/README.md',
+          content: `# {{pascalName}} Plugin
 
 {{description}}
 
@@ -265,22 +266,22 @@ To modify this plugin:
 ## License
 
 MIT
-`
-                }
-            ]
-        }
+`,
+        },
+      ],
     }
+  }
 
-    private getServerOnlyTemplate(): Template {
-        const basic = this.getBasicTemplate()
-        return {
-            ...basic,
-            name: 'server-plugin',
-            description: 'Plugin with server-side code',
-            files: [
-                {
-                    path: 'plugins/{{name}}/package.json',
-                    content: `{
+  private getServerOnlyTemplate(): Template {
+    const basic = this.getBasicTemplate()
+    return {
+      ...basic,
+      name: 'server-plugin',
+      description: 'Plugin with server-side code',
+      files: [
+        {
+          path: 'plugins/{{name}}/package.json',
+          content: `{
   "name": "@fluxstack/{{name}}-plugin",
   "version": "1.0.0",
   "description": "{{description}}",
@@ -329,12 +330,12 @@ MIT
     "tags": ["{{name}}", "server"]
   }
 }
-`
-                },
-                ...basic.files.slice(1), // Skip package.json from basic
-                {
-                    path: 'plugins/{{name}}/server/index.ts',
-                    content: `/**
+`,
+        },
+        ...basic.files.slice(1), // Skip package.json from basic
+        {
+          path: 'plugins/{{name}}/server/index.ts',
+          content: `/**
  * Server-side logic for {{pascalName}} plugin
  */
 
@@ -347,22 +348,22 @@ export class {{pascalName}}Service {
 }
 
 export const {{camelName}}Service = new {{pascalName}}Service()
-`
-                }
-            ]
-        }
+`,
+        },
+      ],
     }
+  }
 
-    private getClientOnlyTemplate(): Template {
-        const basic = this.getBasicTemplate()
-        return {
-            ...basic,
-            name: 'client-plugin',
-            description: 'Plugin with client-side code',
-            files: [
-                {
-                    path: 'plugins/{{name}}/package.json',
-                    content: `{
+  private getClientOnlyTemplate(): Template {
+    const basic = this.getBasicTemplate()
+    return {
+      ...basic,
+      name: 'client-plugin',
+      description: 'Plugin with client-side code',
+      files: [
+        {
+          path: 'plugins/{{name}}/package.json',
+          content: `{
   "name": "@fluxstack/{{name}}-plugin",
   "version": "1.0.0",
   "description": "{{description}}",
@@ -416,12 +417,12 @@ export const {{camelName}}Service = new {{pascalName}}Service()
     "tags": ["{{name}}", "client", "react"]
   }
 }
-`
-                },
-                ...basic.files.slice(1), // Skip package.json from basic
-                {
-                    path: 'plugins/{{name}}/client/index.ts',
-                    content: `/**
+`,
+        },
+        ...basic.files.slice(1), // Skip package.json from basic
+        {
+          path: 'plugins/{{name}}/client/index.ts',
+          content: `/**
  * Client-side logic for {{pascalName}} plugin
  */
 
@@ -434,25 +435,25 @@ export class {{pascalName}}Client {
 }
 
 export const {{camelName}}Client = new {{pascalName}}Client()
-`
-                }
-            ]
-        }
+`,
+        },
+      ],
     }
+  }
 
-    private getFullTemplate(): Template {
-        const basic = this.getBasicTemplate()
-        const server = this.getServerOnlyTemplate()
-        const client = this.getClientOnlyTemplate()
+  private getFullTemplate(): Template {
+    const basic = this.getBasicTemplate()
+    const _server = this.getServerOnlyTemplate()
+    const _client = this.getClientOnlyTemplate()
 
-        return {
-            ...basic,
-            name: 'full-plugin',
-            description: 'Complete plugin with server and client code',
-            files: [
-                {
-                    path: 'plugins/{{name}}/package.json',
-                    content: `{
+    return {
+      ...basic,
+      name: 'full-plugin',
+      description: 'Complete plugin with server and client code',
+      files: [
+        {
+          path: 'plugins/{{name}}/package.json',
+          content: `{
   "name": "@fluxstack/{{name}}-plugin",
   "version": "1.0.0",
   "description": "{{description}}",
@@ -519,12 +520,12 @@ export const {{camelName}}Client = new {{pascalName}}Client()
     "tags": ["{{name}}", "server", "client", "react"]
   }
 }
-`
-                },
-                ...basic.files.slice(1), // Skip package.json from basic
-                {
-                    path: 'plugins/{{name}}/server/index.ts',
-                    content: `/**
+`,
+        },
+        ...basic.files.slice(1), // Skip package.json from basic
+        {
+          path: 'plugins/{{name}}/server/index.ts',
+          content: `/**
  * Server-side logic for {{pascalName}} plugin
  */
 
@@ -537,11 +538,11 @@ export class {{pascalName}}Service {
 }
 
 export const {{camelName}}Service = new {{pascalName}}Service()
-`
-                },
-                {
-                    path: 'plugins/{{name}}/client/index.ts',
-                    content: `/**
+`,
+        },
+        {
+          path: 'plugins/{{name}}/client/index.ts',
+          content: `/**
  * Client-side logic for {{pascalName}} plugin
  */
 
@@ -554,11 +555,11 @@ export class {{pascalName}}Client {
 }
 
 export const {{camelName}}Client = new {{pascalName}}Client()
-`
-                },
-                {
-                    path: 'plugins/{{name}}/types.ts',
-                    content: `/**
+`,
+        },
+        {
+          path: 'plugins/{{name}}/types.ts',
+          content: `/**
  * Type definitions for {{pascalName}} plugin
  */
 
@@ -572,9 +573,9 @@ export interface {{pascalName}}Options {
 export interface {{pascalName}}Event {
   // Add your event types here
 }
-`
-                }
-            ]
-        }
+`,
+        },
+      ],
     }
+  }
 }

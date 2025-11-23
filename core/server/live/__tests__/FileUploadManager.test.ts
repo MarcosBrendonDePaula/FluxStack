@@ -1,22 +1,26 @@
 // 🧪 FileUploadManager Tests
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type {
+  FileUploadChunkMessage,
+  FileUploadCompleteMessage,
+  FileUploadStartMessage,
+} from '@/core/plugins/types'
 import { FileUploadManager } from '../FileUploadManager'
-import type { FileUploadStartMessage, FileUploadChunkMessage, FileUploadCompleteMessage } from '@/core/plugins/types'
 
 // Mock fs/promises
 vi.mock('fs/promises', () => ({
   writeFile: vi.fn(),
   mkdir: vi.fn(),
-  unlink: vi.fn()
+  unlink: vi.fn(),
 }))
 
 vi.mock('fs', () => ({
   existsSync: vi.fn(() => true),
   createWriteStream: vi.fn(() => ({
     write: vi.fn(),
-    end: vi.fn()
-  }))
+    end: vi.fn(),
+  })),
 }))
 
 describe('FileUploadManager', () => {
@@ -27,9 +31,9 @@ describe('FileUploadManager', () => {
     uploadManager = new FileUploadManager()
     mockWs = {
       send: vi.fn(),
-      data: { connectionId: 'test-connection' }
+      data: { connectionId: 'test-connection' },
     }
-    
+
     // Clear all mocks
     vi.clearAllMocks()
   })
@@ -48,7 +52,7 @@ describe('FileUploadManager', () => {
         filename: 'test.jpg',
         fileType: 'image/jpeg',
         fileSize: 1024 * 1024, // 1MB
-        chunkSize: 64 * 1024 // 64KB
+        chunkSize: 64 * 1024, // 64KB
       }
 
       const result = await uploadManager.startUpload(message)
@@ -65,7 +69,7 @@ describe('FileUploadManager', () => {
         filename: 'test.exe',
         fileType: 'application/exe',
         fileSize: 1024,
-        chunkSize: 64 * 1024
+        chunkSize: 64 * 1024,
       }
 
       const result = await uploadManager.startUpload(message)
@@ -82,7 +86,7 @@ describe('FileUploadManager', () => {
         filename: 'huge.jpg',
         fileType: 'image/jpeg',
         fileSize: 100 * 1024 * 1024, // 100MB (over 50MB limit)
-        chunkSize: 64 * 1024
+        chunkSize: 64 * 1024,
       }
 
       const result = await uploadManager.startUpload(message)
@@ -99,7 +103,7 @@ describe('FileUploadManager', () => {
         filename: 'test.jpg',
         fileType: 'image/jpeg',
         fileSize: 1024,
-        chunkSize: 64 * 1024
+        chunkSize: 64 * 1024,
       }
 
       // Start first upload
@@ -125,9 +129,9 @@ describe('FileUploadManager', () => {
         filename: 'test.jpg',
         fileType: 'image/jpeg',
         fileSize: 1024,
-        chunkSize: 512
+        chunkSize: 512,
       }
-      
+
       await uploadManager.startUpload(startMessage)
     })
 
@@ -138,7 +142,7 @@ describe('FileUploadManager', () => {
         uploadId,
         chunkIndex: 0,
         totalChunks: 2,
-        data: Buffer.from('test data').toString('base64')
+        data: Buffer.from('test data').toString('base64'),
       }
 
       const result = await uploadManager.receiveChunk(chunkMessage, mockWs)
@@ -156,11 +160,12 @@ describe('FileUploadManager', () => {
         uploadId,
         chunkIndex: 10, // Invalid index
         totalChunks: 2,
-        data: Buffer.from('test data').toString('base64')
+        data: Buffer.from('test data').toString('base64'),
       }
 
-      await expect(uploadManager.receiveChunk(chunkMessage, mockWs))
-        .rejects.toThrow('Invalid chunk index')
+      await expect(uploadManager.receiveChunk(chunkMessage, mockWs)).rejects.toThrow(
+        'Invalid chunk index',
+      )
     })
 
     it('should handle duplicate chunks', async () => {
@@ -170,7 +175,7 @@ describe('FileUploadManager', () => {
         uploadId,
         chunkIndex: 0,
         totalChunks: 2,
-        data: Buffer.from('test data').toString('base64')
+        data: Buffer.from('test data').toString('base64'),
       }
 
       // Send chunk twice
@@ -188,7 +193,7 @@ describe('FileUploadManager', () => {
         uploadId,
         chunkIndex: 0,
         totalChunks: 2,
-        data: Buffer.from('chunk1').toString('base64')
+        data: Buffer.from('chunk1').toString('base64'),
       }
 
       const result = await uploadManager.receiveChunk(chunk1, mockWs)
@@ -203,11 +208,12 @@ describe('FileUploadManager', () => {
         uploadId: 'non-existent',
         chunkIndex: 0,
         totalChunks: 2,
-        data: Buffer.from('test data').toString('base64')
+        data: Buffer.from('test data').toString('base64'),
       }
 
-      await expect(uploadManager.receiveChunk(chunkMessage, mockWs))
-        .rejects.toThrow('Upload non-existent not found')
+      await expect(uploadManager.receiveChunk(chunkMessage, mockWs)).rejects.toThrow(
+        'Upload non-existent not found',
+      )
     })
   })
 
@@ -223,9 +229,9 @@ describe('FileUploadManager', () => {
         filename: 'test.jpg',
         fileType: 'image/jpeg',
         fileSize: 1024,
-        chunkSize: 512
+        chunkSize: 512,
       }
-      
+
       await uploadManager.startUpload(startMessage)
 
       // Send all chunks
@@ -235,7 +241,7 @@ describe('FileUploadManager', () => {
         uploadId,
         chunkIndex: 0,
         totalChunks: 2,
-        data: Buffer.from('chunk1').toString('base64')
+        data: Buffer.from('chunk1').toString('base64'),
       }
 
       const chunk2: FileUploadChunkMessage = {
@@ -244,7 +250,7 @@ describe('FileUploadManager', () => {
         uploadId,
         chunkIndex: 1,
         totalChunks: 2,
-        data: Buffer.from('chunk2').toString('base64')
+        data: Buffer.from('chunk2').toString('base64'),
       }
 
       await uploadManager.receiveChunk(chunk1, mockWs)
@@ -255,7 +261,7 @@ describe('FileUploadManager', () => {
       const completeMessage: FileUploadCompleteMessage = {
         type: 'FILE_UPLOAD_COMPLETE',
         componentId: 'test-component',
-        uploadId
+        uploadId,
       }
 
       const result = await uploadManager.completeUpload(completeMessage)
@@ -275,9 +281,9 @@ describe('FileUploadManager', () => {
         filename: 'incomplete.jpg',
         fileType: 'image/jpeg',
         fileSize: 1024,
-        chunkSize: 512
+        chunkSize: 512,
       }
-      
+
       await uploadManager.startUpload(startMessage)
 
       // Only send first chunk, not second
@@ -287,7 +293,7 @@ describe('FileUploadManager', () => {
         uploadId: newUploadId,
         chunkIndex: 0,
         totalChunks: 2,
-        data: Buffer.from('chunk1').toString('base64')
+        data: Buffer.from('chunk1').toString('base64'),
       }
 
       await uploadManager.receiveChunk(chunk1, mockWs)
@@ -295,7 +301,7 @@ describe('FileUploadManager', () => {
       const completeMessage: FileUploadCompleteMessage = {
         type: 'FILE_UPLOAD_COMPLETE',
         componentId: 'test-component',
-        uploadId: newUploadId
+        uploadId: newUploadId,
       }
 
       const result = await uploadManager.completeUpload(completeMessage)
@@ -308,7 +314,7 @@ describe('FileUploadManager', () => {
       const completeMessage: FileUploadCompleteMessage = {
         type: 'FILE_UPLOAD_COMPLETE',
         componentId: 'test-component',
-        uploadId: 'non-existent'
+        uploadId: 'non-existent',
       }
 
       const result = await uploadManager.completeUpload(completeMessage)
@@ -328,9 +334,9 @@ describe('FileUploadManager', () => {
         filename: 'status.jpg',
         fileType: 'image/jpeg',
         fileSize: 1024,
-        chunkSize: 512
+        chunkSize: 512,
       }
-      
+
       await uploadManager.startUpload(startMessage)
 
       const status = uploadManager.getUploadStatus(uploadId)
@@ -346,7 +352,7 @@ describe('FileUploadManager', () => {
 
     it('should provide upload statistics', () => {
       const stats = uploadManager.getStats()
-      
+
       expect(stats).toHaveProperty('activeUploads')
       expect(stats).toHaveProperty('maxUploadSize')
       expect(stats).toHaveProperty('allowedTypes')
@@ -365,7 +371,7 @@ describe('FileUploadManager', () => {
         filename: 'tracked.jpg',
         fileType: 'image/jpeg',
         fileSize: 1024,
-        chunkSize: 512
+        chunkSize: 512,
       }
 
       await uploadManager.startUpload(startMessage)
@@ -387,7 +393,7 @@ describe('FileUploadManager', () => {
         filename: 'cleanup.jpg',
         fileType: 'image/jpeg',
         fileSize: 512,
-        chunkSize: 512
+        chunkSize: 512,
       }
 
       await uploadManager.startUpload(startMessage)
@@ -402,7 +408,7 @@ describe('FileUploadManager', () => {
         uploadId,
         chunkIndex: 0,
         totalChunks: 1,
-        data: Buffer.from('test').toString('base64')
+        data: Buffer.from('test').toString('base64'),
       }
 
       await uploadManager.receiveChunk(chunk, mockWs)
@@ -411,7 +417,7 @@ describe('FileUploadManager', () => {
       const completeMessage: FileUploadCompleteMessage = {
         type: 'FILE_UPLOAD_COMPLETE',
         componentId: 'test-component',
-        uploadId
+        uploadId,
       }
 
       await uploadManager.completeUpload(completeMessage)
@@ -430,7 +436,7 @@ describe('FileUploadManager', () => {
         filename: 'small.jpg',
         fileType: 'image/jpeg',
         fileSize: 10,
-        chunkSize: 1024
+        chunkSize: 1024,
       }
 
       const result = await uploadManager.startUpload(message)
@@ -449,20 +455,20 @@ describe('FileUploadManager', () => {
         filename: 'test.jpg',
         fileType: 'image/jpeg',
         fileSize: 100,
-        chunkSize: 10 // Very small chunks
+        chunkSize: 10, // Very small chunks
       }
 
       const result = await uploadManager.startUpload(message)
 
       expect(result.success).toBe(true)
-      
+
       const status = uploadManager.getUploadStatus('small-chunks')
       expect(status?.totalChunks).toBe(10) // 100 bytes / 10 bytes per chunk
     })
 
     it('should handle concurrent uploads', async () => {
       const uploads = []
-      
+
       for (let i = 0; i < 5; i++) {
         const message: FileUploadStartMessage = {
           type: 'FILE_UPLOAD_START',
@@ -471,16 +477,16 @@ describe('FileUploadManager', () => {
           filename: `file-${i}.jpg`,
           fileType: 'image/jpeg',
           fileSize: 1024,
-          chunkSize: 512
+          chunkSize: 512,
         }
-        
+
         uploads.push(uploadManager.startUpload(message))
       }
 
       const results = await Promise.all(uploads)
-      
+
       // All uploads should succeed
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result.success).toBe(true)
       })
 

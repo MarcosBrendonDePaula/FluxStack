@@ -1,11 +1,23 @@
 // 🔥 FluxStack Live Components - Shared Types
 
 export interface LiveMessage {
-  type: 'COMPONENT_MOUNT' | 'COMPONENT_UNMOUNT' |
-  'COMPONENT_REHYDRATE' | 'COMPONENT_ACTION' | 'CALL_ACTION' |
-  'ACTION_RESPONSE' | 'PROPERTY_UPDATE' | 'STATE_UPDATE' | 'STATE_REHYDRATED' |
-  'ERROR' | 'BROADCAST' | 'FILE_UPLOAD_START' | 'FILE_UPLOAD_CHUNK' | 'FILE_UPLOAD_COMPLETE' |
-  'COMPONENT_PING' | 'COMPONENT_PONG'
+  type:
+    | 'COMPONENT_MOUNT'
+    | 'COMPONENT_UNMOUNT'
+    | 'COMPONENT_REHYDRATE'
+    | 'COMPONENT_ACTION'
+    | 'CALL_ACTION'
+    | 'ACTION_RESPONSE'
+    | 'PROPERTY_UPDATE'
+    | 'STATE_UPDATE'
+    | 'STATE_REHYDRATED'
+    | 'ERROR'
+    | 'BROADCAST'
+    | 'FILE_UPLOAD_START'
+    | 'FILE_UPLOAD_CHUNK'
+    | 'FILE_UPLOAD_COMPLETE'
+    | 'COMPONENT_PING'
+    | 'COMPONENT_PONG'
   componentId: string
   action?: string
   property?: string
@@ -23,7 +35,10 @@ export interface ComponentState {
   [key: string]: any
 }
 
-export interface LiveComponentInstance<TState = ComponentState, TActions = Record<string, Function>> {
+export interface LiveComponentInstance<
+  TState = ComponentState,
+  TActions = Record<string, Function>,
+> {
   id: string
   state: TState
   call: <T extends keyof TActions>(action: T, ...args: any[]) => Promise<any>
@@ -69,7 +84,21 @@ export interface WebSocketMessage {
 }
 
 export interface WebSocketResponse {
-  type: 'MESSAGE_RESPONSE' | 'CONNECTION_ESTABLISHED' | 'ERROR' | 'BROADCAST' | 'ACTION_RESPONSE' | 'COMPONENT_MOUNTED' | 'COMPONENT_REHYDRATED' | 'STATE_UPDATE' | 'STATE_REHYDRATED' | 'FILE_UPLOAD_PROGRESS' | 'FILE_UPLOAD_COMPLETE' | 'FILE_UPLOAD_ERROR' | 'FILE_UPLOAD_START_RESPONSE' | 'COMPONENT_PONG'
+  type:
+    | 'MESSAGE_RESPONSE'
+    | 'CONNECTION_ESTABLISHED'
+    | 'ERROR'
+    | 'BROADCAST'
+    | 'ACTION_RESPONSE'
+    | 'COMPONENT_MOUNTED'
+    | 'COMPONENT_REHYDRATED'
+    | 'STATE_UPDATE'
+    | 'STATE_REHYDRATED'
+    | 'FILE_UPLOAD_PROGRESS'
+    | 'FILE_UPLOAD_COMPLETE'
+    | 'FILE_UPLOAD_ERROR'
+    | 'FILE_UPLOAD_START_RESPONSE'
+    | 'COMPONENT_PONG'
   originalType?: string
   componentId?: string
   success?: boolean
@@ -127,10 +156,10 @@ export interface HybridComponentOptions {
   debug?: boolean
 
   // Component lifecycle callbacks
-  onConnect?: () => void      // Called when WebSocket connects (can happen multiple times on reconnect)
-  onMount?: () => void        // Called after fresh mount (no prior state)
-  onRehydrate?: () => void    // Called after successful rehydration (restoring prior state)
-  onDisconnect?: () => void   // Called when WebSocket disconnects
+  onConnect?: () => void // Called when WebSocket connects (can happen multiple times on reconnect)
+  onMount?: () => void // Called after fresh mount (no prior state)
+  onRehydrate?: () => void // Called after successful rehydration (restoring prior state)
+  onDisconnect?: () => void // Called when WebSocket disconnects
   onError?: (error: string) => void
   onStateChange?: (newState: any, oldState: any) => void
 }
@@ -159,7 +188,10 @@ export abstract class LiveComponent<TState = ComponentState> {
   }
 
   // Generic setValue action - set any state key with type safety
-  public async setValue<K extends keyof TState>(payload: { key: K; value: TState[K] }): Promise<{ success: true; key: K; value: TState[K] }> {
+  public async setValue<K extends keyof TState>(payload: {
+    key: K
+    value: TState[K]
+  }): Promise<{ success: true; key: K; value: TState[K] }> {
     const { key, value } = payload
     const update = { [key]: value } as unknown as Partial<TState>
     this.setState(update)
@@ -179,10 +211,10 @@ export abstract class LiveComponent<TState = ComponentState> {
       const result = await method.call(this, payload)
       return result
     } catch (error: any) {
-      this.emit('ERROR', { 
-        action, 
+      this.emit('ERROR', {
+        action,
         error: error.message,
-        stack: error.stack 
+        stack: error.stack,
       })
       throw error
     }
@@ -196,10 +228,10 @@ export abstract class LiveComponent<TState = ComponentState> {
       payload,
       timestamp: Date.now(),
       userId: this.userId,
-      room: this.room
+      room: this.room,
     }
 
-    if (this.ws && this.ws.send) {
+    if (this.ws?.send) {
       this.ws.send(JSON.stringify(message))
     }
   }
@@ -210,7 +242,7 @@ export abstract class LiveComponent<TState = ComponentState> {
       type,
       payload,
       room: this.room,
-      excludeUser: excludeCurrentUser ? this.userId : undefined
+      excludeUser: excludeCurrentUser ? this.userId : undefined,
     }
 
     // This will be handled by the registry
@@ -251,11 +283,17 @@ export type ComponentActions<T> = {
   [K in keyof T]: T[K] extends (...args: any[]) => any ? T[K] : never
 }
 
-export type ComponentProps<T extends LiveComponent> = T extends LiveComponent<infer TState> ? TState : never
+export type ComponentProps<T extends LiveComponent> = T extends LiveComponent<infer TState>
+  ? TState
+  : never
 
-export type ActionParameters<T, K extends keyof T> = T[K] extends (...args: infer P) => any ? P : never
+export type ActionParameters<T, K extends keyof T> = T[K] extends (...args: infer P) => any
+  ? P
+  : never
 
-export type ActionReturnType<T, K extends keyof T> = T[K] extends (...args: any[]) => infer R ? R : never
+export type ActionReturnType<T, K extends keyof T> = T[K] extends (...args: any[]) => infer R
+  ? R
+  : never
 
 // 🔥 Type Inference System for Live Components
 // Similar to Eden Treaty - automatic type inference for actions
@@ -285,7 +323,7 @@ export type ActionNames<T extends LiveComponent<any>> = keyof ExtractActions<T>
  */
 export type ActionPayload<
   T extends LiveComponent<any>,
-  K extends ActionNames<T>
+  K extends ActionNames<T>,
 > = ExtractActions<T>[K] extends (payload: infer P) => any
   ? P
   : ExtractActions<T>[K] extends () => any
@@ -297,7 +335,7 @@ export type ActionPayload<
  */
 export type ActionReturn<
   T extends LiveComponent<any>,
-  K extends ActionNames<T>
+  K extends ActionNames<T>,
 > = ExtractActions<T>[K] extends (...args: any[]) => Promise<infer R>
   ? R
   : ExtractActions<T>[K] extends (...args: any[]) => infer R
@@ -307,7 +345,9 @@ export type ActionReturn<
 /**
  * Get the state type from a LiveComponent class
  */
-export type InferComponentState<T extends LiveComponent<any>> = T extends LiveComponent<infer S> ? S : never
+export type InferComponentState<T extends LiveComponent<any>> = T extends LiveComponent<infer S>
+  ? S
+  : never
 
 /**
  * Type-safe call signature for a component
@@ -315,9 +355,7 @@ export type InferComponentState<T extends LiveComponent<any>> = T extends LiveCo
  */
 export type TypedCall<T extends LiveComponent<any>> = <K extends ActionNames<T>>(
   action: K,
-  ...args: ActionPayload<T, K> extends undefined
-    ? []
-    : [payload: ActionPayload<T, K>]
+  ...args: ActionPayload<T, K> extends undefined ? [] : [payload: ActionPayload<T, K>]
 ) => Promise<void>
 
 /**
@@ -337,7 +375,7 @@ export type TypedCallAndWait<T extends LiveComponent<any>> = <K extends ActionNa
  */
 export type TypedSetValue<T extends LiveComponent<any>> = <K extends keyof InferComponentState<T>>(
   key: K,
-  value: InferComponentState<T>[K]
+  value: InferComponentState<T>[K],
 ) => Promise<void>
 
 /**
@@ -355,7 +393,14 @@ export interface UseTypedLiveComponentReturn<T extends LiveComponent<any>> {
   componentId: string | null
 
   // Connection status with all possible states
-  status: 'synced' | 'disconnected' | 'connecting' | 'reconnecting' | 'loading' | 'mounting' | 'error'
+  status:
+    | 'synced'
+    | 'disconnected'
+    | 'connecting'
+    | 'reconnecting'
+    | 'loading'
+    | 'mounting'
+    | 'error'
 
   // Type-safe actions
   call: TypedCall<T>
@@ -369,7 +414,10 @@ export interface UseTypedLiveComponentReturn<T extends LiveComponent<any>> {
   unmount: () => Promise<void>
 
   // Helper for temporary input state
-  useControlledField: <K extends keyof InferComponentState<T>>(field: K, action?: string) => {
+  useControlledField: <K extends keyof InferComponentState<T>>(
+    field: K,
+    action?: string,
+  ) => {
     value: InferComponentState<T>[K]
     setValue: (value: InferComponentState<T>[K]) => void
     commit: (value?: InferComponentState<T>[K]) => Promise<void>

@@ -1,8 +1,8 @@
-import { existsSync } from 'fs'
-import { join } from 'path'
+import { existsSync } from 'node:fs'
+import { join } from 'node:path'
 import type { FluxStack } from '@/core/plugins/types'
-import { cliRegistry } from './command-registry'
 import { logger } from '@/core/utils/logger'
+import { cliRegistry } from './command-registry'
 
 export class CliPluginDiscovery {
   private loadedPlugins = new Set<string>()
@@ -23,10 +23,11 @@ export class CliPluginDiscovery {
     }
 
     try {
-      const fs = await import('fs')
-      const potentialPlugins = fs.readdirSync(builtInPluginsDir, { withFileTypes: true })
-        .filter(entry => entry.isDirectory())
-        .map(entry => entry.name)
+      const fs = await import('node:fs')
+      const potentialPlugins = fs
+        .readdirSync(builtInPluginsDir, { withFileTypes: true })
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => entry.name)
 
       for (const pluginName of potentialPlugins) {
         try {
@@ -39,7 +40,9 @@ export class CliPluginDiscovery {
                 cliRegistry.register(command)
               }
               this.loadedPlugins.add(pluginName)
-              logger.debug(`Registered ${pluginModule.commands.length} CLI commands from built-in plugin: ${pluginName}`)
+              logger.debug(
+                `Registered ${pluginModule.commands.length} CLI commands from built-in plugin: ${pluginName}`,
+              )
             }
           }
         } catch (error) {
@@ -63,7 +66,7 @@ export class CliPluginDiscovery {
     }
 
     try {
-      const fs = await import('fs')
+      const fs = await import('node:fs')
       const entries = fs.readdirSync(localPluginsDir, { withFileTypes: true })
 
       for (const entry of entries) {
@@ -73,11 +76,13 @@ export class CliPluginDiscovery {
 
           try {
             const pluginModule = await import(pluginPath)
-            const plugin = pluginModule.default || Object.values(pluginModule).find(
-              (exp: any) => exp && typeof exp === 'object' && exp.name && exp.commands
-            ) as Plugin
+            const plugin =
+              pluginModule.default ||
+              (Object.values(pluginModule).find(
+                (exp: any) => exp && typeof exp === 'object' && exp.name && exp.commands,
+              ) as Plugin)
 
-            if (plugin && plugin.commands) {
+            if (plugin?.commands) {
               this.registerPluginCommands(plugin)
             }
           } catch (error) {
@@ -92,11 +97,13 @@ export class CliPluginDiscovery {
           if (existsSync(pluginIndexPath)) {
             try {
               const pluginModule = await import(pluginIndexPath)
-              const plugin = pluginModule.default || Object.values(pluginModule).find(
-                (exp: any) => exp && typeof exp === 'object' && exp.name && exp.commands
-              ) as Plugin
+              const plugin =
+                pluginModule.default ||
+                (Object.values(pluginModule).find(
+                  (exp: any) => exp && typeof exp === 'object' && exp.name && exp.commands,
+                ) as Plugin)
 
-              if (plugin && plugin.commands) {
+              if (plugin?.commands) {
                 this.registerPluginCommands(plugin)
               }
             } catch (error) {
@@ -122,7 +129,7 @@ export class CliPluginDiscovery {
           ...command,
           name: `${plugin.name}:${command.name}`,
           category: command.category || `Plugin: ${plugin.name}`,
-          aliases: command.aliases?.map(alias => `${plugin.name}:${alias}`)
+          aliases: command.aliases?.map((alias) => `${plugin.name}:${alias}`),
         }
 
         cliRegistry.register(prefixedCommand)
@@ -131,14 +138,13 @@ export class CliPluginDiscovery {
         if (!cliRegistry.has(command.name)) {
           cliRegistry.register({
             ...command,
-            category: command.category || `Plugin: ${plugin.name}`
+            category: command.category || `Plugin: ${plugin.name}`,
           })
         }
       }
 
       this.loadedPlugins.add(plugin.name)
       logger.debug(`Registered ${plugin.commands.length} CLI commands from plugin: ${plugin.name}`)
-
     } catch (error) {
       logger.error(`Failed to register CLI commands for plugin ${plugin.name}:`, error)
     }

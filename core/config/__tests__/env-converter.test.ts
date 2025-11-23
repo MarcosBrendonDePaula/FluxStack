@@ -3,7 +3,7 @@
  * Tests edge cases and type conversion robustness
  */
 
-import { describe, test, expect } from 'vitest'
+import { describe, expect, test } from 'vitest'
 import { EnvConverter } from '../env'
 
 describe('EnvConverter Edge Cases and Robustness', () => {
@@ -13,17 +13,17 @@ describe('EnvConverter Edge Cases and Robustness', () => {
       expect(EnvConverter.toNumber('42', 0)).toBe(42)
       expect(EnvConverter.toNumber('-123', 0)).toBe(-123)
       expect(EnvConverter.toNumber('0', 42)).toBe(0)
-      
+
       // Edge cases
       expect(EnvConverter.toNumber('00000123', 0)).toBe(123)
       expect(EnvConverter.toNumber('+456', 0)).toBe(456)
       expect(EnvConverter.toNumber('  789  ', 0)).toBe(789) // With whitespace
-      
+
       // Hex and octal (parseInt with base 10 behavior)
       expect(EnvConverter.toNumber('0x10', 0)).toBe(0) // parseInt with base 10 doesn't parse hex
       expect(EnvConverter.toNumber('0o10', 0)).toBe(0) // parseInt doesn't handle 0o prefix
       expect(EnvConverter.toNumber('010', 0)).toBe(10) // Treated as decimal, not octal
-      
+
       // Invalid cases
       expect(EnvConverter.toNumber('abc', 42)).toBe(42)
       expect(EnvConverter.toNumber('123abc', 42)).toBe(123) // parseInt stops at first non-digit
@@ -56,7 +56,7 @@ describe('EnvConverter Edge Cases and Robustness', () => {
       expect(EnvConverter.toBoolean('1', false)).toBe(true)
       expect(EnvConverter.toBoolean('yes', false)).toBe(true)
       expect(EnvConverter.toBoolean('on', false)).toBe(true)
-      
+
       // Case variations
       expect(EnvConverter.toBoolean('TRUE', false)).toBe(true)
       expect(EnvConverter.toBoolean('True', false)).toBe(true)
@@ -64,7 +64,7 @@ describe('EnvConverter Edge Cases and Robustness', () => {
       expect(EnvConverter.toBoolean('Yes', false)).toBe(true)
       expect(EnvConverter.toBoolean('ON', false)).toBe(true)
       expect(EnvConverter.toBoolean('On', false)).toBe(true)
-      
+
       // With whitespace
       expect(EnvConverter.toBoolean('  true  ', false)).toBe(false) // No trim in current implementation
       expect(EnvConverter.toBoolean(' 1 ', false)).toBe(false)
@@ -76,7 +76,7 @@ describe('EnvConverter Edge Cases and Robustness', () => {
       expect(EnvConverter.toBoolean('0', true)).toBe(false)
       expect(EnvConverter.toBoolean('no', true)).toBe(false)
       expect(EnvConverter.toBoolean('off', true)).toBe(false)
-      
+
       // Any other string is falsy
       expect(EnvConverter.toBoolean('maybe', true)).toBe(false)
       expect(EnvConverter.toBoolean('2', true)).toBe(false)
@@ -95,16 +95,16 @@ describe('EnvConverter Edge Cases and Robustness', () => {
       // Basic cases
       expect(EnvConverter.toArray('a,b,c')).toEqual(['a', 'b', 'c'])
       expect(EnvConverter.toArray('single')).toEqual(['single'])
-      
+
       // Whitespace handling
       expect(EnvConverter.toArray('a, b , c')).toEqual(['a', 'b', 'c'])
       expect(EnvConverter.toArray(' a , b , c ')).toEqual(['a', 'b', 'c'])
-      
+
       // Empty values
       expect(EnvConverter.toArray('a,,c')).toEqual(['a', 'c'])
       expect(EnvConverter.toArray(',a,b,')).toEqual(['a', 'b'])
       expect(EnvConverter.toArray(',,,')).toEqual([])
-      
+
       // Special characters
       expect(EnvConverter.toArray('a\\,b,c')).toEqual(['a\\', 'b', 'c']) // No escape handling
       expect(EnvConverter.toArray('a"b,c')).toEqual(['a"b', 'c'])
@@ -122,12 +122,18 @@ describe('EnvConverter Edge Cases and Robustness', () => {
       expect(EnvConverter.toArray(urls)).toEqual([
         'http://localhost:3000',
         'https://example.com:8080',
-        'ftp://ftp.example.com'
+        'ftp://ftp.example.com',
       ])
-      
+
       const methods = 'GET,POST,PUT,DELETE,PATCH,OPTIONS,HEAD'
       expect(EnvConverter.toArray(methods)).toEqual([
-        'GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'
+        'GET',
+        'POST',
+        'PUT',
+        'DELETE',
+        'PATCH',
+        'OPTIONS',
+        'HEAD',
       ])
     })
   })
@@ -194,8 +200,8 @@ describe('EnvConverter Edge Cases and Robustness', () => {
   describe('toObject edge cases', () => {
     test('handles valid JSON variations', () => {
       expect(EnvConverter.toObject('{"key":"value"}', {})).toEqual({ key: 'value' })
-      expect(EnvConverter.toObject('{"nested":{"key":"value"}}', {})).toEqual({ 
-        nested: { key: 'value' } 
+      expect(EnvConverter.toObject('{"nested":{"key":"value"}}', {})).toEqual({
+        nested: { key: 'value' },
       })
       expect(EnvConverter.toObject('[1,2,3]', {})).toEqual([1, 2, 3])
       expect(EnvConverter.toObject('null', {})).toBe(null)
@@ -206,7 +212,7 @@ describe('EnvConverter Edge Cases and Robustness', () => {
 
     test('handles malformed JSON', () => {
       const defaultValue = { default: true }
-      
+
       expect(EnvConverter.toObject('{key:"value"}', defaultValue)).toBe(defaultValue) // Missing quotes
       expect(EnvConverter.toObject('{"key":value}', defaultValue)).toBe(defaultValue) // Unquoted value
       expect(EnvConverter.toObject('{key:value}', defaultValue)).toBe(defaultValue) // No quotes
@@ -231,13 +237,13 @@ describe('EnvConverter Edge Cases and Robustness', () => {
           options: {
             cors: true,
             compression: false,
-            middleware: ['auth', 'logging']
-          }
+            middleware: ['auth', 'logging'],
+          },
         },
         database: {
           url: 'postgresql://localhost:5432/db',
-          pool: { min: 2, max: 10 }
-        }
+          pool: { min: 2, max: 10 },
+        },
       })
 
       const result = EnvConverter.toObject(complexJson, {})
@@ -248,13 +254,13 @@ describe('EnvConverter Edge Cases and Robustness', () => {
           options: {
             cors: true,
             compression: false,
-            middleware: ['auth', 'logging']
-          }
+            middleware: ['auth', 'logging'],
+          },
         },
         database: {
           url: 'postgresql://localhost:5432/db',
-          pool: { min: 2, max: 10 }
-        }
+          pool: { min: 2, max: 10 },
+        },
       })
     })
 
@@ -304,7 +310,7 @@ describe('EnvConverter Edge Cases and Robustness', () => {
       expect(EnvConverter.toNumber('80', 8080)).toBe(80)
       expect(EnvConverter.toNumber('443', 8080)).toBe(443)
       expect(EnvConverter.toNumber('8080', 3000)).toBe(8080)
-      
+
       // Invalid port values
       expect(EnvConverter.toNumber('port', 3000)).toBe(3000)
       expect(EnvConverter.toNumber('-1', 3000)).toBe(-1) // Negative (invalid but parsed)
@@ -314,19 +320,19 @@ describe('EnvConverter Edge Cases and Robustness', () => {
     test('handles CORS_ORIGINS environment variable', () => {
       // Single origin
       expect(EnvConverter.toArray('http://localhost:3000')).toEqual(['http://localhost:3000'])
-      
+
       // Multiple origins
       expect(EnvConverter.toArray('http://localhost:3000,https://example.com')).toEqual([
         'http://localhost:3000',
-        'https://example.com'
+        'https://example.com',
       ])
-      
+
       // With ports and paths
       expect(EnvConverter.toArray('http://localhost:3000,https://example.com:8080/app')).toEqual([
         'http://localhost:3000',
-        'https://example.com:8080/app'
+        'https://example.com:8080/app',
       ])
-      
+
       // Wildcard
       expect(EnvConverter.toArray('*')).toEqual(['*'])
     })
@@ -335,11 +341,11 @@ describe('EnvConverter Edge Cases and Robustness', () => {
       // Docker-style
       expect(EnvConverter.toBoolean('true', false)).toBe(true)
       expect(EnvConverter.toBoolean('false', true)).toBe(false)
-      
+
       // Shell-style
       expect(EnvConverter.toBoolean('1', false)).toBe(true)
       expect(EnvConverter.toBoolean('0', true)).toBe(false)
-      
+
       // Human-readable
       expect(EnvConverter.toBoolean('yes', false)).toBe(true)
       expect(EnvConverter.toBoolean('no', true)).toBe(false)
@@ -354,18 +360,18 @@ describe('EnvConverter Edge Cases and Robustness', () => {
         options: {
           timeout: 5000,
           retries: 3,
-          endpoints: ['api', 'webhook']
-        }
+          endpoints: ['api', 'webhook'],
+        },
       })
-      
+
       const result = EnvConverter.toObject(pluginConfig, {})
       expect(result).toEqual({
         enabled: true,
         options: {
           timeout: 5000,
           retries: 3,
-          endpoints: ['api', 'webhook']
-        }
+          endpoints: ['api', 'webhook'],
+        },
       })
     })
   })

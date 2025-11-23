@@ -24,7 +24,6 @@
  * @deprecated Use /config modular system instead
  */
 
-
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 export type BuildTarget = 'bun' | 'node' | 'docker'
 export type LogFormat = 'json' | 'pretty'
@@ -241,20 +240,20 @@ export const fluxStackConfigSchema = {
         name: {
           type: 'string',
           minLength: 1,
-          description: 'Application name'
+          description: 'Application name',
         },
         version: {
           type: 'string',
           pattern: '^\\d+\\.\\d+\\.\\d+',
-          description: 'Application version (semver format)'
+          description: 'Application version (semver format)',
         },
         description: {
           type: 'string',
-          description: 'Application description'
-        }
+          description: 'Application description',
+        },
       },
       required: ['name', 'version'],
-      additionalProperties: false
+      additionalProperties: false,
     },
 
     server: {
@@ -264,16 +263,16 @@ export const fluxStackConfigSchema = {
           type: 'number',
           minimum: 1,
           maximum: 65535,
-          description: 'Server port number'
+          description: 'Server port number',
         },
         host: {
           type: 'string',
-          description: 'Server host address'
+          description: 'Server host address',
         },
         apiPrefix: {
           type: 'string',
           pattern: '^/',
-          description: 'API route prefix'
+          description: 'API route prefix',
         },
         cors: {
           type: 'object',
@@ -282,33 +281,33 @@ export const fluxStackConfigSchema = {
               type: 'array',
               items: { type: 'string' },
               minItems: 1,
-              description: 'Allowed CORS origins'
+              description: 'Allowed CORS origins',
             },
             methods: {
               type: 'array',
               items: {
                 type: 'string',
-                enum: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD']
+                enum: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'],
               },
-              description: 'Allowed HTTP methods'
+              description: 'Allowed HTTP methods',
             },
             headers: {
               type: 'array',
               items: { type: 'string' },
-              description: 'Allowed headers'
+              description: 'Allowed headers',
             },
             credentials: {
               type: 'boolean',
-              description: 'Allow credentials in CORS requests'
+              description: 'Allow credentials in CORS requests',
             },
             maxAge: {
               type: 'number',
               minimum: 0,
-              description: 'CORS preflight cache duration'
-            }
+              description: 'CORS preflight cache duration',
+            },
           },
           required: ['origins', 'methods', 'headers'],
-          additionalProperties: false
+          additionalProperties: false,
         },
         middleware: {
           type: 'array',
@@ -317,15 +316,15 @@ export const fluxStackConfigSchema = {
             properties: {
               name: { type: 'string' },
               enabled: { type: 'boolean' },
-              config: { type: 'object' }
+              config: { type: 'object' },
             },
             required: ['name', 'enabled'],
-            additionalProperties: false
-          }
-        }
+            additionalProperties: false,
+          },
+        },
       },
       required: ['port', 'host', 'apiPrefix', 'cors', 'middleware'],
-      additionalProperties: false
+      additionalProperties: false,
     },
 
     client: {
@@ -335,7 +334,7 @@ export const fluxStackConfigSchema = {
           type: 'number',
           minimum: 1,
           maximum: 65535,
-          description: 'Client development server port'
+          description: 'Client development server port',
         },
         proxy: {
           type: 'object',
@@ -344,11 +343,11 @@ export const fluxStackConfigSchema = {
             changeOrigin: { type: 'boolean' },
             pathRewrite: {
               type: 'object',
-              additionalProperties: { type: 'string' }
-            }
+              additionalProperties: { type: 'string' },
+            },
           },
           required: ['target'],
-          additionalProperties: false
+          additionalProperties: false,
         },
         build: {
           type: 'object',
@@ -356,14 +355,14 @@ export const fluxStackConfigSchema = {
             sourceMaps: { type: 'boolean' },
             minify: { type: 'boolean' },
             target: { type: 'string' },
-            outDir: { type: 'string' }
+            outDir: { type: 'string' },
           },
           required: ['sourceMaps', 'minify', 'target', 'outDir'],
-          additionalProperties: false
-        }
+          additionalProperties: false,
+        },
       },
       required: ['port', 'proxy', 'build'],
-      additionalProperties: false
+      additionalProperties: false,
     },
 
     build: {
@@ -372,16 +371,16 @@ export const fluxStackConfigSchema = {
         target: {
           type: 'string',
           enum: ['bun', 'node', 'docker'],
-          description: 'Build target runtime'
+          description: 'Build target runtime',
         },
         outDir: {
           type: 'string',
-          description: 'Build output directory'
+          description: 'Build output directory',
         },
         mode: {
           type: 'string',
           enum: ['development', 'production', 'test'],
-          description: 'Build mode'
+          description: 'Build mode',
         },
         optimization: {
           type: 'object',
@@ -390,10 +389,10 @@ export const fluxStackConfigSchema = {
             treeshake: { type: 'boolean' },
             compress: { type: 'boolean' },
             splitChunks: { type: 'boolean' },
-            bundleAnalyzer: { type: 'boolean' }
+            bundleAnalyzer: { type: 'boolean' },
           },
           required: ['minify', 'treeshake', 'compress', 'splitChunks', 'bundleAnalyzer'],
-          additionalProperties: false
+          additionalProperties: false,
         },
         sourceMaps: { type: 'boolean' },
         minify: { type: 'boolean' },
@@ -407,11 +406,11 @@ export const fluxStackConfigSchema = {
         external: {
           type: 'array',
           items: { type: 'string' },
-          description: 'External dependencies to exclude from bundle'
-        }
+          description: 'External dependencies to exclude from bundle',
+        },
       },
       required: ['target', 'outDir', 'optimization', 'sourceMaps', 'minify', 'treeshake', 'clean'],
-      additionalProperties: false
+      additionalProperties: false,
     },
 
     plugins: {
@@ -420,20 +419,20 @@ export const fluxStackConfigSchema = {
         enabled: {
           type: 'array',
           items: { type: 'string' },
-          description: 'List of enabled plugins'
+          description: 'List of enabled plugins',
         },
         disabled: {
           type: 'array',
           items: { type: 'string' },
-          description: 'List of disabled plugins'
+          description: 'List of disabled plugins',
         },
         config: {
           type: 'object',
-          description: 'Plugin-specific configuration'
-        }
+          description: 'Plugin-specific configuration',
+        },
       },
       required: ['enabled', 'disabled', 'config'],
-      additionalProperties: false
+      additionalProperties: false,
     },
 
     logging: {
@@ -442,12 +441,12 @@ export const fluxStackConfigSchema = {
         level: {
           type: 'string',
           enum: ['debug', 'info', 'warn', 'error'],
-          description: 'Minimum log level'
+          description: 'Minimum log level',
         },
         format: {
           type: 'string',
           enum: ['json', 'pretty'],
-          description: 'Log output format'
+          description: 'Log output format',
         },
         transports: {
           type: 'array',
@@ -456,26 +455,26 @@ export const fluxStackConfigSchema = {
             properties: {
               type: {
                 type: 'string',
-                enum: ['console', 'file', 'http']
+                enum: ['console', 'file', 'http'],
               },
               level: {
                 type: 'string',
-                enum: ['debug', 'info', 'warn', 'error']
+                enum: ['debug', 'info', 'warn', 'error'],
               },
               format: {
                 type: 'string',
-                enum: ['json', 'pretty']
+                enum: ['json', 'pretty'],
               },
-              options: { type: 'object' }
+              options: { type: 'object' },
             },
             required: ['type', 'level', 'format'],
-            additionalProperties: false
-          }
+            additionalProperties: false,
+          },
         },
-        context: { type: 'object' }
+        context: { type: 'object' },
       },
       required: ['level', 'format', 'transports'],
-      additionalProperties: false
+      additionalProperties: false,
     },
 
     monitoring: {
@@ -489,10 +488,10 @@ export const fluxStackConfigSchema = {
             collectInterval: { type: 'number', minimum: 1000 },
             httpMetrics: { type: 'boolean' },
             systemMetrics: { type: 'boolean' },
-            customMetrics: { type: 'boolean' }
+            customMetrics: { type: 'boolean' },
           },
           required: ['enabled', 'collectInterval', 'httpMetrics', 'systemMetrics', 'customMetrics'],
-          additionalProperties: false
+          additionalProperties: false,
         },
         profiling: {
           type: 'object',
@@ -500,18 +499,18 @@ export const fluxStackConfigSchema = {
             enabled: { type: 'boolean' },
             sampleRate: { type: 'number', minimum: 0, maximum: 1 },
             memoryProfiling: { type: 'boolean' },
-            cpuProfiling: { type: 'boolean' }
+            cpuProfiling: { type: 'boolean' },
           },
           required: ['enabled', 'sampleRate', 'memoryProfiling', 'cpuProfiling'],
-          additionalProperties: false
+          additionalProperties: false,
         },
         exporters: {
           type: 'array',
-          items: { type: 'string' }
-        }
+          items: { type: 'string' },
+        },
       },
       required: ['enabled', 'metrics', 'profiling', 'exporters'],
-      additionalProperties: false
+      additionalProperties: false,
     },
 
     // Optional configurations
@@ -525,9 +524,9 @@ export const fluxStackConfigSchema = {
         user: { type: 'string' },
         password: { type: 'string' },
         ssl: { type: 'boolean' },
-        poolSize: { type: 'number', minimum: 1 }
+        poolSize: { type: 'number', minimum: 1 },
       },
-      additionalProperties: false
+      additionalProperties: false,
     },
 
     auth: {
@@ -536,9 +535,9 @@ export const fluxStackConfigSchema = {
         secret: { type: 'string', minLength: 32 },
         expiresIn: { type: 'string' },
         algorithm: { type: 'string' },
-        issuer: { type: 'string' }
+        issuer: { type: 'string' },
       },
-      additionalProperties: false
+      additionalProperties: false,
     },
 
     email: {
@@ -549,9 +548,9 @@ export const fluxStackConfigSchema = {
         user: { type: 'string' },
         password: { type: 'string' },
         secure: { type: 'boolean' },
-        from: { type: 'string' }
+        from: { type: 'string' },
       },
-      additionalProperties: false
+      additionalProperties: false,
     },
 
     storage: {
@@ -561,32 +560,32 @@ export const fluxStackConfigSchema = {
         maxFileSize: { type: 'number', minimum: 1 },
         allowedTypes: {
           type: 'array',
-          items: { type: 'string' }
+          items: { type: 'string' },
         },
         provider: {
           type: 'string',
-          enum: ['local', 's3', 'gcs']
+          enum: ['local', 's3', 'gcs'],
         },
-        config: { type: 'object' }
+        config: { type: 'object' },
       },
-      additionalProperties: false
+      additionalProperties: false,
     },
 
     environments: {
       type: 'object',
       additionalProperties: {
         // Recursive reference to partial config
-        type: 'object'
-      }
+        type: 'object',
+      },
     },
 
     custom: {
       type: 'object',
-      description: 'Custom application-specific configuration'
-    }
+      description: 'Custom application-specific configuration',
+    },
   },
   required: ['app', 'server', 'client', 'build', 'plugins', 'logging', 'monitoring'],
-  additionalProperties: false
+  additionalProperties: false,
 }
 
 // Default configuration values
@@ -594,7 +593,7 @@ export const defaultFluxStackConfig: FluxStackConfig = {
   app: {
     name: 'fluxstack-app',
     version: '1.0.0',
-    description: 'A FluxStack application'
+    description: 'A FluxStack application',
   },
 
   server: {
@@ -606,23 +605,23 @@ export const defaultFluxStackConfig: FluxStackConfig = {
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       headers: ['Content-Type', 'Authorization'],
       credentials: true,
-      maxAge: 86400
+      maxAge: 86400,
     },
-    middleware: []
+    middleware: [],
   },
 
   client: {
     port: 5173,
     proxy: {
       target: 'http://localhost:3000',
-      changeOrigin: true
+      changeOrigin: true,
     },
     build: {
       sourceMaps: true,
       minify: false,
       target: 'esnext',
-      outDir: 'dist/client'
-    }
+      outDir: 'dist/client',
+    },
   },
 
   build: {
@@ -634,7 +633,7 @@ export const defaultFluxStackConfig: FluxStackConfig = {
       treeshake: true,
       compress: true,
       splitChunks: true,
-      bundleAnalyzer: false
+      bundleAnalyzer: false,
     },
     sourceMaps: true,
     minify: true,
@@ -645,13 +644,13 @@ export const defaultFluxStackConfig: FluxStackConfig = {
     bundleAnalysis: false,
     clean: true,
     optimize: true,
-    external: []
+    external: [],
   },
 
   plugins: {
     enabled: ['logger', 'swagger', 'vite', 'cors'],
     disabled: [],
-    config: {}
+    config: {},
   },
 
   logging: {
@@ -661,9 +660,9 @@ export const defaultFluxStackConfig: FluxStackConfig = {
       {
         type: 'console',
         level: 'info',
-        format: 'pretty'
-      }
-    ]
+        format: 'pretty',
+      },
+    ],
   },
 
   monitoring: {
@@ -673,16 +672,16 @@ export const defaultFluxStackConfig: FluxStackConfig = {
       collectInterval: 5000,
       httpMetrics: true,
       systemMetrics: true,
-      customMetrics: false
+      customMetrics: false,
     },
     profiling: {
       enabled: false,
       sampleRate: 0.1,
       memoryProfiling: false,
-      cpuProfiling: false
+      cpuProfiling: false,
     },
-    exporters: []
-  }
+    exporters: [],
+  },
 }
 
 // Environment-specific default overrides
@@ -690,20 +689,20 @@ export const environmentDefaults = {
   development: {
     logging: {
       level: 'debug' as LogLevel,
-      format: 'pretty' as LogFormat
+      format: 'pretty' as LogFormat,
     },
     client: {
       build: {
         minify: false,
-        sourceMaps: true
-      }
+        sourceMaps: true,
+      },
     },
     build: {
       optimization: {
         minify: false,
-        compress: false
-      }
-    }
+        compress: false,
+      },
+    },
   },
 
   production: {
@@ -714,7 +713,7 @@ export const environmentDefaults = {
         {
           type: 'console' as const,
           level: 'warn' as LogLevel,
-          format: 'json' as LogFormat
+          format: 'json' as LogFormat,
         },
         {
           type: 'file' as const,
@@ -723,39 +722,39 @@ export const environmentDefaults = {
           options: {
             filename: 'logs/error.log',
             maxSize: '10m',
-            maxFiles: 5
-          }
-        }
-      ]
+            maxFiles: 5,
+          },
+        },
+      ],
     },
     monitoring: {
       enabled: true,
       metrics: {
         enabled: true,
         httpMetrics: true,
-        systemMetrics: true
-      }
+        systemMetrics: true,
+      },
     },
     build: {
       optimization: {
         minify: true,
         treeshake: true,
         compress: true,
-        splitChunks: true
-      }
-    }
+        splitChunks: true,
+      },
+    },
   },
 
   test: {
     logging: {
       level: 'error' as LogLevel,
-      format: 'json' as LogFormat
+      format: 'json' as LogFormat,
     },
     server: {
-      port: 0 // Use random available port
+      port: 0, // Use random available port
     },
     client: {
-      port: 0 // Use random available port
-    }
-  }
+      port: 0, // Use random available port
+    },
+  },
 } as const

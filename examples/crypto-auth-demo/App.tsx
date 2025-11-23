@@ -4,12 +4,12 @@
  */
 
 import React from 'react'
-import { 
-  AuthProvider, 
-  useAuth, 
-  LoginButton, 
-  ProtectedRoute, 
-  SessionInfo 
+import {
+  AuthProvider,
+  LoginButton,
+  ProtectedRoute,
+  SessionInfo,
+  useAuth,
 } from '../../plugins/crypto-auth/client'
 
 function App() {
@@ -17,7 +17,7 @@ function App() {
     <AuthProvider
       config={{
         apiBaseUrl: 'http://localhost:3000',
-        storage: 'localStorage'
+        storage: 'localStorage',
       }}
     >
       <div className="min-h-screen bg-gray-100">
@@ -37,17 +37,13 @@ function Header() {
     <header className="bg-white shadow">
       <div className="container mx-auto px-4 py-6 flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            FluxStack Crypto Auth
-          </h1>
-          <p className="text-gray-600">
-            Autenticação criptográfica sem senhas
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900">FluxStack Crypto Auth</h1>
+          <p className="text-gray-600">Autenticação criptográfica sem senhas</p>
         </div>
-        
+
         <div className="flex items-center gap-4">
           <SessionInfo compact={true} />
-          <LoginButton 
+          <LoginButton
             showPermissions={true}
             onLogin={(session) => {
               console.log('✅ Login realizado:', session)
@@ -65,10 +61,8 @@ function Header() {
 function WelcomeSection() {
   return (
     <section className="bg-white rounded-lg shadow-md p-8 mb-8">
-      <h2 className="text-2xl font-semibold mb-4">
-        🔐 Autenticação Criptográfica
-      </h2>
-      
+      <h2 className="text-2xl font-semibold mb-4">🔐 Autenticação Criptográfica</h2>
+
       <div className="grid md:grid-cols-2 gap-6">
         <div>
           <h3 className="text-lg font-medium mb-3">Como funciona:</h3>
@@ -91,11 +85,9 @@ function WelcomeSection() {
             </li>
           </ul>
         </div>
-        
+
         <div className="bg-blue-50 rounded-lg p-4">
-          <h3 className="text-lg font-medium text-blue-900 mb-3">
-            Vantagens:
-          </h3>
+          <h3 className="text-lg font-medium text-blue-900 mb-3">Vantagens:</h3>
           <ul className="space-y-1 text-blue-800 text-sm">
             <li>• Zero-friction authentication</li>
             <li>• Criptografia de nível militar (Ed25519)</li>
@@ -111,17 +103,13 @@ function WelcomeSection() {
 
 function AuthenticatedSection() {
   const { isAuthenticated } = useAuth()
-  
+
   if (!isAuthenticated) {
     return (
       <section className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8">
-        <h2 className="text-xl font-semibold text-yellow-800 mb-2">
-          🔒 Área Protegida
-        </h2>
-        <p className="text-yellow-700 mb-4">
-          Faça login para acessar funcionalidades protegidas.
-        </p>
-        <LoginButton 
+        <h2 className="text-xl font-semibold text-yellow-800 mb-2">🔒 Área Protegida</h2>
+        <p className="text-yellow-700 mb-4">Faça login para acessar funcionalidades protegidas.</p>
+        <LoginButton
           className="bg-yellow-600 hover:bg-yellow-700"
           loginText="Entrar para ver mais"
         />
@@ -137,7 +125,7 @@ function AuthenticatedSection() {
 }
 
 function AuthenticatedContent() {
-  const { client, session, permissions, isAdmin } = useAuth()
+  const { client, session: _session, permissions, isAdmin } = useAuth()
   const [apiResponse, setApiResponse] = React.useState<any>(null)
   const [loading, setLoading] = React.useState(false)
 
@@ -148,10 +136,10 @@ function AuthenticatedContent() {
         method: 'POST',
         body: JSON.stringify({
           message: 'Hello from authenticated client!',
-          timestamp: new Date().toISOString()
-        })
+          timestamp: new Date().toISOString(),
+        }),
       })
-      
+
       const data = await response.json()
       setApiResponse(data)
     } catch (error) {
@@ -164,26 +152,25 @@ function AuthenticatedContent() {
 
   return (
     <section className="bg-white rounded-lg shadow-md p-8 mb-8">
-      <h2 className="text-2xl font-semibold mb-6 text-green-700">
-        ✅ Você está autenticado!
-      </h2>
-      
+      <h2 className="text-2xl font-semibold mb-6 text-green-700">✅ Você está autenticado!</h2>
+
       <div className="grid md:grid-cols-2 gap-6">
         <div>
           <h3 className="text-lg font-medium mb-3">Informações da Sessão:</h3>
           <SessionInfo showFullSessionId={false} />
         </div>
-        
+
         <div>
           <h3 className="text-lg font-medium mb-3">Testar API Protegida:</h3>
           <button
+            type="button"
             onClick={testProtectedAPI}
             disabled={loading}
             className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-md transition-colors mb-4"
           >
             {loading ? 'Testando...' : 'Testar API'}
           </button>
-          
+
           {apiResponse && (
             <div className="bg-gray-50 rounded-lg p-4">
               <h4 className="font-medium mb-2">Resposta da API:</h4>
@@ -194,7 +181,7 @@ function AuthenticatedContent() {
           )}
         </div>
       </div>
-      
+
       <div className="mt-6 p-4 bg-green-50 rounded-lg">
         <h4 className="font-medium text-green-800 mb-2">Status:</h4>
         <div className="flex flex-wrap gap-2">
@@ -206,8 +193,8 @@ function AuthenticatedContent() {
               Administrador
             </span>
           )}
-          {permissions.map(permission => (
-            <span 
+          {permissions.map((permission) => (
+            <span
               key={permission}
               className="px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm"
             >
@@ -222,16 +209,12 @@ function AuthenticatedContent() {
 
 function AdminSection() {
   return (
-    <ProtectedRoute 
+    <ProtectedRoute
       requireAdmin={true}
       fallback={
         <section className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-          <h2 className="text-xl font-semibold text-gray-700 mb-2">
-            👑 Área Administrativa
-          </h2>
-          <p className="text-gray-600">
-            Esta seção é visível apenas para administradores.
-          </p>
+          <h2 className="text-xl font-semibold text-gray-700 mb-2">👑 Área Administrativa</h2>
+          <p className="text-gray-600">Esta seção é visível apenas para administradores.</p>
           <p className="text-sm text-gray-500 mt-2">
             Para testar, adicione sua chave pública na configuração adminKeys.
           </p>
@@ -248,7 +231,7 @@ function AdminContent() {
   const [stats, setStats] = React.useState<any>(null)
   const [loading, setLoading] = React.useState(false)
 
-  const loadStats = async () => {
+  const loadStats = React.useCallback(async () => {
     setLoading(true)
     try {
       const response = await client.fetch('/api/admin/stats')
@@ -259,20 +242,19 @@ function AdminContent() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [client])
 
   React.useEffect(() => {
     loadStats()
-  }, [])
+  }, [loadStats])
 
   return (
     <section className="bg-white rounded-lg shadow-md p-8 border-l-4 border-red-500">
-      <h2 className="text-2xl font-semibold mb-6 text-red-700">
-        👑 Painel Administrativo
-      </h2>
-      
+      <h2 className="text-2xl font-semibold mb-6 text-red-700">👑 Painel Administrativo</h2>
+
       <div className="mb-6">
         <button
+          type="button"
           onClick={loadStats}
           disabled={loading}
           className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-4 py-2 rounded-md transition-colors"
@@ -280,7 +262,7 @@ function AdminContent() {
           {loading ? 'Carregando...' : 'Atualizar Estatísticas'}
         </button>
       </div>
-      
+
       {stats && (
         <div className="grid md:grid-cols-4 gap-4">
           <div className="bg-red-50 rounded-lg p-4">

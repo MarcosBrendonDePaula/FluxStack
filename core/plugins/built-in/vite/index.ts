@@ -1,9 +1,9 @@
-import type { FluxStack, PluginContext, RequestContext } from "@/core/plugins/types"
-import { FLUXSTACK_VERSION } from "@/core/utils/version"
+import { existsSync, statSync } from 'node:fs'
+import { join } from 'node:path'
 import { clientConfig } from '@/config/client.config'
-import { isDevelopment } from "@/core/utils/helpers"
-import { join } from "path"
-import { statSync, existsSync } from "fs"
+import type { FluxStack, PluginContext, RequestContext } from '@/core/plugins/types'
+import { isDevelopment } from '@/core/utils/helpers'
+import { FLUXSTACK_VERSION } from '@/core/utils/version'
 
 type Plugin = FluxStack.Plugin
 
@@ -19,7 +19,7 @@ const DEFAULTS = {
   excludePaths: [] as string[],
   // Static file serving (production) - uses clientConfig
   publicDir: clientConfig.build.outDir,
-  indexFile: "index.html"
+  indexFile: 'index.html',
 }
 
 /**
@@ -38,13 +38,14 @@ function parseRequestURL(request: Request): URL {
 }
 
 export const vitePlugin: Plugin = {
-  name: "vite",
+  name: 'vite',
   version: FLUXSTACK_VERSION,
-  description: "Enhanced Vite integration plugin for FluxStack with improved error handling and monitoring",
-  author: "FluxStack Team",
+  description:
+    'Enhanced Vite integration plugin for FluxStack with improved error handling and monitoring',
+  author: 'FluxStack Team',
   priority: 800, // Should run early to setup proxying
-  category: "development",
-  tags: ["vite", "development", "hot-reload"],
+  category: 'development',
+  tags: ['vite', 'development', 'hot-reload'],
   dependencies: [],
 
   setup: async (context: PluginContext) => {
@@ -55,8 +56,8 @@ export const vitePlugin: Plugin = {
 
     // Production mode: setup static file serving
     if (!isDevelopment()) {
-      context.logger.debug("Production mode: static file serving enabled", {
-        publicDir: DEFAULTS.publicDir
+      context.logger.debug('Production mode: static file serving enabled', {
+        publicDir: DEFAULTS.publicDir,
       })
 
       // Static fallback handler (runs last)
@@ -126,14 +127,16 @@ export const vitePlugin: Plugin = {
     if (!isDevelopment()) {
       context.logger.debug(`Static files ready`, {
         publicDir: DEFAULTS.publicDir,
-        indexFile: DEFAULTS.indexFile
+        indexFile: DEFAULTS.indexFile,
       })
       return
     }
 
     const viteConfig = (context as any).viteConfig
     if (viteConfig) {
-      context.logger.debug(`Vite integration active - monitoring ${viteConfig.host}:${viteConfig.port}`)
+      context.logger.debug(
+        `Vite integration active - monitoring ${viteConfig.host}:${viteConfig.port}`,
+      )
     }
   },
 
@@ -142,20 +145,23 @@ export const vitePlugin: Plugin = {
     if (!isDevelopment()) return
 
     // Skip API routes and swagger - let them be handled by backend
-    if (requestContext.path.startsWith("/api") || requestContext.path.startsWith("/swagger")) {
+    if (requestContext.path.startsWith('/api') || requestContext.path.startsWith('/swagger')) {
       return
     }
 
     // For Vite internal routes, proxy directly to Vite server
-    if (requestContext.path.startsWith("/@") ||           // All Vite internal routes (/@vite/, /@fs/, /@react-refresh, etc.)
-      requestContext.path.startsWith("/__vite") ||      // Vite HMR and dev routes
-      requestContext.path.startsWith("/node_modules") || // Direct node_modules access
-      requestContext.path.includes("/.vite/") ||        // Vite cache and deps
-      requestContext.path.endsWith(".js.map") ||        // Source maps
-      requestContext.path.endsWith(".css.map")) {       // CSS source maps
+    if (
+      requestContext.path.startsWith('/@') || // All Vite internal routes (/@vite/, /@fs/, /@react-refresh, etc.)
+      requestContext.path.startsWith('/__vite') || // Vite HMR and dev routes
+      requestContext.path.startsWith('/node_modules') || // Direct node_modules access
+      requestContext.path.includes('/.vite/') || // Vite cache and deps
+      requestContext.path.endsWith('.js.map') || // Source maps
+      requestContext.path.endsWith('.css.map')
+    ) {
+      // CSS source maps
 
       // Use fixed configuration for Vite proxy
-      const viteHost = "localhost"
+      const viteHost = 'localhost'
       const vitePort = 5173
 
       try {
@@ -166,7 +172,10 @@ export const vitePlugin: Plugin = {
         const response = await fetch(viteUrl, {
           method: requestContext.method,
           headers: requestContext.headers,
-          body: requestContext.method !== 'GET' && requestContext.method !== 'HEAD' ? requestContext.request.body : undefined
+          body:
+            requestContext.method !== 'GET' && requestContext.method !== 'HEAD'
+              ? requestContext.request.body
+              : undefined,
         })
 
         // Return the Vite response
@@ -176,9 +185,8 @@ export const vitePlugin: Plugin = {
         requestContext.response = new Response(body, {
           status: response.status,
           statusText: response.statusText,
-          headers: response.headers
+          headers: response.headers,
         })
-
       } catch (viteError) {
         // If Vite fails, let the request continue to normal routing (will become 404)
         // Only log if explicitly enabled for debugging
@@ -190,7 +198,7 @@ export const vitePlugin: Plugin = {
     }
 
     // Use fixed configuration for simplicity - Vite should be running on port 5173
-    const viteHost = "localhost"
+    const viteHost = 'localhost'
     const vitePort = 5173
 
     try {
@@ -201,7 +209,10 @@ export const vitePlugin: Plugin = {
       const response = await fetch(viteUrl, {
         method: requestContext.method,
         headers: requestContext.headers,
-        body: requestContext.method !== 'GET' && requestContext.method !== 'HEAD' ? requestContext.request.body : undefined
+        body:
+          requestContext.method !== 'GET' && requestContext.method !== 'HEAD'
+            ? requestContext.request.body
+            : undefined,
       })
 
       // If Vite responds successfully, handle the request
@@ -213,10 +224,9 @@ export const vitePlugin: Plugin = {
         requestContext.response = new Response(body, {
           status: response.status,
           statusText: response.statusText,
-          headers: response.headers
+          headers: response.headers,
         })
       }
-
     } catch (viteError) {
       // If Vite fails, let the request continue to normal routing (will become 404)
       // Only log if explicitly enabled for debugging
@@ -224,8 +234,7 @@ export const vitePlugin: Plugin = {
         console.warn(`Vite proxy error: ${viteError}`)
       }
     }
-  }
+  },
 }
-
 
 export default vitePlugin

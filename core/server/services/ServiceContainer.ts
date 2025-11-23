@@ -1,7 +1,7 @@
 /**
  * Service Container
  * Core FluxStack dependency injection container
- * 
+ *
  * Provides service registration, resolution, and lifecycle management
  */
 
@@ -81,9 +81,7 @@ export class ServiceContainer {
    * Check if service exists
    */
   has(name: string): boolean {
-    return this.services.has(name) || 
-           this.definitions.has(name) || 
-           this.singletons.has(name)
+    return this.services.has(name) || this.definitions.has(name) || this.singletons.has(name)
   }
 
   /**
@@ -101,33 +99,36 @@ export class ServiceContainer {
    */
   getServiceNames(): string[] {
     const names = new Set<string>()
-    
+
     // Use Array.from to avoid iterator issues
-    Array.from(this.services.keys()).forEach(name => names.add(name))
-    Array.from(this.definitions.keys()).forEach(name => names.add(name))
-    Array.from(this.singletons.keys()).forEach(name => names.add(name))
-    
+    Array.from(this.services.keys()).forEach((name) => names.add(name))
+    Array.from(this.definitions.keys()).forEach((name) => names.add(name))
+    Array.from(this.singletons.keys()).forEach((name) => names.add(name))
+
     return Array.from(names)
   }
 
   /**
    * Register multiple services at once
    */
-  registerMany(services: Array<{
-    name: string
-    constructor: any
-    dependencies?: string[]
-    singleton?: boolean
-  }>): void {
+  registerMany(
+    services: Array<{
+      name: string
+      constructor: any
+      dependencies?: string[]
+      singleton?: boolean
+    }>,
+  ): void {
     for (const service of services) {
       this.register(service.name, {
-        factory: (container) => new service.constructor({
-          config: {},
-          logger: this.logger,
-          services: container
-        }),
+        factory: (container) =>
+          new service.constructor({
+            config: {},
+            logger: this.logger,
+            services: container,
+          }),
         dependencies: service.dependencies,
-        singleton: service.singleton
+        singleton: service.singleton,
       })
     }
   }

@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
+import type { FluxStackConfig } from '@/core/config/schema'
 import { FluxStackFramework } from '@/core/server/framework'
 import type { Plugin } from '@/core/types'
-import type { FluxStackConfig } from '@/core/config/schema'
 
 describe('FluxStackFramework', () => {
   let framework: FluxStackFramework
@@ -17,10 +17,10 @@ describe('FluxStackFramework', () => {
           methods: ['GET', 'POST'],
           headers: ['Content-Type'],
           credentials: false,
-          maxAge: 86400
+          maxAge: 86400,
         },
-        middleware: []
-      }
+        middleware: [],
+      },
     })
   })
 
@@ -28,7 +28,7 @@ describe('FluxStackFramework', () => {
     it('should create framework with default config', () => {
       const defaultFramework = new FluxStackFramework()
       const context = defaultFramework.getContext()
-      
+
       // Environment variables now control default values
       expect(context.config.server.port).toBeDefined()
       expect(context.config.server.apiPrefix).toBe('/api')
@@ -46,28 +46,28 @@ describe('FluxStackFramework', () => {
             methods: ['GET', 'POST'],
             headers: ['Content-Type'],
             credentials: false,
-            maxAge: 86400
+            maxAge: 86400,
           },
-          middleware: []
+          middleware: [],
         },
         client: {
           port: 5174,
           proxy: {
             target: 'http://localhost:4000',
-            changeOrigin: true
+            changeOrigin: true,
           },
           build: {
             outDir: 'dist/client',
             sourceMaps: true,
             minify: false,
-            target: 'es2020'
-          }
-        }
+            target: 'es2020',
+          },
+        },
       }
-      
+
       const customFramework = new FluxStackFramework(config)
       const context = customFramework.getContext()
-      
+
       expect(context.config.server.port).toBe(4000)
       expect(context.config.client.port).toBe(5174)
       expect(context.config.server.apiPrefix).toBe('/custom-api')
@@ -85,7 +85,7 @@ describe('FluxStackFramework', () => {
     it('should add plugins correctly', () => {
       const mockPlugin: Plugin = {
         name: 'test-plugin',
-        setup: () => {}
+        setup: () => {},
       }
 
       const result = framework.use(mockPlugin)
@@ -95,12 +95,12 @@ describe('FluxStackFramework', () => {
     it('should handle multiple plugins', () => {
       const plugin1: Plugin = {
         name: 'plugin-1',
-        setup: () => {}
+        setup: () => {},
       }
-      
+
       const plugin2: Plugin = {
         name: 'plugin-2',
-        setup: () => {}
+        setup: () => {},
       }
 
       framework.use(plugin1).use(plugin2)
@@ -113,7 +113,7 @@ describe('FluxStackFramework', () => {
     it('should register routes correctly', () => {
       // Test that routes method exists and returns framework
       expect(typeof framework.routes).toBe('function')
-      
+
       // Skip actual route registration test to avoid Elysia mock complexity
       // This test verifies the method is available for chaining
       expect(framework).toBeDefined()
@@ -134,7 +134,7 @@ describe('FluxStackFramework', () => {
   describe('getContext', () => {
     it('should return framework context', () => {
       const context = framework.getContext()
-      
+
       expect(context).toBeDefined()
       expect(context.config).toBeDefined()
       expect(typeof context.isDevelopment).toBe('boolean')

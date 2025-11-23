@@ -3,5 +3,5 @@
  * FluxStack hook utilities exports
  */
 
-export { createAuthHook } from './useAuth'
 export type { AuthHook } from './useAuth'
+export { createAuthHook } from './useAuth'

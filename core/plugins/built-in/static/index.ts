@@ -1,22 +1,22 @@
-import { join } from "path"
-import { statSync, existsSync } from "fs"
-import type { Plugin, PluginContext } from "@/core/plugins"
+import { existsSync, statSync } from 'node:fs'
+import { join } from 'node:path'
+import type { Plugin, PluginContext } from '@/core/plugins'
 
 // Default configuration values
 const DEFAULTS = {
   enabled: true,
-  publicDir: "./dist/client",
-  indexFile: "index.html"
+  publicDir: './dist/client',
+  indexFile: 'index.html',
 }
 
 export const staticPlugin: Plugin = {
-  name: "static",
-  version: "2.0.0",
-  description: "Simple and efficient static file serving plugin for FluxStack",
-  author: "FluxStack Team",
+  name: 'static',
+  version: '2.0.0',
+  description: 'Simple and efficient static file serving plugin for FluxStack',
+  author: 'FluxStack Team',
   priority: 200, // Run after all other plugins
-  category: "core",
-  tags: ["static", "files", "spa"],
+  category: 'core',
+  tags: ['static', 'files', 'spa'],
   dependencies: [],
 
   setup: async (context: PluginContext) => {
@@ -25,8 +25,8 @@ export const staticPlugin: Plugin = {
       return
     }
 
-    context.logger.info("Static files plugin activated", {
-      publicDir: DEFAULTS.publicDir
+    context.logger.info('Static files plugin activated', {
+      publicDir: DEFAULTS.publicDir,
     })
 
     // Static fallback handler (runs last)
@@ -94,10 +94,10 @@ export const staticPlugin: Plugin = {
     if (DEFAULTS.enabled) {
       context.logger.info(`Static files plugin ready`, {
         publicDir: DEFAULTS.publicDir,
-        indexFile: DEFAULTS.indexFile
+        indexFile: DEFAULTS.indexFile,
       })
     }
-  }
+  },
 }
 
 export default staticPlugin

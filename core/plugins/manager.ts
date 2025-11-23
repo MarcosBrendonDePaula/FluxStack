@@ -3,27 +3,28 @@
  * Handles plugin lifecycle, execution, and context management
  */
 
-import type { 
+import type {
+  BuildContext,
+  ErrorContext,
   FluxStack,
-  PluginContext, 
-  PluginHook, 
-  PluginHookResult, 
-  PluginMetrics,
-  PluginExecutionContext,
   HookExecutionOptions,
+  PluginContext,
+  PluginExecutionContext,
+  PluginHook,
+  PluginHookResult,
+  PluginMetrics,
   RequestContext,
   ResponseContext,
-  ErrorContext,
-  BuildContext
-} from "./types"
+} from './types'
 
 type Plugin = FluxStack.Plugin
-import type { FluxStackConfig } from "@/core/config/schema"
-import type { Logger } from "@/core/utils/logger"
-import { PluginRegistry } from "./registry"
-import { createPluginUtils } from "./config"
-import { FluxStackError } from "@/core/utils/errors"
-import { EventEmitter } from "events"
+
+import { EventEmitter } from 'node:events'
+import type { FluxStackConfig } from '@/core/config/schema'
+import { FluxStackError } from '@/core/utils/errors'
+import type { Logger } from '@/core/utils/logger'
+import { createPluginUtils } from './config'
+import { PluginRegistry } from './registry'
 
 /**
  * Helper to safely parse request.url which might be relative or absolute
@@ -60,10 +61,10 @@ export class PluginManager extends EventEmitter {
     this.config = options.config
     this.logger = options.logger
     this.app = options.app
-    
+
     this.registry = new PluginRegistry({
       logger: this.logger,
-      config: this.config
+      config: this.config,
     })
   }
 
@@ -98,15 +99,18 @@ export class PluginManager extends EventEmitter {
       this.logger.debug('Plugin manager initialized successfully', {
         totalPlugins: stats.totalPlugins,
         enabledPlugins: stats.enabledPlugins,
-        loadOrder: stats.loadOrder
+        loadOrder: stats.loadOrder,
       })
     } catch (error) {
-      this.logger.error('Failed to initialize plugin manager', { 
-        error: error instanceof Error ? {
-          message: error.message,
-          stack: error.stack,
-          name: error.name
-        } : error 
+      this.logger.error('Failed to initialize plugin manager', {
+        error:
+          error instanceof Error
+            ? {
+                message: error.message,
+                stack: error.stack,
+                name: error.name,
+              }
+            : error,
       })
       throw error
     }
@@ -144,7 +148,7 @@ export class PluginManager extends EventEmitter {
   async registerPlugin(plugin: Plugin): Promise<void> {
     await this.registry.register(plugin)
     this.setupPluginContext(plugin)
-    
+
     if (this.initialized && plugin.setup) {
       await this.executePluginHook(plugin, 'setup')
     }
@@ -163,16 +167,11 @@ export class PluginManager extends EventEmitter {
    * Execute a hook on all plugins
    */
   async executeHook(
-    hook: PluginHook, 
-    context?: any, 
-    options: HookExecutionOptions = {}
+    hook: PluginHook,
+    context?: any,
+    options: HookExecutionOptions = {},
   ): Promise<PluginHookResult[]> {
-    const {
-      timeout = 30000,
-      parallel = false,
-      stopOnError = false,
-      retries = 0
-    } = options
+    const { timeout = 30000, parallel = false, stopOnError = false, retries = 0 } = options
 
     const results: PluginHookResult[] = []
     const loadOrder = this.registry.getLoadOrder()
@@ -180,9 +179,9 @@ export class PluginManager extends EventEmitter {
 
     this.logger.debug(`Executing hook '${hook}' on ${enabledPlugins.length} plugins`, {
       hook,
-      plugins: enabledPlugins.map(p => p.name),
+      plugins: enabledPlugins.map((p) => p.name),
       parallel,
-      timeout
+      timeout,
     })
 
     const executePlugin = async (plugin: Plugin): Promise<PluginHookResult> => {
@@ -191,7 +190,7 @@ export class PluginManager extends EventEmitter {
           success: true,
           duration: 0,
           plugin: plugin.name,
-          hook
+          hook,
         }
       }
 
@@ -202,12 +201,12 @@ export class PluginManager extends EventEmitter {
       if (parallel) {
         // Execute all plugins in parallel
         const promises = loadOrder
-          .map(name => this.registry.get(name))
+          .map((name) => this.registry.get(name))
           .filter(Boolean)
-          .map(plugin => executePlugin(plugin!))
+          .map((plugin) => executePlugin(plugin!))
 
         const settled = await Promise.allSettled(promises)
-        
+
         for (const result of settled) {
           if (result.status === 'fulfilled') {
             results.push(result.value)
@@ -217,7 +216,7 @@ export class PluginManager extends EventEmitter {
               error: result.reason,
               duration: 0,
               plugin: 'unknown',
-              hook
+              hook,
             })
           }
         }
@@ -234,7 +233,7 @@ export class PluginManager extends EventEmitter {
             this.logger.error(`Hook execution stopped due to error in plugin '${plugin.name}'`, {
               hook,
               plugin: plugin.name,
-              error: result.error
+              error: result.error,
             })
             break
           }
@@ -259,7 +258,7 @@ export class PluginManager extends EventEmitter {
     plugin: Plugin,
     hook: PluginHook,
     context?: any,
-    options: { timeout?: number; retries?: number } = {}
+    options: { timeout?: number; retries?: number } = {},
   ): Promise<PluginHookResult> {
     const { timeout = 30000, retries = 0 } = options
     const startTime = Date.now()
@@ -271,7 +270,7 @@ export class PluginManager extends EventEmitter {
         success: true,
         duration: 0,
         plugin: plugin.name,
-        hook
+        hook,
       }
     }
 
@@ -288,23 +287,25 @@ export class PluginManager extends EventEmitter {
           hook,
           startTime: Date.now(),
           timeout,
-          retries
+          retries,
         }
 
         // Create timeout promise
         const timeoutPromise = new Promise<never>((_, reject) => {
           setTimeout(() => {
-            reject(new FluxStackError(
-              `Plugin '${plugin.name}' hook '${hook}' timed out after ${timeout}ms`,
-              'PLUGIN_TIMEOUT',
-              408
-            ))
+            reject(
+              new FluxStackError(
+                `Plugin '${plugin.name}' hook '${hook}' timed out after ${timeout}ms`,
+                'PLUGIN_TIMEOUT',
+                408,
+              ),
+            )
           }, timeout)
         })
 
         // Execute the hook with appropriate context
         let hookPromise: Promise<any>
-        
+
         switch (hook) {
           case 'setup':
           case 'onServerStart':
@@ -328,7 +329,7 @@ export class PluginManager extends EventEmitter {
         await Promise.race([hookPromise, timeoutPromise])
 
         const duration = Date.now() - startTime
-        
+
         // Update metrics
         this.updatePluginMetrics(plugin.name, hook, duration, true)
 
@@ -336,7 +337,7 @@ export class PluginManager extends EventEmitter {
           plugin: plugin.name,
           hook,
           duration,
-          attempt: attempt + 1
+          attempt: attempt + 1,
         })
 
         return {
@@ -344,29 +345,31 @@ export class PluginManager extends EventEmitter {
           duration,
           plugin: plugin.name,
           hook,
-          context: executionContext
+          context: executionContext,
         }
-
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error))
         attempt++
 
-        this.logger.warn(`Plugin '${plugin.name}' hook '${hook}' failed (attempt ${attempt}/${retries + 1})`, {
-          plugin: plugin.name,
-          hook,
-          error: lastError.message,
-          attempt
-        })
+        this.logger.warn(
+          `Plugin '${plugin.name}' hook '${hook}' failed (attempt ${attempt}/${retries + 1})`,
+          {
+            plugin: plugin.name,
+            hook,
+            error: lastError.message,
+            attempt,
+          },
+        )
 
         if (attempt <= retries) {
           // Wait before retry (exponential backoff)
-          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt - 1) * 1000))
+          await new Promise((resolve) => setTimeout(resolve, 2 ** (attempt - 1) * 1000))
         }
       }
     }
 
     const duration = Date.now() - startTime
-    
+
     // Update metrics
     this.updatePluginMetrics(plugin.name, hook, duration, false)
 
@@ -377,7 +380,7 @@ export class PluginManager extends EventEmitter {
       error: lastError,
       duration,
       plugin: plugin.name,
-      hook
+      hook,
     }
   }
 
@@ -386,13 +389,15 @@ export class PluginManager extends EventEmitter {
    */
   getPluginMetrics(pluginName?: string): PluginMetrics | Map<string, PluginMetrics> {
     if (pluginName) {
-      return this.metrics.get(pluginName) || {
-        loadTime: 0,
-        setupTime: 0,
-        hookExecutions: new Map(),
-        errors: 0,
-        warnings: 0
-      }
+      return (
+        this.metrics.get(pluginName) || {
+          loadTime: 0,
+          setupTime: 0,
+          hookExecutions: new Map(),
+          errors: 0,
+          warnings: 0,
+        }
+      )
     }
     return this.metrics
   }
@@ -405,17 +410,17 @@ export class PluginManager extends EventEmitter {
     const enabledNames = this.config.plugins.enabled
     const disabledNames = this.config.plugins.disabled
 
-    return allPlugins.filter(plugin => {
+    return allPlugins.filter((plugin) => {
       // If explicitly disabled, exclude
       if (disabledNames.includes(plugin.name)) {
         return false
       }
-      
+
       // If enabled list is empty, include all non-disabled
       if (enabledNames.length === 0) {
         return true
       }
-      
+
       // Otherwise, only include if explicitly enabled
       return enabledNames.includes(plugin.name)
     })
@@ -431,7 +436,7 @@ export class PluginManager extends EventEmitter {
       const builtInResults = await this.registry.discoverPlugins({
         directories: [],
         includeBuiltIn: true,
-        includeExternal: false
+        includeExternal: false,
       })
 
       // Try to use auto-generated registry for external plugins (if available from build)
@@ -444,18 +449,21 @@ export class PluginManager extends EventEmitter {
           await autoRegistryModule.registerDiscoveredPlugins(this.registry)
           externalResults = autoRegistryModule.discoveredPlugins.map((plugin: any) => ({
             success: true,
-            plugin
+            plugin,
           }))
         }
       } catch (error) {
-        this.logger.debug('Auto-generated external plugins registry not found, falling back to discovery', { error: (error as Error).message })
+        this.logger.debug(
+          'Auto-generated external plugins registry not found, falling back to discovery',
+          { error: (error as Error).message },
+        )
 
         // Fallback to runtime discovery for external plugins
         this.logger.debug('Discovering external plugins in directory: plugins')
         externalResults = await this.registry.discoverPlugins({
           directories: ['plugins'],
           includeBuiltIn: false,
-          includeExternal: true
+          includeExternal: true,
         })
       }
 
@@ -470,7 +478,7 @@ export class PluginManager extends EventEmitter {
           loaded++
           if (result.warnings && result.warnings.length > 0) {
             this.logger.warn(`Plugin '${result.plugin?.name}' loaded with warnings`, {
-              warnings: result.warnings
+              warnings: result.warnings,
             })
           }
         } else {
@@ -491,7 +499,7 @@ export class PluginManager extends EventEmitter {
    */
   private setupPluginContexts(): void {
     const plugins = this.registry.getAll()
-    
+
     for (const plugin of plugins) {
       this.setupPluginContext(plugin)
     }
@@ -510,7 +518,7 @@ export class PluginManager extends EventEmitter {
       logger: this.logger.child ? this.logger.child({ plugin: plugin.name }) : this.logger,
       app: this.app,
       utils: createPluginUtils(this.logger),
-      registry: this.registry
+      registry: this.registry,
     }
 
     this.contexts.set(plugin.name, context)
@@ -521,7 +529,7 @@ export class PluginManager extends EventEmitter {
       setupTime: 0,
       hookExecutions: new Map(),
       errors: 0,
-      warnings: 0
+      warnings: 0,
     })
   }
 
@@ -534,7 +542,7 @@ export class PluginManager extends EventEmitter {
       throw new FluxStackError(
         `Plugin context not found for '${pluginName}'`,
         'PLUGIN_CONTEXT_NOT_FOUND',
-        500
+        500,
       )
     }
     return context
@@ -547,7 +555,7 @@ export class PluginManager extends EventEmitter {
     pluginName: string,
     hook: PluginHook,
     duration: number,
-    success: boolean
+    success: boolean,
   ): void {
     const metrics = this.metrics.get(pluginName)
     if (!metrics) return
@@ -574,7 +582,7 @@ export class PluginManager extends EventEmitter {
  */
 export function createRequestContext(request: Request, additionalData: any = {}): RequestContext {
   const url = parseRequestURL(request)
-  
+
   return {
     request,
     path: url.pathname,
@@ -589,7 +597,7 @@ export function createRequestContext(request: Request, additionalData: any = {})
     query: Object.fromEntries(url.searchParams.entries()),
     params: {},
     startTime: Date.now(),
-    ...additionalData
+    ...additionalData,
   }
 }
 
@@ -599,15 +607,15 @@ export function createRequestContext(request: Request, additionalData: any = {})
 export function createResponseContext(
   requestContext: RequestContext,
   response: Response,
-  additionalData: any = {}
+  additionalData: any = {},
 ): ResponseContext {
   return {
     ...requestContext,
     response,
     statusCode: response.status,
     duration: Date.now() - requestContext.startTime,
-    size: parseInt(response.headers.get('content-length') || '0'),
-    ...additionalData
+    size: parseInt(response.headers.get('content-length') || '0', 10),
+    ...additionalData,
   }
 }
 
@@ -617,14 +625,14 @@ export function createResponseContext(
 export function createErrorContext(
   requestContext: RequestContext,
   error: Error,
-  additionalData: any = {}
+  additionalData: any = {},
 ): ErrorContext {
   return {
     ...requestContext,
     error,
     duration: Date.now() - requestContext.startTime,
     handled: false,
-    ...additionalData
+    ...additionalData,
   }
 }
 
@@ -635,12 +643,12 @@ export function createBuildContext(
   target: string,
   outDir: string,
   mode: 'development' | 'production',
-  config: FluxStackConfig
+  config: FluxStackConfig,
 ): BuildContext {
   return {
     target,
     outDir,
     mode,
-    config
+    config,
   }
 }

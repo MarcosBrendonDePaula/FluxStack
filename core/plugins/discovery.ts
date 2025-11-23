@@ -3,11 +3,11 @@
  * Handles automatic discovery and loading of plugins from various sources
  */
 
-import type { FluxStack, PluginManifest, PluginLoadResult, PluginDiscoveryOptions } from "./types"
-import type { Logger } from "@/core/utils/logger/index"
-import { readdir, readFile } from "fs/promises"
-import { join, resolve } from "path"
-import { existsSync } from "fs"
+import { existsSync } from 'node:fs'
+import { readdir, readFile } from 'node:fs/promises'
+import { join, resolve } from 'node:path'
+import type { Logger } from '@/core/utils/logger/index'
+import type { FluxStack, PluginDiscoveryOptions, PluginLoadResult, PluginManifest } from './types'
 
 type Plugin = FluxStack.Plugin
 
@@ -39,10 +39,7 @@ export class PluginDiscovery {
    */
   async discoverAll(options: PluginDiscoveryOptions = {}): Promise<PluginLoadResult[]> {
     const results: PluginLoadResult[] = []
-    const {
-      includeBuiltIn = true,
-      includeExternal = true
-    } = options
+    const { includeBuiltIn = true, includeExternal = true } = options
 
     // Discover built-in plugins
     if (includeBuiltIn) {
@@ -54,7 +51,7 @@ export class PluginDiscovery {
     if (includeExternal) {
       const externalResults = await this.discoverExternalPlugins()
       results.push(...externalResults)
-      
+
       const npmResults = await this.discoverNpmPlugins()
       results.push(...npmResults)
     }
@@ -99,7 +96,7 @@ export class PluginDiscovery {
 
     try {
       const entries = await readdir(this.nodeModulesDir, { withFileTypes: true })
-      
+
       for (const entry of entries) {
         if (entry.isDirectory() && entry.name.startsWith('fluxstack-plugin-')) {
           const pluginDir = join(this.nodeModulesDir, entry.name)
@@ -138,7 +135,7 @@ export class PluginDiscovery {
 
     return {
       success: false,
-      error: `Plugin '${name}' not found in any plugin directory`
+      error: `Plugin '${name}' not found in any plugin directory`,
     }
   }
 
@@ -147,7 +144,7 @@ export class PluginDiscovery {
    */
   private async discoverPluginsInDirectory(
     directory: string,
-    source: 'built-in' | 'external' | 'npm'
+    source: 'built-in' | 'external' | 'npm',
   ): Promise<PluginLoadResult[]> {
     const results: PluginLoadResult[] = []
 
@@ -165,7 +162,7 @@ export class PluginDiscovery {
       this.logger?.error(`Failed to discover plugins in directory '${directory}'`, { error })
       results.push({
         success: false,
-        error: `Failed to scan directory: ${error instanceof Error ? error.message : String(error)}`
+        error: `Failed to scan directory: ${error instanceof Error ? error.message : String(error)}`,
       })
     }
 
@@ -177,18 +174,18 @@ export class PluginDiscovery {
    */
   private async loadPluginFromDirectory(
     pluginDir: string,
-    source: 'built-in' | 'external' | 'npm'
+    source: 'built-in' | 'external' | 'npm',
   ): Promise<PluginLoadResult> {
     try {
       // Load manifest if it exists
       const manifest = await this.loadPluginManifest(pluginDir)
-      
+
       // Find the main plugin file
       const pluginFile = await this.findPluginFile(pluginDir)
       if (!pluginFile) {
         return {
           success: false,
-          error: 'No plugin entry point found (index.ts, index.js, plugin.ts, or plugin.js)'
+          error: 'No plugin entry point found (index.ts, index.js, plugin.ts, or plugin.js)',
         }
       }
 
@@ -199,7 +196,7 @@ export class PluginDiscovery {
       if (!this.isValidPlugin(plugin)) {
         return {
           success: false,
-          error: 'Invalid plugin: must export a plugin object with a name property'
+          error: 'Invalid plugin: must export a plugin object with a name property',
         }
       }
 
@@ -216,19 +213,19 @@ export class PluginDiscovery {
         plugin: plugin.name,
         version: plugin.version,
         source,
-        path: pluginDir
+        path: pluginDir,
       })
 
       return {
         success: true,
         plugin,
-        warnings
+        warnings,
       }
     } catch (error) {
       this.logger?.error(`Failed to load plugin from '${pluginDir}'`, { error })
       return {
         success: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       }
     }
   }
@@ -238,7 +235,7 @@ export class PluginDiscovery {
    */
   private async loadPluginManifest(pluginDir: string): Promise<PluginManifest | undefined> {
     const manifestPath = join(pluginDir, 'plugin.json')
-    
+
     if (!existsSync(manifestPath)) {
       // Try package.json for npm plugins
       const packagePath = join(pluginDir, 'package.json')
@@ -246,7 +243,7 @@ export class PluginDiscovery {
         try {
           const packageContent = await readFile(packagePath, 'utf-8')
           const packageJson = JSON.parse(packageContent)
-          
+
           if (packageJson.fluxstack) {
             return {
               name: packageJson.name,
@@ -259,7 +256,7 @@ export class PluginDiscovery {
               keywords: packageJson.keywords || [],
               dependencies: packageJson.dependencies || {},
               peerDependencies: packageJson.peerDependencies,
-              fluxstack: packageJson.fluxstack
+              fluxstack: packageJson.fluxstack,
             }
           }
         } catch (error) {
@@ -289,7 +286,7 @@ export class PluginDiscovery {
       'plugin.js',
       'src/index.ts',
       'src/index.js',
-      'dist/index.js'
+      'dist/index.js',
     ]
 
     for (const file of possibleFiles) {
@@ -321,20 +318,24 @@ export class PluginDiscovery {
     const warnings: string[] = []
 
     if (plugin.name !== manifest.name) {
-      warnings.push(`Plugin name mismatch: plugin exports '${plugin.name}' but manifest declares '${manifest.name}'`)
+      warnings.push(
+        `Plugin name mismatch: plugin exports '${plugin.name}' but manifest declares '${manifest.name}'`,
+      )
     }
 
     if (plugin.version && plugin.version !== manifest.version) {
-      warnings.push(`Plugin version mismatch: plugin exports '${plugin.version}' but manifest declares '${manifest.version}'`)
+      warnings.push(
+        `Plugin version mismatch: plugin exports '${plugin.version}' but manifest declares '${manifest.version}'`,
+      )
     }
 
     if (plugin.dependencies && manifest.fluxstack.hooks) {
       // Check if plugin implements the hooks declared in manifest
       const declaredHooks = manifest.fluxstack.hooks
-      const implementedHooks = Object.keys(plugin).filter(key => 
-        key.startsWith('on') || key === 'setup'
+      const implementedHooks = Object.keys(plugin).filter(
+        (key) => key.startsWith('on') || key === 'setup',
       )
-      
+
       for (const hook of declaredHooks) {
         if (!implementedHooks.includes(hook)) {
           warnings.push(`Plugin declares hook '${hook}' in manifest but doesn't implement it`)

@@ -12,12 +12,20 @@ interface FileUploadState {
 }
 
 export class LiveFileUploadComponent extends LiveComponent<FileUploadState> {
-  constructor(initialState: FileUploadState, ws: any, options?: { room?: string; userId?: string }) {
-    super({
-      uploadedFiles: [],
-      maxFiles: 10,
-      ...initialState
-    }, ws, options)
+  constructor(
+    initialState: FileUploadState,
+    ws: any,
+    options?: { room?: string; userId?: string },
+  ) {
+    super(
+      {
+        uploadedFiles: [],
+        maxFiles: 10,
+        ...initialState,
+      },
+      ws,
+      options,
+    )
   }
 
   /**
@@ -32,7 +40,7 @@ export class LiveFileUploadComponent extends LiveComponent<FileUploadState> {
       id: `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       filename,
       url: fileUrl,
-      uploadedAt: Date.now()
+      uploadedAt: Date.now(),
     }
 
     // Limit to maxFiles
@@ -40,7 +48,7 @@ export class LiveFileUploadComponent extends LiveComponent<FileUploadState> {
 
     // Update state and broadcast to all clients
     this.setState({
-      uploadedFiles: updatedFiles
+      uploadedFiles: updatedFiles,
     })
   }
 
@@ -49,7 +57,7 @@ export class LiveFileUploadComponent extends LiveComponent<FileUploadState> {
    */
   async removeFile(payload: { fileId: string }): Promise<void> {
     this.setState({
-      uploadedFiles: this.state.uploadedFiles.filter(file => file.id !== payload.fileId)
+      uploadedFiles: this.state.uploadedFiles.filter((file) => file.id !== payload.fileId),
     })
   }
 
@@ -58,7 +66,7 @@ export class LiveFileUploadComponent extends LiveComponent<FileUploadState> {
    */
   async clearAll(): Promise<void> {
     this.setState({
-      uploadedFiles: []
+      uploadedFiles: [],
     })
   }
 
@@ -71,7 +79,7 @@ export class LiveFileUploadComponent extends LiveComponent<FileUploadState> {
   }> {
     return {
       totalFiles: this.state.uploadedFiles.length,
-      remainingSlots: this.state.maxFiles - this.state.uploadedFiles.length
+      remainingSlots: this.state.maxFiles - this.state.uploadedFiles.length,
     }
   }
 }

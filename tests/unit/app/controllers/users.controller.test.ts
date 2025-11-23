@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { UsersController } from '@/app/server/controllers/users.controller'
 import type { CreateUserRequest } from '@/app/shared/types'
 
@@ -13,7 +13,7 @@ describe('UsersController', () => {
   describe('getUsers', () => {
     it('should return users list', async () => {
       const result = await UsersController.getUsers()
-      
+
       expect(result).toBeDefined()
       expect(result.users).toBeDefined()
       expect(Array.isArray(result.users)).toBe(true)
@@ -21,7 +21,7 @@ describe('UsersController', () => {
 
     it('should return users with correct structure', async () => {
       const result = await UsersController.getUsers()
-      
+
       if (result.users.length > 0) {
         const user = result.users[0]
         expect(user).toHaveProperty('id')
@@ -36,11 +36,11 @@ describe('UsersController', () => {
     it('should create a new user successfully', async () => {
       const userData: CreateUserRequest = {
         name: 'Test User',
-        email: 'test@example.com'
+        email: 'test@example.com',
       }
 
       const result = await UsersController.createUser(userData)
-      
+
       expect(result.success).toBe(true)
       expect(result.user).toBeDefined()
       expect(result.user?.name).toBe(userData.name)
@@ -52,7 +52,7 @@ describe('UsersController', () => {
     it('should prevent duplicate email addresses', async () => {
       const userData: CreateUserRequest = {
         name: 'Test User',
-        email: 'duplicate@example.com'
+        email: 'duplicate@example.com',
       }
 
       // Create first user
@@ -69,17 +69,17 @@ describe('UsersController', () => {
     it('should generate unique IDs for different users', async () => {
       const user1Data: CreateUserRequest = {
         name: 'User 1',
-        email: 'user1@example.com'
+        email: 'user1@example.com',
       }
 
       const user2Data: CreateUserRequest = {
-        name: 'User 2', 
-        email: 'user2@example.com'
+        name: 'User 2',
+        email: 'user2@example.com',
       }
 
       const result1 = await UsersController.createUser(user1Data)
       // Add small delay to ensure different timestamps
-      await new Promise(resolve => setTimeout(resolve, 2))
+      await new Promise((resolve) => setTimeout(resolve, 2))
       const result2 = await UsersController.createUser(user2Data)
 
       expect(result1.success).toBe(true)
@@ -93,15 +93,15 @@ describe('UsersController', () => {
       // First create a user
       const userData: CreateUserRequest = {
         name: 'Findable User',
-        email: 'findable@example.com'
+        email: 'findable@example.com',
       }
-      
+
       const createResult = await UsersController.createUser(userData)
       expect(createResult.success).toBe(true)
-      
+
       const userId = createResult.user!.id
       const result = await UsersController.getUserById(userId)
-      
+
       expect(result).toBeDefined()
       expect(result?.user).toBeDefined()
       expect(result?.user.id).toBe(userId)
@@ -120,15 +120,15 @@ describe('UsersController', () => {
       // First create a user
       const userData: CreateUserRequest = {
         name: 'Deletable User',
-        email: 'deletable@example.com'
+        email: 'deletable@example.com',
       }
-      
+
       const createResult = await UsersController.createUser(userData)
       expect(createResult.success).toBe(true)
-      
+
       const userId = createResult.user!.id
       const deleteResult = await UsersController.deleteUser(userId)
-      
+
       expect(deleteResult.success).toBe(true)
       expect(deleteResult.user).toBeDefined()
       expect(deleteResult.user?.id).toBe(userId)
@@ -141,7 +141,7 @@ describe('UsersController', () => {
 
     it('should return error when trying to delete non-existent user', async () => {
       const result = await UsersController.deleteUser(99999)
-      
+
       expect(result.success).toBe(false)
       expect(result.message).toBe('Usuário não encontrado')
       expect(result.user).toBeUndefined()

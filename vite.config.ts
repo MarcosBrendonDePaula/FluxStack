@@ -1,16 +1,16 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
-import { nodePolyfills } from 'vite-plugin-node-polyfills'
-import { resolve } from 'path'
+import { resolve } from 'node:path'
 import { fileURLToPath, URL } from 'node:url'
+import tailwindcss from '@tailwindcss/vite'
+import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite'
+import { nodePolyfills } from 'vite-plugin-node-polyfills'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
-    react(), 
+    react(),
     tailwindcss(),
     nodePolyfills({
       // Para adicionar polyfills específicos do Node.js
@@ -21,7 +21,7 @@ export default defineConfig({
         global: true,
         process: true,
       },
-    })
+    }),
   ],
   define: {
     __DEFINES__: JSON.stringify({}),
@@ -56,11 +56,11 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
         ws: true, // Habilita proxy WebSocket para live components
-      }
-    }
+      },
+    },
   },
   build: {
-    outDir: '../../dist/client'
+    outDir: '../../dist/client',
   },
   resolve: {
     alias: [
@@ -75,7 +75,7 @@ export default defineConfig({
       { find: '@/hooks', replacement: resolve(__dirname, './app/client/src/hooks') },
       { find: '@/assets', replacement: resolve(__dirname, './app/client/src/assets') },
       { find: '@/lib', replacement: resolve(__dirname, './app/client/src/lib') },
-      { find: '@/types', replacement: resolve(__dirname, './app/client/src/types') }
-    ]
-  }
+      { find: '@/types', replacement: resolve(__dirname, './app/client/src/types') },
+    ],
+  },
 })

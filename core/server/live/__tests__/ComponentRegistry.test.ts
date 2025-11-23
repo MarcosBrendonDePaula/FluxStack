@@ -1,15 +1,11 @@
 // 🧪 ComponentRegistry Tests
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { ComponentRegistry } from '../ComponentRegistry'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { LiveComponent } from '@/core/plugins/types'
+import { ComponentRegistry } from '../ComponentRegistry'
 
 // Mock LiveComponent for testing
 class TestComponent extends LiveComponent {
-  constructor(initialState: any, ws: any) {
-    super(initialState, ws)
-  }
-
   async testAction(payload: any) {
     this.setState({ ...this.state, actionCalled: true, payload })
     return { success: true, data: payload }
@@ -31,8 +27,8 @@ describe('ComponentRegistry', () => {
       data: {
         components: new Map(),
         subscriptions: new Set(),
-        userId: 'test-user'
-      }
+        userId: 'test-user',
+      },
     }
   })
 
@@ -45,11 +41,11 @@ describe('ComponentRegistry', () => {
       const definition = {
         name: 'TestComponent',
         initialState: { count: 0 },
-        component: TestComponent
+        component: TestComponent,
       }
 
       registry.registerComponent(definition)
-      
+
       // Verify component is registered (internal test)
       expect(true).toBe(true) // Registry doesn't expose internal state
     })
@@ -57,19 +53,19 @@ describe('ComponentRegistry', () => {
     it('should register component dependencies', () => {
       const dependencies = [
         { name: 'database', version: '1.0.0', required: true, factory: () => ({}) },
-        { name: 'cache', version: '1.0.0', required: false, factory: () => ({}) }
+        { name: 'cache', version: '1.0.0', required: false, factory: () => ({}) },
       ]
 
       registry.registerDependencies('TestComponent', dependencies)
-      
+
       expect(true).toBe(true) // Dependencies registered successfully
     })
 
     it('should register services', () => {
       const mockService = { getData: () => 'test data' }
-      
+
       registry.registerService('testService', () => mockService)
-      
+
       expect(true).toBe(true) // Service registered successfully
     })
   })
@@ -84,7 +80,7 @@ describe('ComponentRegistry', () => {
         mockWs,
         'TestComponent',
         { count: 5 },
-        { room: 'test-room', userId: 'test-user' }
+        { room: 'test-room', userId: 'test-user' },
       )
 
       expect(result).toHaveProperty('componentId')
@@ -94,22 +90,22 @@ describe('ComponentRegistry', () => {
     })
 
     it('should fail to mount non-existent component', async () => {
-      await expect(
-        registry.mountComponent(mockWs, 'NonExistentComponent', {})
-      ).rejects.toThrow('Component \'NonExistentComponent\' not found')
+      await expect(registry.mountComponent(mockWs, 'NonExistentComponent', {})).rejects.toThrow(
+        "Component 'NonExistentComponent' not found",
+      )
     })
 
     it('should inject services into mounted component', async () => {
       const mockService = { getData: () => 'test data' }
       registry.registerService('testService', () => mockService)
-      
+
       const dependencies = [
-        { name: 'testService', version: '1.0.0', required: true, factory: () => mockService }
+        { name: 'testService', version: '1.0.0', required: true, factory: () => mockService },
       ]
       registry.registerDependencies('TestComponent', dependencies)
 
       const result = await registry.mountComponent(mockWs, 'TestComponent', {})
-      
+
       expect(result).toHaveProperty('componentId')
     })
   })
@@ -129,11 +125,11 @@ describe('ComponentRegistry', () => {
         componentId,
         action: 'testAction',
         payload: { test: 'data' },
-        expectResponse: true
+        expectResponse: true,
       }
 
       const result = await registry.handleMessage(mockWs, message)
-      
+
       expect(result.success).toBe(true)
       expect(result.result).toEqual({ success: true, data: { test: 'data' } })
     })
@@ -144,11 +140,11 @@ describe('ComponentRegistry', () => {
         componentId,
         action: 'errorAction',
         payload: {},
-        expectResponse: true
+        expectResponse: true,
       }
 
       const result = await registry.handleMessage(mockWs, message)
-      
+
       expect(result.success).toBe(false)
       expect(result.error).toBe('Test error')
     })
@@ -156,11 +152,11 @@ describe('ComponentRegistry', () => {
     it('should handle component unmounting', async () => {
       const message = {
         type: 'COMPONENT_UNMOUNT' as const,
-        componentId
+        componentId,
       }
 
       const result = await registry.handleMessage(mockWs, message)
-      
+
       expect(result.success).toBe(true)
     })
   })
@@ -177,7 +173,7 @@ describe('ComponentRegistry', () => {
     it('should track component metrics', () => {
       registry.recordComponentMetrics(componentId, 50) // 50ms render time
       registry.recordComponentMetrics(componentId, undefined, 'testAction')
-      
+
       const health = registry.getComponentHealth(componentId)
       expect(health).toBeTruthy()
       expect(health?.componentId).toBe(componentId)
@@ -186,7 +182,7 @@ describe('ComponentRegistry', () => {
     it('should record component errors', () => {
       const error = new Error('Test error')
       registry.recordComponentError(componentId, error)
-      
+
       const health = registry.getComponentHealth(componentId)
       expect(health?.metrics.errorCount).toBe(1)
     })
@@ -203,7 +199,10 @@ describe('ComponentRegistry', () => {
 
     beforeEach(async () => {
       registry.registerComponentClass('TestComponent', TestComponent)
-      const result = await registry.mountComponent(mockWs, 'TestComponent', { version: 1, data: 'old' })
+      const result = await registry.mountComponent(mockWs, 'TestComponent', {
+        version: 1,
+        data: 'old',
+      })
       componentId = result.componentId
     })
 
@@ -211,15 +210,10 @@ describe('ComponentRegistry', () => {
       const migrationFn = (state: any) => ({
         ...state,
         version: 2,
-        data: 'migrated'
+        data: 'migrated',
       })
 
-      const success = await registry.migrateComponentState(
-        componentId,
-        '1',
-        '2',
-        migrationFn
-      )
+      const success = await registry.migrateComponentState(componentId, '1', '2', migrationFn)
 
       expect(success).toBe(true)
     })
@@ -229,12 +223,7 @@ describe('ComponentRegistry', () => {
         throw new Error('Migration failed')
       }
 
-      const success = await registry.migrateComponentState(
-        componentId,
-        '1',
-        '2',
-        migrationFn
-      )
+      const success = await registry.migrateComponentState(componentId, '1', '2', migrationFn)
 
       expect(success).toBe(false)
     })
@@ -244,19 +233,19 @@ describe('ComponentRegistry', () => {
     it('should cleanup connection properly', async () => {
       // Register component first
       registry.registerComponentClass('TestComponent', TestComponent)
-      
+
       // Mount a real component
-      const result = await registry.mountComponent(mockWs, 'TestComponent', {})
+      const _result = await registry.mountComponent(mockWs, 'TestComponent', {})
       expect(mockWs.data.components.size).toBe(1)
-      
+
       registry.cleanupConnection(mockWs)
-      
+
       expect(mockWs.data.components.size).toBe(0)
     })
 
     it('should cleanup all resources on shutdown', () => {
       registry.cleanup()
-      
+
       // Should not throw any errors
       expect(true).toBe(true)
     })

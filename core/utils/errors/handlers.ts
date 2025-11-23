@@ -1,6 +1,11 @@
-import { FluxStackError, wrapError, type ErrorMetadata, type ErrorSerializedResponse } from "./index"
-import type { Logger } from "../logger/index"
 import { v4 as uuidv4 } from 'uuid'
+import type { Logger } from '../logger/index'
+import {
+  type ErrorMetadata,
+  type ErrorSerializedResponse,
+  FluxStackError,
+  wrapError,
+} from './index'
 
 export interface ErrorHandlerContext {
   logger: Logger
@@ -44,17 +49,28 @@ export class EnhancedErrorHandler {
       enableCorrelationId: options.enableCorrelationId ?? true,
       sanitizeErrors: options.sanitizeErrors ?? true,
       recoveryStrategies: options.recoveryStrategies ?? [],
-      customErrorMessages: options.customErrorMessages ?? {}
+      customErrorMessages: options.customErrorMessages ?? {},
     }
     this.recoveryStrategies = this.options.recoveryStrategies
   }
 
   async handle(error: Error, context: ErrorHandlerContext): Promise<ErrorSerializedResponse> {
-    const { logger, isDevelopment, request, path, method, correlationId, userId, userAgent, ip, metricsCollector } = context
-    
+    const {
+      logger,
+      isDevelopment,
+      request: _request,
+      path,
+      method,
+      correlationId,
+      userId,
+      userAgent,
+      ip,
+      metricsCollector,
+    } = context
+
     // Generate correlation ID if not provided and enabled
-    const finalCorrelationId = this.options.enableCorrelationId 
-      ? (correlationId || uuidv4())
+    const finalCorrelationId = this.options.enableCorrelationId
+      ? correlationId || uuidv4()
       : correlationId
 
     // Create metadata from context
@@ -65,7 +81,7 @@ export class EnhancedErrorHandler {
       ip,
       path,
       method,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     }
 
     // Convert to FluxStackError if needed
@@ -85,7 +101,7 @@ export class EnhancedErrorHandler {
             logger.info('Error recovery successful', {
               errorCode: fluxError.code,
               correlationId: finalCorrelationId,
-              strategy: strategy.constructor.name
+              strategy: strategy.constructor.name,
             })
             return recoveryResult
           } catch (recoveryError) {
@@ -93,7 +109,7 @@ export class EnhancedErrorHandler {
               errorCode: fluxError.code,
               correlationId: finalCorrelationId,
               strategy: strategy.constructor.name,
-              recoveryError: recoveryError instanceof Error ? recoveryError.message : recoveryError
+              recoveryError: recoveryError instanceof Error ? recoveryError.message : recoveryError,
             })
           }
         }
@@ -108,8 +124,8 @@ export class EnhancedErrorHandler {
       try {
         metricsCollector.recordError(fluxError, context)
       } catch (metricsError) {
-        logger.warn('Failed to record error metrics', { 
-          error: metricsError instanceof Error ? metricsError.message : metricsError 
+        logger.warn('Failed to record error metrics', {
+          error: metricsError instanceof Error ? metricsError.message : metricsError,
         })
       }
     }
@@ -126,7 +142,7 @@ export class EnhancedErrorHandler {
       context: error.context,
       metadata: error.metadata,
       isOperational: error.isOperational,
-      ...(isDevelopment && { stack: error.stack })
+      ...(isDevelopment && { stack: error.stack }),
     }
 
     // Skip logging for certain errors to reduce noise
@@ -141,7 +157,7 @@ export class EnhancedErrorHandler {
     if (!error.isOperational) {
       return 'error'
     }
-    
+
     if (error.statusCode >= 500) {
       return 'error'
     } else if (error.statusCode >= 400) {
@@ -160,11 +176,13 @@ export class EnhancedErrorHandler {
     // Skip logging for Vite internal routes (even if NOT_FOUND logging is enabled)
     if (error.code === 'NOT_FOUND' && error.metadata?.path) {
       const path = error.metadata.path
-      if (path.startsWith('/@') || 
-          path.startsWith('/__vite') || 
-          path.includes('/.vite/') ||
-          path.endsWith('.js.map') ||
-          path.endsWith('.css.map')) {
+      if (
+        path.startsWith('/@') ||
+        path.startsWith('/__vite') ||
+        path.includes('/.vite/') ||
+        path.endsWith('.js.map') ||
+        path.endsWith('.css.map')
+      ) {
         return true
       }
     }
@@ -177,9 +195,12 @@ export class EnhancedErrorHandler {
     return false
   }
 
-  private generateErrorResponse(error: FluxStackError, isDevelopment: boolean): ErrorSerializedResponse {
+  private generateErrorResponse(
+    error: FluxStackError,
+    isDevelopment: boolean,
+  ): ErrorSerializedResponse {
     const response = error.toResponse(isDevelopment)
-    
+
     // Apply custom error messages if configured
     if (this.options.customErrorMessages[error.code]) {
       response.error.message = this.options.customErrorMessages[error.code]
@@ -195,7 +216,7 @@ export class EnhancedErrorHandler {
 
   private sanitizeErrorResponse(errorResponse: any): any {
     const sanitized = { ...errorResponse }
-    
+
     // Remove potentially sensitive fields in production
     if (sanitized.details) {
       // Remove sensitive fields from details
@@ -216,7 +237,7 @@ export class EnhancedErrorHandler {
 
   removeRecoveryStrategy(strategyClass: new (...args: any[]) => ErrorRecoveryStrategy): void {
     this.recoveryStrategies = this.recoveryStrategies.filter(
-      strategy => !(strategy instanceof strategyClass)
+      (strategy) => !(strategy instanceof strategyClass),
     )
   }
 }
@@ -229,18 +250,18 @@ export const errorHandler = (error: Error, context: ErrorHandlerContext) => {
 
 export const createErrorHandler = (
   baseContext: Omit<ErrorHandlerContext, 'request' | 'path' | 'method'>,
-  options?: ErrorHandlerOptions
+  options?: ErrorHandlerOptions,
 ) => {
   const handler = new EnhancedErrorHandler(options)
-  
+
   return async (error: Error, request?: Request, path?: string, method?: string) => {
     const context: ErrorHandlerContext = {
       ...baseContext,
       request,
       path,
-      method: method || request?.method
+      method: method || request?.method,
     }
-    
+
     return handler.handle(error, context)
   }
 }
@@ -250,26 +271,28 @@ export class RetryRecoveryStrategy implements ErrorRecoveryStrategy {
   constructor(
     private maxRetries: number = 3,
     private retryDelay: number = 1000,
-    private retryableCodes: string[] = ['EXTERNAL_SERVICE_ERROR', 'DATABASE_ERROR']
+    private retryableCodes: string[] = ['EXTERNAL_SERVICE_ERROR', 'DATABASE_ERROR'],
   ) {}
 
   canRecover(error: FluxStackError): boolean {
-    return this.retryableCodes.includes(error.code) && 
-           (!error.context?.retryCount || error.context.retryCount < this.maxRetries)
+    return (
+      this.retryableCodes.includes(error.code) &&
+      (!error.context?.retryCount || error.context.retryCount < this.maxRetries)
+    )
   }
 
   async recover(error: FluxStackError, context: ErrorHandlerContext): Promise<any> {
     const retryCount = (error.context?.retryCount || 0) + 1
-    
+
     context.logger.info('Attempting error recovery', {
       errorCode: error.code,
       retryCount,
-      maxRetries: this.maxRetries
+      maxRetries: this.maxRetries,
     })
 
     // Wait before retry
-    await new Promise(resolve => setTimeout(resolve, this.retryDelay * retryCount))
-    
+    await new Promise((resolve) => setTimeout(resolve, this.retryDelay * retryCount))
+
     // This would typically re-execute the original operation
     // For now, we'll just return a recovery response
     throw error.withMetadata({ ...error.metadata, retryCount })
@@ -279,7 +302,7 @@ export class RetryRecoveryStrategy implements ErrorRecoveryStrategy {
 export class FallbackRecoveryStrategy implements ErrorRecoveryStrategy {
   constructor(
     private fallbackResponse: any,
-    private applicableCodes: string[] = ['EXTERNAL_SERVICE_ERROR']
+    private applicableCodes: string[] = ['EXTERNAL_SERVICE_ERROR'],
   ) {}
 
   canRecover(error: FluxStackError): boolean {
@@ -289,12 +312,12 @@ export class FallbackRecoveryStrategy implements ErrorRecoveryStrategy {
   recover(error: FluxStackError, context: ErrorHandlerContext): any {
     context.logger.info('Using fallback recovery', {
       errorCode: error.code,
-      correlationId: error.metadata.correlationId
+      correlationId: error.metadata.correlationId,
     })
 
     return {
       data: this.fallbackResponse,
-      warning: 'Fallback data provided due to service unavailability'
+      warning: 'Fallback data provided due to service unavailability',
     }
   }
 }

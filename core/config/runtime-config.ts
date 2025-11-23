@@ -3,14 +3,13 @@
  * Uses declarative configuration system
  */
 
-import { env, createNamespace } from '../utils/env'
+import { appConfig } from '@/config/app.config'
+import { clientConfig } from '@/config/client.config'
+import { loggerConfig } from '@/config/logger.config'
+import { monitoringConfig } from '@/config/monitoring.config'
+import { createNamespace, env } from '../utils/env'
 import type { FluxStackConfig } from './schema'
 import { defaultFluxStackConfig } from './schema'
-import { loggerConfig } from '@/config/logger.config'
-import { clientConfig } from '@/config/client.config'
-import { serverConfig } from '@/config/server.config'
-import { monitoringConfig } from '@/config/monitoring.config'
-import { appConfig } from '@/config/app.config'
 
 /**
  * Runtime Configuration Builder
@@ -18,7 +17,7 @@ import { appConfig } from '@/config/app.config'
  */
 export class RuntimeConfigBuilder {
   private config: Partial<FluxStackConfig> = {}
-  
+
   constructor() {
     this.loadFromDefaults()
     this.loadFromDynamicEnv()
@@ -93,7 +92,7 @@ export class RuntimeConfigBuilder {
     const result = { ...target }
 
     for (const key in source) {
-      if (source.hasOwnProperty(key)) {
+      if (Object.hasOwn(source, key)) {
         if (Array.isArray(source[key])) {
           result[key] = [...source[key]]
         } else if (typeof source[key] === 'object' && source[key] !== null) {
@@ -128,14 +127,14 @@ export class RuntimeConfigBuilder {
  */
 export function createRuntimeConfig(overrides?: Partial<FluxStackConfig>): FluxStackConfig {
   const builder = new RuntimeConfigBuilder()
-  
+
   if (overrides) {
     // Apply overrides
     for (const [key, value] of Object.entries(overrides)) {
       builder.override(key, value)
     }
   }
-  
+
   return builder.build()
 }
 
@@ -186,9 +185,9 @@ export const runtimeConfig = {
    */
   auto(overrides?: Partial<FluxStackConfig>): FluxStackConfig {
     const environment = appConfig.env
-    
+
     let config: FluxStackConfig
-    
+
     switch (environment) {
       case 'production':
         config = this.production()
@@ -199,20 +198,20 @@ export const runtimeConfig = {
       default:
         config = this.development()
     }
-    
+
     if (overrides) {
       const builder = new RuntimeConfigBuilder()
       ;(builder as any).config = config
-      
+
       for (const [key, value] of Object.entries(overrides)) {
         builder.override(key, value)
       }
-      
+
       config = builder.build()
     }
-    
+
     return config
-  }
+  },
 }
 
 /**
@@ -242,7 +241,7 @@ export const envLoaders = {
   /**
    * FluxStack specific environment loader
    */
-  fluxstack: createNamespace('FLUXSTACK_')
+  fluxstack: createNamespace('FLUXSTACK_'),
 }
 
 /**
@@ -294,8 +293,8 @@ export const configHelpers = {
         methods: env.CORS_METHODS,
         headers: env.CORS_HEADERS,
         credentials: env.CORS_CREDENTIALS,
-        maxAge: env.CORS_MAX_AGE
-      }
+        maxAge: env.CORS_MAX_AGE,
+      },
     }
   },
 
@@ -307,16 +306,16 @@ export const configHelpers = {
       port: env.VITE_PORT,
       proxy: {
         target: clientConfig.proxy.target,
-        changeOrigin: clientConfig.proxy.changeOrigin
+        changeOrigin: clientConfig.proxy.changeOrigin,
       },
       build: {
         outDir: clientConfig.build.outDir,
         sourceMaps: clientConfig.build.sourceMaps,
         minify: clientConfig.build.minify,
-        target: clientConfig.build.target
-      }
+        target: clientConfig.build.target,
+      },
     }
-  }
+  },
 }
 
 /**

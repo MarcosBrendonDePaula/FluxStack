@@ -55,7 +55,6 @@ export interface TableRow {
 }
 
 export class BuildLogger {
-  private indent = ''
   private startTime = Date.now()
 
   /**
@@ -67,9 +66,29 @@ export class BuildLogger {
     const paddingRight = width - title.length - 2 - padding
 
     console.log()
-    console.log(colors.cyan + colors.bright + box.topLeft + box.horizontal.repeat(width) + box.topRight + colors.reset)
-    console.log(colors.cyan + box.vertical + ' '.repeat(padding) + colors.bright + colors.white + title + colors.cyan + ' '.repeat(paddingRight) + box.vertical + colors.reset)
-    console.log(colors.cyan + box.bottomLeft + box.horizontal.repeat(width) + box.bottomRight + colors.reset)
+    console.log(
+      colors.cyan +
+        colors.bright +
+        box.topLeft +
+        box.horizontal.repeat(width) +
+        box.topRight +
+        colors.reset,
+    )
+    console.log(
+      colors.cyan +
+        box.vertical +
+        ' '.repeat(padding) +
+        colors.bright +
+        colors.white +
+        title +
+        colors.cyan +
+        ' '.repeat(paddingRight) +
+        box.vertical +
+        colors.reset,
+    )
+    console.log(
+      colors.cyan + box.bottomLeft + box.horizontal.repeat(width) + box.bottomRight + colors.reset,
+    )
     console.log()
   }
 
@@ -78,7 +97,7 @@ export class BuildLogger {
    */
   section(title: string, icon: string = '📦') {
     console.log()
-    console.log(colors.bright + colors.blue + `${icon}  ${title}` + colors.reset)
+    console.log(`${colors.bright + colors.blue}${icon}  ${title}${colors.reset}`)
     console.log(colors.dim + colors.gray + box.horizontal.repeat(50) + colors.reset)
   }
 
@@ -86,35 +105,35 @@ export class BuildLogger {
    * Print a success message
    */
   success(message: string) {
-    console.log(colors.green + '✓ ' + colors.reset + message)
+    console.log(`${colors.green}✓ ${colors.reset}${message}`)
   }
 
   /**
    * Print an error message
    */
   error(message: string) {
-    console.log(colors.red + '✗ ' + colors.reset + message)
+    console.log(`${colors.red}✗ ${colors.reset}${message}`)
   }
 
   /**
    * Print a warning message
    */
   warn(message: string) {
-    console.log(colors.yellow + '⚠ ' + colors.reset + message)
+    console.log(`${colors.yellow}⚠ ${colors.reset}${message}`)
   }
 
   /**
    * Print an info message
    */
   info(message: string, icon: string = '→') {
-    console.log(colors.cyan + icon + ' ' + colors.reset + message)
+    console.log(`${colors.cyan + icon} ${colors.reset}${message}`)
   }
 
   /**
    * Print a step message
    */
   step(message: string, icon: string = '▸') {
-    console.log(colors.dim + colors.gray + icon + ' ' + colors.reset + message)
+    console.log(`${colors.dim + colors.gray + icon} ${colors.reset}${message}`)
   }
 
   /**
@@ -127,95 +146,163 @@ export class BuildLogger {
     }
 
     // Calculate column widths
-    const widths = columns.map(col => {
+    const widths = columns.map((col) => {
       if (col.width) return col.width
       const maxContentWidth = Math.max(
         col.header.length,
-        ...rows.map(row => String(row[col.key] || '').length)
+        ...rows.map((row) => String(row[col.key] || '').length),
       )
       return Math.min(maxContentWidth, 40) // Max 40 chars per column
     })
 
-    const totalWidth = widths.reduce((sum, w) => sum + w, 0) + (columns.length - 1) * 3 + 4
+    const _totalWidth = widths.reduce((sum, w) => sum + w, 0) + (columns.length - 1) * 3 + 4
 
     // Print top border
     console.log(
-      colors.gray + box.topLeft +
-      widths.map((w, i) =>
-        box.horizontal.repeat(w + 2) + (i < widths.length - 1 ? box.horizontalDown : '')
-      ).join('') +
-      box.topRight + colors.reset
+      colors.gray +
+        box.topLeft +
+        widths
+          .map(
+            (w, i) =>
+              box.horizontal.repeat(w + 2) + (i < widths.length - 1 ? box.horizontalDown : ''),
+          )
+          .join('') +
+        box.topRight +
+        colors.reset,
     )
 
     // Print header
-    const headerRow = columns.map((col, i) => {
-      const content = this.padContent(col.header, widths[i], 'center')
-      return colors.bright + colors.white + content + colors.reset
-    }).join(colors.gray + ' │ ' + colors.reset)
+    const headerRow = columns
+      .map((col, i) => {
+        const content = this.padContent(col.header, widths[i], 'center')
+        return colors.bright + colors.white + content + colors.reset
+      })
+      .join(`${colors.gray} │ ${colors.reset}`)
 
-    console.log(colors.gray + box.vertical + ' ' + colors.reset + headerRow + colors.gray + ' ' + box.vertical + colors.reset)
+    console.log(
+      colors.gray +
+        box.vertical +
+        ' ' +
+        colors.reset +
+        headerRow +
+        colors.gray +
+        ' ' +
+        box.vertical +
+        colors.reset,
+    )
 
     // Print header separator
     console.log(
-      colors.gray + box.verticalRight +
-      widths.map((w, i) =>
-        box.horizontal.repeat(w + 2) + (i < widths.length - 1 ? box.cross : '')
-      ).join('') +
-      box.verticalLeft + colors.reset
+      colors.gray +
+        box.verticalRight +
+        widths
+          .map((w, i) => box.horizontal.repeat(w + 2) + (i < widths.length - 1 ? box.cross : ''))
+          .join('') +
+        box.verticalLeft +
+        colors.reset,
     )
 
     // Print rows
-    rows.forEach((row, rowIndex) => {
-      const rowContent = columns.map((col, i) => {
-        const value = String(row[col.key] || '')
-        const content = this.padContent(value, widths[i], col.align || 'left')
-        const color = col.color ? colors[col.color] : ''
-        return color + content + colors.reset
-      }).join(colors.gray + ' │ ' + colors.reset)
+    rows.forEach((row, _rowIndex) => {
+      const rowContent = columns
+        .map((col, i) => {
+          const value = String(row[col.key] || '')
+          const content = this.padContent(value, widths[i], col.align || 'left')
+          const color = col.color ? colors[col.color] : ''
+          return color + content + colors.reset
+        })
+        .join(`${colors.gray} │ ${colors.reset}`)
 
-      console.log(colors.gray + box.vertical + ' ' + colors.reset + rowContent + colors.gray + ' ' + box.vertical + colors.reset)
+      console.log(
+        colors.gray +
+          box.vertical +
+          ' ' +
+          colors.reset +
+          rowContent +
+          colors.gray +
+          ' ' +
+          box.vertical +
+          colors.reset,
+      )
     })
 
     // Print bottom border
     console.log(
-      colors.gray + box.bottomLeft +
-      widths.map((w, i) =>
-        box.horizontal.repeat(w + 2) + (i < widths.length - 1 ? box.horizontalUp : '')
-      ).join('') +
-      box.bottomRight + colors.reset
+      colors.gray +
+        box.bottomLeft +
+        widths
+          .map(
+            (w, i) =>
+              box.horizontal.repeat(w + 2) + (i < widths.length - 1 ? box.horizontalUp : ''),
+          )
+          .join('') +
+        box.bottomRight +
+        colors.reset,
     )
   }
 
   /**
    * Print a simple info box
    */
-  box(title: string, items: Array<{ label: string; value: string | number; color?: keyof typeof colors }>) {
-    const maxLabelWidth = Math.max(...items.map(i => i.label.length))
-    const maxValueWidth = Math.max(...items.map(i => String(i.value).length))
+  box(
+    title: string,
+    items: Array<{ label: string; value: string | number; color?: keyof typeof colors }>,
+  ) {
+    const maxLabelWidth = Math.max(...items.map((i) => i.label.length))
+    const maxValueWidth = Math.max(...items.map((i) => String(i.value).length))
     const contentWidth = maxLabelWidth + maxValueWidth + 3
     const boxWidth = Math.max(contentWidth, title.length) + 4
 
     // Top border with title
     console.log()
-    console.log(colors.cyan + box.topLeft + box.horizontal.repeat(2) + colors.bright + colors.white + title + colors.cyan + box.horizontal.repeat(boxWidth - title.length - 2) + box.topRight + colors.reset)
+    console.log(
+      colors.cyan +
+        box.topLeft +
+        box.horizontal.repeat(2) +
+        colors.bright +
+        colors.white +
+        title +
+        colors.cyan +
+        box.horizontal.repeat(boxWidth - title.length - 2) +
+        box.topRight +
+        colors.reset,
+    )
 
     // Content
-    items.forEach(item => {
+    items.forEach((item) => {
       const label = item.label.padEnd(maxLabelWidth)
       const value = String(item.value)
       const valueColor = item.color ? colors[item.color] : colors.white
       console.log(
-        colors.cyan + box.vertical + ' ' + colors.reset +
-        colors.gray + label + colors.reset +
-        colors.dim + ' : ' + colors.reset +
-        valueColor + colors.bright + value + colors.reset +
-        ' '.repeat(boxWidth - label.length - value.length - 3) +
-        colors.cyan + box.vertical + colors.reset
+        colors.cyan +
+          box.vertical +
+          ' ' +
+          colors.reset +
+          colors.gray +
+          label +
+          colors.reset +
+          colors.dim +
+          ' : ' +
+          colors.reset +
+          valueColor +
+          colors.bright +
+          value +
+          colors.reset +
+          ' '.repeat(boxWidth - label.length - value.length - 3) +
+          colors.cyan +
+          box.vertical +
+          colors.reset,
       )
     })
 
     // Bottom border
-    console.log(colors.cyan + box.bottomLeft + box.horizontal.repeat(boxWidth) + box.bottomRight + colors.reset)
+    console.log(
+      colors.cyan +
+        box.bottomLeft +
+        box.horizontal.repeat(boxWidth) +
+        box.bottomRight +
+        colors.reset,
+    )
     console.log()
   }
 
@@ -254,34 +341,78 @@ export class BuildLogger {
   /**
    * Print a summary box
    */
-  summary(title: string, stats: Array<{ label: string; value: string | number; highlight?: boolean }>) {
+  summary(
+    title: string,
+    stats: Array<{ label: string; value: string | number; highlight?: boolean }>,
+  ) {
     console.log()
-    console.log(colors.bright + colors.green + '╔═══════════════════════════════════════════════════════════╗' + colors.reset)
-    console.log(colors.bright + colors.green + '║' + colors.reset + colors.bright + colors.white + ` ${title}`.padEnd(60) + colors.bright + colors.green + '║' + colors.reset)
-    console.log(colors.bright + colors.green + '╠═══════════════════════════════════════════════════════════╣' + colors.reset)
+    console.log(
+      colors.bright +
+        colors.green +
+        '╔═══════════════════════════════════════════════════════════╗' +
+        colors.reset,
+    )
+    console.log(
+      colors.bright +
+        colors.green +
+        '║' +
+        colors.reset +
+        colors.bright +
+        colors.white +
+        ` ${title}`.padEnd(60) +
+        colors.bright +
+        colors.green +
+        '║' +
+        colors.reset,
+    )
+    console.log(
+      colors.bright +
+        colors.green +
+        '╠═══════════════════════════════════════════════════════════╣' +
+        colors.reset,
+    )
 
-    stats.forEach(stat => {
+    stats.forEach((stat) => {
       const label = `  ${stat.label}:`
       const value = String(stat.value)
       const valueColor = stat.highlight ? colors.yellow + colors.bright : colors.white
       const padding = 60 - label.length - value.length - 1
       console.log(
-        colors.bright + colors.green + '║' + colors.reset +
-        colors.cyan + label + colors.reset +
-        ' '.repeat(Math.max(padding, 1)) +
-        valueColor + value + colors.reset +
-        colors.bright + colors.green + ' ║' + colors.reset
+        colors.bright +
+          colors.green +
+          '║' +
+          colors.reset +
+          colors.cyan +
+          label +
+          colors.reset +
+          ' '.repeat(Math.max(padding, 1)) +
+          valueColor +
+          value +
+          colors.reset +
+          colors.bright +
+          colors.green +
+          ' ║' +
+          colors.reset,
       )
     })
 
-    console.log(colors.bright + colors.green + '╚═══════════════════════════════════════════════════════════╝' + colors.reset)
+    console.log(
+      colors.bright +
+        colors.green +
+        '╚═══════════════════════════════════════════════════════════╝' +
+        colors.reset,
+    )
     console.log()
   }
 
   /**
    * Pad content based on alignment
    */
-  private padContent(content: string, width: number, align: 'left' | 'right' | 'center' = 'left'): string {
+  private padContent(
+    content: string,
+    width: number,
+    align: 'left' | 'right' | 'center' = 'left',
+  ): string {
     if (content.length >= width) {
       return content.slice(0, width)
     }
@@ -291,10 +422,11 @@ export class BuildLogger {
     switch (align) {
       case 'right':
         return ' '.repeat(padding) + content
-      case 'center':
+      case 'center': {
         const leftPad = Math.floor(padding / 2)
         const rightPad = padding - leftPad
         return ' '.repeat(leftPad) + content + ' '.repeat(rightPad)
+      }
       default:
         return content + ' '.repeat(padding)
     }
@@ -308,7 +440,7 @@ export class BuildLogger {
     const k = 1024
     const sizes = ['B', 'KB', 'MB', 'GB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`
+    return `${(bytes / k ** i).toFixed(2)} ${sizes[i]}`
   }
 
   /**

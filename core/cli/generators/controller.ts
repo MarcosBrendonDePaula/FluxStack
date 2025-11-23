@@ -1,6 +1,6 @@
-import type { Generator } from "./index"
-import type { GeneratorContext, GeneratorOptions, Template } from "./types"
-import { templateEngine } from "./template-engine"
+import type { Generator } from './index'
+import { templateEngine } from './template-engine'
+import type { GeneratorContext, GeneratorOptions, Template } from './types'
 
 export class ControllerGenerator implements Generator {
   name = 'controller'
@@ -8,14 +8,14 @@ export class ControllerGenerator implements Generator {
 
   async generate(context: GeneratorContext, options: GeneratorOptions): Promise<void> {
     const template = this.getTemplate(options.template)
-    
+
     // Execute before hook if present
     if (template.hooks?.beforeGenerate) {
       await template.hooks.beforeGenerate(context, options)
     }
 
     const files = await templateEngine.processTemplate(template, context, options)
-    
+
     if (options.dryRun) {
       console.log(`\n📋 Would generate controller '${options.name}':\n`)
       for (const file of files) {
@@ -25,10 +25,10 @@ export class ControllerGenerator implements Generator {
     }
 
     await templateEngine.generateFiles(files, options.dryRun)
-    
+
     // Execute after hook if present
     if (template.hooks?.afterGenerate) {
-      const filePaths = files.map(f => f.path)
+      const filePaths = files.map((f) => f.path)
       await template.hooks.afterGenerate(context, options, filePaths)
     }
 
@@ -39,7 +39,6 @@ export class ControllerGenerator implements Generator {
     switch (templateName) {
       case 'minimal':
         return this.getMinimalTemplate()
-      case 'crud':
       default:
         return this.getCrudTemplate()
     }
@@ -179,7 +178,7 @@ export class {{pascalName}}Controller {
     }
   }
 }
-`
+`,
         },
         {
           path: 'app/server/schemas/{{kebabName}}.schema.ts',
@@ -210,21 +209,23 @@ export const Update{{pascalName}}Schema = t.Partial(Create{{pascalName}}Schema)
 export type {{pascalName}} = typeof {{pascalName}}Schema.static
 export type Create{{pascalName}} = typeof Create{{pascalName}}Schema.static
 export type Update{{pascalName}} = typeof Update{{pascalName}}Schema.static
-`
-        }
+`,
+        },
       ],
       hooks: {
         afterGenerate: async (context, options, files) => {
           context.logger.info(`Generated controller files:`)
-          files.forEach(file => {
+          files.forEach((file) => {
             context.logger.info(`  - ${file}`)
           })
           context.logger.info(`\nNext steps:`)
-          context.logger.info(`1. Generate the corresponding service: flux generate service ${options.name}`)
+          context.logger.info(
+            `1. Generate the corresponding service: flux generate service ${options.name}`,
+          )
           context.logger.info(`2. Add the controller to your routes in app/server/routes/`)
           context.logger.info(`3. Implement the business logic in the service`)
-        }
-      }
+        },
+      },
     }
   }
 
@@ -291,9 +292,9 @@ export class {{pascalName}}Controller {
     }
   }
 }
-`
-        }
-      ]
+`,
+        },
+      ],
     }
   }
 }

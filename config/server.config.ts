@@ -3,7 +3,7 @@
  * Server-specific settings (port, host, CORS, middleware)
  */
 
-import { defineConfig, defineNestedConfig, config } from '@/core/utils/config-schema'
+import { config, defineNestedConfig } from '@/core/utils/config-schema'
 
 /**
  * CORS configuration schema
@@ -13,7 +13,7 @@ const corsSchema = {
   methods: config.array('CORS_METHODS', ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']),
   headers: config.array('CORS_HEADERS', ['Content-Type', 'Authorization']),
   credentials: config.boolean('CORS_CREDENTIALS', false),
-  maxAge: config.number('CORS_MAX_AGE', 86400)
+  maxAge: config.number('CORS_MAX_AGE', 86400),
 } as const
 
 /**
@@ -31,7 +31,7 @@ const serverSchema = {
         return 'Port must be between 1 and 65535'
       }
       return true
-    }
+    },
   },
 
   host: config.string('HOST', 'localhost', true),
@@ -40,7 +40,7 @@ const serverSchema = {
     type: 'string' as const,
     env: 'API_PREFIX',
     default: '/api',
-    validate: (value: string) => value.startsWith('/') || 'API prefix must start with /'
+    validate: (value: string) => value.startsWith('/') || 'API prefix must start with /',
   },
 
   // Backend-only mode
@@ -48,7 +48,7 @@ const serverSchema = {
 
   // Features
   enableRequestLogging: config.boolean('ENABLE_REQUEST_LOGGING', true),
-  showBanner: config.boolean('SHOW_SERVER_BANNER', true)
+  showBanner: config.boolean('SHOW_SERVER_BANNER', true),
 } as const
 
 /**
@@ -56,7 +56,7 @@ const serverSchema = {
  */
 export const serverConfig = defineNestedConfig({
   server: serverSchema,
-  cors: corsSchema
+  cors: corsSchema,
 })
 
 // Export types

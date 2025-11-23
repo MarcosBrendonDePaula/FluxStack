@@ -38,7 +38,7 @@ export class CryptoAuthClient {
     this.config = {
       storage: 'localStorage',
       autoInit: true,
-      ...config
+      ...config,
     }
 
     // Configurar storage
@@ -83,7 +83,7 @@ export class CryptoAuthClient {
     const keys: KeyPair = {
       publicKey: bytesToHex(publicKey),
       privateKey: bytesToHex(privateKey),
-      createdAt: new Date()
+      createdAt: new Date(),
     }
 
     this.keys = keys
@@ -123,12 +123,12 @@ export class CryptoAuthClient {
       'x-public-key': this.keys.publicKey,
       'x-timestamp': timestamp.toString(),
       'x-nonce': nonce,
-      'x-signature': signature
+      'x-signature': signature,
     }
 
     return fetch(url, {
       ...fetchOptions,
-      headers
+      headers,
     })
   }
 
@@ -180,7 +180,7 @@ export class CryptoAuthClient {
       const keys: KeyPair = {
         publicKey: bytesToHex(publicKeyBytes),
         privateKey: privateKeyHex.toLowerCase(),
-        createdAt: new Date()
+        createdAt: new Date(),
       }
 
       this.keys = keys
@@ -188,7 +188,7 @@ export class CryptoAuthClient {
 
       return keys
     } catch (error) {
-      throw new Error('Erro ao importar chave privada: ' + (error as Error).message)
+      throw new Error(`Erro ao importar chave privada: ${(error as Error).message}`)
     }
   }
 
@@ -271,7 +271,7 @@ export class CryptoAuthClient {
       return {
         publicKey: parsed.publicKey,
         privateKey: parsed.privateKey,
-        createdAt: new Date(parsed.createdAt)
+        createdAt: new Date(parsed.createdAt),
       }
     } catch (error) {
       console.error('Erro ao carregar chaves:', error)
@@ -287,7 +287,7 @@ export class CryptoAuthClient {
       const data = JSON.stringify({
         publicKey: keys.publicKey,
         privateKey: keys.privateKey,
-        createdAt: keys.createdAt.toISOString()
+        createdAt: keys.createdAt.toISOString(),
       })
 
       if (this.storage instanceof Map) {

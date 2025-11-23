@@ -2,39 +2,39 @@
  * Tests for Enhanced Error Handling System
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
-  FluxStackError,
-  ValidationError,
-  InvalidInputError,
-  MissingRequiredFieldError,
-  NotFoundError,
-  ResourceNotFoundError,
-  EndpointNotFoundError,
-  UnauthorizedError,
-  InvalidTokenError,
-  TokenExpiredError,
-  ForbiddenError,
-  InsufficientPermissionsError,
-  ConflictError,
-  ResourceAlreadyExistsError,
-  RateLimitExceededError,
-  InternalServerError,
-  DatabaseError,
-  ExternalServiceError,
-  ServiceUnavailableError,
-  MaintenanceModeError,
-  PluginError,
-  PluginNotFoundError,
-  ConfigError,
-  InvalidConfigError,
   BuildError,
   CompilationError,
+  ConfigError,
+  ConflictError,
+  createErrorFromCode,
+  DatabaseError,
+  EndpointNotFoundError,
+  type ErrorMetadata,
+  ExternalServiceError,
+  FluxStackError,
+  ForbiddenError,
+  InsufficientPermissionsError,
+  InternalServerError,
+  InvalidConfigError,
+  InvalidInputError,
+  InvalidTokenError,
   isFluxStackError,
   isOperationalError,
-  createErrorFromCode,
+  MaintenanceModeError,
+  MissingRequiredFieldError,
+  NotFoundError,
+  PluginError,
+  PluginNotFoundError,
+  RateLimitExceededError,
+  ResourceAlreadyExistsError,
+  ResourceNotFoundError,
+  ServiceUnavailableError,
+  TokenExpiredError,
+  UnauthorizedError,
+  ValidationError,
   wrapError,
-  type ErrorMetadata
 } from '../errors'
 
 describe('Enhanced Error Classes', () => {
@@ -43,13 +43,13 @@ describe('Enhanced Error Classes', () => {
       const context = { field: 'email', value: 'invalid' }
       const metadata: ErrorMetadata = { correlationId: 'test-123', userId: 'user-456' }
       const error = new FluxStackError(
-        'Test error', 
-        'TEST_ERROR', 
-        400, 
-        context, 
-        metadata, 
-        true, 
-        'User friendly message'
+        'Test error',
+        'TEST_ERROR',
+        400,
+        context,
+        metadata,
+        true,
+        'User friendly message',
       )
 
       expect(error.message).toBe('Test error')
@@ -87,13 +87,13 @@ describe('Enhanced Error Classes', () => {
     it('should create response format correctly', () => {
       const metadata = { correlationId: 'test-123' }
       const error = new FluxStackError(
-        'Test error', 
-        'TEST_ERROR', 
-        400, 
-        { test: true }, 
+        'Test error',
+        'TEST_ERROR',
+        400,
+        { test: true },
         metadata,
         true,
-        'User message'
+        'User message',
       )
       const response = error.toResponse(false)
 
@@ -348,7 +348,9 @@ describe('Enhanced Error Classes', () => {
         expect(error.code).toBe('EXTERNAL_SERVICE_ERROR')
         expect(error.statusCode).toBe(500)
         expect(error.context).toEqual({ service: 'PaymentAPI', details: { timeout: true } })
-        expect(error.userMessage).toBe('An external service is currently unavailable. Please try again later')
+        expect(error.userMessage).toBe(
+          'An external service is currently unavailable. Please try again later',
+        )
         expect(error.isOperational).toBe(false)
       })
     })
@@ -361,7 +363,9 @@ describe('Enhanced Error Classes', () => {
         expect(error.code).toBe('MAINTENANCE_MODE')
         expect(error.statusCode).toBe(503)
         expect(error.context).toEqual({ estimatedDuration: 'in 2 hours' })
-        expect(error.userMessage).toBe('The service is under maintenance. Expected to be back in 2 hours')
+        expect(error.userMessage).toBe(
+          'The service is under maintenance. Expected to be back in 2 hours',
+        )
       })
 
       it('should create maintenance mode error without duration', () => {
@@ -379,7 +383,9 @@ describe('Enhanced Error Classes', () => {
         expect(error.code).toBe('PLUGIN_ERROR')
         expect(error.statusCode).toBe(500)
         expect(error.context).toEqual({ pluginName: 'auth-plugin', config: 'missing' })
-        expect(error.userMessage).toBe('A plugin error occurred. Please contact support if this persists')
+        expect(error.userMessage).toBe(
+          'A plugin error occurred. Please contact support if this persists',
+        )
         expect(error.isOperational).toBe(false)
       })
     })
@@ -498,13 +504,19 @@ describe('Enhanced Error Classes', () => {
       })
 
       it('should create InvalidInputError from INVALID_INPUT code', () => {
-        const error = createErrorFromCode('INVALID_INPUT', undefined, { field: 'email', value: 'invalid' })
+        const error = createErrorFromCode('INVALID_INPUT', undefined, {
+          field: 'email',
+          value: 'invalid',
+        })
         expect(error).toBeInstanceOf(InvalidInputError)
         expect(error.context?.field).toBe('email')
       })
 
       it('should create ResourceNotFoundError from RESOURCE_NOT_FOUND code', () => {
-        const error = createErrorFromCode('RESOURCE_NOT_FOUND', undefined, { resourceType: 'User', identifier: '123' })
+        const error = createErrorFromCode('RESOURCE_NOT_FOUND', undefined, {
+          resourceType: 'User',
+          identifier: '123',
+        })
         expect(error).toBeInstanceOf(ResourceNotFoundError)
         expect(error.context?.resourceType).toBe('User')
         expect(error.context?.identifier).toBe('123')

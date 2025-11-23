@@ -3,8 +3,8 @@
  * Declarative client, proxy and Vite dev server configuration
  */
 
-import { defineConfig, defineNestedConfig, config } from '@/core/utils/config-schema'
-import { env, helpers } from '@/core/utils/env'
+import { config, defineNestedConfig } from '@/core/utils/config-schema'
+import { helpers } from '@/core/utils/env'
 
 /**
  * Vite Dev Server Configuration
@@ -18,7 +18,7 @@ const viteSchema = {
 
   open: config.boolean('VITE_OPEN', false),
 
-  enableLogging: config.boolean('ENABLE_VITE_PROXY_LOGS', false)
+  enableLogging: config.boolean('ENABLE_VITE_PROXY_LOGS', false),
 } as const
 
 /**
@@ -38,7 +38,7 @@ const proxySchema = {
       } catch {
         return 'Proxy target must be a valid URL'
       }
-    }
+    },
   },
 
   changeOrigin: config.boolean('PROXY_CHANGE_ORIGIN', true),
@@ -51,8 +51,8 @@ const proxySchema = {
     type: 'object' as const,
     env: 'PROXY_REWRITE',
     default: {},
-    required: false
-  }
+    required: false,
+  },
 } as const
 
 /**
@@ -73,7 +73,7 @@ const buildSchema = {
 
   chunkSizeWarningLimit: config.number('CLIENT_CHUNK_SIZE_WARNING', 500), // KB
 
-  emptyOutDir: config.boolean('CLIENT_EMPTY_OUTDIR', true)
+  emptyOutDir: config.boolean('CLIENT_EMPTY_OUTDIR', true),
 } as const
 
 /**
@@ -82,7 +82,7 @@ const buildSchema = {
 export const clientConfig = defineNestedConfig({
   vite: viteSchema,
   proxy: proxySchema,
-  build: buildSchema
+  build: buildSchema,
 })
 
 // Export types

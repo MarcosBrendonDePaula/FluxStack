@@ -7,8 +7,8 @@
  * For customization, use app/server/backend-only.ts
  */
 
-import type { Elysia } from "elysia"
-import { startBackendOnly } from "./standalone"
+import type { Elysia } from 'elysia'
+import { startBackendOnly } from './standalone'
 
 export interface BackendEntryConfig {
   port: number
@@ -22,10 +22,7 @@ export interface BackendEntryConfig {
  * @param apiRoutes - Elysia routes from app/server/routes
  * @param config - Backend configuration
  */
-export function startBackend(
-  apiRoutes: Elysia,
-  config: BackendEntryConfig
-) {
+export function startBackend(apiRoutes: Elysia, config: BackendEntryConfig) {
   const { port, apiPrefix = '/api', host = 'localhost' } = config
 
   console.log(`🚀 Backend standalone: ${host}:${port}`)
@@ -40,12 +37,12 @@ export function startBackend(
  * Create backend entry config from declarative config
  * Helper to make it easy to use with the config system
  */
-export function createBackendConfig(
-  serverConfig: { server: { backendPort: number; apiPrefix: string; host: string } }
-): BackendEntryConfig {
+export function createBackendConfig(serverConfig: {
+  server: { backendPort: number; apiPrefix: string; host: string }
+}): BackendEntryConfig {
   return {
     port: serverConfig.server.backendPort,
     apiPrefix: serverConfig.server.apiPrefix,
-    host: serverConfig.server.host
+    host: serverConfig.server.host,
   }
 }

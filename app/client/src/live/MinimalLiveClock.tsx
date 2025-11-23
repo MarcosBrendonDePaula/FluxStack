@@ -1,16 +1,16 @@
 // 🔥 MinimalLiveClock - Live Component
-import { useTypedLiveComponent } from '@/core/client';
+import { useTypedLiveComponent } from '@/core/client'
 
 // Import component type DIRECTLY from backend - full type inference!
-import type { LiveClockComponent } from '@/server/live/LiveClockComponent';
+import type { LiveClockComponent } from '@/server/live/LiveClockComponent'
 
 export function MinimalLiveClock() {
   const { state, setValue } = useTypedLiveComponent<LiveClockComponent>(
     'LiveClock',
     {
-      currentTime: "Loading...",
-      timeZone: "America/Sao_Paulo",
-      format: "12h",
+      currentTime: 'Loading...',
+      timeZone: 'America/Sao_Paulo',
+      format: '12h',
       showSeconds: true,
       showDate: true,
       lastSync: new Date(),
@@ -30,8 +30,8 @@ export function MinimalLiveClock() {
       onRehydrate: () => {
         console.log('onRehydrate called - keeping format 24h')
         setValue('format', '24h')
-      }
-    }
+      },
+    },
   )
 
   return (
@@ -40,7 +40,9 @@ export function MinimalLiveClock() {
         {state.currentTime}
       </div>
       <div className="text-center mt-2">
-        <span className="text-xs text-gray-400">{state.timeZone} ({state.format})</span>
+        <span className="text-xs text-gray-400">
+          {state.timeZone} ({state.format})
+        </span>
       </div>
     </div>
   )

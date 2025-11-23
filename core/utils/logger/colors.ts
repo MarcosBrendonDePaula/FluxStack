@@ -5,29 +5,29 @@
 
 import chalk, { type ChalkInstance } from 'chalk'
 
-// Cache for module colors  
+// Cache for module colors
 const moduleColors = new Map<string, ChalkInstance>()
 
 /**
  * Pre-defined colors for common modules
  */
 const COMMON_MODULE_COLORS: Record<string, string> = {
-  api: '#4CAF50',      // Green
-  db: '#2196F3',       // Blue
-  auth: '#FF9800',     // Orange
-  user: '#9C27B0',     // Purple
-  config: '#00BCD4',   // Cyan
-  utils: '#607D8B',    // Blue Gray
-  routes: '#E91E63',   // Pink
+  api: '#4CAF50', // Green
+  db: '#2196F3', // Blue
+  auth: '#FF9800', // Orange
+  user: '#9C27B0', // Purple
+  config: '#00BCD4', // Cyan
+  utils: '#607D8B', // Blue Gray
+  routes: '#E91E63', // Pink
   controllers: '#3F51B5', // Indigo
-  models: '#009688',   // Teal
+  models: '#009688', // Teal
   services: '#FF5722', // Deep Orange
-  plugins: '#673AB7',  // Deep Purple
+  plugins: '#673AB7', // Deep Purple
   middleware: '#795548', // Brown
-  live: '#00E676',     // Green Accent
+  live: '#00E676', // Green Accent
   websocket: '#00B0FF', // Light Blue Accent
-  build: '#FFC107',    // Amber
-  cli: '#CDDC39'       // Lime
+  build: '#FFC107', // Amber
+  cli: '#CDDC39', // Lime
 }
 
 /**
@@ -38,7 +38,7 @@ export const LOG_SYMBOLS = {
   warn: chalk.yellow('⚠'),
   info: chalk.blue('ℹ'),
   debug: chalk.magenta('⬤'),
-  default: chalk.gray('•')
+  default: chalk.gray('•'),
 } as const
 
 /**
@@ -49,7 +49,7 @@ export const LEVEL_COLORS = {
   warn: chalk.bold.yellow,
   info: chalk.bold.blue,
   debug: chalk.bold.magenta,
-  default: chalk.bold.gray
+  default: chalk.bold.gray,
 } as const
 
 /**

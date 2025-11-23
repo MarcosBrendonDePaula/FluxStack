@@ -1,116 +1,148 @@
 // 🔥 FluxStack Live Components - Enhanced WebSocket Plugin with Connection Management
 
+import path from 'node:path'
+import { Elysia, t } from 'elysia'
+import type { Plugin, PluginContext } from '@/core/index'
+import type {
+  FileUploadChunkMessage,
+  FileUploadCompleteMessage,
+  FileUploadStartMessage,
+  LiveMessage,
+} from '@/core/plugins/types'
 import { componentRegistry } from './ComponentRegistry'
 import { fileUploadManager } from './FileUploadManager'
-import { connectionManager } from './WebSocketConnectionManager'
 import { performanceMonitor } from './LiveComponentPerformanceMonitor'
-import type { LiveMessage, FileUploadStartMessage, FileUploadChunkMessage, FileUploadCompleteMessage } from '@/core/plugins/types'
-import type { Plugin, PluginContext } from '@/core/index'
-import { t, Elysia } from 'elysia'
-import path from 'path'
+import { connectionManager } from './WebSocketConnectionManager'
 
 // ===== Response Schemas for Live Components Routes =====
 
-const LiveWebSocketInfoSchema = t.Object({
-  success: t.Boolean(),
-  message: t.String(),
-  endpoint: t.String(),
-  status: t.String(),
-  connectionManager: t.Any()
-}, {
-  description: 'WebSocket connection information and system statistics'
-})
+const LiveWebSocketInfoSchema = t.Object(
+  {
+    success: t.Boolean(),
+    message: t.String(),
+    endpoint: t.String(),
+    status: t.String(),
+    connectionManager: t.Any(),
+  },
+  {
+    description: 'WebSocket connection information and system statistics',
+  },
+)
 
-const LiveStatsSchema = t.Object({
-  success: t.Boolean(),
-  stats: t.Any(),
-  timestamp: t.String()
-}, {
-  description: 'Live Components statistics including registered components and instances'
-})
-
-const LiveHealthSchema = t.Object({
-  success: t.Boolean(),
-  service: t.String(),
-  status: t.String(),
-  components: t.Number(),
-  connections: t.Any(),
-  uptime: t.Number(),
-  timestamp: t.String()
-}, {
-  description: 'Health status of Live Components service'
-})
-
-const LiveConnectionsSchema = t.Object({
-  success: t.Boolean(),
-  connections: t.Array(t.Any()),
-  systemStats: t.Any(),
-  timestamp: t.String()
-}, {
-  description: 'List of all active WebSocket connections with metrics'
-})
-
-const LiveConnectionDetailsSchema = t.Union([
-  t.Object({
-    success: t.Literal(true),
-    connection: t.Any(),
-    timestamp: t.String()
-  }),
-  t.Object({
-    success: t.Literal(false),
-    error: t.String()
-  })
-], {
-  description: 'Detailed metrics for a specific connection'
-})
-
-const LivePoolStatsSchema = t.Union([
-  t.Object({
-    success: t.Literal(true),
-    pool: t.String(),
+const LiveStatsSchema = t.Object(
+  {
+    success: t.Boolean(),
     stats: t.Any(),
-    timestamp: t.String()
-  }),
-  t.Object({
-    success: t.Literal(false),
-    error: t.String()
-  })
-], {
-  description: 'Statistics for a specific connection pool'
-})
+    timestamp: t.String(),
+  },
+  {
+    description: 'Live Components statistics including registered components and instances',
+  },
+)
 
-const LivePerformanceDashboardSchema = t.Object({
-  success: t.Boolean(),
-  dashboard: t.Any(),
-  timestamp: t.String()
-}, {
-  description: 'Performance monitoring dashboard data'
-})
+const LiveHealthSchema = t.Object(
+  {
+    success: t.Boolean(),
+    service: t.String(),
+    status: t.String(),
+    components: t.Number(),
+    connections: t.Any(),
+    uptime: t.Number(),
+    timestamp: t.String(),
+  },
+  {
+    description: 'Health status of Live Components service',
+  },
+)
 
-const LiveComponentMetricsSchema = t.Union([
-  t.Object({
-    success: t.Literal(true),
-    component: t.String(),
-    metrics: t.Any(),
-    alerts: t.Array(t.Any()),
-    suggestions: t.Array(t.Any()),
-    timestamp: t.String()
-  }),
-  t.Object({
-    success: t.Literal(false),
-    error: t.String()
-  })
-], {
-  description: 'Performance metrics, alerts and suggestions for a specific component'
-})
+const LiveConnectionsSchema = t.Object(
+  {
+    success: t.Boolean(),
+    connections: t.Array(t.Any()),
+    systemStats: t.Any(),
+    timestamp: t.String(),
+  },
+  {
+    description: 'List of all active WebSocket connections with metrics',
+  },
+)
 
-const LiveAlertResolveSchema = t.Object({
-  success: t.Boolean(),
-  message: t.String(),
-  timestamp: t.String()
-}, {
-  description: 'Result of alert resolution operation'
-})
+const LiveConnectionDetailsSchema = t.Union(
+  [
+    t.Object({
+      success: t.Literal(true),
+      connection: t.Any(),
+      timestamp: t.String(),
+    }),
+    t.Object({
+      success: t.Literal(false),
+      error: t.String(),
+    }),
+  ],
+  {
+    description: 'Detailed metrics for a specific connection',
+  },
+)
+
+const LivePoolStatsSchema = t.Union(
+  [
+    t.Object({
+      success: t.Literal(true),
+      pool: t.String(),
+      stats: t.Any(),
+      timestamp: t.String(),
+    }),
+    t.Object({
+      success: t.Literal(false),
+      error: t.String(),
+    }),
+  ],
+  {
+    description: 'Statistics for a specific connection pool',
+  },
+)
+
+const LivePerformanceDashboardSchema = t.Object(
+  {
+    success: t.Boolean(),
+    dashboard: t.Any(),
+    timestamp: t.String(),
+  },
+  {
+    description: 'Performance monitoring dashboard data',
+  },
+)
+
+const LiveComponentMetricsSchema = t.Union(
+  [
+    t.Object({
+      success: t.Literal(true),
+      component: t.String(),
+      metrics: t.Any(),
+      alerts: t.Array(t.Any()),
+      suggestions: t.Array(t.Any()),
+      timestamp: t.String(),
+    }),
+    t.Object({
+      success: t.Literal(false),
+      error: t.String(),
+    }),
+  ],
+  {
+    description: 'Performance metrics, alerts and suggestions for a specific component',
+  },
+)
+
+const LiveAlertResolveSchema = t.Object(
+  {
+    success: t.Boolean(),
+    message: t.String(),
+    timestamp: t.String(),
+  },
+  {
+    description: 'Result of alert resolution operation',
+  },
+)
 
 export const liveComponentsPlugin: Plugin = {
   name: 'live-components',
@@ -120,15 +152,15 @@ export const liveComponentsPlugin: Plugin = {
   priority: 'normal',
   category: 'core',
   tags: ['websocket', 'real-time', 'live-components'],
-  
+
   setup: async (context: PluginContext) => {
     context.logger.debug('🔌 Setting up Live Components plugin with Elysia WebSocket...')
-    
+
     // Auto-discover components from app/server/live directory
     const componentsPath = path.join(process.cwd(), 'app', 'server', 'live')
     await componentRegistry.autoDiscoverComponents(componentsPath)
     context.logger.debug('🔍 Component auto-discovery completed')
-    
+
     // Create grouped routes for Live Components with documentation
     const liveRoutes = new Elysia({ prefix: '/api/live', tags: ['Live Components'] })
       // WebSocket route
@@ -152,16 +184,16 @@ export const liveComponentsPlugin: Plugin = {
           chunkIndex: t.Optional(t.Number()),
           totalChunks: t.Optional(t.Number()),
           data: t.Optional(t.String()),
-          hash: t.Optional(t.String())
+          hash: t.Optional(t.String()),
         }),
-        
+
         open(ws) {
           const connectionId = `ws-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
           console.log(`🔌 Live Components WebSocket connected: ${connectionId}`)
-          
+
           // Register connection with enhanced connection manager
           connectionManager.registerConnection(ws, connectionId, 'live-components')
-          
+
           // Initialize and store connection data in ws.data
           if (!ws.data) {
             ws.data = {}
@@ -170,31 +202,33 @@ export const liveComponentsPlugin: Plugin = {
           ws.data.components = new Map()
           ws.data.subscriptions = new Set()
           ws.data.connectedAt = new Date()
-          
+
           // Send connection confirmation
-          ws.send(JSON.stringify({
-            type: 'CONNECTION_ESTABLISHED',
-            connectionId,
-            timestamp: Date.now(),
-            features: {
-              compression: true,
-              encryption: true,
-              offlineQueue: true,
-              loadBalancing: true
-            }
-          }))
+          ws.send(
+            JSON.stringify({
+              type: 'CONNECTION_ESTABLISHED',
+              connectionId,
+              timestamp: Date.now(),
+              features: {
+                compression: true,
+                encryption: true,
+                offlineQueue: true,
+                loadBalancing: true,
+              },
+            }),
+          )
         },
-        
+
         async message(ws, message: LiveMessage) {
           try {
             // Add connection metadata
             message.timestamp = Date.now()
-            
+
             console.log(`📨 Received message:`, {
               type: message.type,
               componentId: message.componentId,
               action: message.action,
-              requestId: message.requestId
+              requestId: message.requestId,
             })
 
             // Handle different message types
@@ -228,223 +262,264 @@ export const liveComponentsPlugin: Plugin = {
                 break
               default:
                 console.warn(`❌ Unknown message type: ${message.type}`)
-                ws.send(JSON.stringify({
-                  type: 'ERROR',
-                  error: `Unknown message type: ${message.type}`,
-                  timestamp: Date.now()
-                }))
+                ws.send(
+                  JSON.stringify({
+                    type: 'ERROR',
+                    error: `Unknown message type: ${message.type}`,
+                    timestamp: Date.now(),
+                  }),
+                )
             }
           } catch (error) {
             console.error('❌ WebSocket message error:', error)
-            ws.send(JSON.stringify({
-              type: 'ERROR',
-              error: error instanceof Error ? error.message : 'Unknown error',
-              timestamp: Date.now()
-            }))
+            ws.send(
+              JSON.stringify({
+                type: 'ERROR',
+                error: error instanceof Error ? error.message : 'Unknown error',
+                timestamp: Date.now(),
+              }),
+            )
           }
         },
-        
+
         close(ws) {
           const connectionId = ws.data?.connectionId
           console.log(`🔌 Live Components WebSocket disconnected: ${connectionId}`)
-          
+
           // Cleanup connection in connection manager
           if (connectionId) {
             connectionManager.cleanupConnection(connectionId)
           }
-          
+
           // Cleanup components for this connection
           componentRegistry.cleanupConnection(ws)
-        }
+        },
       })
 
       // ===== Live Components Information Routes =====
-      .get('/websocket-info', () => {
-        return {
-          success: true,
-          message: 'Live Components WebSocket available via Elysia',
-          endpoint: 'ws://localhost:3000/api/live/ws',
-          status: 'running',
-          connectionManager: connectionManager.getSystemStats()
-        }
-      }, {
-        detail: {
-          summary: 'Get WebSocket Information',
-          description: 'Returns WebSocket endpoint information and connection manager statistics',
-          tags: ['Live Components', 'WebSocket']
+      .get(
+        '/websocket-info',
+        () => {
+          return {
+            success: true,
+            message: 'Live Components WebSocket available via Elysia',
+            endpoint: 'ws://localhost:3000/api/live/ws',
+            status: 'running',
+            connectionManager: connectionManager.getSystemStats(),
+          }
         },
-        response: LiveWebSocketInfoSchema
-      })
+        {
+          detail: {
+            summary: 'Get WebSocket Information',
+            description: 'Returns WebSocket endpoint information and connection manager statistics',
+            tags: ['Live Components', 'WebSocket'],
+          },
+          response: LiveWebSocketInfoSchema,
+        },
+      )
 
-      .get('/stats', () => {
-        const stats = componentRegistry.getStats()
-        return {
-          success: true,
-          stats,
-          timestamp: new Date().toISOString()
-        }
-      }, {
-        detail: {
-          summary: 'Get Live Components Statistics',
-          description: 'Returns statistics about registered components and active instances',
-          tags: ['Live Components', 'Monitoring']
+      .get(
+        '/stats',
+        () => {
+          const stats = componentRegistry.getStats()
+          return {
+            success: true,
+            stats,
+            timestamp: new Date().toISOString(),
+          }
         },
-        response: LiveStatsSchema
-      })
+        {
+          detail: {
+            summary: 'Get Live Components Statistics',
+            description: 'Returns statistics about registered components and active instances',
+            tags: ['Live Components', 'Monitoring'],
+          },
+          response: LiveStatsSchema,
+        },
+      )
 
-      .get('/health', () => {
-        return {
-          success: true,
-          service: 'FluxStack Live Components',
-          status: 'operational',
-          components: componentRegistry.getStats().components,
-          connections: connectionManager.getSystemStats(),
-          uptime: process.uptime(),
-          timestamp: new Date().toISOString()
-        }
-      }, {
-        detail: {
-          summary: 'Health Check',
-          description: 'Returns the health status of the Live Components service',
-          tags: ['Live Components', 'Health']
+      .get(
+        '/health',
+        () => {
+          return {
+            success: true,
+            service: 'FluxStack Live Components',
+            status: 'operational',
+            components: componentRegistry.getStats().components,
+            connections: connectionManager.getSystemStats(),
+            uptime: process.uptime(),
+            timestamp: new Date().toISOString(),
+          }
         },
-        response: LiveHealthSchema
-      })
+        {
+          detail: {
+            summary: 'Health Check',
+            description: 'Returns the health status of the Live Components service',
+            tags: ['Live Components', 'Health'],
+          },
+          response: LiveHealthSchema,
+        },
+      )
 
       // ===== Connection Management Routes =====
-      .get('/connections', () => {
-        return {
-          success: true,
-          connections: connectionManager.getAllConnectionMetrics(),
-          systemStats: connectionManager.getSystemStats(),
-          timestamp: new Date().toISOString()
-        }
-      }, {
-        detail: {
-          summary: 'List All Connections',
-          description: 'Returns all active WebSocket connections with their metrics',
-          tags: ['Live Components', 'Connections']
-        },
-        response: LiveConnectionsSchema
-      })
-
-      .get('/connections/:connectionId', ({ params }) => {
-        const metrics = connectionManager.getConnectionMetrics(params.connectionId)
-        if (!metrics) {
+      .get(
+        '/connections',
+        () => {
           return {
-            success: false,
-            error: 'Connection not found'
+            success: true,
+            connections: connectionManager.getAllConnectionMetrics(),
+            systemStats: connectionManager.getSystemStats(),
+            timestamp: new Date().toISOString(),
           }
-        }
-        return {
-          success: true,
-          connection: metrics,
-          timestamp: new Date().toISOString()
-        }
-      }, {
-        detail: {
-          summary: 'Get Connection Details',
-          description: 'Returns detailed metrics for a specific WebSocket connection',
-          tags: ['Live Components', 'Connections']
         },
-        params: t.Object({
-          connectionId: t.String({ description: 'The unique connection identifier' })
-        }),
-        response: LiveConnectionDetailsSchema
-      })
+        {
+          detail: {
+            summary: 'List All Connections',
+            description: 'Returns all active WebSocket connections with their metrics',
+            tags: ['Live Components', 'Connections'],
+          },
+          response: LiveConnectionsSchema,
+        },
+      )
 
-      .get('/pools/:poolId/stats', ({ params }) => {
-        const stats = connectionManager.getPoolStats(params.poolId)
-        if (!stats) {
-          return {
-            success: false,
-            error: 'Pool not found'
+      .get(
+        '/connections/:connectionId',
+        ({ params }) => {
+          const metrics = connectionManager.getConnectionMetrics(params.connectionId)
+          if (!metrics) {
+            return {
+              success: false,
+              error: 'Connection not found',
+            }
           }
-        }
-        return {
-          success: true,
-          pool: params.poolId,
-          stats,
-          timestamp: new Date().toISOString()
-        }
-      }, {
-        detail: {
-          summary: 'Get Pool Statistics',
-          description: 'Returns statistics for a specific connection pool',
-          tags: ['Live Components', 'Connections', 'Pools']
+          return {
+            success: true,
+            connection: metrics,
+            timestamp: new Date().toISOString(),
+          }
         },
-        params: t.Object({
-          poolId: t.String({ description: 'The unique pool identifier' })
-        }),
-        response: LivePoolStatsSchema
-      })
+        {
+          detail: {
+            summary: 'Get Connection Details',
+            description: 'Returns detailed metrics for a specific WebSocket connection',
+            tags: ['Live Components', 'Connections'],
+          },
+          params: t.Object({
+            connectionId: t.String({ description: 'The unique connection identifier' }),
+          }),
+          response: LiveConnectionDetailsSchema,
+        },
+      )
+
+      .get(
+        '/pools/:poolId/stats',
+        ({ params }) => {
+          const stats = connectionManager.getPoolStats(params.poolId)
+          if (!stats) {
+            return {
+              success: false,
+              error: 'Pool not found',
+            }
+          }
+          return {
+            success: true,
+            pool: params.poolId,
+            stats,
+            timestamp: new Date().toISOString(),
+          }
+        },
+        {
+          detail: {
+            summary: 'Get Pool Statistics',
+            description: 'Returns statistics for a specific connection pool',
+            tags: ['Live Components', 'Connections', 'Pools'],
+          },
+          params: t.Object({
+            poolId: t.String({ description: 'The unique pool identifier' }),
+          }),
+          response: LivePoolStatsSchema,
+        },
+      )
 
       // ===== Performance Monitoring Routes =====
-      .get('/performance/dashboard', () => {
-        return {
-          success: true,
-          dashboard: performanceMonitor.generateDashboard(),
-          timestamp: new Date().toISOString()
-        }
-      }, {
-        detail: {
-          summary: 'Performance Dashboard',
-          description: 'Returns comprehensive performance monitoring dashboard data',
-          tags: ['Live Components', 'Performance']
-        },
-        response: LivePerformanceDashboardSchema
-      })
-
-      .get('/performance/components/:componentId', ({ params }) => {
-        const metrics = performanceMonitor.getComponentMetrics(params.componentId)
-        if (!metrics) {
+      .get(
+        '/performance/dashboard',
+        () => {
           return {
-            success: false,
-            error: 'Component metrics not found'
+            success: true,
+            dashboard: performanceMonitor.generateDashboard(),
+            timestamp: new Date().toISOString(),
           }
-        }
-
-        const alerts = performanceMonitor.getComponentAlerts(params.componentId)
-        const suggestions = performanceMonitor.getComponentSuggestions(params.componentId)
-
-        return {
-          success: true,
-          component: params.componentId,
-          metrics,
-          alerts,
-          suggestions,
-          timestamp: new Date().toISOString()
-        }
-      }, {
-        detail: {
-          summary: 'Get Component Performance Metrics',
-          description: 'Returns performance metrics, alerts, and optimization suggestions for a specific component',
-          tags: ['Live Components', 'Performance']
         },
-        params: t.Object({
-          componentId: t.String({ description: 'The unique component identifier' })
-        }),
-        response: LiveComponentMetricsSchema
-      })
-
-      .post('/performance/alerts/:alertId/resolve', ({ params }) => {
-        const resolved = performanceMonitor.resolveAlert(params.alertId)
-        return {
-          success: resolved,
-          message: resolved ? 'Alert resolved' : 'Alert not found',
-          timestamp: new Date().toISOString()
-        }
-      }, {
-        detail: {
-          summary: 'Resolve Performance Alert',
-          description: 'Marks a performance alert as resolved',
-          tags: ['Live Components', 'Performance', 'Alerts']
+        {
+          detail: {
+            summary: 'Performance Dashboard',
+            description: 'Returns comprehensive performance monitoring dashboard data',
+            tags: ['Live Components', 'Performance'],
+          },
+          response: LivePerformanceDashboardSchema,
         },
-        params: t.Object({
-          alertId: t.String({ description: 'The unique alert identifier' })
-        }),
-        response: LiveAlertResolveSchema
-      })
+      )
+
+      .get(
+        '/performance/components/:componentId',
+        ({ params }) => {
+          const metrics = performanceMonitor.getComponentMetrics(params.componentId)
+          if (!metrics) {
+            return {
+              success: false,
+              error: 'Component metrics not found',
+            }
+          }
+
+          const alerts = performanceMonitor.getComponentAlerts(params.componentId)
+          const suggestions = performanceMonitor.getComponentSuggestions(params.componentId)
+
+          return {
+            success: true,
+            component: params.componentId,
+            metrics,
+            alerts,
+            suggestions,
+            timestamp: new Date().toISOString(),
+          }
+        },
+        {
+          detail: {
+            summary: 'Get Component Performance Metrics',
+            description:
+              'Returns performance metrics, alerts, and optimization suggestions for a specific component',
+            tags: ['Live Components', 'Performance'],
+          },
+          params: t.Object({
+            componentId: t.String({ description: 'The unique component identifier' }),
+          }),
+          response: LiveComponentMetricsSchema,
+        },
+      )
+
+      .post(
+        '/performance/alerts/:alertId/resolve',
+        ({ params }) => {
+          const resolved = performanceMonitor.resolveAlert(params.alertId)
+          return {
+            success: resolved,
+            message: resolved ? 'Alert resolved' : 'Alert not found',
+            timestamp: new Date().toISOString(),
+          }
+        },
+        {
+          detail: {
+            summary: 'Resolve Performance Alert',
+            description: 'Marks a performance alert as resolved',
+            tags: ['Live Components', 'Performance', 'Alerts'],
+          },
+          params: t.Object({
+            alertId: t.String({ description: 'The unique alert identifier' }),
+          }),
+          response: LiveAlertResolveSchema,
+        },
+      )
 
     // Register the grouped routes with the main app
     context.app.use(liveRoutes)
@@ -452,13 +527,13 @@ export const liveComponentsPlugin: Plugin = {
 
   onServerStart: async (context: PluginContext) => {
     context.logger.debug('🔌 Live Components WebSocket ready on /api/live/ws')
-  }
+  },
 }
 
 // Handler functions for WebSocket messages
 async function handleComponentMount(ws: any, message: LiveMessage) {
   const result = await componentRegistry.handleMessage(ws, message)
-  
+
   if (result !== null) {
     const response = {
       type: 'COMPONENT_MOUNTED',
@@ -467,7 +542,7 @@ async function handleComponentMount(ws: any, message: LiveMessage) {
       result: result.result,
       error: result.error,
       requestId: message.requestId,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     }
     ws.send(JSON.stringify(response))
   }
@@ -476,12 +551,12 @@ async function handleComponentMount(ws: any, message: LiveMessage) {
 async function handleComponentRehydrate(ws: any, message: LiveMessage) {
   console.log('🔄 Processing component re-hydration request:', {
     componentId: message.componentId,
-    payload: message.payload
+    payload: message.payload,
   })
 
   try {
     const { componentName, signedState, room, userId } = message.payload || {}
-    
+
     if (!componentName || !signedState) {
       throw new Error('Missing componentName or signedState in rehydration payload')
     }
@@ -491,7 +566,7 @@ async function handleComponentRehydrate(ws: any, message: LiveMessage) {
       componentName,
       signedState,
       ws,
-      { room, userId }
+      { room, userId },
     )
 
     const response = {
@@ -500,48 +575,47 @@ async function handleComponentRehydrate(ws: any, message: LiveMessage) {
       success: result.success,
       result: {
         newComponentId: result.newComponentId,
-        ...result
+        ...result,
       },
       error: result.error,
       requestId: message.requestId,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     }
 
     console.log('📤 Sending COMPONENT_REHYDRATED response:', {
       type: response.type,
       success: response.success,
       newComponentId: response.result?.newComponentId,
-      requestId: response.requestId
+      requestId: response.requestId,
     })
-    
-    ws.send(JSON.stringify(response))
 
+    ws.send(JSON.stringify(response))
   } catch (error: any) {
     console.error('❌ Re-hydration handler error:', error.message)
-    
+
     const errorResponse = {
       type: 'COMPONENT_REHYDRATED',
       componentId: message.componentId,
       success: false,
       error: error.message,
       requestId: message.requestId,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     }
-    
+
     ws.send(JSON.stringify(errorResponse))
   }
 }
 
 async function handleComponentUnmount(ws: any, message: LiveMessage) {
   const result = await componentRegistry.handleMessage(ws, message)
-  
+
   if (result !== null) {
     const response = {
       type: 'COMPONENT_UNMOUNTED',
       componentId: message.componentId,
       success: result.success,
       requestId: message.requestId,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     }
     ws.send(JSON.stringify(response))
   }
@@ -549,7 +623,7 @@ async function handleComponentUnmount(ws: any, message: LiveMessage) {
 
 async function handleActionCall(ws: any, message: LiveMessage) {
   const result = await componentRegistry.handleMessage(ws, message)
-  
+
   if (result !== null) {
     const response = {
       type: message.expectResponse ? 'ACTION_RESPONSE' : 'MESSAGE_RESPONSE',
@@ -559,7 +633,7 @@ async function handleActionCall(ws: any, message: LiveMessage) {
       result: result.result,
       error: result.error,
       requestId: message.requestId,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     }
     ws.send(JSON.stringify(response))
   }
@@ -576,7 +650,7 @@ async function handlePropertyUpdate(ws: any, message: LiveMessage) {
       result: result.result,
       error: result.error,
       requestId: message.requestId,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     }
     ws.send(JSON.stringify(response))
   }
@@ -592,7 +666,7 @@ async function handleComponentPing(ws: any, message: LiveMessage) {
     componentId: message.componentId,
     success: updated,
     requestId: message.requestId,
-    timestamp: Date.now()
+    timestamp: Date.now(),
   }
 
   ws.send(JSON.stringify(response))
@@ -601,9 +675,9 @@ async function handleComponentPing(ws: any, message: LiveMessage) {
 // File Upload Handler Functions
 async function handleFileUploadStart(ws: any, message: FileUploadStartMessage) {
   console.log('📤 Starting file upload:', message.uploadId)
-  
+
   const result = await fileUploadManager.startUpload(message)
-  
+
   const response = {
     type: 'FILE_UPLOAD_START_RESPONSE',
     componentId: message.componentId,
@@ -611,9 +685,9 @@ async function handleFileUploadStart(ws: any, message: FileUploadStartMessage) {
     success: result.success,
     error: result.error,
     requestId: message.requestId,
-    timestamp: Date.now()
+    timestamp: Date.now(),
   }
-  
+
   ws.send(JSON.stringify(response))
 }
 
@@ -627,7 +701,7 @@ async function handleFileUploadChunk(ws: any, message: FileUploadChunkMessage) {
     const responseWithRequestId = {
       ...progressResponse,
       requestId: message.requestId,
-      success: true
+      success: true,
     }
     ws.send(JSON.stringify(responseWithRequestId))
   } else {
@@ -639,7 +713,7 @@ async function handleFileUploadChunk(ws: any, message: FileUploadChunkMessage) {
       error: 'Failed to process chunk',
       requestId: message.requestId,
       success: false,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     }
     ws.send(JSON.stringify(errorResponse))
   }
@@ -653,7 +727,7 @@ async function handleFileUploadComplete(ws: any, message: FileUploadCompleteMess
   // Add requestId to response so client can correlate it
   const responseWithRequestId = {
     ...completeResponse,
-    requestId: message.requestId
+    requestId: message.requestId,
   }
 
   ws.send(JSON.stringify(responseWithRequestId))

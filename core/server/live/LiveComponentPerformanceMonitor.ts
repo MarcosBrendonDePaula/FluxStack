@@ -1,7 +1,7 @@
 // 📊 FluxStack Live Component Performance Monitor
 // Advanced performance monitoring, metrics collection, and optimization suggestions
 
-import { EventEmitter } from 'events'
+import { EventEmitter } from 'node:events'
 
 export interface PerformanceMetrics {
   componentId: string
@@ -142,7 +142,7 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
 
   constructor(config?: Partial<MonitoringConfig>) {
     super()
-    
+
     this.config = {
       enabled: true,
       sampleRate: 1.0, // Monitor 100% by default
@@ -152,7 +152,7 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
       alertCooldown: 60000, // 1 minute
       historyRetention: 24 * 60 * 60 * 1000, // 24 hours
       dashboardUpdateInterval: 30000, // 30 seconds
-      ...config
+      ...config,
     }
 
     if (this.config.enabled) {
@@ -168,8 +168,8 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
   private setupPerformanceObserver(): void {
     try {
       // Use Node.js performance hooks if available
-      const { PerformanceObserver, performance } = require('perf_hooks')
-      
+      const { PerformanceObserver, performance: _performance } = require('node:perf_hooks')
+
       this.performanceObserver = new PerformanceObserver((list: any) => {
         const entries = list.getEntries()
         for (const entry of entries) {
@@ -178,7 +178,7 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
           }
         }
       })
-      
+
       this.performanceObserver.observe({ entryTypes: ['measure', 'mark'] })
       // Performance observer ready (logged at DEBUG level to keep startup clean)
     } catch (error) {
@@ -191,7 +191,7 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
    */
   private processPerformanceEntry(entry: any): void {
     const [, componentId, operation] = entry.name.split('-')
-    
+
     if (operation === 'render') {
       this.recordRenderTime(componentId, entry.duration)
     } else if (operation === 'action') {
@@ -213,9 +213,12 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
    */
   private setupCleanupTasks(): void {
     // Clean up old data every hour
-    setInterval(() => {
-      this.cleanupOldData()
-    }, 60 * 60 * 1000)
+    setInterval(
+      () => {
+        this.cleanupOldData()
+      },
+      60 * 60 * 1000,
+    )
   }
 
   /**
@@ -235,7 +238,7 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
         lastRenderTime: 0,
         renderTimeHistory: [],
         slowRenderCount: 0,
-        renderErrorCount: 0
+        renderErrorCount: 0,
       },
       actionMetrics: {
         totalActions: 0,
@@ -244,7 +247,7 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
         maxActionTime: 0,
         actionsByType: {},
         failedActions: 0,
-        timeoutActions: 0
+        timeoutActions: 0,
       },
       memoryMetrics: {
         currentUsage: 0,
@@ -253,7 +256,7 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
         memoryLeakDetected: false,
         gcCount: 0,
         stateSize: 0,
-        stateSizeHistory: []
+        stateSizeHistory: [],
       },
       networkMetrics: {
         messagesSent: 0,
@@ -262,7 +265,7 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
         averageLatency: 0,
         connectionDrops: 0,
         reconnectCount: 0,
-        queuedMessages: 0
+        queuedMessages: 0,
       },
       userInteractionMetrics: {
         clickCount: 0,
@@ -270,9 +273,9 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
         formSubmissions: 0,
         averageInteractionTime: 0,
         bounceRate: 0,
-        engagementScore: 0
+        engagementScore: 0,
       },
-      timestamp: new Date()
+      timestamp: new Date(),
     }
 
     this.metrics.set(componentId, metrics)
@@ -304,10 +307,11 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
     renderMetrics.lastRenderTime = renderTime
     renderMetrics.minRenderTime = Math.min(renderMetrics.minRenderTime, renderTime)
     renderMetrics.maxRenderTime = Math.max(renderMetrics.maxRenderTime, renderTime)
-    
+
     // Update average
-    renderMetrics.averageRenderTime = 
-      (renderMetrics.averageRenderTime * (renderMetrics.totalRenders - 1) + renderTime) / renderMetrics.totalRenders
+    renderMetrics.averageRenderTime =
+      (renderMetrics.averageRenderTime * (renderMetrics.totalRenders - 1) + renderTime) /
+      renderMetrics.totalRenders
 
     // Track history (keep last 100 renders)
     renderMetrics.renderTimeHistory.push(renderTime)
@@ -318,11 +322,16 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
     // Check for slow renders
     if (renderTime > this.config.renderTimeThreshold) {
       renderMetrics.slowRenderCount++
-      
+
       if (renderTime > this.config.renderTimeThreshold * 2) {
-        this.createAlert(componentId, 'warning', 'render', 
-          `Slow render detected: ${renderTime.toFixed(2)}ms`, 
-          this.config.renderTimeThreshold, renderTime)
+        this.createAlert(
+          componentId,
+          'warning',
+          'render',
+          `Slow render detected: ${renderTime.toFixed(2)}ms`,
+          this.config.renderTimeThreshold,
+          renderTime,
+        )
       }
     }
 
@@ -335,7 +344,12 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
   /**
    * Record action performance
    */
-  recordActionTime(componentId: string, actionName: string, actionTime: number, error?: Error): void {
+  recordActionTime(
+    componentId: string,
+    actionName: string,
+    actionTime: number,
+    error?: Error,
+  ): void {
     if (!this.config.enabled || !this.shouldSample()) return
 
     const metrics = this.metrics.get(componentId)
@@ -345,8 +359,14 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
 
     if (error) {
       actionMetrics.failedActions++
-      this.createAlert(componentId, 'warning', 'action', 
-        `Action failed: ${actionName} - ${error.message}`, 0, 1)
+      this.createAlert(
+        componentId,
+        'warning',
+        'action',
+        `Action failed: ${actionName} - ${error.message}`,
+        0,
+        1,
+      )
       return
     }
 
@@ -354,8 +374,9 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
     actionMetrics.totalActions++
     actionMetrics.minActionTime = Math.min(actionMetrics.minActionTime, actionTime)
     actionMetrics.maxActionTime = Math.max(actionMetrics.maxActionTime, actionTime)
-    actionMetrics.averageActionTime = 
-      (actionMetrics.averageActionTime * (actionMetrics.totalActions - 1) + actionTime) / actionMetrics.totalActions
+    actionMetrics.averageActionTime =
+      (actionMetrics.averageActionTime * (actionMetrics.totalActions - 1) + actionTime) /
+      actionMetrics.totalActions
 
     // Update action type metrics
     if (!actionMetrics.actionsByType[actionName]) {
@@ -365,7 +386,7 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
         minTime: Infinity,
         maxTime: 0,
         errorCount: 0,
-        lastExecuted: new Date()
+        lastExecuted: new Date(),
       }
     }
 
@@ -373,15 +394,20 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
     typeMetrics.count++
     typeMetrics.minTime = Math.min(typeMetrics.minTime, actionTime)
     typeMetrics.maxTime = Math.max(typeMetrics.maxTime, actionTime)
-    typeMetrics.averageTime = 
+    typeMetrics.averageTime =
       (typeMetrics.averageTime * (typeMetrics.count - 1) + actionTime) / typeMetrics.count
     typeMetrics.lastExecuted = new Date()
 
     // Check for slow actions
     if (actionTime > this.config.actionTimeThreshold) {
-      this.createAlert(componentId, 'warning', 'action', 
-        `Slow action detected: ${actionName} took ${actionTime.toFixed(2)}ms`, 
-        this.config.actionTimeThreshold, actionTime)
+      this.createAlert(
+        componentId,
+        'warning',
+        'action',
+        `Slow action detected: ${actionName} took ${actionTime.toFixed(2)}ms`,
+        this.config.actionTimeThreshold,
+        actionTime,
+      )
     }
 
     // Generate optimization suggestions
@@ -404,16 +430,16 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
     // Update memory metrics
     memoryMetrics.currentUsage = memoryUsage
     memoryMetrics.peakUsage = Math.max(memoryMetrics.peakUsage, memoryUsage)
-    
+
     // Calculate average (simple moving average)
     const sampleCount = Math.min(100, memoryMetrics.gcCount + 1)
-    memoryMetrics.averageUsage = 
+    memoryMetrics.averageUsage =
       (memoryMetrics.averageUsage * (sampleCount - 1) + memoryUsage) / sampleCount
 
     if (stateSize !== undefined) {
       memoryMetrics.stateSize = stateSize
       memoryMetrics.stateSizeHistory.push(stateSize)
-      
+
       // Keep last 100 state sizes
       if (memoryMetrics.stateSizeHistory.length > 100) {
         memoryMetrics.stateSizeHistory.shift()
@@ -422,20 +448,32 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
 
     // Check for memory issues
     if (memoryUsage > this.config.memoryThreshold) {
-      this.createAlert(componentId, 'critical', 'memory', 
-        `High memory usage: ${(memoryUsage / 1024 / 1024).toFixed(2)}MB`, 
-        this.config.memoryThreshold, memoryUsage)
+      this.createAlert(
+        componentId,
+        'critical',
+        'memory',
+        `High memory usage: ${(memoryUsage / 1024 / 1024).toFixed(2)}MB`,
+        this.config.memoryThreshold,
+        memoryUsage,
+      )
     }
 
     // Detect memory leaks (increasing trend over time)
     if (memoryMetrics.stateSizeHistory.length >= 10) {
       const recentSizes = memoryMetrics.stateSizeHistory.slice(-10)
       const trend = this.calculateTrend(recentSizes)
-      
-      if (trend > 0.1) { // 10% increase trend
+
+      if (trend > 0.1) {
+        // 10% increase trend
         memoryMetrics.memoryLeakDetected = true
-        this.createAlert(componentId, 'critical', 'memory', 
-          'Potential memory leak detected - state size increasing', 0, trend)
+        this.createAlert(
+          componentId,
+          'critical',
+          'memory',
+          'Potential memory leak detected - state size increasing',
+          0,
+          trend,
+        )
       }
     }
 
@@ -448,7 +486,12 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
   /**
    * Record network metrics
    */
-  recordNetworkActivity(componentId: string, type: 'sent' | 'received', bytes: number, latency?: number): void {
+  recordNetworkActivity(
+    componentId: string,
+    type: 'sent' | 'received',
+    bytes: number,
+    latency?: number,
+  ): void {
     if (!this.config.enabled || !this.shouldSample()) return
 
     const metrics = this.metrics.get(componentId)
@@ -466,7 +509,7 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
 
     if (latency !== undefined) {
       const totalMessages = networkMetrics.messagesSent + networkMetrics.messagesReceived
-      networkMetrics.averageLatency = 
+      networkMetrics.averageLatency =
         (networkMetrics.averageLatency * (totalMessages - 1) + latency) / totalMessages
     }
 
@@ -476,7 +519,11 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
   /**
    * Record user interaction
    */
-  recordUserInteraction(componentId: string, type: 'click' | 'input' | 'submit', interactionTime?: number): void {
+  recordUserInteraction(
+    componentId: string,
+    type: 'click' | 'input' | 'submit',
+    interactionTime?: number,
+  ): void {
     if (!this.config.enabled || !this.shouldSample()) return
 
     const metrics = this.metrics.get(componentId)
@@ -497,12 +544,14 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
     }
 
     if (interactionTime !== undefined) {
-      const totalInteractions = interactionMetrics.clickCount + 
-                               interactionMetrics.inputChangeCount + 
-                               interactionMetrics.formSubmissions
-      
-      interactionMetrics.averageInteractionTime = 
-        (interactionMetrics.averageInteractionTime * (totalInteractions - 1) + interactionTime) / totalInteractions
+      const totalInteractions =
+        interactionMetrics.clickCount +
+        interactionMetrics.inputChangeCount +
+        interactionMetrics.formSubmissions
+
+      interactionMetrics.averageInteractionTime =
+        (interactionMetrics.averageInteractionTime * (totalInteractions - 1) + interactionTime) /
+        totalInteractions
     }
 
     // Calculate engagement score
@@ -515,12 +564,14 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
    * Calculate engagement score based on interactions
    */
   private calculateEngagementScore(metrics: UserInteractionMetrics): number {
-    const totalInteractions = metrics.clickCount + metrics.inputChangeCount + metrics.formSubmissions
+    const totalInteractions =
+      metrics.clickCount + metrics.inputChangeCount + metrics.formSubmissions
     const timeWeight = Math.min(metrics.averageInteractionTime / 1000, 10) // Cap at 10 seconds
-    const diversityBonus = (metrics.clickCount > 0 ? 1 : 0) + 
-                          (metrics.inputChangeCount > 0 ? 1 : 0) + 
-                          (metrics.formSubmissions > 0 ? 1 : 0)
-    
+    const diversityBonus =
+      (metrics.clickCount > 0 ? 1 : 0) +
+      (metrics.inputChangeCount > 0 ? 1 : 0) +
+      (metrics.formSubmissions > 0 ? 1 : 0)
+
     return Math.min(100, (totalInteractions * timeWeight * diversityBonus) / 10)
   }
 
@@ -528,19 +579,19 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
    * Create performance alert
    */
   private createAlert(
-    componentId: string, 
-    type: 'warning' | 'critical', 
+    componentId: string,
+    type: 'warning' | 'critical',
     category: 'render' | 'action' | 'memory' | 'network' | 'interaction',
     message: string,
     threshold: number,
-    currentValue: number
+    currentValue: number,
   ): void {
     const alertKey = `${componentId}-${category}-${type}`
     const now = Date.now()
-    
+
     // Check cooldown
     const lastAlert = this.alertCooldowns.get(alertKey)
-    if (lastAlert && (now - lastAlert) < this.config.alertCooldown) {
+    if (lastAlert && now - lastAlert < this.config.alertCooldown) {
       return
     }
 
@@ -553,7 +604,7 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
       threshold,
       currentValue,
       timestamp: new Date(),
-      resolved: false
+      resolved: false,
     }
 
     const componentAlerts = this.alerts.get(componentId) || []
@@ -571,15 +622,18 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
    */
   private analyzeRenderPerformance(componentId: string, metrics: PerformanceMetrics): void {
     const renderMetrics = metrics.renderMetrics
-    
+
     // Check for consistently slow renders
     if (renderMetrics.averageRenderTime > this.config.renderTimeThreshold * 0.8) {
-      this.createSuggestion(componentId, 'render', 'medium', 
+      this.createSuggestion(
+        componentId,
+        'render',
+        'medium',
         'Optimize Render Performance',
         'Component renders are consistently slow. Consider optimizing state updates and reducing re-renders.',
         'Improved user experience and responsiveness',
         'Use React.memo, useMemo, or useCallback to prevent unnecessary re-renders. Optimize state structure.',
-        `${((this.config.renderTimeThreshold - renderMetrics.averageRenderTime) / renderMetrics.averageRenderTime * 100).toFixed(1)}% faster renders`
+        `${(((this.config.renderTimeThreshold - renderMetrics.averageRenderTime) / renderMetrics.averageRenderTime) * 100).toFixed(1)}% faster renders`,
       )
     }
 
@@ -587,12 +641,15 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
     if (renderMetrics.renderTimeHistory.length >= 10) {
       const variance = this.calculateVariance(renderMetrics.renderTimeHistory)
       if (variance > renderMetrics.averageRenderTime * 0.5) {
-        this.createSuggestion(componentId, 'render', 'low',
+        this.createSuggestion(
+          componentId,
+          'render',
+          'low',
           'Reduce Render Time Variance',
           'Render times are inconsistent, which can cause jank.',
           'Smoother user experience',
           'Identify and optimize conditional rendering logic. Consider lazy loading heavy components.',
-          'More consistent performance'
+          'More consistent performance',
         )
       }
     }
@@ -601,30 +658,41 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
   /**
    * Analyze action performance and generate suggestions
    */
-  private analyzeActionPerformance(componentId: string, actionName: string, metrics: PerformanceMetrics): void {
+  private analyzeActionPerformance(
+    componentId: string,
+    actionName: string,
+    metrics: PerformanceMetrics,
+  ): void {
     const actionMetrics = metrics.actionMetrics
     const typeMetrics = actionMetrics.actionsByType[actionName]
 
     // Check for slow actions
     if (typeMetrics.averageTime > this.config.actionTimeThreshold * 0.8) {
-      this.createSuggestion(componentId, 'action', 'high',
+      this.createSuggestion(
+        componentId,
+        'action',
+        'high',
         `Optimize ${actionName} Action`,
         `The ${actionName} action is taking longer than expected to complete.`,
         'Better user experience and responsiveness',
         'Consider adding loading states, optimizing database queries, or implementing caching.',
-        `${((this.config.actionTimeThreshold - typeMetrics.averageTime) / typeMetrics.averageTime * 100).toFixed(1)}% faster actions`
+        `${(((this.config.actionTimeThreshold - typeMetrics.averageTime) / typeMetrics.averageTime) * 100).toFixed(1)}% faster actions`,
       )
     }
 
     // Check for high error rate
     const errorRate = typeMetrics.errorCount / typeMetrics.count
-    if (errorRate > 0.1) { // 10% error rate
-      this.createSuggestion(componentId, 'action', 'critical',
+    if (errorRate > 0.1) {
+      // 10% error rate
+      this.createSuggestion(
+        componentId,
+        'action',
+        'critical',
         `Fix ${actionName} Action Errors`,
         `High error rate detected for ${actionName} action (${(errorRate * 100).toFixed(1)}%).`,
         'Improved reliability and user experience',
         'Add proper error handling, input validation, and retry mechanisms.',
-        `${((1 - errorRate) * 100).toFixed(1)}% success rate improvement`
+        `${((1 - errorRate) * 100).toFixed(1)}% success rate improvement`,
       )
     }
   }
@@ -636,24 +704,31 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
     const memoryMetrics = metrics.memoryMetrics
 
     // Check for large state size
-    if (memoryMetrics.stateSize > 100 * 1024) { // 100KB
-      this.createSuggestion(componentId, 'memory', 'medium',
+    if (memoryMetrics.stateSize > 100 * 1024) {
+      // 100KB
+      this.createSuggestion(
+        componentId,
+        'memory',
+        'medium',
         'Optimize State Size',
         'Component state is larger than recommended, which can impact performance.',
         'Reduced memory usage and faster serialization',
         'Consider normalizing state structure, removing unused data, or implementing state compression.',
-        `${((memoryMetrics.stateSize - 50 * 1024) / 1024).toFixed(1)}KB reduction potential`
+        `${((memoryMetrics.stateSize - 50 * 1024) / 1024).toFixed(1)}KB reduction potential`,
       )
     }
 
     // Check for memory leak
     if (memoryMetrics.memoryLeakDetected) {
-      this.createSuggestion(componentId, 'memory', 'critical',
+      this.createSuggestion(
+        componentId,
+        'memory',
+        'critical',
         'Fix Memory Leak',
         'Potential memory leak detected - memory usage is continuously increasing.',
         'Prevent application crashes and improve stability',
         'Review event listeners, timers, and subscriptions for proper cleanup. Use weak references where appropriate.',
-        'Stable memory usage'
+        'Stable memory usage',
       )
     }
   }
@@ -669,14 +744,17 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
     description: string,
     impact: string,
     implementation: string,
-    estimatedImprovement: string
+    estimatedImprovement: string,
   ): void {
     const suggestions = this.suggestions.get(componentId) || []
-    
+
     // Check if similar suggestion already exists
-    const existingSuggestion = suggestions.find(s => s.title === title && !s.timestamp || 
-      (Date.now() - s.timestamp.getTime()) < 24 * 60 * 60 * 1000) // 24 hours
-    
+    const existingSuggestion = suggestions.find(
+      (s) =>
+        (s.title === title && !s.timestamp) ||
+        Date.now() - s.timestamp.getTime() < 24 * 60 * 60 * 1000,
+    ) // 24 hours
+
     if (existingSuggestion) return
 
     const suggestion: OptimizationSuggestion = {
@@ -689,7 +767,7 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
       impact,
       implementation,
       estimatedImprovement,
-      timestamp: new Date()
+      timestamp: new Date(),
     }
 
     suggestions.push(suggestion)
@@ -708,7 +786,7 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
     const n = values.length
     const sumX = (n * (n - 1)) / 2
     const sumY = values.reduce((sum, val) => sum + val, 0)
-    const sumXY = values.reduce((sum, val, index) => sum + (index * val), 0)
+    const sumXY = values.reduce((sum, val, index) => sum + index * val, 0)
     const sumX2 = (n * (n - 1) * (2 * n - 1)) / 6
 
     const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX)
@@ -722,7 +800,7 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
     if (values.length < 2) return 0
 
     const mean = values.reduce((sum, val) => sum + val, 0) / values.length
-    const squaredDiffs = values.map(val => Math.pow(val - mean, 2))
+    const squaredDiffs = values.map((val) => (val - mean) ** 2)
     return squaredDiffs.reduce((sum, val) => sum + val, 0) / values.length
   }
 
@@ -751,24 +829,29 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
 
     // Calculate overview stats
     const totalComponents = allMetrics.length
-    const healthyComponents = allMetrics.filter(m => this.isComponentHealthy(m)).length
-    const degradedComponents = allMetrics.filter(m => this.isComponentDegraded(m)).length
+    const healthyComponents = allMetrics.filter((m) => this.isComponentHealthy(m)).length
+    const degradedComponents = allMetrics.filter((m) => this.isComponentDegraded(m)).length
     const unhealthyComponents = totalComponents - healthyComponents - degradedComponents
 
-    const averageRenderTime = allMetrics.reduce((sum, m) => sum + m.renderMetrics.averageRenderTime, 0) / totalComponents || 0
-    const averageMemoryUsage = allMetrics.reduce((sum, m) => sum + m.memoryMetrics.currentUsage, 0) / totalComponents || 0
+    const averageRenderTime =
+      allMetrics.reduce((sum, m) => sum + m.renderMetrics.averageRenderTime, 0) / totalComponents ||
+      0
+    const averageMemoryUsage =
+      allMetrics.reduce((sum, m) => sum + m.memoryMetrics.currentUsage, 0) / totalComponents || 0
 
-    const totalAlerts = allAlerts.filter(a => !a.resolved).length
-    const criticalAlerts = allAlerts.filter(a => a.type === 'critical' && !a.resolved).length
+    const totalAlerts = allAlerts.filter((a) => !a.resolved).length
+    const criticalAlerts = allAlerts.filter((a) => a.type === 'critical' && !a.resolved).length
 
     // Get top and worst performers
-    const sortedByRender = [...allMetrics].sort((a, b) => a.renderMetrics.averageRenderTime - b.renderMetrics.averageRenderTime)
+    const sortedByRender = [...allMetrics].sort(
+      (a, b) => a.renderMetrics.averageRenderTime - b.renderMetrics.averageRenderTime,
+    )
     const topPerformers = sortedByRender.slice(0, 5)
     const worstPerformers = sortedByRender.slice(-5).reverse()
 
     // Get recent alerts
     const recentAlerts = allAlerts
-      .filter(a => !a.resolved)
+      .filter((a) => !a.resolved)
       .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
       .slice(0, 10)
 
@@ -781,9 +864,9 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
       .slice(0, 10)
 
     // Generate trends (simplified - would need historical data storage for real trends)
-    const renderTimeHistory = allMetrics.map(m => m.renderMetrics.averageRenderTime)
-    const memoryUsageHistory = allMetrics.map(m => m.memoryMetrics.currentUsage)
-    const actionTimeHistory = allMetrics.map(m => m.actionMetrics.averageActionTime)
+    const renderTimeHistory = allMetrics.map((m) => m.renderMetrics.averageRenderTime)
+    const memoryUsageHistory = allMetrics.map((m) => m.memoryMetrics.currentUsage)
+    const actionTimeHistory = allMetrics.map((m) => m.actionMetrics.averageActionTime)
 
     return {
       overview: {
@@ -794,7 +877,7 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
         averageRenderTime,
         averageMemoryUsage,
         totalAlerts,
-        criticalAlerts
+        criticalAlerts,
       },
       topPerformers,
       worstPerformers,
@@ -803,8 +886,8 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
       trends: {
         renderTimetrend: renderTimeHistory,
         memoryUsageTrend: memoryUsageHistory,
-        actionTimeTrend: actionTimeHistory
-      }
+        actionTimeTrend: actionTimeHistory,
+      },
     }
   }
 
@@ -812,9 +895,11 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
    * Check if component is healthy
    */
   private isComponentHealthy(metrics: PerformanceMetrics): boolean {
-    return metrics.renderMetrics.averageRenderTime < this.config.renderTimeThreshold * 0.5 &&
-           metrics.memoryMetrics.currentUsage < this.config.memoryThreshold * 0.5 &&
-           metrics.actionMetrics.failedActions / Math.max(metrics.actionMetrics.totalActions, 1) < 0.05
+    return (
+      metrics.renderMetrics.averageRenderTime < this.config.renderTimeThreshold * 0.5 &&
+      metrics.memoryMetrics.currentUsage < this.config.memoryThreshold * 0.5 &&
+      metrics.actionMetrics.failedActions / Math.max(metrics.actionMetrics.totalActions, 1) < 0.05
+    )
   }
 
   /**
@@ -828,10 +913,12 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
    * Check if component is unhealthy
    */
   private isComponentUnhealthy(metrics: PerformanceMetrics): boolean {
-    return metrics.renderMetrics.averageRenderTime > this.config.renderTimeThreshold ||
-           metrics.memoryMetrics.currentUsage > this.config.memoryThreshold ||
-           metrics.actionMetrics.failedActions / Math.max(metrics.actionMetrics.totalActions, 1) > 0.2 ||
-           metrics.memoryMetrics.memoryLeakDetected
+    return (
+      metrics.renderMetrics.averageRenderTime > this.config.renderTimeThreshold ||
+      metrics.memoryMetrics.currentUsage > this.config.memoryThreshold ||
+      metrics.actionMetrics.failedActions / Math.max(metrics.actionMetrics.totalActions, 1) > 0.2 ||
+      metrics.memoryMetrics.memoryLeakDetected
+    )
   }
 
   /**
@@ -860,7 +947,7 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
    */
   resolveAlert(alertId: string): boolean {
     for (const alerts of this.alerts.values()) {
-      const alert = alerts.find(a => a.id === alertId)
+      const alert = alerts.find((a) => a.id === alertId)
       if (alert) {
         alert.resolved = true
         console.log(`✅ Alert resolved: ${alertId}`)
@@ -879,13 +966,15 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
 
     // Clean up old alerts
     for (const [componentId, alerts] of this.alerts) {
-      const validAlerts = alerts.filter(alert => alert.timestamp.getTime() > cutoff)
+      const validAlerts = alerts.filter((alert) => alert.timestamp.getTime() > cutoff)
       this.alerts.set(componentId, validAlerts)
     }
 
     // Clean up old suggestions
     for (const [componentId, suggestions] of this.suggestions) {
-      const validSuggestions = suggestions.filter(suggestion => suggestion.timestamp.getTime() > cutoff)
+      const validSuggestions = suggestions.filter(
+        (suggestion) => suggestion.timestamp.getTime() > cutoff,
+      )
       this.suggestions.set(componentId, validSuggestions)
     }
 
@@ -899,7 +988,7 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
     this.metrics.delete(componentId)
     this.alerts.delete(componentId)
     this.suggestions.delete(componentId)
-    
+
     console.log(`📊 Performance monitoring removed for component: ${componentId}`)
   }
 
@@ -908,7 +997,7 @@ export class LiveComponentPerformanceMonitor extends EventEmitter {
    */
   shutdown(): void {
     console.log('📊 Shutting down Performance Monitor...')
-    
+
     if (this.dashboardUpdateInterval) {
       clearInterval(this.dashboardUpdateInterval)
     }

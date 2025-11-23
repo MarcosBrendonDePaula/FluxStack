@@ -1,6 +1,6 @@
 // 🚀 Quick Upload Test - Compact upload tester for home page
-import { useState, useRef } from 'react'
-import { useTypedLiveComponent, useChunkedUpload, useLiveComponents } from '@/core/client'
+import { useRef, useState } from 'react'
+import { useChunkedUpload, useLiveComponents, useTypedLiveComponent } from '@/core/client'
 
 // Import component type DIRECTLY from backend - full type inference!
 import type { LiveFileUploadComponent } from '@/server/live/LiveFileUploadComponent'
@@ -13,15 +13,13 @@ export function QuickUploadTest() {
   const { sendMessageAndWait } = useLiveComponents()
 
   // Setup Live Component with full type inference
-  const {
-    state,
-    call,
-    componentId,
-    connected
-  } = useTypedLiveComponent<LiveFileUploadComponent>('LiveFileUpload', {
-    uploadedFiles: [],
-    maxFiles: 10
-  })
+  const { state, call, componentId, connected } = useTypedLiveComponent<LiveFileUploadComponent>(
+    'LiveFileUpload',
+    {
+      uploadedFiles: [],
+      maxFiles: 10,
+    },
+  )
 
   // Setup Chunked Upload with Adaptive Chunking
   const {
@@ -32,7 +30,7 @@ export function QuickUploadTest() {
     cancelUpload,
     reset: resetUpload,
     bytesUploaded,
-    totalBytes
+    totalBytes,
   } = useChunkedUpload(componentId || '', {
     chunkSize: 64 * 1024,
     maxFileSize: 500 * 1024 * 1024,
@@ -47,14 +45,14 @@ export function QuickUploadTest() {
       initialChunkSize: 64 * 1024,
       targetLatency: 200,
       adjustmentFactor: 1.5,
-      measurementWindow: 3
+      measurementWindow: 3,
     },
 
     onComplete: async (response) => {
       if (selectedFile && response.fileUrl) {
         await call('onFileUploaded', {
           filename: selectedFile.name,
-          fileUrl: response.fileUrl
+          fileUrl: response.fileUrl,
         })
       }
       setSelectedFile(null)
@@ -66,7 +64,7 @@ export function QuickUploadTest() {
 
     onError: (error) => {
       console.error('Upload error:', error)
-    }
+    },
   })
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,7 +85,7 @@ export function QuickUploadTest() {
     const k = 1024
     const sizes = ['B', 'KB', 'MB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
+    return `${Math.round((bytes / k ** i) * 100) / 100} ${sizes[i]}`
   }
 
   if (!connected) {
@@ -145,13 +143,12 @@ export function QuickUploadTest() {
         )}
 
         {/* Error */}
-        {uploadError && (
-          <div className="text-xs text-red-400">❌ {uploadError}</div>
-        )}
+        {uploadError && <div className="text-xs text-red-400">❌ {uploadError}</div>}
 
         {/* Buttons */}
         <div className="flex gap-2">
           <button
+            type="button"
             onClick={handleUpload}
             disabled={!selectedFile || uploading}
             className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:shadow-lg hover:shadow-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm transition-all"
@@ -161,6 +158,7 @@ export function QuickUploadTest() {
 
           {uploading && (
             <button
+              type="button"
               onClick={cancelUpload}
               className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium text-sm"
             >
@@ -172,9 +170,7 @@ export function QuickUploadTest() {
         {/* Last Upload Info */}
         {state.uploadedFiles.length > 0 && !uploading && (
           <div className="pt-3 border-t border-white/10">
-            <div className="text-xs text-green-400">
-              ✅ Last: {state.uploadedFiles[0].filename}
-            </div>
+            <div className="text-xs text-green-400">✅ Last: {state.uploadedFiles[0].filename}</div>
           </div>
         )}
 

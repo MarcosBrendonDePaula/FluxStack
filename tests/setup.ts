@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom'
-import { beforeAll, afterAll, afterEach } from 'vitest'
 import { cleanup } from '@testing-library/react'
 import * as React from 'react'
+import { afterAll, afterEach, beforeAll } from 'vitest'
 
 // Fix React.act for React 19
 global.React = React
@@ -15,19 +15,19 @@ afterEach(() => {
 beforeAll(() => {
   // Setup global test environment
   console.log('🧪 Setting up test environment...')
-  
+
   // Handle unhandled rejections to prevent CI failures
   // Specifically for esbuild TextEncoder errors in CI
-  const originalUnhandledRejection = process.listeners('unhandledRejection')
+  const _originalUnhandledRejection = process.listeners('unhandledRejection')
   process.removeAllListeners('unhandledRejection')
-  
+
   process.on('unhandledRejection', (reason: any) => {
     // Only suppress esbuild TextEncoder errors
     if (reason?.message?.includes('TextEncoder') && reason?.message?.includes('esbuild')) {
       console.warn('⚠️ Suppressed esbuild TextEncoder error in test environment')
       return
     }
-    
+
     // Re-throw other unhandled rejections
     throw reason
   })

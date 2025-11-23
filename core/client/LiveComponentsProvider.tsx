@@ -1,7 +1,8 @@
 // 🔥 Live Components Provider - Singleton WebSocket Connection
 // Single WebSocket connection shared by all live components in the app
 
-import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react'
+import type React from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import type { WebSocketMessage, WebSocketResponse } from '../types/types'
 
 export interface LiveComponentsContextValue {
@@ -17,7 +18,10 @@ export interface LiveComponentsContextValue {
   sendMessageAndWait: (message: WebSocketMessage, timeout?: number) => Promise<WebSocketResponse>
 
   // Register message listener for a component
-  registerComponent: (componentId: string, callback: (message: WebSocketResponse) => void) => () => void
+  registerComponent: (
+    componentId: string,
+    callback: (message: WebSocketResponse) => void,
+  ) => () => void
 
   // Unregister component
   unregisterComponent: (componentId: string) => void
@@ -48,9 +52,8 @@ export function LiveComponentsProvider({
   reconnectInterval = 1000,
   maxReconnectAttempts = 5,
   heartbeatInterval = 30000,
-  debug = false
+  debug = false,
 }: WebSocketProviderProps) {
-
   // Get WebSocket URL dynamically
   const getWebSocketUrl = () => {
     if (url) return url
@@ -79,17 +82,25 @@ export function LiveComponentsProvider({
   const componentCallbacksRef = useRef<Map<string, (message: WebSocketResponse) => void>>(new Map())
 
   // Pending requests: requestId -> { resolve, reject, timeout }
-  const pendingRequestsRef = useRef<Map<string, {
-    resolve: (value: any) => void
-    reject: (error: any) => void
-    timeout: NodeJS.Timeout
-  }>>(new Map())
+  const pendingRequestsRef = useRef<
+    Map<
+      string,
+      {
+        resolve: (value: any) => void
+        reject: (error: any) => void
+        timeout: NodeJS.Timeout
+      }
+    >
+  >(new Map())
 
-  const log = useCallback((message: string, data?: any) => {
-    if (debug) {
-      console.log(`[WebSocketProvider] ${message}`, data || '')
-    }
-  }, [debug])
+  const log = useCallback(
+    (message: string, data?: any) => {
+      if (debug) {
+        console.log(`[WebSocketProvider] ${message}`, data || '')
+      }
+    },
+    [debug],
+  )
 
   // Generate unique request ID
   const generateRequestId = useCallback(() => {
@@ -168,11 +179,10 @@ export function LiveComponentsProvider({
           // Broadcast messages (no specific componentId)
           if (response.type === 'BROADCAST' && !response.componentId) {
             // Send to all registered components
-            componentCallbacksRef.current.forEach(callback => {
+            componentCallbacksRef.current.forEach((callback) => {
               callback(response)
             })
           }
-
         } catch (error) {
           log('❌ Failed to parse message', error)
           setError('Failed to parse message')
@@ -207,13 +217,19 @@ export function LiveComponentsProvider({
         setError('WebSocket connection error')
         setConnecting(false)
       }
-
     } catch (error) {
       setConnecting(false)
       setError(error instanceof Error ? error.message : 'Connection failed')
       log('❌ Failed to create WebSocket', error)
     }
-  }, [wsUrl, reconnectInterval, maxReconnectAttempts, log])
+  }, [
+    wsUrl,
+    reconnectInterval,
+    maxReconnectAttempts,
+    log, // Start heartbeat
+    startHeartbeat, // Stop heartbeat
+    stopHeartbeat,
+  ])
 
   // Disconnect
   const disconnect = useCallback(() => {
@@ -234,7 +250,7 @@ export function LiveComponentsProvider({
     setConnecting(false)
     setConnectionId(null)
     log('🔌 WebSocket disconnected manually')
-  }, [maxReconnectAttempts, log])
+  }, [maxReconnectAttempts, log, stopHeartbeat])
 
   // Manual reconnect
   const reconnect = useCallback(() => {
@@ -254,14 +270,14 @@ export function LiveComponentsProvider({
           sendMessage({
             type: 'COMPONENT_PING',
             componentId,
-            timestamp: Date.now()
-          }).catch(err => {
+            timestamp: Date.now(),
+          }).catch((_err) => {
             log('❌ Heartbeat ping failed for component:', componentId)
           })
         })
       }
     }, heartbeatInterval)
-  }, [heartbeatInterval, log])
+  }, [heartbeatInterval, log, sendMessage, stopHeartbeat])
 
   // Stop heartbeat
   const stopHeartbeat = useCallback(() => {
@@ -272,85 +288,91 @@ export function LiveComponentsProvider({
   }, [])
 
   // Send message without waiting for response
-  const sendMessage = useCallback(async (message: WebSocketMessage): Promise<void> => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-      throw new Error('WebSocket is not connected')
-    }
-
-    try {
-      const messageWithTimestamp = { ...message, timestamp: Date.now() }
-      wsRef.current.send(JSON.stringify(messageWithTimestamp))
-      log('📤 Sent message', { type: message.type, componentId: message.componentId })
-    } catch (error) {
-      log('❌ Failed to send message', error)
-      throw error
-    }
-  }, [log])
-
-  // Send message and wait for response
-  const sendMessageAndWait = useCallback(async (
-    message: WebSocketMessage,
-    timeout: number = 10000
-  ): Promise<WebSocketResponse> => {
-    return new Promise((resolve, reject) => {
+  const sendMessage = useCallback(
+    async (message: WebSocketMessage): Promise<void> => {
       if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-        reject(new Error('WebSocket is not connected'))
-        return
+        throw new Error('WebSocket is not connected')
       }
-
-      const requestId = generateRequestId()
-
-      // Set up timeout
-      const timeoutHandle = setTimeout(() => {
-        pendingRequestsRef.current.delete(requestId)
-        reject(new Error(`Request timeout after ${timeout}ms`))
-      }, timeout)
-
-      // Store pending request
-      pendingRequestsRef.current.set(requestId, {
-        resolve,
-        reject,
-        timeout: timeoutHandle
-      })
 
       try {
-        const messageWithRequestId = {
-          ...message,
-          requestId,
-          expectResponse: true,
-          timestamp: Date.now()
+        const messageWithTimestamp = { ...message, timestamp: Date.now() }
+        wsRef.current.send(JSON.stringify(messageWithTimestamp))
+        log('📤 Sent message', { type: message.type, componentId: message.componentId })
+      } catch (error) {
+        log('❌ Failed to send message', error)
+        throw error
+      }
+    },
+    [log],
+  )
+
+  // Send message and wait for response
+  const sendMessageAndWait = useCallback(
+    async (message: WebSocketMessage, timeout: number = 10000): Promise<WebSocketResponse> => {
+      return new Promise((resolve, reject) => {
+        if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+          reject(new Error('WebSocket is not connected'))
+          return
         }
 
-        wsRef.current.send(JSON.stringify(messageWithRequestId))
-        log('📤 Sent message with request ID', { requestId, type: message.type })
-      } catch (error) {
-        clearTimeout(timeoutHandle)
-        pendingRequestsRef.current.delete(requestId)
-        reject(error)
-      }
-    })
-  }, [log, generateRequestId])
+        const requestId = generateRequestId()
+
+        // Set up timeout
+        const timeoutHandle = setTimeout(() => {
+          pendingRequestsRef.current.delete(requestId)
+          reject(new Error(`Request timeout after ${timeout}ms`))
+        }, timeout)
+
+        // Store pending request
+        pendingRequestsRef.current.set(requestId, {
+          resolve,
+          reject,
+          timeout: timeoutHandle,
+        })
+
+        try {
+          const messageWithRequestId = {
+            ...message,
+            requestId,
+            expectResponse: true,
+            timestamp: Date.now(),
+          }
+
+          wsRef.current.send(JSON.stringify(messageWithRequestId))
+          log('📤 Sent message with request ID', { requestId, type: message.type })
+        } catch (error) {
+          clearTimeout(timeoutHandle)
+          pendingRequestsRef.current.delete(requestId)
+          reject(error)
+        }
+      })
+    },
+    [log, generateRequestId],
+  )
 
   // Register component callback
-  const registerComponent = useCallback((
-    componentId: string,
-    callback: (message: WebSocketResponse) => void
-  ): (() => void) => {
-    log('📝 Registering component', componentId)
-    componentCallbacksRef.current.set(componentId, callback)
+  const registerComponent = useCallback(
+    (componentId: string, callback: (message: WebSocketResponse) => void): (() => void) => {
+      log('📝 Registering component', componentId)
+      componentCallbacksRef.current.set(componentId, callback)
 
-    // Return unregister function
-    return () => {
-      log('🗑️ Unregistering component', componentId)
-      componentCallbacksRef.current.delete(componentId)
-    }
-  }, [log])
+      // Return unregister function
+      return () => {
+        log('🗑️ Unregistering component', componentId)
+        componentCallbacksRef.current.delete(componentId)
+      }
+    },
+    [log],
+  )
 
   // Unregister component
-  const unregisterComponent = useCallback((componentId: string) => {
-    componentCallbacksRef.current.delete(componentId)
-    log('🗑️ Component unregistered', componentId)
-  }, [log])
+  const unregisterComponent = useCallback(
+    (componentId: string) => {
+      componentCallbacksRef.current.delete(componentId)
+      log('🗑️ Component unregistered', componentId)
+    },
+    [log],
+  )
 
   // Get WebSocket instance
   const getWebSocket = useCallback(() => {
@@ -378,14 +400,10 @@ export function LiveComponentsProvider({
     registerComponent,
     unregisterComponent,
     reconnect,
-    getWebSocket
+    getWebSocket,
   }
 
-  return (
-    <LiveComponentsContext.Provider value={value}>
-      {children}
-    </LiveComponentsContext.Provider>
-  )
+  return <LiveComponentsContext.Provider value={value}>{children}</LiveComponentsContext.Provider>
 }
 
 // Hook to use Live Components context

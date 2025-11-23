@@ -1,17 +1,16 @@
 // 🔥 Typed Live Component Hook - Full Type Inference for Actions
 // Similar to Eden Treaty - automatic type inference from backend components
 
-import { useHybridLiveComponent } from './useHybridLiveComponent'
-import type { UseHybridLiveComponentReturn } from './useHybridLiveComponent'
 import type {
-  LiveComponent,
-  InferComponentState,
-  HybridComponentOptions,
-  UseTypedLiveComponentReturn,
   ActionNames,
   ActionPayload,
-  ActionReturn
+  ActionReturn,
+  HybridComponentOptions,
+  InferComponentState,
+  LiveComponent,
+  UseTypedLiveComponentReturn,
 } from '@/core/types/types'
+import { useHybridLiveComponent } from './useHybridLiveComponent'
 
 /**
  * Type-safe Live Component hook with automatic action inference
@@ -43,19 +42,19 @@ import type {
 export function useTypedLiveComponent<T extends LiveComponent<any>>(
   componentName: string,
   initialState: InferComponentState<T>,
-  options: HybridComponentOptions = {}
+  options: HybridComponentOptions = {},
 ): UseTypedLiveComponentReturn<T> {
   // Use the original hook
   const result = useHybridLiveComponent<InferComponentState<T>>(
     componentName,
     initialState,
-    options
+    options,
   )
 
   // Create convenience setValue helper
   const setValue = async <K extends keyof InferComponentState<T>>(
     key: K,
-    value: InferComponentState<T>[K]
+    value: InferComponentState<T>[K],
   ): Promise<void> => {
     await result.call('setValue', { key, value })
   }
@@ -64,7 +63,7 @@ export function useTypedLiveComponent<T extends LiveComponent<any>>(
   // The types are enforced at compile time, runtime behavior is the same
   return {
     ...result,
-    setValue
+    setValue,
   } as unknown as UseTypedLiveComponentReturn<T>
 }
 
@@ -111,12 +110,10 @@ export type ComponentRegistry<T extends Record<string, LiveComponent<any>>> = {
  * // Usage in component
  * const { state, call } = useLiveClock({ currentTime: '', ... })
  */
-export function createTypedLiveComponentHook<T extends LiveComponent<any>>(
-  componentName: string
-) {
+export function createTypedLiveComponentHook<T extends LiveComponent<any>>(componentName: string) {
   return function useComponent(
     initialState: InferComponentState<T>,
-    options: HybridComponentOptions = {}
+    options: HybridComponentOptions = {},
   ): UseTypedLiveComponentReturn<T> {
     return useTypedLiveComponent<T>(componentName, initialState, options)
   }
@@ -129,5 +126,5 @@ export type {
   ActionPayload,
   ActionReturn,
   UseTypedLiveComponentReturn,
-  HybridComponentOptions
+  HybridComponentOptions,
 }

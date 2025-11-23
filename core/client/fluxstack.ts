@@ -5,11 +5,11 @@
 export * from './index'
 
 // Convenience aliases for common hooks and utilities
-export { 
+export {
+  StateValidator as Validator,
+  useChunkedUpload as useUpload,
   useHybridLiveComponent as useLive,
   useWebSocket as useWS,
-  useChunkedUpload as useUpload,
-  StateValidator as Validator
 } from './index'
 
 // Default export for easy importing

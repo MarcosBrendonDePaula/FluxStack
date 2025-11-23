@@ -1,10 +1,10 @@
-import { Elysia } from "elysia"
-import type { FluxStackConfig, FluxStackContext, Plugin } from "../types"
-import type { PluginContext, PluginUtils } from "../plugins/types"
-import { PluginManager } from "../plugins/manager"
-import { getConfigSync, getEnvironmentInfo } from "../config"
-import { logger, type Logger } from "../utils/logger/index"
-import { createTimer, formatBytes, isProduction, isDevelopment } from "../utils/helpers"
+import { Elysia } from 'elysia'
+import { getConfigSync, getEnvironmentInfo } from '../config'
+import { PluginManager } from '../plugins/manager'
+import type { PluginContext, PluginUtils } from '../plugins/types'
+import type { FluxStackConfig, FluxStackContext, Plugin } from '../types'
+import { createTimer, formatBytes, isDevelopment, isProduction } from '../utils/helpers'
+import { logger } from '../utils/logger/index'
 
 export class FluxStackFramework {
   private app: Elysia
@@ -24,7 +24,7 @@ export class FluxStackFramework {
       isDevelopment: envInfo.isDevelopment,
       isProduction: envInfo.isProduction,
       isTest: envInfo.isTest,
-      environment: envInfo.name
+      environment: envInfo.name,
     }
 
     this.app = new Elysia()
@@ -37,7 +37,7 @@ export class FluxStackFramework {
       isDevelopment,
       getEnvironment: () => envInfo.name,
       createHash: (data: string) => {
-        const crypto = require('crypto')
+        const crypto = require('node:crypto')
         return crypto.createHash('sha256').update(data).digest('hex')
       },
       deepMerge: (target: any, source: any) => {
@@ -57,9 +57,12 @@ export class FluxStackFramework {
           // Basic validation logic
           return { valid: true, errors: [] }
         } catch (error) {
-          return { valid: false, errors: [error instanceof Error ? error.message : 'Validation failed'] }
+          return {
+            valid: false,
+            errors: [error instanceof Error ? error.message : 'Validation failed'],
+          }
         }
-      }
+      },
     }
 
     // Create plugin context
@@ -67,21 +70,21 @@ export class FluxStackFramework {
       config: fullConfig,
       logger: logger as any,
       app: this.app,
-      utils: pluginUtils
+      utils: pluginUtils,
     }
 
     // Initialize plugin manager
     this.pluginManager = new PluginManager({
       config: fullConfig,
       logger: logger as any,
-      app: this.app
+      app: this.app,
     })
 
     this.setupCors()
-    
+
     console.log('🔍 [DEBUG] About to call initializePluginsAsync()...')
     // Initialize plugins automatically in the background
-    this.initializePluginsAsync().catch(error => {
+    this.initializePluginsAsync().catch((error) => {
       console.error('❌ [DEBUG] Failed to initialize plugins async:', error)
     })
     console.log('🔍 [DEBUG] initializePluginsAsync() call dispatched')
@@ -99,7 +102,7 @@ export class FluxStackFramework {
       logger.info('[FluxStack] Automatic plugins loaded successfully', {
         pluginCount: stats.totalPlugins,
         enabledPlugins: stats.enabledPlugins,
-        disabledPlugins: stats.disabledPlugins
+        disabledPlugins: stats.disabledPlugins,
       })
     } catch (error) {
       console.error('❌ [DEBUG] Plugin discovery error:', error)
@@ -112,16 +115,16 @@ export class FluxStackFramework {
 
     this.app
       .onRequest(({ set }) => {
-        set.headers["Access-Control-Allow-Origin"] = cors.origins.join(", ") || "*"
-        set.headers["Access-Control-Allow-Methods"] = cors.methods.join(", ") || "*"
-        set.headers["Access-Control-Allow-Headers"] = cors.headers.join(", ") || "*"
+        set.headers['Access-Control-Allow-Origin'] = cors.origins.join(', ') || '*'
+        set.headers['Access-Control-Allow-Methods'] = cors.methods.join(', ') || '*'
+        set.headers['Access-Control-Allow-Headers'] = cors.headers.join(', ') || '*'
         if (cors.credentials) {
-          set.headers["Access-Control-Allow-Credentials"] = "true"
+          set.headers['Access-Control-Allow-Credentials'] = 'true'
         }
       })
-      .options("*", ({ set }) => {
+      .options('*', ({ set }) => {
         set.status = 200
-        return ""
+        return ''
       })
   }
 
@@ -151,11 +154,11 @@ export class FluxStackFramework {
     const apiPrefix = this.context.config.server.apiPrefix
 
     this.app.listen(port, () => {
-      logger.info('[FluxStack] Server started on port ' + port, {
+      logger.info(`[FluxStack] Server started on port ${port}`, {
         apiPrefix,
         environment: this.context.environment,
         manualPlugins: this.plugins.length,
-        automaticPlugins: this.pluginManager.getRegistry().getStats().totalPlugins
+        automaticPlugins: this.pluginManager.getRegistry().getStats().totalPlugins,
       })
       console.log(`🚀 API ready at http://localhost:${port}${apiPrefix}`)
       console.log(`📋 Health check: http://localhost:${port}${apiPrefix}/health`)

@@ -3,8 +3,15 @@
  * Context Provider React para gerenciar chaves criptográficas
  */
 
-import React, { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import { CryptoAuthClient, type KeyPair, type AuthConfig } from '../CryptoAuthClient'
+import React, {
+  createContext,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from 'react'
+import { type AuthConfig, CryptoAuthClient, type KeyPair } from '../CryptoAuthClient'
 
 export interface AuthContextValue {
   client: CryptoAuthClient
@@ -29,7 +36,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   children,
   config = {},
   onKeysChange,
-  onError
+  onError,
 }) => {
   const [client] = useState(() => new CryptoAuthClient({ ...config, autoInit: false }))
   const [keys, setKeys] = useState<KeyPair | null>(null)
@@ -38,15 +45,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 
   const hasKeys = keys !== null
 
-  useEffect(() => {
-    initializeKeys()
-  }, [])
-
-  useEffect(() => {
-    onKeysChange?.(hasKeys, keys)
-  }, [hasKeys, keys, onKeysChange])
-
-  const initializeKeys = () => {
+  const initializeKeys = useCallback(() => {
     setIsLoading(true)
     setError(null)
 
@@ -63,7 +62,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [client, onError])
+
+  useEffect(() => {
+    initializeKeys()
+  }, [initializeKeys])
+
+  useEffect(() => {
+    onKeysChange?.(hasKeys, keys)
+  }, [hasKeys, keys, onKeysChange])
 
   const createKeys = () => {
     setIsLoading(true)
@@ -107,14 +114,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     isLoading,
     error,
     createKeys,
-    clearKeys
+    clearKeys,
   }
 
-  return (
-    <AuthContext.Provider value={contextValue}>
-      {children}
-    </AuthContext.Provider>
-  )
+  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
 }
 
 /**

@@ -1,9 +1,8 @@
-import { spawn } from "bun"
-import { existsSync, mkdirSync } from "fs"
-import { join } from "path"
-import type { FluxStackConfig } from "../config"
-import type { BundleResult, BundleOptions } from "../types/build"
-import { buildLogger } from "../utils/build-logger"
+import { existsSync, mkdirSync } from 'node:fs'
+import { join } from 'node:path'
+import { spawn } from 'bun'
+import type { BundleOptions, BundleResult } from '../types/build'
+import { buildLogger } from '../utils/build-logger'
 
 export interface BundlerConfig {
   target: 'bun' | 'node' | 'docker'
@@ -25,21 +24,21 @@ export class Bundler {
     buildLogger.step('Starting Vite build...')
 
     const startTime = Date.now()
-    
+
     try {
       const buildProcess = spawn({
-        cmd: ["bunx", "vite", "build", "--config", "vite.config.ts"],
+        cmd: ['bunx', 'vite', 'build', '--config', 'vite.config.ts'],
         cwd: process.cwd(),
-        stdout: "pipe",
-        stderr: "pipe",
+        stdout: 'pipe',
+        stderr: 'pipe',
         env: {
           ...process.env,
-          NODE_ENV: 'production',  // Force production environment for builds
+          NODE_ENV: 'production', // Force production environment for builds
           VITE_BUILD_OUTDIR: this.config.outDir,
           VITE_BUILD_MINIFY: (this.config.minify || false).toString(),
           VITE_BUILD_SOURCEMAPS: this.config.sourceMaps.toString(),
-          ...options.env
-        }
+          ...options.env,
+        },
       })
 
       const exitCode = await buildProcess.exited
@@ -51,15 +50,15 @@ export class Bundler {
           success: true,
           duration,
           outputPath: this.config.outDir,
-          assets: await this.getClientAssets()
+          assets: await this.getClientAssets(),
         }
       } else {
         const stderr = await new Response(buildProcess.stderr).text()
-        buildLogger.error("Client bundle failed")
+        buildLogger.error('Client bundle failed')
         return {
           success: false,
           duration,
-          error: stderr || "Client build failed"
+          error: stderr || 'Client build failed',
         }
       }
     } catch (error) {
@@ -67,7 +66,7 @@ export class Bundler {
       return {
         success: false,
         duration,
-        error: error instanceof Error ? error.message : "Unknown error"
+        error: error instanceof Error ? error.message : 'Unknown error',
       }
     }
   }
@@ -89,28 +88,31 @@ export class Bundler {
       const external = this.getExternalDependencies(options)
 
       const buildArgs = [
-        "bun", "build",
+        'bun',
+        'build',
         entryPoint,
-        "--outdir", this.config.outDir,
-        "--target", this.config.target,
-        ...external.flatMap(ext => ["--external", ext])
+        '--outdir',
+        this.config.outDir,
+        '--target',
+        this.config.target,
+        ...external.flatMap((ext) => ['--external', ext]),
       ]
 
       if (this.config.sourceMaps) {
-        buildArgs.push("--sourcemap")
+        buildArgs.push('--sourcemap')
       }
 
       // Bun bundling only - no minification for better compatibility
 
       const buildProcess = spawn({
         cmd: buildArgs,
-        stdout: "pipe",
-        stderr: "pipe",
+        stdout: 'pipe',
+        stderr: 'pipe',
         env: {
           ...process.env,
-          NODE_ENV: 'production',  // Force production environment for builds
-          ...options.env
-        }
+          NODE_ENV: 'production', // Force production environment for builds
+          ...options.env,
+        },
       })
 
       const exitCode = await buildProcess.exited
@@ -126,10 +128,10 @@ export class Bundler {
           success: true,
           duration,
           outputPath: this.config.outDir,
-          entryPoint: join(this.config.outDir, "index.js")
+          entryPoint: join(this.config.outDir, 'index.js'),
         }
       } else {
-        buildLogger.error("Server bundle failed")
+        buildLogger.error('Server bundle failed')
 
         // Run post-build cleanup
         await this.runPostBuildCleanup(liveComponentsGenerator)
@@ -138,7 +140,7 @@ export class Bundler {
         return {
           success: false,
           duration,
-          error: stderr || "Server build failed"
+          error: stderr || 'Server build failed',
         }
       }
     } catch (error) {
@@ -154,12 +156,16 @@ export class Bundler {
       return {
         success: false,
         duration,
-        error: error instanceof Error ? error.message : "Unknown error"
+        error: error instanceof Error ? error.message : 'Unknown error',
       }
     }
   }
 
-  async compileToExecutable(entryPoint: string, outputName: string = "app", options: BundleOptions = {}): Promise<BundleResult> {
+  async compileToExecutable(
+    entryPoint: string,
+    outputName: string = 'app',
+    options: BundleOptions = {},
+  ): Promise<BundleResult> {
     buildLogger.section('Executable Build', '📦')
 
     const startTime = Date.now()
@@ -181,45 +187,48 @@ export class Bundler {
       const target = options.target || this.config.target
 
       const buildArgs = [
-        "bun", "build",
+        'bun',
+        'build',
         entryPoint,
-        "--compile",
-        "--outfile", outputPath,
-        "--target", target,
-        ...external.flatMap(ext => ["--external", ext])
+        '--compile',
+        '--outfile',
+        outputPath,
+        '--target',
+        target,
+        ...external.flatMap((ext) => ['--external', ext]),
       ]
 
       if (this.config.sourceMaps) {
-        buildArgs.push("--sourcemap")
+        buildArgs.push('--sourcemap')
       }
 
       if (this.config.minify) {
-        buildArgs.push("--minify")
+        buildArgs.push('--minify')
       }
 
       // Add Windows-specific options if provided
       if (options.executable?.windows) {
         const winOpts = options.executable.windows
         if (winOpts.hideConsole) {
-          buildArgs.push("--windows-hide-console")
+          buildArgs.push('--windows-hide-console')
         }
         if (winOpts.icon) {
-          buildArgs.push("--windows-icon", winOpts.icon)
+          buildArgs.push('--windows-icon', winOpts.icon)
         }
         if (winOpts.title) {
-          buildArgs.push("--windows-title", winOpts.title)
+          buildArgs.push('--windows-title', winOpts.title)
         }
         if (winOpts.publisher) {
-          buildArgs.push("--windows-publisher", winOpts.publisher)
+          buildArgs.push('--windows-publisher', winOpts.publisher)
         }
         if (winOpts.version) {
-          buildArgs.push("--windows-version", winOpts.version)
+          buildArgs.push('--windows-version', winOpts.version)
         }
         if (winOpts.description) {
-          buildArgs.push("--windows-description", winOpts.description)
+          buildArgs.push('--windows-description', winOpts.description)
         }
         if (winOpts.copyright) {
-          buildArgs.push("--windows-copyright", winOpts.copyright)
+          buildArgs.push('--windows-copyright', winOpts.copyright)
         }
       }
 
@@ -232,13 +241,13 @@ export class Bundler {
 
       const buildProcess = spawn({
         cmd: buildArgs,
-        stdout: "pipe",
-        stderr: "pipe",
+        stdout: 'pipe',
+        stderr: 'pipe',
         env: {
           ...process.env,
           NODE_ENV: 'production',
-          ...options.env
-        }
+          ...options.env,
+        },
       })
 
       const exitCode = await buildProcess.exited
@@ -254,10 +263,10 @@ export class Bundler {
           success: true,
           duration,
           outputPath,
-          entryPoint: outputPath
+          entryPoint: outputPath,
         }
       } else {
-        buildLogger.error("Executable compilation failed")
+        buildLogger.error('Executable compilation failed')
 
         // Run post-build cleanup
         await this.runPostBuildCleanup(liveComponentsGenerator)
@@ -266,7 +275,7 @@ export class Bundler {
         return {
           success: false,
           duration,
-          error: stderr || "Executable compilation failed"
+          error: stderr || 'Executable compilation failed',
         }
       }
     } catch (error) {
@@ -282,7 +291,7 @@ export class Bundler {
       return {
         success: false,
         duration,
-        error: error instanceof Error ? error.message : "Unknown error"
+        error: error instanceof Error ? error.message : 'Unknown error',
       }
     }
   }
@@ -292,14 +301,14 @@ export class Bundler {
    */
   private getExternalDependencies(options: BundleOptions = {}): string[] {
     return [
-      "@tailwindcss/vite",
-      "tailwindcss",
-      "lightningcss",
-      "vite",
-      "@vitejs/plugin-react",
-      "rollup",
+      '@tailwindcss/vite',
+      'tailwindcss',
+      'lightningcss',
+      'vite',
+      '@vitejs/plugin-react',
+      'rollup',
       ...(this.config.external || []),
-      ...(options.external || [])
+      ...(options.external || []),
     ]
   }
 
@@ -348,18 +357,26 @@ export class Bundler {
     return []
   }
 
-  async bundle(clientEntry?: string, serverEntry?: string, options: BundleOptions = {}): Promise<{
+  async bundle(
+    clientEntry?: string,
+    serverEntry?: string,
+    options: BundleOptions = {},
+  ): Promise<{
     client: BundleResult
     server: BundleResult
   }> {
     const [clientResult, serverResult] = await Promise.all([
-      clientEntry ? this.bundleClient(options) : Promise.resolve({ success: true, duration: 0 } as BundleResult),
-      serverEntry ? this.bundleServer(serverEntry, options) : Promise.resolve({ success: true, duration: 0 } as BundleResult)
+      clientEntry
+        ? this.bundleClient(options)
+        : Promise.resolve({ success: true, duration: 0 } as BundleResult),
+      serverEntry
+        ? this.bundleServer(serverEntry, options)
+        : Promise.resolve({ success: true, duration: 0 } as BundleResult),
     ])
 
     return {
       client: clientResult,
-      server: serverResult
+      server: serverResult,
     }
   }
 }

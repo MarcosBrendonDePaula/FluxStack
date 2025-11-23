@@ -2,27 +2,27 @@
  * Tests for Plugin Registry
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { Logger } from '@/core/utils/logger/index'
 import { PluginRegistry } from '../registry'
 import type { Plugin, PluginManifest } from '../types'
-import type { Logger } from '@/core/utils/logger/index'
 
 // Mock fs module with proper default export
 vi.mock('fs', () => ({
   default: {
     existsSync: vi.fn(() => false),
     readFileSync: vi.fn(() => '{}'),
-    readdirSync: vi.fn(() => [])
+    readdirSync: vi.fn(() => []),
   },
   existsSync: vi.fn(() => false),
   readFileSync: vi.fn(() => '{}'),
-  readdirSync: vi.fn(() => [])
+  readdirSync: vi.fn(() => []),
 }))
 
 vi.mock('fs/promises', () => ({
   default: {},
   readdir: vi.fn(() => Promise.resolve([])),
-  readFile: vi.fn(() => Promise.resolve('{}'))
+  readFile: vi.fn(() => Promise.resolve('{}')),
 }))
 
 // Mock logger
@@ -34,7 +34,7 @@ const mockLogger: Logger = {
   child: vi.fn(() => mockLogger),
   time: vi.fn(),
   timeEnd: vi.fn(),
-  request: vi.fn()
+  request: vi.fn(),
 }
 
 describe('PluginRegistry', () => {
@@ -49,7 +49,7 @@ describe('PluginRegistry', () => {
     it('should register a plugin successfully', async () => {
       const plugin: Plugin = {
         name: 'test-plugin',
-        version: '1.0.0'
+        version: '1.0.0',
       }
 
       await registry.register(plugin)
@@ -60,7 +60,7 @@ describe('PluginRegistry', () => {
     it('should register a plugin with manifest', async () => {
       const plugin: Plugin = {
         name: 'test-plugin',
-        version: '1.0.0'
+        version: '1.0.0',
       }
 
       const manifest: PluginManifest = {
@@ -73,8 +73,8 @@ describe('PluginRegistry', () => {
         dependencies: {},
         fluxstack: {
           version: '1.0.0',
-          hooks: ['setup']
-        }
+          hooks: ['setup'],
+        },
       }
 
       await registry.register(plugin, manifest)
@@ -83,25 +83,29 @@ describe('PluginRegistry', () => {
 
     it('should throw error when registering duplicate plugin', async () => {
       const plugin: Plugin = {
-        name: 'duplicate-plugin'
+        name: 'duplicate-plugin',
       }
 
       await registry.register(plugin)
-      await expect(registry.register(plugin)).rejects.toThrow("Plugin 'duplicate-plugin' is already registered")
+      await expect(registry.register(plugin)).rejects.toThrow(
+        "Plugin 'duplicate-plugin' is already registered",
+      )
     })
 
     it('should validate plugin structure', async () => {
       const invalidPlugin = {
         // Missing name property
-        version: '1.0.0'
+        version: '1.0.0',
       } as Plugin
 
-      await expect(registry.register(invalidPlugin)).rejects.toThrow('Plugin must have a valid name property')
+      await expect(registry.register(invalidPlugin)).rejects.toThrow(
+        'Plugin must have a valid name property',
+      )
     })
 
     it('should unregister a plugin successfully', async () => {
       const plugin: Plugin = {
-        name: 'removable-plugin'
+        name: 'removable-plugin',
       }
 
       await registry.register(plugin)
@@ -113,7 +117,9 @@ describe('PluginRegistry', () => {
     })
 
     it('should throw error when unregistering non-existent plugin', () => {
-      expect(() => registry.unregister('non-existent')).toThrow("Plugin 'non-existent' is not registered")
+      expect(() => registry.unregister('non-existent')).toThrow(
+        "Plugin 'non-existent' is not registered",
+      )
     })
 
     it('should prevent unregistering plugin with dependents', async () => {
@@ -124,7 +130,7 @@ describe('PluginRegistry', () => {
       await registry.register(pluginB)
 
       expect(() => registry.unregister('plugin-a')).toThrow(
-        "Cannot unregister plugin 'plugin-a' because it is required by: plugin-b"
+        "Cannot unregister plugin 'plugin-a' because it is required by: plugin-b",
       )
     })
   })
@@ -150,7 +156,7 @@ describe('PluginRegistry', () => {
     it('should get plugin dependencies', async () => {
       const plugin: Plugin = {
         name: 'plugin-with-deps',
-        dependencies: ['dep1', 'dep2']
+        dependencies: ['dep1', 'dep2'],
       }
 
       await registry.register(plugin)
@@ -187,12 +193,12 @@ describe('PluginRegistry', () => {
   describe('Dependency Management', () => {
     it('should validate dependencies successfully', async () => {
       const pluginA: Plugin = {
-        name: 'plugin-a'
+        name: 'plugin-a',
       }
 
       const pluginB: Plugin = {
         name: 'plugin-b',
-        dependencies: ['plugin-a']
+        dependencies: ['plugin-a'],
       }
 
       await registry.register(pluginA)
@@ -204,28 +210,26 @@ describe('PluginRegistry', () => {
     it('should throw error for missing dependencies', async () => {
       const pluginWithMissingDep: Plugin = {
         name: 'plugin-with-missing-dep',
-        dependencies: ['non-existent-plugin']
+        dependencies: ['non-existent-plugin'],
       }
 
       await registry.register(pluginWithMissingDep)
-      expect(() => registry.validateDependencies()).toThrow(
-        "Plugin dependency validation failed"
-      )
+      expect(() => registry.validateDependencies()).toThrow('Plugin dependency validation failed')
     })
 
     it('should detect circular dependencies', async () => {
       const pluginA: Plugin = {
         name: 'plugin-a',
-        dependencies: ['plugin-b']
+        dependencies: ['plugin-b'],
       }
 
       const pluginB: Plugin = {
         name: 'plugin-b',
-        dependencies: ['plugin-a']
+        dependencies: ['plugin-a'],
       }
 
       await registry.register(pluginA)
-      
+
       await expect(registry.register(pluginB)).rejects.toThrow('Circular dependency detected')
     })
   })
@@ -233,17 +237,17 @@ describe('PluginRegistry', () => {
   describe('Load Order', () => {
     it('should determine correct load order based on dependencies', async () => {
       const pluginA: Plugin = {
-        name: 'plugin-a'
+        name: 'plugin-a',
       }
 
       const pluginB: Plugin = {
         name: 'plugin-b',
-        dependencies: ['plugin-a']
+        dependencies: ['plugin-a'],
       }
 
       const pluginC: Plugin = {
         name: 'plugin-c',
-        dependencies: ['plugin-b']
+        dependencies: ['plugin-b'],
       }
 
       await registry.register(pluginA)
@@ -251,7 +255,7 @@ describe('PluginRegistry', () => {
       await registry.register(pluginC)
 
       const loadOrder = registry.getLoadOrder()
-      
+
       expect(loadOrder.indexOf('plugin-a')).toBeLessThan(loadOrder.indexOf('plugin-b'))
       expect(loadOrder.indexOf('plugin-b')).toBeLessThan(loadOrder.indexOf('plugin-c'))
     })
@@ -259,37 +263,37 @@ describe('PluginRegistry', () => {
     it('should respect plugin priorities', async () => {
       const lowPriorityPlugin: Plugin = {
         name: 'low-priority',
-        priority: 1
+        priority: 1,
       }
 
       const highPriorityPlugin: Plugin = {
         name: 'high-priority',
-        priority: 10
+        priority: 10,
       }
 
       await registry.register(lowPriorityPlugin)
       await registry.register(highPriorityPlugin)
 
       const loadOrder = registry.getLoadOrder()
-      
+
       expect(loadOrder.indexOf('high-priority')).toBeLessThan(loadOrder.indexOf('low-priority'))
     })
 
     it('should handle plugins without priorities', async () => {
       const pluginWithoutPriority: Plugin = {
-        name: 'no-priority'
+        name: 'no-priority',
       }
 
       const pluginWithPriority: Plugin = {
         name: 'with-priority',
-        priority: 5
+        priority: 5,
       }
 
       await registry.register(pluginWithoutPriority)
       await registry.register(pluginWithPriority)
 
       const loadOrder = registry.getLoadOrder()
-      
+
       expect(loadOrder.indexOf('with-priority')).toBeLessThan(loadOrder.indexOf('no-priority'))
     })
   })
@@ -299,9 +303,9 @@ describe('PluginRegistry', () => {
       // This would require mocking the filesystem
       // For now, just test that the method exists and returns an array
       const results = await registry.discoverPlugins({
-        directories: ['non-existent-dir']
+        directories: ['non-existent-dir'],
       })
-      
+
       expect(Array.isArray(results)).toBe(true)
     })
 
@@ -309,7 +313,7 @@ describe('PluginRegistry', () => {
       // This would require mocking the filesystem and import
       // For now, just test that the method exists
       const result = await registry.loadPlugin('non-existent-path')
-      
+
       expect(result).toHaveProperty('success')
       expect(result.success).toBe(false)
       expect(result).toHaveProperty('error')
@@ -323,10 +327,10 @@ describe('PluginRegistry', () => {
         configSchema: {
           type: 'object',
           properties: {
-            apiKey: { type: 'string' }
+            apiKey: { type: 'string' },
           },
-          required: ['apiKey']
-        }
+          required: ['apiKey'],
+        },
       }
 
       const config = {
@@ -335,15 +339,15 @@ describe('PluginRegistry', () => {
           disabled: [],
           config: {
             'config-plugin': {
-              apiKey: 'test-key'
-            }
-          }
-        }
+              apiKey: 'test-key',
+            },
+          },
+        },
       }
 
-      const registryWithConfig = new PluginRegistry({ 
+      const registryWithConfig = new PluginRegistry({
         logger: mockLogger,
-        config: config as any
+        config: config as any,
       })
 
       await registryWithConfig.register(plugin)

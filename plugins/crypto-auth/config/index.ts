@@ -3,7 +3,7 @@
  * Declarative config using FluxStack config system
  */
 
-import { defineConfig, config } from '@/core/utils/config-schema'
+import { config, defineConfig } from '@/core/utils/config-schema'
 
 const cryptoAuthConfigSchema = {
   // Enable/disable plugin

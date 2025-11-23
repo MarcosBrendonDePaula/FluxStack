@@ -4,7 +4,7 @@
  */
 
 import { create } from 'zustand'
-import { persist, createJSONStorage } from 'zustand/middleware'
+import { createJSONStorage, persist } from 'zustand/middleware'
 
 export interface StoreOptions<T> {
   name?: string
@@ -19,26 +19,29 @@ export interface StoreOptions<T> {
  */
 export function createFluxStore<T>(
   storeFactory: (set: any, get: any) => T,
-  options: StoreOptions<T> = {}
+  options: StoreOptions<T> = {},
 ) {
-  const { name, persist: shouldPersist = false, storage = 'localStorage', version = 1, migrate } = options
+  const {
+    name,
+    persist: shouldPersist = false,
+    storage = 'localStorage',
+    version = 1,
+    migrate,
+  } = options
 
   if (shouldPersist && name) {
     return create<T>()(
-      persist(
-        storeFactory,
-        {
-          name,
-          storage: createJSONStorage(() => 
-            storage === 'localStorage' ? localStorage : sessionStorage
-          ),
-          version,
-          migrate: migrate as any,
-          onRehydrateStorage: () => (state) => {
-            console.log('FluxStack: Store rehydrated', name, state)
-          }
-        }
-      )
+      persist(storeFactory, {
+        name,
+        storage: createJSONStorage(() =>
+          storage === 'localStorage' ? localStorage : sessionStorage,
+        ),
+        version,
+        migrate: migrate as any,
+        onRehydrateStorage: () => (state) => {
+          console.log('FluxStack: Store rehydrated', name, state)
+        },
+      }),
     )
   }
 
@@ -85,7 +88,7 @@ export function createUserStore(options: StoreOptions<BaseUserStore> = {}) {
           const response = await fetch('/api/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(credentials)
+            body: JSON.stringify(credentials),
           })
 
           if (!response.ok) {
@@ -94,15 +97,15 @@ export function createUserStore(options: StoreOptions<BaseUserStore> = {}) {
           }
 
           const { user } = await response.json()
-          set({ 
-            currentUser: user, 
-            isAuthenticated: true, 
-            isLoading: false 
+          set({
+            currentUser: user,
+            isAuthenticated: true,
+            isLoading: false,
           })
         } catch (error) {
-          set({ 
-            error: error instanceof Error ? error.message : 'Login failed', 
-            isLoading: false 
+          set({
+            error: error instanceof Error ? error.message : 'Login failed',
+            isLoading: false,
           })
           throw error
         }
@@ -114,7 +117,7 @@ export function createUserStore(options: StoreOptions<BaseUserStore> = {}) {
           const response = await fetch('/api/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
+            body: JSON.stringify(data),
           })
 
           if (!response.ok) {
@@ -123,15 +126,15 @@ export function createUserStore(options: StoreOptions<BaseUserStore> = {}) {
           }
 
           const { user } = await response.json()
-          set({ 
-            currentUser: user, 
-            isAuthenticated: true, 
-            isLoading: false 
+          set({
+            currentUser: user,
+            isAuthenticated: true,
+            isLoading: false,
           })
         } catch (error) {
-          set({ 
-            error: error instanceof Error ? error.message : 'Registration failed', 
-            isLoading: false 
+          set({
+            error: error instanceof Error ? error.message : 'Registration failed',
+            isLoading: false,
           })
           throw error
         }
@@ -140,11 +143,11 @@ export function createUserStore(options: StoreOptions<BaseUserStore> = {}) {
       logout: () => {
         // Call logout API
         fetch('/api/auth/logout', { method: 'POST' }).catch(console.error)
-        
-        set({ 
-          currentUser: null, 
-          isAuthenticated: false, 
-          error: null 
+
+        set({
+          currentUser: null,
+          isAuthenticated: false,
+          error: null,
         })
       },
 
@@ -159,7 +162,7 @@ export function createUserStore(options: StoreOptions<BaseUserStore> = {}) {
           const response = await fetch('/api/user/profile', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
+            body: JSON.stringify(data),
           })
 
           if (!response.ok) {
@@ -168,26 +171,26 @@ export function createUserStore(options: StoreOptions<BaseUserStore> = {}) {
           }
 
           const { user } = await response.json()
-          set({ 
-            currentUser: user, 
-            isLoading: false 
+          set({
+            currentUser: user,
+            isLoading: false,
           })
         } catch (error) {
-          set({ 
-            error: error instanceof Error ? error.message : 'Profile update failed', 
-            isLoading: false 
+          set({
+            error: error instanceof Error ? error.message : 'Profile update failed',
+            isLoading: false,
           })
           throw error
         }
       },
 
       clearError: () => set({ error: null }),
-      setLoading: (loading) => set({ isLoading: loading })
+      setLoading: (loading) => set({ isLoading: loading }),
     }),
     {
       name: 'user-store',
       persist: true,
-      ...options
-    }
+      ...options,
+    },
   )
 }

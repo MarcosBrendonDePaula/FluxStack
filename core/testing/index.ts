@@ -3,8 +3,8 @@
  * FluxStack testing infrastructure exports
  */
 
-export { 
-  setupFluxStackTests, 
-  createMockLogger, 
-  createMockServiceContext 
+export {
+  createMockLogger,
+  createMockServiceContext,
+  setupFluxStackTests,
 } from './setup'

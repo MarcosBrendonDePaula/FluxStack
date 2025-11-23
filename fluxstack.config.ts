@@ -6,18 +6,17 @@
  * required by core/config/schema.ts for backward compatibility
  */
 
-import type { FluxStackConfig } from './core/config/schema'
-import { env, helpers } from './core/utils/env'
-
 // Import modular configs
 import { appConfig } from './config/app.config'
-import { serverConfig } from './config/server.config'
 import { clientConfig } from './config/client.config'
 import { databaseConfig } from './config/database.config'
-import { servicesConfig } from './config/services.config'
 import { loggerConfig } from './config/logger.config'
-import { pluginsConfig } from './config/plugins.config'
 import { monitoringConfig } from './config/monitoring.config'
+import { pluginsConfig } from './config/plugins.config'
+import { serverConfig } from './config/server.config'
+import { servicesConfig } from './config/services.config'
+import type { FluxStackConfig } from './core/config/schema'
+import { helpers } from './core/utils/env'
 
 console.log(`🔧 Loading FluxStack config for ${appConfig.env} environment`)
 
@@ -30,7 +29,7 @@ export const config: FluxStackConfig = {
   app: {
     name: appConfig.name,
     version: appConfig.version,
-    description: appConfig.description
+    description: appConfig.description,
   },
 
   // Server configuration
@@ -43,10 +42,10 @@ export const config: FluxStackConfig = {
       methods: serverConfig.cors.methods,
       headers: serverConfig.cors.headers,
       credentials: serverConfig.cors.credentials,
-      maxAge: serverConfig.cors.maxAge
+      maxAge: serverConfig.cors.maxAge,
     },
     middleware: [],
-    showBanner: serverConfig.server.showBanner
+    showBanner: serverConfig.server.showBanner,
   },
 
   // Client configuration
@@ -54,14 +53,14 @@ export const config: FluxStackConfig = {
     port: clientConfig.vite.port,
     proxy: {
       target: clientConfig.proxy.target || helpers.getServerUrl(),
-      changeOrigin: clientConfig.proxy.changeOrigin
+      changeOrigin: clientConfig.proxy.changeOrigin,
     },
     build: {
       sourceMaps: clientConfig.build.sourceMaps,
       minify: clientConfig.build.minify,
       target: clientConfig.build.target,
-      outDir: clientConfig.build.outDir
-    }
+      outDir: clientConfig.build.outDir,
+    },
   },
 
   // Build configuration
@@ -74,12 +73,12 @@ export const config: FluxStackConfig = {
       treeshake: helpers.isProduction(),
       compress: helpers.isProduction(),
       splitChunks: true,
-      bundleAnalyzer: helpers.isDevelopment()
+      bundleAnalyzer: helpers.isDevelopment(),
     },
     sourceMaps: !helpers.isProduction(),
     minify: helpers.isProduction(),
     treeshake: helpers.isProduction(),
-    clean: true
+    clean: true,
   },
 
   // Plugin configuration
@@ -93,18 +92,18 @@ export const config: FluxStackConfig = {
       swagger: {
         title: pluginsConfig.swaggerTitle,
         version: pluginsConfig.swaggerVersion,
-        description: pluginsConfig.swaggerDescription
+        description: pluginsConfig.swaggerDescription,
       },
       staticFiles: {
         publicDir: pluginsConfig.staticPublicDir,
         uploadsDir: pluginsConfig.staticUploadsDir,
         cacheMaxAge: pluginsConfig.staticCacheMaxAge,
         enableUploads: pluginsConfig.staticEnableUploads,
-        enablePublic: pluginsConfig.staticEnablePublic
-      }
+        enablePublic: pluginsConfig.staticEnablePublic,
+      },
       // ✅ crypto-auth manages its own configuration
       // See: plugins/crypto-auth/config/index.ts
-    }
+    },
   },
 
   // Logging configuration
@@ -115,9 +114,9 @@ export const config: FluxStackConfig = {
       {
         type: 'console' as const,
         level: loggerConfig.level,
-        format: helpers.isDevelopment() ? 'pretty' : 'json'
-      }
-    ]
+        format: helpers.isDevelopment() ? 'pretty' : 'json',
+      },
+    ],
   },
 
   // Monitoring configuration
@@ -128,15 +127,15 @@ export const config: FluxStackConfig = {
       collectInterval: monitoringConfig.metrics.collectInterval,
       httpMetrics: monitoringConfig.metrics.httpMetrics,
       systemMetrics: monitoringConfig.metrics.systemMetrics,
-      customMetrics: monitoringConfig.metrics.customMetrics
+      customMetrics: monitoringConfig.metrics.customMetrics,
     },
     profiling: {
       enabled: monitoringConfig.profiling.enabled,
       sampleRate: monitoringConfig.profiling.sampleRate,
       memoryProfiling: monitoringConfig.profiling.memoryProfiling,
-      cpuProfiling: monitoringConfig.profiling.cpuProfiling
+      cpuProfiling: monitoringConfig.profiling.cpuProfiling,
     },
-    exporters: monitoringConfig.monitoring.exporters
+    exporters: monitoringConfig.monitoring.exporters,
   },
 
   // Optional configurations (only included if configured)
@@ -150,8 +149,8 @@ export const config: FluxStackConfig = {
           user: databaseConfig.user,
           password: databaseConfig.password,
           ssl: databaseConfig.ssl,
-          poolSize: databaseConfig.poolMax
-        }
+          poolSize: databaseConfig.poolMax,
+        },
       }
     : {}),
 
@@ -161,8 +160,8 @@ export const config: FluxStackConfig = {
           secret: servicesConfig.jwt.secret,
           expiresIn: servicesConfig.jwt.expiresIn,
           algorithm: servicesConfig.jwt.algorithm,
-          issuer: servicesConfig.jwt.issuer
-        }
+          issuer: servicesConfig.jwt.issuer,
+        },
       }
     : {}),
 
@@ -174,8 +173,8 @@ export const config: FluxStackConfig = {
           user: servicesConfig.email.user,
           password: servicesConfig.email.password,
           secure: servicesConfig.email.secure,
-          from: servicesConfig.email.from
-        }
+          from: servicesConfig.email.from,
+        },
       }
     : {}),
 
@@ -186,8 +185,8 @@ export const config: FluxStackConfig = {
           maxFileSize: servicesConfig.storage.maxFileSize,
           allowedTypes: servicesConfig.storage.allowedTypes,
           provider: servicesConfig.storage.provider,
-          config: {}
-        }
+          config: {},
+        },
       }
     : {}),
 
@@ -201,9 +200,9 @@ export const config: FluxStackConfig = {
           {
             type: 'console',
             level: 'debug',
-            format: 'pretty'
-          }
-        ]
+            format: 'pretty',
+          },
+        ],
       },
       client: {
         port: 5173,
@@ -212,8 +211,8 @@ export const config: FluxStackConfig = {
           sourceMaps: true,
           minify: false,
           target: 'es2020',
-          outDir: 'dist'
-        }
+          outDir: 'dist',
+        },
       },
       build: {
         target: 'bun',
@@ -223,19 +222,25 @@ export const config: FluxStackConfig = {
           compress: false,
           treeshake: false,
           splitChunks: false,
-          bundleAnalyzer: false
+          bundleAnalyzer: false,
         },
         sourceMaps: true,
         minify: false,
         treeshake: false,
-        clean: true
+        clean: true,
       },
       monitoring: {
         enabled: false,
-        metrics: { enabled: false, collectInterval: 5000, httpMetrics: false, systemMetrics: false, customMetrics: false },
+        metrics: {
+          enabled: false,
+          collectInterval: 5000,
+          httpMetrics: false,
+          systemMetrics: false,
+          customMetrics: false,
+        },
         profiling: { enabled: false, sampleRate: 0.1, memoryProfiling: false, cpuProfiling: false },
-        exporters: []
-      }
+        exporters: [],
+      },
     },
 
     production: {
@@ -246,7 +251,7 @@ export const config: FluxStackConfig = {
           {
             type: 'console',
             level: 'warn',
-            format: 'json'
+            format: 'json',
           },
           {
             type: 'file',
@@ -255,10 +260,10 @@ export const config: FluxStackConfig = {
             options: {
               filename: 'logs/error.log',
               maxSize: '10m',
-              maxFiles: 5
-            }
-          }
-        ]
+              maxFiles: 5,
+            },
+          },
+        ],
       },
       client: {
         port: 5173,
@@ -267,8 +272,8 @@ export const config: FluxStackConfig = {
           sourceMaps: false,
           minify: true,
           target: 'es2020',
-          outDir: 'dist'
-        }
+          outDir: 'dist',
+        },
       },
       build: {
         target: 'bun',
@@ -278,12 +283,12 @@ export const config: FluxStackConfig = {
           treeshake: false,
           compress: false,
           splitChunks: false,
-          bundleAnalyzer: false
+          bundleAnalyzer: false,
         },
         sourceMaps: false,
         minify: true,
         treeshake: false,
-        clean: true
+        clean: true,
       },
       monitoring: {
         enabled: true,
@@ -292,16 +297,16 @@ export const config: FluxStackConfig = {
           collectInterval: 10000,
           httpMetrics: true,
           systemMetrics: true,
-          customMetrics: false
+          customMetrics: false,
         },
         profiling: {
           enabled: true,
           sampleRate: 0.01, // Lower sample rate in production
           memoryProfiling: true,
-          cpuProfiling: false
+          cpuProfiling: false,
         },
-        exporters: ['console', 'file']
-      }
+        exporters: ['console', 'file'],
+      },
     },
 
     test: {
@@ -312,36 +317,42 @@ export const config: FluxStackConfig = {
           {
             type: 'console',
             level: 'error',
-            format: 'json'
-          }
-        ]
+            format: 'json',
+          },
+        ],
       },
       server: {
         port: 0, // Use random available port
         host: 'localhost',
         apiPrefix: '/api',
         cors: { origins: [], methods: [], headers: [] },
-        middleware: []
+        middleware: [],
       },
       client: {
         port: 0, // Use random available port
         proxy: { target: 'http://localhost:3000' },
-        build: { sourceMaps: true, minify: false, target: 'es2020', outDir: 'dist' }
+        build: { sourceMaps: true, minify: false, target: 'es2020', outDir: 'dist' },
       },
       monitoring: {
         enabled: false,
-        metrics: { enabled: false, collectInterval: 5000, httpMetrics: false, systemMetrics: false, customMetrics: false },
+        metrics: {
+          enabled: false,
+          collectInterval: 5000,
+          httpMetrics: false,
+          systemMetrics: false,
+          customMetrics: false,
+        },
         profiling: { enabled: false, sampleRate: 0.1, memoryProfiling: false, cpuProfiling: false },
-        exporters: []
-      }
-    }
+        exporters: [],
+      },
+    },
   },
 
   // Custom configuration for application-specific settings
   custom: {
     // Add any custom configuration here
     // This will be merged with environment variables prefixed with FLUXSTACK_
-  }
+  },
 }
 
 // Export as default for ES modules

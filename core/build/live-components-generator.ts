@@ -1,8 +1,8 @@
 // 🚀 FluxStack Live Components - Auto Registration Generator
 // Automatically generates component registration during build time
 
-import { existsSync, readdirSync, writeFileSync, unlinkSync, readFileSync } from 'fs'
-import { join, extname, basename } from 'path'
+import { existsSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
+import { basename, extname, join } from 'node:path'
 import { buildLogger } from '../utils/build-logger'
 
 export interface ComponentInfo {
@@ -25,8 +25,20 @@ export class LiveComponentsGenerator {
     this.componentsPath = join(process.cwd(), 'app', 'server', 'live')
 
     // Generate registration file in core/ directory (framework code - protected from user modifications)
-    this.registrationFilePath = join(process.cwd(), 'core', 'server', 'live', 'auto-generated-components.ts')
-    this.backupFilePath = join(process.cwd(), 'core', 'server', 'live', 'auto-generated-components.backup.ts')
+    this.registrationFilePath = join(
+      process.cwd(),
+      'core',
+      'server',
+      'live',
+      'auto-generated-components.ts',
+    )
+    this.backupFilePath = join(
+      process.cwd(),
+      'core',
+      'server',
+      'live',
+      'auto-generated-components.backup.ts',
+    )
 
     // Entry point for import injection
     this.entryPointPath = join(process.cwd(), 'app', 'server', 'index.ts')
@@ -46,43 +58,45 @@ export class LiveComponentsGenerator {
 
     for (const file of files) {
       // Skip non-TypeScript files, backup files, and the registration file itself
-      if (!file.endsWith('.ts') || 
-          file === 'register-components.ts' || 
-          file.includes('.backup.') ||
-          file.includes('.bak')) {
+      if (
+        !file.endsWith('.ts') ||
+        file === 'register-components.ts' ||
+        file.includes('.backup.') ||
+        file.includes('.bak')
+      ) {
         continue
       }
 
       const filePath = join(this.componentsPath, file)
       const fileName = basename(file, extname(file))
-      
+
       try {
         // Read file content to extract class name
         const content = readFileSync(filePath, 'utf-8')
-        
+
         // Look for class exports that extend LiveComponent
         const classMatches = content.match(/export\s+class\s+(\w+)\s+extends\s+LiveComponent/g)
-        
+
         if (classMatches && classMatches.length > 0) {
           for (const match of classMatches) {
             const classNameMatch = match.match(/class\s+(\w+)/)
             if (classNameMatch) {
               const className = classNameMatch[1]
               const componentName = className.replace(/Component$/, '')
-              
+
               components.push({
                 fileName,
                 className,
                 componentName,
                 // Path relative to core/server/live/ where the generated file will be
-                filePath: `@/app/server/live/${fileName}`
+                filePath: `@/app/server/live/${fileName}`,
               })
 
               buildLogger.step(`Discovered component: ${className} → ${componentName}`)
             }
           }
         }
-      } catch (error) {
+      } catch (_error) {
         // Silently skip files that can't be analyzed
       }
     }
@@ -102,12 +116,15 @@ export class LiveComponentsGenerator {
 
     // Generate imports
     const imports = components
-      .map(comp => `import { ${comp.className} } from "${comp.filePath}"`)
+      .map((comp) => `import { ${comp.className} } from "${comp.filePath}"`)
       .join('\n')
 
     // Generate registrations
     const registrations = components
-      .map(comp => `    componentRegistry.registerComponentClass('${comp.componentName}', ${comp.className})`)
+      .map(
+        (comp) =>
+          `    componentRegistry.registerComponentClass('${comp.componentName}', ${comp.className})`,
+      )
       .join('\n')
 
     // Generate file content
@@ -135,7 +152,7 @@ registerAllComponents()
 
 // Export all components to ensure they're included in the bundle
 export { 
-${components.map(comp => `  ${comp.className}`).join(',\n')}
+${components.map((comp) => `  ${comp.className}`).join(',\n')}
 }
 `
 
@@ -234,19 +251,19 @@ ${components.map(comp => `  ${comp.className}`).join(',\n')}
     }
 
     // Create table of discovered components
-    const componentData = components.map(c => ({
+    const componentData = components.map((c) => ({
       component: c.componentName,
       className: c.className,
-      file: c.fileName + '.ts'
+      file: `${c.fileName}.ts`,
     }))
 
     buildLogger.table(
       [
         { header: 'Component', key: 'component', width: 20, align: 'left', color: 'cyan' },
         { header: 'Class Name', key: 'className', width: 25, align: 'left' },
-        { header: 'File', key: 'file', width: 20, align: 'left', color: 'gray' }
+        { header: 'File', key: 'file', width: 20, align: 'left', color: 'gray' },
       ],
-      componentData
+      componentData,
     )
 
     this.generateRegistrationFile(components)
@@ -261,7 +278,7 @@ ${components.map(comp => `  ${comp.className}`).join(',\n')}
    * Post-build hook: Clean up backup file and restore entry point
    * Note: Since the generated file is now in core/, we always keep it (it's bundled into production)
    */
-  async postBuild(keepGenerated: boolean = true): Promise<void> {
+  async postBuild(_keepGenerated: boolean = true): Promise<void> {
     buildLogger.step('Cleaning up Live Components registration...')
 
     // Always keep the generated file in core/ (it gets bundled)
@@ -285,7 +302,7 @@ ${components.map(comp => `  ${comp.className}`).join(',\n')}
 
     const components = this.discoverComponents()
     const currentContent = readFileSync(this.registrationFilePath, 'utf-8')
-    
+
     // Check if all discovered components are in the current file
     for (const comp of components) {
       if (!currentContent.includes(`'${comp.componentName}', ${comp.className}`)) {

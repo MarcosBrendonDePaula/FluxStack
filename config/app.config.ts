@@ -3,7 +3,7 @@
  * Core application metadata and global settings
  */
 
-import { defineConfig, config } from '@/core/utils/config-schema'
+import { config, defineConfig } from '@/core/utils/config-schema'
 import { FLUXSTACK_VERSION } from '@/core/utils/version'
 
 /**
@@ -18,7 +18,8 @@ const appConfigSchema = {
     type: 'string' as const,
     env: 'APP_VERSION',
     default: FLUXSTACK_VERSION,
-    validate: (value: string) => /^\d+\.\d+\.\d+$/.test(value) || 'Version must be semver format (e.g., 1.0.0)'
+    validate: (value: string) =>
+      /^\d+\.\d+\.\d+$/.test(value) || 'Version must be semver format (e.g., 1.0.0)',
   },
 
   description: config.string('APP_DESCRIPTION', 'A FluxStack application'),
@@ -43,8 +44,8 @@ const appConfigSchema = {
         return 'Session secret must be at least 32 characters'
       }
       return true
-    }
-  }
+    },
+  },
 } as const
 
 export const appConfig = defineConfig(appConfigSchema)

@@ -2,23 +2,23 @@
  * Tests for Helper Utilities
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
-  formatBytes,
   createTimer,
-  delay,
-  retry,
   debounce,
-  throttle,
-  isProduction,
-  isDevelopment,
-  isTest,
   deepMerge,
-  pick,
-  omit,
+  delay,
+  formatBytes,
   generateId,
+  isDevelopment,
+  isProduction,
+  isTest,
+  omit,
+  pick,
+  retry,
   safeJsonParse,
-  safeJsonStringify
+  safeJsonStringify,
+  throttle,
 } from '../helpers'
 
 describe('Helper Utilities', () => {
@@ -70,7 +70,8 @@ describe('Helper Utilities', () => {
     })
 
     it('should retry on failure and eventually succeed', async () => {
-      const fn = vi.fn()
+      const fn = vi
+        .fn()
         .mockRejectedValueOnce(new Error('fail 1'))
         .mockRejectedValueOnce(new Error('fail 2'))
         .mockResolvedValue('success')
@@ -102,7 +103,7 @@ describe('Helper Utilities', () => {
       expect(fn).not.toHaveBeenCalled()
 
       // Wait for debounce delay
-      await new Promise(resolve => setTimeout(resolve, 60))
+      await new Promise((resolve) => setTimeout(resolve, 60))
 
       expect(fn).toHaveBeenCalledTimes(1)
       expect(fn).toHaveBeenCalledWith('arg3')
@@ -113,17 +114,17 @@ describe('Helper Utilities', () => {
       const debouncedFn = debounce(fn, 50)
 
       debouncedFn('arg1')
-      
+
       // Call again before timer expires
-      await new Promise(resolve => setTimeout(resolve, 25))
+      await new Promise((resolve) => setTimeout(resolve, 25))
       debouncedFn('arg2')
-      
+
       // Wait for original timer (should not fire)
-      await new Promise(resolve => setTimeout(resolve, 30))
+      await new Promise((resolve) => setTimeout(resolve, 30))
       expect(fn).not.toHaveBeenCalled()
-      
+
       // Wait for second timer to complete
-      await new Promise(resolve => setTimeout(resolve, 30))
+      await new Promise((resolve) => setTimeout(resolve, 30))
       expect(fn).toHaveBeenCalledTimes(1)
       expect(fn).toHaveBeenCalledWith('arg2')
     })
@@ -145,7 +146,7 @@ describe('Helper Utilities', () => {
       expect(fn).toHaveBeenCalledTimes(1)
 
       // Wait for throttle period to pass
-      await new Promise(resolve => setTimeout(resolve, 60))
+      await new Promise((resolve) => setTimeout(resolve, 60))
 
       // Next call should execute
       throttledFn('arg4')
@@ -204,17 +205,17 @@ describe('Helper Utilities', () => {
           a: 1,
           b: {
             c: 2,
-            d: 3
-          }
+            d: 3,
+          },
         }
 
         const source = {
           b: {
             c: 2, // Keep existing property
             d: 4,
-            e: 5
+            e: 5,
           },
-          f: 6
+          f: 6,
         }
 
         const result = deepMerge(target, source)
@@ -224,9 +225,9 @@ describe('Helper Utilities', () => {
           b: {
             c: 2,
             d: 4,
-            e: 5
+            e: 5,
           },
-          f: 6
+          f: 6,
         })
       })
 

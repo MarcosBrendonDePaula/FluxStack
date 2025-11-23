@@ -1,9 +1,8 @@
 #!/usr/bin/env tsx
 // 🧪 Live Components Test Runner Script
 
-import { spawn } from 'child_process'
-import { existsSync, mkdirSync } from 'fs'
-import path from 'path'
+import { spawn } from 'node:child_process'
+import { existsSync, mkdirSync } from 'node:fs'
 
 interface TestOptions {
   coverage?: boolean
@@ -22,7 +21,7 @@ class LiveComponentsTestRunner {
       watch: false,
       verbose: true,
       reporter: 'verbose',
-      ...options
+      ...options,
     }
   }
 
@@ -34,14 +33,14 @@ class LiveComponentsTestRunner {
 
     // Build vitest command
     const command = this.buildCommand()
-    
+
     console.log(`📋 Running command: ${command.join(' ')}\n`)
 
     // Execute tests
     const testProcess = spawn(command[0], command.slice(1), {
       stdio: 'inherit',
       shell: true,
-      cwd: process.cwd()
+      cwd: process.cwd(),
     })
 
     return new Promise((resolve, reject) => {
@@ -64,13 +63,9 @@ class LiveComponentsTestRunner {
   }
 
   private ensureDirectories(): void {
-    const dirs = [
-      './test-results',
-      './coverage',
-      './coverage/live-components'
-    ]
+    const dirs = ['./test-results', './coverage', './coverage/live-components']
 
-    dirs.forEach(dir => {
+    dirs.forEach((dir) => {
       if (!existsSync(dir)) {
         mkdirSync(dir, { recursive: true })
         console.log(`📁 Created directory: ${dir}`)
@@ -80,7 +75,7 @@ class LiveComponentsTestRunner {
 
   private buildCommand(): string[] {
     const command = ['npx', 'vitest']
-    
+
     // Add config file
     command.push('--config', 'vitest.config.live.ts')
 
@@ -121,11 +116,11 @@ class LiveComponentsTestRunner {
     console.log('✅ LiveComponentPerformanceMonitor: Performance tracking and optimization')
     console.log('✅ FileUploadManager: File upload handling and validation')
     console.log('✅ Integration Tests: End-to-end system functionality')
-    
+
     if (this.options.coverage) {
       console.log('\n📈 Coverage report generated in: ./coverage/live-components/')
     }
-    
+
     console.log('\n📋 Test results saved in: ./test-results/live-components.json')
   }
 }
@@ -133,17 +128,18 @@ class LiveComponentsTestRunner {
 // CLI interface
 async function main() {
   const args = process.argv.slice(2)
-  
+
   const options: TestOptions = {
     coverage: args.includes('--coverage') || args.includes('-c'),
     watch: args.includes('--watch') || args.includes('-w'),
     verbose: args.includes('--verbose') || args.includes('-v'),
-    filter: args.find(arg => arg.startsWith('--filter='))?.split('=')[1],
-    reporter: args.find(arg => arg.startsWith('--reporter='))?.split('=')[1] as any || 'verbose'
+    filter: args.find((arg) => arg.startsWith('--filter='))?.split('=')[1],
+    reporter:
+      (args.find((arg) => arg.startsWith('--reporter='))?.split('=')[1] as any) || 'verbose',
   }
 
   const runner = new LiveComponentsTestRunner(options)
-  
+
   try {
     await runner.run()
     process.exit(0)

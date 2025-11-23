@@ -5,15 +5,15 @@
  * Note: Logger is NOT a plugin - it's core infrastructure used by plugins
  */
 
+import { monitoringPlugin } from './monitoring'
 // Import all built-in plugins
 import { swaggerPlugin } from './swagger'
 import { vitePlugin } from './vite'
-import { monitoringPlugin } from './monitoring'
 
+export { monitoringPlugin } from './monitoring'
 // Export individual plugins
 export { swaggerPlugin } from './swagger'
 export { vitePlugin } from './vite'
-export { monitoringPlugin } from './monitoring'
 
 // Deprecated: staticPlugin is now merged into vitePlugin (auto-detects dev/prod)
 /** @deprecated Use vitePlugin instead - it now handles both dev and prod */
@@ -24,7 +24,7 @@ export const builtInPlugins = {
   swagger: swaggerPlugin,
   vite: vitePlugin,
   static: staticPlugin,
-  monitoring: monitoringPlugin
+  monitoring: monitoringPlugin,
 } as const
 
 // Export as an array for easy registration
@@ -32,7 +32,7 @@ export const builtInPluginsList = [
   swaggerPlugin,
   vitePlugin,
   staticPlugin,
-  monitoringPlugin
+  monitoringPlugin,
 ] as const
 
 // Plugin categories
@@ -40,7 +40,7 @@ export const pluginCategories = {
   core: [vitePlugin], // vitePlugin now handles both dev (Vite) and prod (static)
   development: [vitePlugin],
   documentation: [swaggerPlugin],
-  monitoring: [monitoringPlugin]
+  monitoring: [monitoringPlugin],
 } as const
 
 // Default plugin configuration
@@ -49,7 +49,7 @@ export const defaultPluginConfig = {
     enabled: true,
     path: '/swagger',
     title: 'FluxStack API',
-    description: 'Modern full-stack TypeScript framework with type-safe API endpoints'
+    description: 'Modern full-stack TypeScript framework with type-safe API endpoints',
   },
   vite: {
     enabled: true,
@@ -57,7 +57,7 @@ export const defaultPluginConfig = {
     host: 'localhost',
     checkInterval: 2000,
     maxRetries: 10,
-    timeout: 5000
+    timeout: 5000,
   },
   static: {
     enabled: true,
@@ -66,8 +66,8 @@ export const defaultPluginConfig = {
     indexFile: 'index.html',
     spa: {
       enabled: true,
-      fallback: 'index.html'
-    }
+      fallback: 'index.html',
+    },
   },
   monitoring: {
     enabled: false, // Disabled by default to avoid overhead
@@ -80,22 +80,24 @@ export const defaultPluginConfig = {
       {
         type: 'console',
         interval: 30000,
-        enabled: false
-      }
+        enabled: false,
+      },
     ],
     thresholds: {
       responseTime: 1000,
       errorRate: 0.05,
       memoryUsage: 0.8,
-      cpuUsage: 0.8
-    }
-  }
+      cpuUsage: 0.8,
+    },
+  },
 } as const
 
 /**
  * Get default plugins for a specific environment
  */
-export function getDefaultPlugins(environment: 'development' | 'production' | 'test' = 'development') {
+export function getDefaultPlugins(
+  environment: 'development' | 'production' | 'test' = 'development',
+) {
   // vitePlugin now auto-detects dev/prod and serves appropriately
   const basePlugins = [vitePlugin]
 

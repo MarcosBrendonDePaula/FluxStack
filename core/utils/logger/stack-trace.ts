@@ -3,7 +3,7 @@
  * Extracts caller information from stack traces
  */
 
-import { relative } from 'path'
+import { relative } from 'node:path'
 
 export interface CallerInfo {
   file: string
@@ -53,7 +53,7 @@ export function getCallerInfo(): CallerInfo {
         callerInfo = {
           file: relativeFile,
           line: lineNumber,
-          function: callSite.getFunctionName() || 'anonymous'
+          function: callSite.getFunctionName() || 'anonymous',
         }
 
         // Cache the result
@@ -67,7 +67,7 @@ export function getCallerInfo(): CallerInfo {
         break
       }
     }
-  } catch (error) {
+  } catch (_error) {
     // Silently fail - return default caller info
   }
 

@@ -91,20 +91,23 @@ export type InferConfig<T extends ConfigSchema> = {
  * Infer field type from field definition
  * Uses the generic T from ConfigField<T> for better type inference
  */
-type InferFieldType<F> =
-  F extends ConfigField<infer T>
-    ? T extends undefined
-      ? (
-        F extends { type: 'string' } ? string :
-        F extends { type: 'number' } ? number :
-        F extends { type: 'boolean' } ? boolean :
-        F extends { type: 'array' } ? string[] :
-        F extends { type: 'object' } ? Record<string, any> :
-        F extends { type: 'enum'; values: readonly (infer U)[] } ? U :
-        any
-      )
-      : T
-    : any
+type InferFieldType<F> = F extends ConfigField<infer T>
+  ? T extends undefined
+    ? F extends { type: 'string' }
+      ? string
+      : F extends { type: 'number' }
+        ? number
+        : F extends { type: 'boolean' }
+          ? boolean
+          : F extends { type: 'array' }
+            ? string[]
+            : F extends { type: 'object' }
+              ? Record<string, any>
+              : F extends { type: 'enum'; values: readonly (infer U)[] }
+                ? U
+                : any
+    : T
+  : any
 
 /**
  * Validation error
@@ -136,9 +139,10 @@ function castValue(value: any, type: ConfigFieldType): any {
     case 'string':
       return String(value)
 
-    case 'number':
+    case 'number': {
       const num = Number(value)
-      return isNaN(num) ? undefined : num
+      return Number.isNaN(num) ? undefined : num
+    }
 
     case 'boolean':
       if (typeof value === 'boolean') return value
@@ -150,7 +154,10 @@ function castValue(value: any, type: ConfigFieldType): any {
     case 'array':
       if (Array.isArray(value)) return value
       if (typeof value === 'string') {
-        return value.split(',').map(v => v.trim()).filter(Boolean)
+        return value
+          .split(',')
+          .map((v) => v.trim())
+          .filter(Boolean)
       }
       return [value]
 
@@ -176,16 +183,12 @@ function castValue(value: any, type: ConfigFieldType): any {
 /**
  * Validate config value
  */
-function validateField(
-  fieldName: string,
-  value: any,
-  field: ConfigField
-): ValidationError | null {
+function validateField(fieldName: string, value: any, field: ConfigField): ValidationError | null {
   // Check required
   if (field.required && (value === undefined || value === null || value === '')) {
     return {
       field: fieldName,
-      message: `Field '${fieldName}' is required but not provided`
+      message: `Field '${fieldName}' is required but not provided`,
     }
   }
 
@@ -200,7 +203,7 @@ function validateField(
       return {
         field: fieldName,
         message: `Field '${fieldName}' must be one of: ${field.values.join(', ')}`,
-        value
+        value,
       }
     }
   }
@@ -212,14 +215,14 @@ function validateField(
       return {
         field: fieldName,
         message: `Field '${fieldName}' failed validation`,
-        value
+        value,
       }
     }
     if (typeof result === 'string') {
       return {
         field: fieldName,
         message: result,
-        value
+        value,
       }
     }
   }
@@ -270,7 +273,7 @@ export class ReactiveConfig<T extends ConfigSchema> {
         } catch (error) {
           errors.push({
             field: fieldName,
-            message: `Transform failed: ${error}`
+            message: `Transform failed: ${error}`,
           })
           continue
         }
@@ -295,12 +298,15 @@ export class ReactiveConfig<T extends ConfigSchema> {
     // Throw error if validation failed
     if (errors.length > 0) {
       const errorMessage = errors
-        .map(e => `  - ${e.message}${e.value !== undefined ? ` (got: ${JSON.stringify(e.value)})` : ''}`)
+        .map(
+          (e) =>
+            `  - ${e.message}${e.value !== undefined ? ` (got: ${JSON.stringify(e.value)})` : ''}`,
+        )
         .join('\n')
 
       throw new Error(
         `❌ Configuration validation failed:\n${errorMessage}\n\n` +
-        `Please check your environment variables or configuration.`
+          `Please check your environment variables or configuration.`,
       )
     }
 
@@ -326,7 +332,7 @@ export class ReactiveConfig<T extends ConfigSchema> {
     this.config = newConfig
 
     // Notify watchers
-    this.watchers.forEach(watcher => watcher(newConfig))
+    this.watchers.forEach((watcher) => watcher(newConfig))
 
     return newConfig
   }
@@ -381,7 +387,7 @@ export function defineReactiveConfig<T extends ConfigSchema>(schema: T): Reactiv
  */
 export function validateConfig<T extends ConfigSchema>(
   schema: T,
-  values: Partial<InferConfig<T>>
+  values: Partial<InferConfig<T>>,
 ): ValidationResult {
   const errors: ValidationError[] = []
 
@@ -395,7 +401,7 @@ export function validateConfig<T extends ConfigSchema>(
 
   return {
     valid: errors.length === 0,
-    errors
+    errors,
   }
 }
 
@@ -403,7 +409,7 @@ export function validateConfig<T extends ConfigSchema>(
  * Create nested config schema (for grouping)
  */
 export function defineNestedConfig<T extends Record<string, ConfigSchema>>(
-  schemas: T
+  schemas: T,
 ): { [K in keyof T]: InferConfig<T[K]> } {
   const config: any = {}
 
@@ -417,39 +423,55 @@ export function defineNestedConfig<T extends Record<string, ConfigSchema>>(
 /**
  * Helper to create env field quickly
  */
-export function envString(envVar: string, defaultValue?: string, required = false): ConfigField<string> {
+export function envString(
+  envVar: string,
+  defaultValue?: string,
+  required = false,
+): ConfigField<string> {
   return {
     type: 'string' as const,
     env: envVar,
     default: defaultValue,
-    required
+    required,
   }
 }
 
-export function envNumber(envVar: string, defaultValue?: number, required = false): ConfigField<number> {
+export function envNumber(
+  envVar: string,
+  defaultValue?: number,
+  required = false,
+): ConfigField<number> {
   return {
     type: 'number' as const,
     env: envVar,
     default: defaultValue,
-    required
+    required,
   }
 }
 
-export function envBoolean(envVar: string, defaultValue?: boolean, required = false): ConfigField<boolean> {
+export function envBoolean(
+  envVar: string,
+  defaultValue?: boolean,
+  required = false,
+): ConfigField<boolean> {
   return {
     type: 'boolean' as const,
     env: envVar,
     default: defaultValue,
-    required
+    required,
   }
 }
 
-export function envArray(envVar: string, defaultValue?: string[], required = false): ConfigField<string[]> {
+export function envArray(
+  envVar: string,
+  defaultValue?: string[],
+  required = false,
+): ConfigField<string[]> {
   return {
     type: 'array' as const,
     env: envVar,
     default: defaultValue,
-    required
+    required,
   }
 }
 
@@ -457,14 +479,14 @@ export function envEnum<T extends readonly string[]>(
   envVar: string,
   values: T,
   defaultValue?: T[number],
-  required = false
+  required = false,
 ): ConfigField<T[number]> {
   return {
     type: 'enum' as const,
     env: envVar,
     values,
     default: defaultValue,
-    required
+    required,
   }
 }
 
@@ -476,5 +498,5 @@ export const config = {
   number: envNumber,
   boolean: envBoolean,
   array: envArray,
-  enum: envEnum
+  enum: envEnum,
 }

@@ -2,22 +2,22 @@
  * Tests for Configuration Validator
  */
 
-import { describe, it, expect } from 'vitest'
-import { 
-  validateConfig, 
-  validateConfigStrict,
-  createEnvironmentValidator,
-  validatePartialConfig,
-  getConfigSuggestions
-} from '../validator'
-import { defaultFluxStackConfig } from '../schema'
+import { describe, expect, it } from 'vitest'
 import type { FluxStackConfig } from '../schema'
+import { defaultFluxStackConfig } from '../schema'
+import {
+  createEnvironmentValidator,
+  getConfigSuggestions,
+  validateConfig,
+  validateConfigStrict,
+  validatePartialConfig,
+} from '../validator'
 
 describe('Configuration Validator', () => {
   describe('validateConfig', () => {
     it('should validate default configuration successfully', () => {
       const result = validateConfig(defaultFluxStackConfig)
-      
+
       expect(result.valid).toBe(true)
       expect(result.errors).toHaveLength(0)
     })
@@ -30,13 +30,13 @@ describe('Configuration Validator', () => {
         build: defaultFluxStackConfig.build,
         plugins: defaultFluxStackConfig.plugins,
         logging: defaultFluxStackConfig.logging,
-        monitoring: defaultFluxStackConfig.monitoring
+        monitoring: defaultFluxStackConfig.monitoring,
       } as FluxStackConfig
 
       const result = validateConfig(invalidConfig)
-      
+
       expect(result.valid).toBe(false)
-      expect(result.errors.some(e => e.includes('version'))).toBe(true)
+      expect(result.errors.some((e) => e.includes('version'))).toBe(true)
     })
 
     it('should detect invalid port numbers', () => {
@@ -44,27 +44,27 @@ describe('Configuration Validator', () => {
         ...defaultFluxStackConfig,
         server: {
           ...defaultFluxStackConfig.server,
-          port: 70000 // Invalid port
-        }
+          port: 70000, // Invalid port
+        },
       }
 
       const result = validateConfig(invalidConfig)
-      
+
       expect(result.valid).toBe(false)
-      expect(result.errors.some(e => e.includes('port'))).toBe(true)
+      expect(result.errors.some((e) => e.includes('port'))).toBe(true)
     })
 
     it('should detect port conflicts', () => {
       const conflictConfig = {
         ...defaultFluxStackConfig,
         server: { ...defaultFluxStackConfig.server, port: 3000 },
-        client: { ...defaultFluxStackConfig.client, port: 3000 }
+        client: { ...defaultFluxStackConfig.client, port: 3000 },
       }
 
       const result = validateConfig(conflictConfig)
-      
+
       expect(result.valid).toBe(false)
-      expect(result.errors.some(e => e.includes('different'))).toBe(true)
+      expect(result.errors.some((e) => e.includes('different'))).toBe(true)
     })
 
     it('should warn about security issues', () => {
@@ -75,9 +75,9 @@ describe('Configuration Validator', () => {
           cors: {
             ...defaultFluxStackConfig.server.cors,
             origins: ['*'],
-            credentials: true
-          }
-        }
+            credentials: true,
+          },
+        },
       }
 
       // Mock production environment
@@ -85,8 +85,8 @@ describe('Configuration Validator', () => {
       process.env.NODE_ENV = 'production'
 
       const result = validateConfig(insecureConfig)
-      
-      expect(result.warnings.some(w => w.includes('wildcard'))).toBe(true)
+
+      expect(result.warnings.some((w) => w.includes('wildcard'))).toBe(true)
 
       // Restore environment
       process.env.NODE_ENV = originalEnv
@@ -97,14 +97,14 @@ describe('Configuration Validator', () => {
         ...defaultFluxStackConfig,
         logging: {
           ...defaultFluxStackConfig.logging,
-          level: 'invalid' as any
-        }
+          level: 'invalid' as any,
+        },
       }
 
       const result = validateConfig(invalidConfig)
-      
+
       expect(result.valid).toBe(false)
-      expect(result.errors.some(e => e.includes('one of'))).toBe(true)
+      expect(result.errors.some((e) => e.includes('one of'))).toBe(true)
     })
 
     it('should validate array constraints', () => {
@@ -114,15 +114,15 @@ describe('Configuration Validator', () => {
           ...defaultFluxStackConfig.server,
           cors: {
             ...defaultFluxStackConfig.server.cors,
-            origins: [] // Empty array
-          }
-        }
+            origins: [], // Empty array
+          },
+        },
       }
 
       const result = validateConfig(invalidConfig)
-      
+
       expect(result.valid).toBe(false)
-      expect(result.errors.some(e => e.includes('at least'))).toBe(true)
+      expect(result.errors.some((e) => e.includes('at least'))).toBe(true)
     })
   })
 
@@ -136,7 +136,7 @@ describe('Configuration Validator', () => {
     it('should throw for invalid configuration', () => {
       const invalidConfig = {
         ...defaultFluxStackConfig,
-        app: { name: '' } // Invalid empty name
+        app: { name: '' }, // Invalid empty name
       } as FluxStackConfig
 
       expect(() => {
@@ -148,34 +148,34 @@ describe('Configuration Validator', () => {
   describe('createEnvironmentValidator', () => {
     it('should create production validator with additional checks', () => {
       const prodValidator = createEnvironmentValidator('production')
-      
+
       const devConfig = {
         ...defaultFluxStackConfig,
-        logging: { ...defaultFluxStackConfig.logging, level: 'debug' as const }
+        logging: { ...defaultFluxStackConfig.logging, level: 'debug' as const },
       }
 
       const result = prodValidator(devConfig)
-      
-      expect(result.warnings.some(w => w.includes('Debug logging'))).toBe(true)
+
+      expect(result.warnings.some((w) => w.includes('Debug logging'))).toBe(true)
     })
 
     it('should create development validator with build warnings', () => {
       const devValidator = createEnvironmentValidator('development')
-      
+
       const prodConfig = {
         ...defaultFluxStackConfig,
         build: {
           ...defaultFluxStackConfig.build,
           optimization: {
             ...defaultFluxStackConfig.build.optimization,
-            minify: true
-          }
-        }
+            minify: true,
+          },
+        },
       }
 
       const result = devValidator(prodConfig)
-      
-      expect(result.warnings.some(w => w.includes('Minification enabled'))).toBe(true)
+
+      expect(result.warnings.some((w) => w.includes('Minification enabled'))).toBe(true)
     })
   })
 
@@ -191,14 +191,14 @@ describe('Configuration Validator', () => {
             methods: ['GET', 'POST'],
             headers: ['Content-Type'],
             credentials: false,
-            maxAge: 86400
+            maxAge: 86400,
           },
-          middleware: []
-        }
+          middleware: [],
+        },
       }
 
       const result = validatePartialConfig(partialConfig, defaultFluxStackConfig)
-      
+
       expect(result.valid).toBe(true)
     })
 
@@ -213,14 +213,14 @@ describe('Configuration Validator', () => {
             methods: ['GET', 'POST'],
             headers: ['Content-Type'],
             credentials: false,
-            maxAge: 86400
+            maxAge: 86400,
           },
-          middleware: []
-        }
+          middleware: [],
+        },
       }
 
       const result = validatePartialConfig(partialConfig, defaultFluxStackConfig)
-      
+
       expect(result.valid).toBe(false)
     })
   })
@@ -229,34 +229,34 @@ describe('Configuration Validator', () => {
     it('should provide suggestions for improvement', () => {
       const basicConfig = {
         ...defaultFluxStackConfig,
-        monitoring: { ...defaultFluxStackConfig.monitoring, enabled: false }
+        monitoring: { ...defaultFluxStackConfig.monitoring, enabled: false },
       }
 
       const suggestions = getConfigSuggestions(basicConfig)
-      
-      expect(suggestions.some(s => s.includes('monitoring'))).toBe(true)
+
+      expect(suggestions.some((s) => s.includes('monitoring'))).toBe(true)
     })
 
     it('should suggest database configuration', () => {
       const configWithoutDb = {
         ...defaultFluxStackConfig,
-        database: undefined
+        database: undefined,
       }
 
       const suggestions = getConfigSuggestions(configWithoutDb)
-      
-      expect(suggestions.some(s => s.includes('database'))).toBe(true)
+
+      expect(suggestions.some((s) => s.includes('database'))).toBe(true)
     })
 
     it('should suggest plugin enablement', () => {
       const configWithoutPlugins = {
         ...defaultFluxStackConfig,
-        plugins: { ...defaultFluxStackConfig.plugins, enabled: [] }
+        plugins: { ...defaultFluxStackConfig.plugins, enabled: [] },
       }
 
       const suggestions = getConfigSuggestions(configWithoutPlugins)
-      
-      expect(suggestions.some(s => s.includes('plugins'))).toBe(true)
+
+      expect(suggestions.some((s) => s.includes('plugins'))).toBe(true)
     })
   })
 
@@ -267,13 +267,13 @@ describe('Configuration Validator', () => {
         plugins: {
           enabled: ['logger', 'cors'],
           disabled: ['logger'], // Conflict: logger is both enabled and disabled
-          config: {}
-        }
+          config: {},
+        },
       }
 
       const result = validateConfig(conflictConfig)
-      
-      expect(result.warnings.some(w => w.includes('both enabled and disabled'))).toBe(true)
+
+      expect(result.warnings.some((w) => w.includes('both enabled and disabled'))).toBe(true)
     })
 
     it('should validate authentication security', () => {
@@ -281,13 +281,13 @@ describe('Configuration Validator', () => {
         ...defaultFluxStackConfig,
         auth: {
           secret: 'short', // Too short
-          expiresIn: '24h'
-        }
+          expiresIn: '24h',
+        },
       }
 
       const result = validateConfig(weakAuthConfig)
-      
-      expect(result.warnings.some(w => w.includes('too short'))).toBe(true)
+
+      expect(result.warnings.some((w) => w.includes('too short'))).toBe(true)
     })
 
     it('should validate build optimization settings', () => {
@@ -302,14 +302,16 @@ describe('Configuration Validator', () => {
           optimization: {
             ...defaultFluxStackConfig.build.optimization,
             minify: false,
-            treeshake: false
-          }
-        }
+            treeshake: false,
+          },
+        },
       }
 
       const result = validateConfig(unoptimizedConfig)
-      
-      expect(result.warnings.some(w => w.includes('minification') || w.includes('tree-shaking'))).toBe(true)
+
+      expect(
+        result.warnings.some((w) => w.includes('minification') || w.includes('tree-shaking')),
+      ).toBe(true)
 
       // Restore environment
       process.env.NODE_ENV = originalEnv

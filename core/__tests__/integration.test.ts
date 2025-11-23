@@ -3,11 +3,11 @@
  * Tests the complete integration of all restructured components
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { FluxStackFramework } from '../framework/server'
 import { PluginRegistry } from '../plugins/registry'
-import { logger } from '../utils/logger'
 import type { Plugin } from '../plugins/types'
+import { logger } from '../utils/logger'
 
 // Set test environment
 process.env.NODE_ENV = 'test'
@@ -22,7 +22,7 @@ describe('Core Framework Integration', () => {
       debug: vi.spyOn(console, 'debug').mockImplementation(() => {}),
       info: vi.spyOn(console, 'info').mockImplementation(() => {}),
       warn: vi.spyOn(console, 'warn').mockImplementation(() => {}),
-      error: vi.spyOn(console, 'error').mockImplementation(() => {})
+      error: vi.spyOn(console, 'error').mockImplementation(() => {}),
     }
   })
 
@@ -60,33 +60,33 @@ describe('Core Framework Integration', () => {
         name: 'test-integration-plugin',
         setup: vi.fn(),
         onServerStart: vi.fn(),
-        onServerStop: vi.fn()
+        onServerStop: vi.fn(),
       }
 
       framework.use(mockPlugin)
-      
+
       expect(framework.getPluginRegistry().get('test-integration-plugin')).toBe(mockPlugin)
-      
+
       await framework.start()
-      
+
       expect(mockPlugin.setup).toHaveBeenCalled()
       expect(mockPlugin.onServerStart).toHaveBeenCalled()
-      
+
       await framework.stop()
-      
+
       expect(mockPlugin.onServerStop).toHaveBeenCalled()
     })
 
     it('should handle plugin dependencies correctly', async () => {
       const basePlugin: Plugin = {
         name: 'base-plugin',
-        setup: vi.fn()
+        setup: vi.fn(),
       }
 
       const dependentPlugin: Plugin = {
         name: 'dependent-plugin',
         dependencies: ['base-plugin'],
-        setup: vi.fn()
+        setup: vi.fn(),
       }
 
       framework.use(basePlugin)
@@ -103,7 +103,7 @@ describe('Core Framework Integration', () => {
     it('should use enhanced logger throughout the system', () => {
       // Clear any previous log calls
       consoleSpy.info.mockClear()
-      
+
       // Test basic logger functionality
       logger.info('Test message')
 
@@ -130,26 +130,26 @@ describe('Core Framework Integration', () => {
     it('should have comprehensive type exports', async () => {
       // Test that all type exports are available
       const types = await import('../types')
-      
+
       // Test that the main types module is properly structured (it's a module, not an object)
       expect(typeof types).toBe('object')
       expect(types).toBeDefined()
-      
+
       // Test config schema exports directly
       const configTypes = await import('../config/schema')
       expect(configTypes).toHaveProperty('defaultFluxStackConfig')
       expect(configTypes).toHaveProperty('environmentDefaults')
-      
+
       // Test plugin types from the main types index
       const coreTypes = await import('../types')
       // Plugin types should be available through the main types module
       expect(typeof coreTypes).toBe('object')
       expect(coreTypes).toBeDefined()
-      
+
       // Test utility types
       const loggerTypes = await import('../utils/logger')
       expect(loggerTypes).toHaveProperty('logger')
-      
+
       const errorTypes = await import('../utils/errors')
       expect(errorTypes).toHaveProperty('FluxStackError')
     })
@@ -158,7 +158,7 @@ describe('Core Framework Integration', () => {
   describe('Utilities Integration', () => {
     it('should provide all utility functions', async () => {
       const utils = await import('../utils')
-      
+
       expect(utils.logger).toBeDefined()
       expect(utils.log).toBeDefined()
       expect(utils.FluxStackError).toBeDefined()
@@ -169,10 +169,10 @@ describe('Core Framework Integration', () => {
 
     it('should have working helper functions', async () => {
       const { formatBytes, createTimer, isTest } = await import('../utils/helpers')
-      
+
       expect(formatBytes(1024)).toBe('1 KB')
       expect(isTest()).toBe(true)
-      
+
       const timer = createTimer('test')
       expect(timer.label).toBe('test')
       expect(typeof timer.end).toBe('function')
@@ -183,7 +183,7 @@ describe('Core Framework Integration', () => {
     it('should maintain exports from core/server/index.ts', async () => {
       try {
         const serverExports = await import('../server')
-        
+
         expect(serverExports.FluxStackFramework).toBeDefined()
         expect(serverExports.PluginRegistry).toBeDefined()
         expect(serverExports.loggerPlugin).toBeDefined()
@@ -208,20 +208,20 @@ describe('Core Framework Integration', () => {
         name: 'workflow-test-plugin',
         setup: vi.fn(),
         onServerStart: vi.fn(),
-        onServerStop: vi.fn()
+        onServerStop: vi.fn(),
       }
 
       // Register plugin
       framework.use(testPlugin)
-      
+
       // Start framework
       await framework.start()
       expect(testPlugin.setup).toHaveBeenCalled()
       expect(testPlugin.onServerStart).toHaveBeenCalled()
-      
+
       // Verify framework is running
       expect(framework.getPluginRegistry().getAll()).toHaveLength(1)
-      
+
       // Stop framework
       await framework.stop()
       expect(testPlugin.onServerStop).toHaveBeenCalled()

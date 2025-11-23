@@ -2,17 +2,17 @@
  * Tests for Environment Configuration System
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
-  getEnvironmentInfo,
-  EnvConverter,
-  EnvironmentProcessor,
   ConfigMerger,
+  EnvConverter,
   EnvironmentConfigApplier,
+  EnvironmentProcessor,
+  getEnvironmentInfo,
+  getEnvironmentRecommendations,
   isDevelopment,
   isProduction,
   isTest,
-  getEnvironmentRecommendations
 } from '../env'
 import { defaultFluxStackConfig } from '../schema'
 
@@ -21,7 +21,7 @@ describe('Environment Configuration System', () => {
 
   beforeEach(() => {
     // Clean environment
-    Object.keys(process.env).forEach(key => {
+    Object.keys(process.env).forEach((key) => {
       if (key.startsWith('FLUXSTACK_') || key.startsWith('TEST_')) {
         delete process.env[key]
       }
@@ -37,7 +37,7 @@ describe('Environment Configuration System', () => {
     it('should return development info by default', () => {
       delete process.env.NODE_ENV
       const info = getEnvironmentInfo()
-      
+
       expect(info.name).toBe('development')
       expect(info.isDevelopment).toBe(true)
       expect(info.isProduction).toBe(false)
@@ -48,7 +48,7 @@ describe('Environment Configuration System', () => {
     it('should detect production environment', () => {
       process.env.NODE_ENV = 'production'
       const info = getEnvironmentInfo()
-      
+
       expect(info.name).toBe('production')
       expect(info.isDevelopment).toBe(false)
       expect(info.isProduction).toBe(true)
@@ -58,7 +58,7 @@ describe('Environment Configuration System', () => {
     it('should detect test environment', () => {
       process.env.NODE_ENV = 'test'
       const info = getEnvironmentInfo()
-      
+
       expect(info.name).toBe('test')
       expect(info.isDevelopment).toBe(false)
       expect(info.isProduction).toBe(false)
@@ -184,7 +184,6 @@ describe('Environment Configuration System', () => {
       expect(config.build?.sourceMaps).toBe(true)
     })
 
-
     it('should track precedence information', () => {
       process.env.PORT = '5000'
       process.env.FLUXSTACK_APP_NAME = 'precedence-test'
@@ -193,7 +192,7 @@ describe('Environment Configuration System', () => {
       processor.processEnvironmentVariables()
 
       const precedence = processor.getPrecedenceInfo()
-      
+
       expect(precedence.has('server.port')).toBe(true)
       expect(precedence.has('app.name')).toBe(true)
       expect(precedence.get('server.port')?.source).toBe('environment')
@@ -204,11 +203,11 @@ describe('Environment Configuration System', () => {
   describe('ConfigMerger', () => {
     it('should merge configurations with precedence', () => {
       const merger = new ConfigMerger()
-      
+
       const baseConfig = {
         app: { name: 'base-app', version: '1.0.0' },
-        server: { 
-          port: 3000, 
+        server: {
+          port: 3000,
           host: 'localhost',
           apiPrefix: '/api',
           cors: {
@@ -216,14 +215,14 @@ describe('Environment Configuration System', () => {
             methods: ['GET', 'POST'],
             headers: ['Content-Type'],
             credentials: false,
-            maxAge: 86400
+            maxAge: 86400,
           },
-          middleware: []
-        }
+          middleware: [],
+        },
       }
-      
+
       const envConfig = {
-        server: { 
+        server: {
           port: 4000,
           host: 'localhost',
           apiPrefix: '/api',
@@ -232,20 +231,22 @@ describe('Environment Configuration System', () => {
             methods: ['GET', 'POST'],
             headers: ['Content-Type'],
             credentials: false,
-            maxAge: 86400
+            maxAge: 86400,
           },
-          middleware: []
+          middleware: [],
         },
-        logging: { 
+        logging: {
           level: 'debug' as const,
           format: 'pretty' as const,
-          transports: [{ type: 'console' as const, level: 'debug' as const, format: 'pretty' as const }]
-        }
+          transports: [
+            { type: 'console' as const, level: 'debug' as const, format: 'pretty' as const },
+          ],
+        },
       }
 
       const result = merger.merge(
         { config: baseConfig, source: 'file' },
-        { config: envConfig, source: 'environment' }
+        { config: envConfig, source: 'environment' },
       )
 
       expect(result.app.name).toBe('base-app') // From base
@@ -256,7 +257,7 @@ describe('Environment Configuration System', () => {
 
     it('should handle nested object merging', () => {
       const merger = new ConfigMerger()
-      
+
       const config1 = {
         server: {
           port: 3000,
@@ -267,12 +268,12 @@ describe('Environment Configuration System', () => {
             methods: ['GET', 'POST'],
             headers: ['Content-Type'],
             credentials: false,
-            maxAge: 86400
+            maxAge: 86400,
           },
-          middleware: []
-        }
+          middleware: [],
+        },
       }
-      
+
       const config2 = {
         server: {
           port: 3000,
@@ -283,15 +284,15 @@ describe('Environment Configuration System', () => {
             methods: ['GET', 'POST'],
             headers: ['Content-Type'],
             credentials: true,
-            maxAge: 86400
+            maxAge: 86400,
           },
-          middleware: []
-        }
+          middleware: [],
+        },
       }
 
       const result = merger.merge(
         { config: config1, source: 'default' },
-        { config: config2, source: 'environment' }
+        { config: config2, source: 'environment' },
       )
 
       expect(result.server.cors.origins).toEqual(['https://example.com'])
@@ -303,35 +304,37 @@ describe('Environment Configuration System', () => {
   describe('EnvironmentConfigApplier', () => {
     it('should apply environment-specific configuration', () => {
       const applier = new EnvironmentConfigApplier()
-      
+
       const baseConfig = {
         ...defaultFluxStackConfig,
         environments: {
           production: {
-            logging: { 
+            logging: {
               level: 'error' as const,
               format: 'json' as const,
-              transports: [{ type: 'console' as const, level: 'error' as const, format: 'json' as const }]
+              transports: [
+                { type: 'console' as const, level: 'error' as const, format: 'json' as const },
+              ],
             },
-            monitoring: { 
+            monitoring: {
               enabled: true,
-              metrics: { 
-                enabled: true, 
+              metrics: {
+                enabled: true,
                 collectInterval: 30000,
                 httpMetrics: true,
                 systemMetrics: true,
-                customMetrics: false
+                customMetrics: false,
               },
-              profiling: { 
-                enabled: true, 
+              profiling: {
+                enabled: true,
                 sampleRate: 0.01,
                 memoryProfiling: true,
-                cpuProfiling: true
+                cpuProfiling: true,
               },
-              exporters: ['prometheus']
-            }
-          }
-        }
+              exporters: ['prometheus'],
+            },
+          },
+        },
       }
 
       const result = applier.applyEnvironmentConfig(baseConfig, 'production')
@@ -342,41 +345,43 @@ describe('Environment Configuration System', () => {
 
     it('should get available environments', () => {
       const applier = new EnvironmentConfigApplier()
-      
+
       const config = {
         ...defaultFluxStackConfig,
         environments: {
           staging: {},
           production: {},
-          custom: {}
-        }
+          custom: {},
+        },
       }
 
       const environments = applier.getAvailableEnvironments(config)
-      
+
       expect(environments).toEqual(['staging', 'production', 'custom'])
     })
 
     it('should validate environment configuration', () => {
       const applier = new EnvironmentConfigApplier()
-      
+
       const config = {
         ...defaultFluxStackConfig,
         environments: {
           production: {
-            logging: { 
+            logging: {
               level: 'debug' as const,
               format: 'json' as const,
-              transports: [{ type: 'console' as const, level: 'debug' as const, format: 'json' as const }]
-            } // Bad for production
-          }
-        }
+              transports: [
+                { type: 'console' as const, level: 'debug' as const, format: 'json' as const },
+              ],
+            }, // Bad for production
+          },
+        },
       }
 
       const result = applier.validateEnvironmentConfig(config, 'production')
-      
+
       expect(result.valid).toBe(false)
-      expect(result.errors.some(e => e.includes('debug'))).toBe(true)
+      expect(result.errors.some((e) => e.includes('debug'))).toBe(true)
     })
   })
 
@@ -406,7 +411,7 @@ describe('Environment Configuration System', () => {
   describe('getEnvironmentRecommendations', () => {
     it('should provide development recommendations', () => {
       const recommendations = getEnvironmentRecommendations('development')
-      
+
       expect(recommendations.logging?.level).toBe('debug')
       expect(recommendations.logging?.format).toBe('pretty')
       expect(recommendations.build?.optimization?.minify).toBe(false)
@@ -415,7 +420,7 @@ describe('Environment Configuration System', () => {
 
     it('should provide production recommendations', () => {
       const recommendations = getEnvironmentRecommendations('production')
-      
+
       expect(recommendations.logging?.level).toBe('warn')
       expect(recommendations.logging?.format).toBe('json')
       expect(recommendations.build?.optimization?.minify).toBe(true)
@@ -424,7 +429,7 @@ describe('Environment Configuration System', () => {
 
     it('should provide test recommendations', () => {
       const recommendations = getEnvironmentRecommendations('test')
-      
+
       expect(recommendations.logging?.level).toBe('error')
       expect(recommendations.server?.port).toBe(0)
       expect(recommendations.client?.port).toBe(0)
@@ -433,7 +438,7 @@ describe('Environment Configuration System', () => {
 
     it('should return empty for unknown environments', () => {
       const recommendations = getEnvironmentRecommendations('unknown')
-      
+
       expect(Object.keys(recommendations)).toHaveLength(0)
     })
   })

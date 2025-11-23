@@ -28,7 +28,7 @@ export function getLoggerConfig(): LoggerConfig {
     maxFiles: loggerConfig.maxFiles,
     objectDepth: loggerConfig.objectDepth,
     enableColors: loggerConfig.enableColors,
-    enableStackTrace: loggerConfig.enableStackTrace
+    enableStackTrace: loggerConfig.enableStackTrace,
   }
 }
 

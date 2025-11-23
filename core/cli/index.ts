@@ -1,14 +1,14 @@
 #!/usr/bin/env bun
 
-import { FluxStackBuilder } from "@/core/build"
-import { ProjectCreator } from "@/core/templates/create-project"
-import { getConfigSync } from "@/core/config"
-import { serverConfig } from "@/config/server.config"
-import { clientConfig } from "@/config/client.config"
-import { cliRegistry } from "./command-registry"
-import { pluginDiscovery } from "./plugin-discovery"
-import { generateCommand, interactiveGenerateCommand } from "./generators/index"
-import { startGroup, endGroup, logBox, logInGroup } from "@/core/utils/logger/group-logger"
+import { clientConfig } from '@/config/client.config'
+import { serverConfig } from '@/config/server.config'
+import { FluxStackBuilder } from '@/core/build'
+import { getConfigSync } from '@/core/config'
+import { ProjectCreator } from '@/core/templates/create-project'
+import { endGroup, logInGroup, startGroup } from '@/core/utils/logger/group-logger'
+import { cliRegistry } from './command-registry'
+import { generateCommand, interactiveGenerateCommand } from './generators/index'
+import { pluginDiscovery } from './plugin-discovery'
 
 const command = process.argv[2]
 const args = process.argv.slice(3)
@@ -18,13 +18,13 @@ async function registerBuiltInCommands() {
   // Register generate commands
   cliRegistry.register(generateCommand)
   cliRegistry.register(interactiveGenerateCommand)
-  
+
   // Register plugin dependency commands
   cliRegistry.register({
     name: 'plugin:deps',
     description: 'Gerenciar dependências de plugins',
     category: 'Plugins',
-    handler: async (args, options, context) => {
+    handler: async (args, _options, _context) => {
       if (args.length === 0) {
         console.log(`
 ⚡ FluxStack Plugin Dependencies Manager
@@ -42,47 +42,51 @@ Examples:
         `)
         return
       }
-      
+
       // Handle subcommands
       const subcommand = args[0]
       const subArgs = args.slice(1)
-      
+
       // Import dinamicamente para evitar problemas de inicialização
       const { createPluginDepsCommand } = await import('./commands/plugin-deps')
       const cmd = createPluginDepsCommand()
-      
+
       switch (subcommand) {
-        case 'install':
-          const installCmd = cmd.commands.find(c => c.name() === 'install')
+        case 'install': {
+          const installCmd = cmd.commands.find((c) => c.name() === 'install')
           if (installCmd) {
             await installCmd.parseAsync(['node', 'cli', ...subArgs], { from: 'user' })
           }
           break
-        case 'list':
-          const listCmd = cmd.commands.find(c => c.name() === 'list')
+        }
+        case 'list': {
+          const listCmd = cmd.commands.find((c) => c.name() === 'list')
           if (listCmd) {
             await listCmd.parseAsync(['node', 'cli', ...subArgs], { from: 'user' })
           }
           break
-        case 'check':
-          const checkCmd = cmd.commands.find(c => c.name() === 'check')
+        }
+        case 'check': {
+          const checkCmd = cmd.commands.find((c) => c.name() === 'check')
           if (checkCmd) {
             await checkCmd.parseAsync(['node', 'cli', ...subArgs], { from: 'user' })
           }
           break
-        case 'clean':
-          const cleanCmd = cmd.commands.find(c => c.name() === 'clean')
+        }
+        case 'clean': {
+          const cleanCmd = cmd.commands.find((c) => c.name() === 'clean')
           if (cleanCmd) {
             await cleanCmd.parseAsync(['node', 'cli', ...subArgs], { from: 'user' })
           }
           break
+        }
         default:
           console.error(`❌ Unknown subcommand: ${subcommand}`)
           console.error('Available subcommands: install, list, check, clean')
       }
-    }
+    },
   })
-  
+
   // Help command
   cliRegistry.register({
     name: 'help',
@@ -93,10 +97,10 @@ Examples:
       {
         name: 'command',
         description: 'Command to show help for',
-        required: false
-      }
+        required: false,
+      },
     ],
-    handler: async (args, options, context) => {
+    handler: async (args, _options, _context) => {
       if (args[0]) {
         const targetCommand = cliRegistry.get(args[0])
         if (targetCommand) {
@@ -108,7 +112,7 @@ Examples:
       } else {
         cliRegistry.showHelp()
       }
-    }
+    },
   })
 
   // Dev command
@@ -119,7 +123,7 @@ Examples:
     usage: 'flux dev [options]',
     examples: [
       'flux dev                    # Start development server',
-      'flux dev --port 4000        # Start on custom port'
+      'flux dev --port 4000        # Start on custom port',
     ],
     options: [
       {
@@ -127,21 +131,21 @@ Examples:
         short: 'p',
         description: 'Port for backend server',
         type: 'number',
-        default: serverConfig.server.port
+        default: serverConfig.server.port,
       },
       {
         name: 'frontend-port',
         description: 'Port for frontend server',
         type: 'number',
-        default: clientConfig.vite.port
-      }
+        default: clientConfig.vite.port,
+      },
     ],
-    handler: async (args, options, context) => {
+    handler: async (_args, options, _context) => {
       // Grouped startup messages
       startGroup({
         title: 'FluxStack Development Server',
         icon: '',
-        color: 'cyan'
+        color: 'cyan',
       })
 
       logInGroup(`Server: http://localhost:${options.port}`, '')
@@ -151,18 +155,18 @@ Examples:
 
       endGroup()
       console.log('') // Separator line
-      
-      const { spawn } = await import("child_process")
-      const devProcess = spawn("bun", ["--watch", "app/server/index.ts"], {
-        stdio: "inherit",
+
+      const { spawn } = await import('node:child_process')
+      const devProcess = spawn('bun', ['--watch', 'app/server/index.ts'], {
+        stdio: 'inherit',
         cwd: process.cwd(),
         env: {
           ...process.env,
           FRONTEND_PORT: options['frontend-port'].toString(),
-          BACKEND_PORT: options.port.toString()
-        }
+          BACKEND_PORT: options.port.toString(),
+        },
       })
-      
+
       process.on('SIGINT', () => {
         console.log('\n🛑 Shutting down gracefully...')
         devProcess.kill('SIGTERM')
@@ -171,16 +175,16 @@ Examples:
           process.exit(0)
         }, 5000)
       })
-      
+
       devProcess.on('close', (code) => {
         process.exit(code || 0)
       })
-      
+
       // Keep the CLI running until the child process exits
       return new Promise((resolve) => {
         devProcess.on('exit', resolve)
       })
-    }
+    },
   })
 
   // Build command
@@ -192,27 +196,27 @@ Examples:
     examples: [
       'flux build                  # Build both frontend and backend',
       'flux build --frontend-only  # Build only frontend',
-      'flux build --backend-only   # Build only backend'
+      'flux build --backend-only   # Build only backend',
     ],
     options: [
       {
         name: 'frontend-only',
         description: 'Build only frontend',
-        type: 'boolean'
+        type: 'boolean',
       },
       {
         name: 'backend-only',
         description: 'Build only backend',
-        type: 'boolean'
+        type: 'boolean',
       },
       {
         name: 'production',
         description: 'Build for production (minified)',
         type: 'boolean',
-        default: true
-      }
+        default: true,
+      },
     ],
-    handler: async (args, options, context) => {
+    handler: async (_args, options, context) => {
       const config = getConfigSync()
 
       // Load plugins for build hooks
@@ -227,15 +231,15 @@ Examples:
         const discoveredPlugins = pluginManager.getRegistry().getAll()
         for (const plugin of discoveredPlugins) {
           if (!pluginRegistry.has(plugin.name)) {
-            (pluginRegistry as any).plugins.set(plugin.name, plugin)
+            ;(pluginRegistry as any).plugins.set(plugin.name, plugin)
             if (plugin.dependencies) {
-              (pluginRegistry as any).dependencies.set(plugin.name, plugin.dependencies)
+              ;(pluginRegistry as any).dependencies.set(plugin.name, plugin.dependencies)
             }
           }
         }
         try {
-          (pluginRegistry as any).updateLoadOrder()
-        } catch (error) {
+          ;(pluginRegistry as any).updateLoadOrder()
+        } catch (_error) {
           const plugins = (pluginRegistry as any).plugins as Map<string, any>
           ;(pluginRegistry as any).loadOrder = Array.from(plugins.keys())
         }
@@ -252,7 +256,7 @@ Examples:
       } else {
         await builder.build()
       }
-    }
+    },
   })
 
   // Create command
@@ -263,14 +267,14 @@ Examples:
     usage: 'flux create <project-name> [template]',
     examples: [
       'flux create my-app          # Create basic project',
-      'flux create my-app full     # Create full-featured project'
+      'flux create my-app full     # Create full-featured project',
     ],
     arguments: [
       {
         name: 'project-name',
         description: 'Name of the project to create',
         required: true,
-        type: 'string'
+        type: 'string',
       },
       {
         name: 'template',
@@ -278,29 +282,32 @@ Examples:
         required: false,
         type: 'string',
         default: 'basic',
-        choices: ['basic', 'full']
-      }
+        choices: ['basic', 'full'],
+      },
     ],
-    handler: async (args, options, context) => {
+    handler: async (args, _options, _context) => {
       const [projectName, template] = args
 
       if (!/^[a-zA-Z0-9-_]+$/.test(projectName)) {
-        console.error("❌ Project name can only contain letters, numbers, hyphens, and underscores")
+        console.error('❌ Project name can only contain letters, numbers, hyphens, and underscores')
         return
       }
 
       try {
         const creator = new ProjectCreator({
           name: projectName,
-          template: template as 'basic' | 'full' || 'basic'
+          template: (template as 'basic' | 'full') || 'basic',
         })
 
         await creator.create()
       } catch (error) {
-        console.error("❌ Failed to create project:", error instanceof Error ? error.message : String(error))
+        console.error(
+          '❌ Failed to create project:',
+          error instanceof Error ? error.message : String(error),
+        )
         throw error
       }
-    }
+    },
   })
 
   // Make:plugin command (shortcut for generate plugin)
@@ -313,15 +320,15 @@ Examples:
     examples: [
       'flux make:plugin my-plugin              # Create basic plugin',
       'flux make:plugin my-plugin --template full    # Create full plugin with server/client',
-      'flux make:plugin auth --template server       # Create server-only plugin'
+      'flux make:plugin auth --template server       # Create server-only plugin',
     ],
     arguments: [
       {
         name: 'name',
         description: 'Name of the plugin to create',
         required: true,
-        type: 'string'
-      }
+        type: 'string',
+      },
     ],
     options: [
       {
@@ -330,28 +337,28 @@ Examples:
         description: 'Plugin template to use',
         type: 'string',
         choices: ['basic', 'full', 'server', 'client'],
-        default: 'basic'
+        default: 'basic',
       },
       {
         name: 'description',
         short: 'd',
         description: 'Plugin description',
         type: 'string',
-        default: 'A FluxStack plugin'
+        default: 'A FluxStack plugin',
       },
       {
         name: 'force',
         short: 'f',
         description: 'Overwrite existing plugin',
         type: 'boolean',
-        default: false
-      }
+        default: false,
+      },
     ],
     handler: async (args, options, context) => {
       const [name] = args
 
       if (!/^[a-zA-Z0-9-_]+$/.test(name)) {
-        console.error("❌ Plugin name can only contain letters, numbers, hyphens, and underscores")
+        console.error('❌ Plugin name can only contain letters, numbers, hyphens, and underscores')
         return
       }
 
@@ -360,7 +367,7 @@ Examples:
       const pluginGenerator = generatorRegistry.get('plugin')
 
       if (!pluginGenerator) {
-        console.error("❌ Plugin generator not found")
+        console.error('❌ Plugin generator not found')
         return
       }
 
@@ -368,7 +375,7 @@ Examples:
         workingDir: context.workingDir,
         config: context.config,
         logger: context.logger,
-        utils: context.utils
+        utils: context.utils,
       }
 
       const generatorOptions = {
@@ -376,16 +383,19 @@ Examples:
         template: options.template,
         force: options.force,
         dryRun: false,
-        description: options.description
+        description: options.description,
       }
 
       try {
         await pluginGenerator.generate(generatorContext, generatorOptions)
       } catch (error) {
-        console.error("❌ Failed to create plugin:", error instanceof Error ? error.message : String(error))
+        console.error(
+          '❌ Failed to create plugin:',
+          error instanceof Error ? error.message : String(error),
+        )
         throw error
       }
-    }
+    },
   })
 
   // Frontend command (frontend-only development)
@@ -396,7 +406,7 @@ Examples:
     usage: 'flux frontend [options]',
     examples: [
       'flux frontend               # Start Vite dev server on port 5173',
-      'flux frontend --port 3000   # Start on custom port'
+      'flux frontend --port 3000   # Start on custom port',
     ],
     options: [
       {
@@ -404,20 +414,24 @@ Examples:
         short: 'p',
         description: 'Port for frontend server',
         type: 'number',
-        default: 5173
-      }
+        default: 5173,
+      },
     ],
-    handler: async (args, options, context) => {
-      console.log("🎨 FluxStack Frontend Development")
+    handler: async (_args, options, _context) => {
+      console.log('🎨 FluxStack Frontend Development')
       console.log(`🌐 Frontend: http://localhost:${options.port}`)
-      console.log("📦 Starting Vite dev server...")
+      console.log('📦 Starting Vite dev server...')
       console.log()
 
-      const { spawn } = await import("child_process")
-      const frontendProcess = spawn("vite", ["--config", "vite.config.ts", "--port", options.port.toString()], {
-        stdio: "inherit",
-        cwd: process.cwd()
-      })
+      const { spawn } = await import('node:child_process')
+      const frontendProcess = spawn(
+        'vite',
+        ['--config', 'vite.config.ts', '--port', options.port.toString()],
+        {
+          stdio: 'inherit',
+          cwd: process.cwd(),
+        },
+      )
 
       process.on('SIGINT', () => {
         frontendProcess.kill('SIGINT')
@@ -427,7 +441,7 @@ Examples:
       return new Promise((resolve) => {
         frontendProcess.on('exit', resolve)
       })
-    }
+    },
   })
 
   // Backend command (backend-only development)
@@ -438,7 +452,7 @@ Examples:
     usage: 'flux backend [options]',
     examples: [
       'flux backend                # Start backend on port 3001',
-      'flux backend --port 4000    # Start on custom port'
+      'flux backend --port 4000    # Start on custom port',
     ],
     options: [
       {
@@ -446,28 +460,28 @@ Examples:
         short: 'p',
         description: 'Port for backend server',
         type: 'number',
-        default: 3001
-      }
+        default: 3001,
+      },
     ],
-    handler: async (args, options, context) => {
-      console.log("⚡ FluxStack Backend Development")
+    handler: async (_args, options, _context) => {
+      console.log('⚡ FluxStack Backend Development')
       console.log(`🚀 API Server: http://localhost:${options.port}`)
-      console.log("📦 Starting backend with hot reload...")
+      console.log('📦 Starting backend with hot reload...')
       console.log()
 
       // Ensure backend-only.ts exists
-      const { ensureBackendEntry } = await import("../utils/regenerate-files")
+      const { ensureBackendEntry } = await import('../utils/regenerate-files')
       await ensureBackendEntry()
 
       // Start backend with Bun watch for hot reload
-      const { spawn } = await import("child_process")
-      const backendProcess = spawn("bun", ["--watch", "app/server/backend-only.ts"], {
-        stdio: "inherit",
+      const { spawn } = await import('node:child_process')
+      const backendProcess = spawn('bun', ['--watch', 'app/server/backend-only.ts'], {
+        stdio: 'inherit',
         cwd: process.cwd(),
         env: {
           ...process.env,
-          BACKEND_PORT: options.port.toString()
-        }
+          BACKEND_PORT: options.port.toString(),
+        },
       })
 
       // Handle process cleanup
@@ -479,7 +493,7 @@ Examples:
       return new Promise((resolve) => {
         backendProcess.on('exit', resolve)
       })
-    }
+    },
   })
 
   // Start command (production server)
@@ -488,14 +502,12 @@ Examples:
     description: 'Start production server',
     category: 'Production',
     usage: 'flux start',
-    examples: [
-      'flux start                  # Start production server from dist/'
-    ],
-    handler: async (args, options, context) => {
-      console.log("🚀 Starting FluxStack production server...")
-      const { join } = await import("path")
-      await import(join(process.cwd(), "dist", "index.js"))
-    }
+    examples: ['flux start                  # Start production server from dist/'],
+    handler: async (_args, _options, _context) => {
+      console.log('🚀 Starting FluxStack production server...')
+      const { join } = await import('node:path')
+      await import(join(process.cwd(), 'dist', 'index.js'))
+    },
   })
 
   // Build:frontend command (shortcut)
@@ -504,14 +516,12 @@ Examples:
     description: 'Build frontend only (shortcut for build --frontend-only)',
     category: 'Build',
     usage: 'flux build:frontend',
-    examples: [
-      'flux build:frontend         # Build only frontend'
-    ],
-    handler: async (args, options, context) => {
+    examples: ['flux build:frontend         # Build only frontend'],
+    handler: async (_args, _options, _context) => {
       const config = getConfigSync()
       const builder = new FluxStackBuilder(config)
       await builder.buildClient()
-    }
+    },
   })
 
   // Build:backend command (shortcut)
@@ -520,14 +530,12 @@ Examples:
     description: 'Build backend only (shortcut for build --backend-only)',
     category: 'Build',
     usage: 'flux build:backend',
-    examples: [
-      'flux build:backend          # Build only backend'
-    ],
-    handler: async (args, options, context) => {
+    examples: ['flux build:backend          # Build only backend'],
+    handler: async (_args, _options, _context) => {
       const config = getConfigSync()
       const builder = new FluxStackBuilder(config)
       await builder.buildServer()
-    }
+    },
   })
 
   // Build:exe command (compile to executable)
@@ -540,7 +548,7 @@ Examples:
       'flux build:exe                                    # Compile for current platform (auto-detected)',
       'flux build:exe --target bun-linux-x64             # Compile for specific target',
       'flux build:exe --name MyApp                       # Compile with custom name',
-      'flux build:exe --windows-hide-console             # Hide console window on Windows'
+      'flux build:exe --windows-hide-console             # Hide console window on Windows',
     ],
     options: [
       {
@@ -548,7 +556,7 @@ Examples:
         short: 'n',
         description: 'Name for the executable file',
         type: 'string',
-        default: 'CLauncher'
+        default: 'CLauncher',
       },
       {
         name: 'target',
@@ -562,47 +570,47 @@ Examples:
           'bun-linux-x64-baseline',
           'bun-linux-arm64',
           'bun-darwin-x64',
-          'bun-darwin-arm64'
-        ]
+          'bun-darwin-arm64',
+        ],
       },
       {
         name: 'windows-hide-console',
         description: 'Hide console window on Windows',
         type: 'boolean',
-        default: false
+        default: false,
       },
       {
         name: 'windows-icon',
         description: 'Path to .ico file for Windows executable',
-        type: 'string'
+        type: 'string',
       },
       {
         name: 'windows-title',
         description: 'Product name for Windows executable',
-        type: 'string'
+        type: 'string',
       },
       {
         name: 'windows-publisher',
         description: 'Company name for Windows executable',
-        type: 'string'
+        type: 'string',
       },
       {
         name: 'windows-version',
         description: 'Version string for Windows executable (e.g. 1.2.3.4)',
-        type: 'string'
+        type: 'string',
       },
       {
         name: 'windows-description',
         description: 'Description for Windows executable',
-        type: 'string'
+        type: 'string',
       },
       {
         name: 'windows-copyright',
         description: 'Copyright string for Windows executable',
-        type: 'string'
-      }
+        type: 'string',
+      },
     ],
-    handler: async (args, options, context) => {
+    handler: async (_args, options, _context) => {
       const config = getConfigSync()
       const builder = new FluxStackBuilder(config)
 
@@ -612,7 +620,8 @@ Examples:
       const currentYear = new Date().getFullYear()
 
       // Convert semver to Windows version format (1.0.0 -> 1.0.0.0)
-      const windowsVersion = options['windows-version'] ||
+      const windowsVersion =
+        options['windows-version'] ||
         (appVersion.split('.').length === 3 ? `${appVersion}.0` : appVersion)
 
       // Determine targets to build based on current platform
@@ -638,30 +647,36 @@ Examples:
         return [`bun-${platform}-${arch}`]
       }
 
-      const targets: string[] = options.target
-        ? [options.target]
-        : getDefaultTargets()
+      const targets: string[] = options.target ? [options.target] : getDefaultTargets()
 
-      const results: Array<{ target: string; success: boolean; outputPath?: string; error?: string }> = []
+      const results: Array<{
+        target: string
+        success: boolean
+        outputPath?: string
+        error?: string
+      }> = []
 
       for (const target of targets) {
         // Determine if this is a Windows target
         const isWindowsTarget = target.includes('windows')
 
         // Build executable options for this target
-        const executableOptions: import("../types/build").BundleOptions = {
+        const executableOptions: import('../types/build').BundleOptions = {
           target,
-          executable: isWindowsTarget ? {
-            windows: {
-              hideConsole: options['windows-hide-console'],
-              icon: options['windows-icon'],
-              title: options['windows-title'] || appName,
-              publisher: options['windows-publisher'] || appName,
-              version: windowsVersion,
-              description: options['windows-description'] || `${appName} Application`,
-              copyright: options['windows-copyright'] || `Copyright © ${currentYear} ${appName}`
-            }
-          } : {}
+          executable: isWindowsTarget
+            ? {
+                windows: {
+                  hideConsole: options['windows-hide-console'],
+                  icon: options['windows-icon'],
+                  title: options['windows-title'] || appName,
+                  publisher: options['windows-publisher'] || appName,
+                  version: windowsVersion,
+                  description: options['windows-description'] || `${appName} Application`,
+                  copyright:
+                    options['windows-copyright'] || `Copyright © ${currentYear} ${appName}`,
+                },
+              }
+            : {},
         }
 
         // Generate output name with target suffix
@@ -676,7 +691,7 @@ Examples:
           target,
           success: result.success,
           outputPath: result.outputPath,
-          error: result.error
+          error: result.error,
         })
 
         if (result.success) {
@@ -687,10 +702,10 @@ Examples:
       }
 
       // Summary
-      const successful = results.filter(r => r.success)
-      const failed = results.filter(r => !r.success)
+      const successful = results.filter((r) => r.success)
+      const failed = results.filter((r) => !r.success)
 
-      console.log('\n' + '═'.repeat(50))
+      console.log(`\n${'═'.repeat(50)}`)
       console.log('📊 Build Summary')
       console.log('═'.repeat(50))
 
@@ -709,7 +724,7 @@ Examples:
       }
 
       // Show Windows metadata if any Windows target was built
-      const hasWindowsTarget = targets.some(t => t.includes('windows'))
+      const hasWindowsTarget = targets.some((t) => t.includes('windows'))
       if (hasWindowsTarget && successful.length > 0) {
         console.log('\n📦 Windows executable metadata:')
         if (options['windows-hide-console']) console.log('   • Console window: hidden')
@@ -717,14 +732,18 @@ Examples:
         console.log(`   • Title: ${options['windows-title'] || appName}`)
         console.log(`   • Publisher: ${options['windows-publisher'] || appName}`)
         console.log(`   • Version: ${windowsVersion}`)
-        console.log(`   • Description: ${options['windows-description'] || `${appName} Application`}`)
-        console.log(`   • Copyright: ${options['windows-copyright'] || `Copyright © ${currentYear} ${appName}`}`)
+        console.log(
+          `   • Description: ${options['windows-description'] || `${appName} Application`}`,
+        )
+        console.log(
+          `   • Copyright: ${options['windows-copyright'] || `Copyright © ${currentYear} ${appName}`}`,
+        )
       }
 
       if (failed.length > 0) {
         process.exit(1)
       }
-    }
+    },
   })
 }
 
@@ -732,16 +751,16 @@ Examples:
 async function main() {
   // Register built-in commands
   await registerBuiltInCommands()
-  
+
   // Discover and register plugin commands
   await pluginDiscovery.discoverAndRegisterCommands()
-  
+
   // Handle special cases first
   if (!command || command === 'help' || command === '--help' || command === '-h') {
     await cliRegistry.execute('help', args)
     return
   }
-  
+
   // Check if it's a registered command (built-in or plugin)
   if (cliRegistry.has(command)) {
     const exitCode = await cliRegistry.execute(command, args)
@@ -757,7 +776,7 @@ async function main() {
 }
 
 // Run main CLI
-main().catch(error => {
+main().catch((error) => {
   console.error('❌ CLI Error:', error instanceof Error ? error.message : String(error))
   process.exit(1)
 })

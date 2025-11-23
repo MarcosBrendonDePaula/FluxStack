@@ -42,13 +42,13 @@ class EnvLoader {
 
     return () => {
       // Try Bun.env first (most reliable in Bun)
-      if (global['Bun']?.['env']) {
-        return global['Bun']['env']
+      if (global.Bun?.env) {
+        return global.Bun.env
       }
 
       // Fallback to process.env
-      if (global['process']?.['env']) {
-        return global['process']['env']
+      if (global.process?.env) {
+        return global.process.env
       }
 
       // Last resort: eval to bypass static analysis
@@ -85,11 +85,14 @@ class EnvLoader {
 
     if (typeof defaultValue === 'number') {
       const parsed = Number(value)
-      result = isNaN(parsed) ? defaultValue : parsed
+      result = Number.isNaN(parsed) ? defaultValue : parsed
     } else if (typeof defaultValue === 'boolean') {
       result = ['true', '1', 'yes', 'on'].includes(value.toLowerCase())
     } else if (Array.isArray(defaultValue)) {
-      result = value.split(',').map(v => v.trim()).filter(Boolean)
+      result = value
+        .split(',')
+        .map((v) => v.trim())
+        .filter(Boolean)
     } else if (typeof defaultValue === 'object' && defaultValue !== null) {
       try {
         result = JSON.parse(value)
@@ -131,11 +134,11 @@ class EnvLoader {
    * Require specific environment variables (throws if missing)
    */
   require(keys: string[]): void {
-    const missing = keys.filter(key => !this.has(key))
+    const missing = keys.filter((key) => !this.has(key))
     if (missing.length > 0) {
       throw new Error(
         `Missing required environment variables: ${missing.join(', ')}\n` +
-        `Please set them in your .env file or environment.`
+          `Please set them in your .env file or environment.`,
       )
     }
   }
@@ -147,8 +150,7 @@ class EnvLoader {
     const value = this.get(key, '')
     if (value && !validValues.includes(value)) {
       throw new Error(
-        `Invalid value for ${key}: "${value}"\n` +
-        `Valid values are: ${validValues.join(', ')}`
+        `Invalid value for ${key}: "${value}"\n` + `Valid values are: ${validValues.join(', ')}`,
       )
     }
   }
@@ -200,56 +202,120 @@ export const env = {
   clearCache: (): void => loader.clearCache(),
 
   // Common environment variables with smart defaults
-  get NODE_ENV() { return this.get('NODE_ENV', 'development') as 'development' | 'production' | 'test' },
-  get PORT() { return this.get('PORT', 3000) },
-  get HOST() { return this.get('HOST', 'localhost') },
-  get DEBUG() { return this.get('DEBUG', false) },
-  get LOG_LEVEL() { return this.get('LOG_LEVEL', 'info') as 'debug' | 'info' | 'warn' | 'error' },
-  get LOG_FORMAT() { return this.get('LOG_FORMAT', 'pretty') as 'json' | 'pretty' },
+  get NODE_ENV() {
+    return this.get('NODE_ENV', 'development') as 'development' | 'production' | 'test'
+  },
+  get PORT() {
+    return this.get('PORT', 3000)
+  },
+  get HOST() {
+    return this.get('HOST', 'localhost')
+  },
+  get DEBUG() {
+    return this.get('DEBUG', false)
+  },
+  get LOG_LEVEL() {
+    return this.get('LOG_LEVEL', 'info') as 'debug' | 'info' | 'warn' | 'error'
+  },
+  get LOG_FORMAT() {
+    return this.get('LOG_FORMAT', 'pretty') as 'json' | 'pretty'
+  },
 
   // API
-  get API_PREFIX() { return this.get('API_PREFIX', '/api') },
-  get VITE_PORT() { return this.get('VITE_PORT', 5173) },
+  get API_PREFIX() {
+    return this.get('API_PREFIX', '/api')
+  },
+  get VITE_PORT() {
+    return this.get('VITE_PORT', 5173)
+  },
 
   // CORS
-  get CORS_ORIGINS() { return this.get('CORS_ORIGINS', ['*']) },
-  get CORS_METHODS() { return this.get('CORS_METHODS', ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']) },
-  get CORS_HEADERS() { return this.get('CORS_HEADERS', ['Content-Type', 'Authorization']) },
-  get CORS_CREDENTIALS() { return this.get('CORS_CREDENTIALS', false) },
-  get CORS_MAX_AGE() { return this.get('CORS_MAX_AGE', 86400) },
+  get CORS_ORIGINS() {
+    return this.get('CORS_ORIGINS', ['*'])
+  },
+  get CORS_METHODS() {
+    return this.get('CORS_METHODS', ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
+  },
+  get CORS_HEADERS() {
+    return this.get('CORS_HEADERS', ['Content-Type', 'Authorization'])
+  },
+  get CORS_CREDENTIALS() {
+    return this.get('CORS_CREDENTIALS', false)
+  },
+  get CORS_MAX_AGE() {
+    return this.get('CORS_MAX_AGE', 86400)
+  },
 
   // App
-  get FLUXSTACK_APP_NAME() { return this.get('FLUXSTACK_APP_NAME', 'FluxStack') },
-  get FLUXSTACK_APP_VERSION() { 
+  get FLUXSTACK_APP_NAME() {
+    return this.get('FLUXSTACK_APP_NAME', 'FluxStack')
+  },
+  get FLUXSTACK_APP_VERSION() {
     const { FLUXSTACK_VERSION } = require('./version')
-    return this.get('FLUXSTACK_APP_VERSION', FLUXSTACK_VERSION) 
+    return this.get('FLUXSTACK_APP_VERSION', FLUXSTACK_VERSION)
   },
 
   // Features
-  get ENABLE_MONITORING() { return this.get('ENABLE_MONITORING', false) },
-  get ENABLE_SWAGGER() { return this.get('ENABLE_SWAGGER', true) },
-  get ENABLE_METRICS() { return this.get('ENABLE_METRICS', false) },
+  get ENABLE_MONITORING() {
+    return this.get('ENABLE_MONITORING', false)
+  },
+  get ENABLE_SWAGGER() {
+    return this.get('ENABLE_SWAGGER', true)
+  },
+  get ENABLE_METRICS() {
+    return this.get('ENABLE_METRICS', false)
+  },
 
   // Database
-  get DATABASE_URL() { return this.get('DATABASE_URL', '') },
-  get DB_HOST() { return this.get('DB_HOST', 'localhost') },
-  get DB_PORT() { return this.get('DB_PORT', 5432) },
-  get DB_NAME() { return this.get('DB_NAME', '') },
-  get DB_USER() { return this.get('DB_USER', '') },
-  get DB_PASSWORD() { return this.get('DB_PASSWORD', '') },
-  get DB_SSL() { return this.get('DB_SSL', false) },
+  get DATABASE_URL() {
+    return this.get('DATABASE_URL', '')
+  },
+  get DB_HOST() {
+    return this.get('DB_HOST', 'localhost')
+  },
+  get DB_PORT() {
+    return this.get('DB_PORT', 5432)
+  },
+  get DB_NAME() {
+    return this.get('DB_NAME', '')
+  },
+  get DB_USER() {
+    return this.get('DB_USER', '')
+  },
+  get DB_PASSWORD() {
+    return this.get('DB_PASSWORD', '')
+  },
+  get DB_SSL() {
+    return this.get('DB_SSL', false)
+  },
 
   // Auth
-  get JWT_SECRET() { return this.get('JWT_SECRET', '') },
-  get JWT_EXPIRES_IN() { return this.get('JWT_EXPIRES_IN', '24h') },
-  get JWT_ALGORITHM() { return this.get('JWT_ALGORITHM', 'HS256') },
+  get JWT_SECRET() {
+    return this.get('JWT_SECRET', '')
+  },
+  get JWT_EXPIRES_IN() {
+    return this.get('JWT_EXPIRES_IN', '24h')
+  },
+  get JWT_ALGORITHM() {
+    return this.get('JWT_ALGORITHM', 'HS256')
+  },
 
   // Email
-  get SMTP_HOST() { return this.get('SMTP_HOST', '') },
-  get SMTP_PORT() { return this.get('SMTP_PORT', 587) },
-  get SMTP_USER() { return this.get('SMTP_USER', '') },
-  get SMTP_PASSWORD() { return this.get('SMTP_PASSWORD', '') },
-  get SMTP_SECURE() { return this.get('SMTP_SECURE', false) },
+  get SMTP_HOST() {
+    return this.get('SMTP_HOST', '')
+  },
+  get SMTP_PORT() {
+    return this.get('SMTP_PORT', 587)
+  },
+  get SMTP_USER() {
+    return this.get('SMTP_USER', '')
+  },
+  get SMTP_PASSWORD() {
+    return this.get('SMTP_PASSWORD', '')
+  },
+  get SMTP_SECURE() {
+    return this.get('SMTP_SECURE', false)
+  },
 }
 
 /**
@@ -273,7 +339,7 @@ export const helpers = {
     }
 
     return null
-  }
+  },
 }
 
 /**
@@ -284,11 +350,9 @@ export const helpers = {
  */
 export function createNamespace(prefix: string) {
   return {
-    get: <T>(key: string, defaultValue?: T): T =>
-      env.get(`${prefix}${key}`, defaultValue),
+    get: <T>(key: string, defaultValue?: T): T => env.get(`${prefix}${key}`, defaultValue),
 
-    has: (key: string): boolean =>
-      env.has(`${prefix}${key}`),
+    has: (key: string): boolean => env.has(`${prefix}${key}`),
 
     all: (): Record<string, string> => {
       const allEnv = env.all()
@@ -301,7 +365,7 @@ export function createNamespace(prefix: string) {
       }
 
       return namespaced
-    }
+    },
   }
 }
 

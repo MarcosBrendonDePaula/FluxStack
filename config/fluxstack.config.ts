@@ -4,8 +4,8 @@
  * @deprecated Use the configuration from the root fluxstack.config.ts instead
  */
 
-import { getConfigSync, createLegacyConfig } from '@/core/config'
 import type { FluxStackConfig } from '@/core/config'
+import { createLegacyConfig, getConfigSync } from '@/core/config'
 
 // Load the new configuration
 const newConfig = getConfigSync()
@@ -38,9 +38,9 @@ export const envConfig = {
 if (process.env.NODE_ENV === 'development') {
   console.warn(
     '⚠️  DEPRECATED: Importing from config/fluxstack.config.ts is deprecated.\n' +
-    '   Please update your imports to use the new configuration system:\n' +
-    '   import { getConfig } from "./core/config"\n' +
-    '   or import config from "./fluxstack.config.ts"'
+      '   Please update your imports to use the new configuration system:\n' +
+      '   import { getConfig } from "./core/config"\n' +
+      '   or import config from "./fluxstack.config.ts"',
   )
 }
 

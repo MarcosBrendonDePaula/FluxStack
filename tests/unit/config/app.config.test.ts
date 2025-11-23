@@ -3,7 +3,7 @@
  * Tests for config/app.config.ts
  */
 
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { appConfig } from '@/config/app.config'
 
 describe('App Configuration', () => {

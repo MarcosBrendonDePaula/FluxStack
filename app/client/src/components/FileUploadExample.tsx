@@ -1,6 +1,6 @@
 // 📤 File Upload Example - Demonstrates chunked file upload with Live Components
-import { useState, useRef } from 'react'
-import { useTypedLiveComponent, useChunkedUpload, useLiveComponents } from '@/core/client'
+import { useRef, useState } from 'react'
+import { useChunkedUpload, useLiveComponents, useTypedLiveComponent } from '@/core/client'
 
 // Import component type DIRECTLY from backend - full type inference!
 import type { LiveFileUploadComponent } from '@/server/live/LiveFileUploadComponent'
@@ -13,15 +13,13 @@ export function FileUploadExample() {
   const { sendMessageAndWait } = useLiveComponents()
 
   // Setup Live Component with full type inference
-  const {
-    state,
-    call,
-    componentId,
-    connected
-  } = useTypedLiveComponent<LiveFileUploadComponent>('LiveFileUpload', {
-    uploadedFiles: [],
-    maxFiles: 10
-  })
+  const { state, call, componentId, connected } = useTypedLiveComponent<LiveFileUploadComponent>(
+    'LiveFileUpload',
+    {
+      uploadedFiles: [],
+      maxFiles: 10,
+    },
+  )
 
   // Setup Chunked Upload Hook with Adaptive Chunking
   const {
@@ -32,7 +30,7 @@ export function FileUploadExample() {
     cancelUpload,
     reset: resetUpload,
     bytesUploaded,
-    totalBytes
+    totalBytes,
   } = useChunkedUpload(componentId || '', {
     chunkSize: 64 * 1024, // 64KB initial chunk size
     maxFileSize: 500 * 1024 * 1024, // 500MB max (aceita qualquer arquivo)
@@ -42,12 +40,12 @@ export function FileUploadExample() {
     // Enable Adaptive Chunking for optimal upload speed
     adaptiveChunking: true,
     adaptiveConfig: {
-      minChunkSize: 16 * 1024,   // 16KB minimum
-      maxChunkSize: 512 * 1024,  // 512KB maximum (safer for web)
+      minChunkSize: 16 * 1024, // 16KB minimum
+      maxChunkSize: 512 * 1024, // 512KB maximum (safer for web)
       initialChunkSize: 64 * 1024, // 64KB start
-      targetLatency: 200,        // Target 200ms per chunk
-      adjustmentFactor: 1.5,     // Moderate adjustment
-      measurementWindow: 3       // Measure last 3 chunks
+      targetLatency: 200, // Target 200ms per chunk
+      adjustmentFactor: 1.5, // Moderate adjustment
+      measurementWindow: 3, // Measure last 3 chunks
     },
 
     onProgress: (progress, uploaded, total) => {
@@ -61,7 +59,7 @@ export function FileUploadExample() {
       if (selectedFile && response.fileUrl) {
         await call('onFileUploaded', {
           filename: selectedFile.name,
-          fileUrl: response.fileUrl
+          fileUrl: response.fileUrl,
         })
       }
 
@@ -75,7 +73,7 @@ export function FileUploadExample() {
 
     onError: (error) => {
       console.error('❌ Upload error:', error)
-    }
+    },
   })
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -104,7 +102,7 @@ export function FileUploadExample() {
     const k = 1024
     const sizes = ['Bytes', 'KB', 'MB', 'GB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
+    return `${Math.round((bytes / k ** i) * 100) / 100} ${sizes[i]}`
   }
 
   const getFileIcon = (filename: string): string => {
@@ -137,7 +135,7 @@ export function FileUploadExample() {
       '.json': '📋',
       '.xml': '📋',
       '.txt': '📃',
-      '.md': '📰'
+      '.md': '📰',
     }
     return iconMap[ext] || '📎'
   }
@@ -162,9 +160,7 @@ export function FileUploadExample() {
       <div className="bg-white rounded-lg shadow-lg">
         {/* Header */}
         <div className="p-6 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-900">
-            📤 Universal File Upload
-          </h2>
+          <h2 className="text-2xl font-bold text-gray-900">📤 Universal File Upload</h2>
           <p className="mt-2 text-gray-600">
             Upload any type of file with real-time progress tracking and adaptive chunking
           </p>
@@ -175,10 +171,11 @@ export function FileUploadExample() {
           <div className="space-y-4">
             {/* File Input */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="file-upload" className="block text-sm font-medium text-gray-700 mb-2">
                 Select Any File
               </label>
               <input
+                id="file-upload"
                 ref={fileInputRef}
                 type="file"
                 onChange={handleFileSelect}
@@ -194,7 +191,8 @@ export function FileUploadExample() {
             {selectedFile && !uploading && (
               <div className="p-4 bg-gray-50 rounded-lg">
                 <p className="text-sm text-gray-700">
-                  <strong>Selected:</strong> {getFileIcon(selectedFile.name)} {selectedFile.name} ({formatBytes(selectedFile.size)})
+                  <strong>Selected:</strong> {getFileIcon(selectedFile.name)} {selectedFile.name} (
+                  {formatBytes(selectedFile.size)})
                 </p>
               </div>
             )}
@@ -228,6 +226,7 @@ export function FileUploadExample() {
             {/* Action Buttons */}
             <div className="flex gap-2">
               <button
+                type="button"
                 onClick={handleUpload}
                 disabled={!selectedFile || uploading || remainingSlots === 0}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
@@ -237,6 +236,7 @@ export function FileUploadExample() {
 
               {uploading && (
                 <button
+                  type="button"
                   onClick={cancelUpload}
                   className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 font-medium"
                 >
@@ -246,6 +246,7 @@ export function FileUploadExample() {
 
               {state.uploadedFiles.length > 0 && (
                 <button
+                  type="button"
                   onClick={handleClearAll}
                   disabled={uploading}
                   className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 disabled:opacity-50 font-medium ml-auto"
@@ -321,11 +322,17 @@ export function FileUploadExample() {
 
                   {/* Remove Button */}
                   <button
+                    type="button"
                     onClick={() => handleRemoveFile(file.id)}
                     className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors shadow-lg"
                     title="Remove file"
                   >
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <svg
+                      className="w-4 h-4"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                      aria-hidden="true"
+                    >
                       <path
                         fillRule="evenodd"
                         d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
@@ -344,14 +351,30 @@ export function FileUploadExample() {
       <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
         <h4 className="font-semibold text-gray-900 mb-2">📋 Technical Details</h4>
         <ul className="text-sm text-gray-600 space-y-1">
-          <li>✅ <strong>Adaptive Chunking:</strong> Enabled (16KB - 512KB)</li>
-          <li>✅ <strong>Initial Chunk Size:</strong> 64KB</li>
-          <li>✅ <strong>Max File Size:</strong> 500MB</li>
-          <li>✅ <strong>Allowed Types:</strong> All file types supported</li>
-          <li>✅ <strong>Real-time Progress:</strong> Shows bytes uploaded and percentage</li>
-          <li>✅ <strong>State Sync:</strong> Uploaded files synced via Live Component</li>
-          <li>✅ <strong>Component ID:</strong> {componentId || 'Not connected'}</li>
-          <li>🚀 <strong>Optimization:</strong> Chunk size adjusts based on connection speed</li>
+          <li>
+            ✅ <strong>Adaptive Chunking:</strong> Enabled (16KB - 512KB)
+          </li>
+          <li>
+            ✅ <strong>Initial Chunk Size:</strong> 64KB
+          </li>
+          <li>
+            ✅ <strong>Max File Size:</strong> 500MB
+          </li>
+          <li>
+            ✅ <strong>Allowed Types:</strong> All file types supported
+          </li>
+          <li>
+            ✅ <strong>Real-time Progress:</strong> Shows bytes uploaded and percentage
+          </li>
+          <li>
+            ✅ <strong>State Sync:</strong> Uploaded files synced via Live Component
+          </li>
+          <li>
+            ✅ <strong>Component ID:</strong> {componentId || 'Not connected'}
+          </li>
+          <li>
+            🚀 <strong>Optimization:</strong> Chunk size adjusts based on connection speed
+          </li>
         </ul>
       </div>
     </div>

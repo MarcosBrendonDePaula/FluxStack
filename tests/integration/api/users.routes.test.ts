@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest'
 import { Elysia } from 'elysia'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { usersRoutes } from '@/app/server/routes/users.routes'
 
 describe('Users API Routes', () => {
@@ -12,11 +12,10 @@ describe('Users API Routes', () => {
 
   describe('GET /users', () => {
     it('should return users list', async () => {
-      const response = await app
-        .handle(new Request('http://localhost/users'))
-        
+      const response = await app.handle(new Request('http://localhost/users'))
+
       expect(response.status).toBe(200)
-      
+
       const data = await response.json()
       expect(data).toBeDefined()
       expect(data.users).toBeDefined()
@@ -24,11 +23,10 @@ describe('Users API Routes', () => {
     })
 
     it('should return users with correct structure', async () => {
-      const response = await app
-        .handle(new Request('http://localhost/users'))
-        
+      const response = await app.handle(new Request('http://localhost/users'))
+
       const data = await response.json()
-      
+
       if (data.users.length > 0) {
         const user = data.users[0]
         expect(user).toHaveProperty('id')
@@ -42,18 +40,16 @@ describe('Users API Routes', () => {
   describe('GET /users/:id', () => {
     it('should return user by ID', async () => {
       // First get all users to find a valid ID
-      const usersResponse = await app
-        .handle(new Request('http://localhost/users'))
+      const usersResponse = await app.handle(new Request('http://localhost/users'))
       const usersData = await usersResponse.json()
-      
+
       if (usersData.users.length > 0) {
         const userId = usersData.users[0].id
-        
-        const response = await app
-          .handle(new Request(`http://localhost/users/${userId}`))
-          
+
+        const response = await app.handle(new Request(`http://localhost/users/${userId}`))
+
         expect(response.status).toBe(200)
-        
+
         const data = await response.json()
         expect(data.user).toBeDefined()
         expect(data.user.id).toBe(userId)
@@ -61,19 +57,17 @@ describe('Users API Routes', () => {
     })
 
     it('should return error for non-existent user', async () => {
-      const response = await app
-        .handle(new Request('http://localhost/users/99999'))
-        
+      const response = await app.handle(new Request('http://localhost/users/99999'))
+
       expect(response.status).toBe(404) // Not found
-      
+
       const data = await response.json()
       expect(data.error).toBe('Usuário não encontrado')
     })
 
     it('should validate ID parameter', async () => {
-      const response = await app
-        .handle(new Request('http://localhost/users/invalid-id'))
-        
+      const response = await app.handle(new Request('http://localhost/users/invalid-id'))
+
       // Should handle invalid ID gracefully
       expect(response.status).toBeGreaterThanOrEqual(200)
     })
@@ -83,18 +77,19 @@ describe('Users API Routes', () => {
     it('should create new user with valid data', async () => {
       const userData = {
         name: 'Integration Test User',
-        email: 'integration@test.com'
+        email: 'integration@test.com',
       }
 
-      const response = await app
-        .handle(new Request('http://localhost/users', {
+      const response = await app.handle(
+        new Request('http://localhost/users', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(userData)
-        }))
-        
+          body: JSON.stringify(userData),
+        }),
+      )
+
       expect(response.status).toBe(200)
-      
+
       const data = await response.json()
       expect(data.success).toBe(true)
       expect(data.user).toBeDefined()
@@ -106,18 +101,19 @@ describe('Users API Routes', () => {
     it('should reject user with invalid data', async () => {
       const invalidData = {
         name: 'A', // Too short
-        email: 'invalid-email' // Invalid format
+        email: 'invalid-email', // Invalid format
       }
 
-      const response = await app
-        .handle(new Request('http://localhost/users', {
+      const response = await app.handle(
+        new Request('http://localhost/users', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(invalidData)
-        }))
-        
+          body: JSON.stringify(invalidData),
+        }),
+      )
+
       expect(response.status).toBe(400)
-      
+
       const data = await response.json()
       expect(data.success).toBe(false)
       expect(data.error).toBeDefined()
@@ -125,16 +121,17 @@ describe('Users API Routes', () => {
 
     it('should reject user with missing fields', async () => {
       const incompleteData = {
-        name: 'Test User'
+        name: 'Test User',
         // Missing email
       }
 
-      const response = await app
-        .handle(new Request('http://localhost/users', {
+      const response = await app.handle(
+        new Request('http://localhost/users', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(incompleteData)
-        }))
+          body: JSON.stringify(incompleteData),
+        }),
+      )
 
       expect(response.status).toBe(400)
     })
@@ -142,27 +139,29 @@ describe('Users API Routes', () => {
     it('should prevent duplicate emails', async () => {
       const userData = {
         name: 'Duplicate Test User',
-        email: 'duplicate@integration.test'
+        email: 'duplicate@integration.test',
       }
 
       // Create first user
-      const firstResponse = await app
-        .handle(new Request('http://localhost/users', {
+      const firstResponse = await app.handle(
+        new Request('http://localhost/users', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(userData)
-        }))
-        
+          body: JSON.stringify(userData),
+        }),
+      )
+
       expect(firstResponse.status).toBe(200)
 
       // Try to create user with same email
-      const secondResponse = await app
-        .handle(new Request('http://localhost/users', {
+      const secondResponse = await app.handle(
+        new Request('http://localhost/users', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(userData)
-        }))
-        
+          body: JSON.stringify(userData),
+        }),
+      )
+
       const data = await secondResponse.json()
       expect(data.success).toBe(false)
       expect(data.message).toBe('Email já está em uso')
@@ -174,38 +173,41 @@ describe('Users API Routes', () => {
       // First create a user to delete
       const userData = {
         name: 'User to Delete',
-        email: 'delete@test.com'
+        email: 'delete@test.com',
       }
 
-      const createResponse = await app
-        .handle(new Request('http://localhost/users', {
+      const createResponse = await app.handle(
+        new Request('http://localhost/users', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(userData)
-        }))
+          body: JSON.stringify(userData),
+        }),
+      )
 
       const createData = await createResponse.json()
       const userId = createData.user.id
 
       // Now delete the user
-      const deleteResponse = await app
-        .handle(new Request(`http://localhost/users/${userId}`, {
-          method: 'DELETE'
-        }))
-        
+      const deleteResponse = await app.handle(
+        new Request(`http://localhost/users/${userId}`, {
+          method: 'DELETE',
+        }),
+      )
+
       expect(deleteResponse.status).toBe(200)
-      
+
       const deleteData = await deleteResponse.json()
       expect(deleteData.success).toBe(true)
       expect(deleteData.message).toBe('Usuário deletado com sucesso')
     })
 
     it('should return error when deleting non-existent user', async () => {
-      const response = await app
-        .handle(new Request('http://localhost/users/99999', {
-          method: 'DELETE'
-        }))
-        
+      const response = await app.handle(
+        new Request('http://localhost/users/99999', {
+          method: 'DELETE',
+        }),
+      )
+
       const data = await response.json()
       expect(data.success).toBe(false)
       expect(data.message).toBe('Usuário não encontrado')

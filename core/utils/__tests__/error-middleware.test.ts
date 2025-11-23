@@ -2,27 +2,25 @@
  * Tests for Error Middleware
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { Elysia } from 'elysia'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
-  errorMiddleware,
   correlationIdMiddleware,
+  errorMiddleware,
+  fullErrorHandlingMiddleware,
   requestContextMiddleware,
-  fullErrorHandlingMiddleware
 } from '../errors/middleware'
-import { ValidationError, InternalServerError } from '../errors'
 
 // Mock logger
 const mockLogger = {
   error: vi.fn(),
   warn: vi.fn(),
   info: vi.fn(),
-  debug: vi.fn()
+  debug: vi.fn(),
 }
 
 // Mock metrics collector
 const mockMetricsCollector = {
-  recordError: vi.fn()
+  recordError: vi.fn(),
 }
 
 describe('Error Middleware', () => {
@@ -34,9 +32,9 @@ describe('Error Middleware', () => {
     it('should create middleware without errors', () => {
       const middleware = errorMiddleware({
         logger: mockLogger as any,
-        isDevelopment: false
+        isDevelopment: false,
       })
-      
+
       expect(middleware).toBeDefined()
       expect(middleware.config.name).toBe('error-handler')
     })
@@ -47,17 +45,17 @@ describe('Error Middleware', () => {
         isDevelopment: true,
         metricsCollector: mockMetricsCollector,
         customErrorMessages: {
-          'VALIDATION_ERROR': 'Custom message'
-        }
+          VALIDATION_ERROR: 'Custom message',
+        },
       })
-      
+
       expect(middleware).toBeDefined()
       expect(middleware.config.name).toBe('error-handler')
     })
 
     it('should create middleware with default options', () => {
       const middleware = errorMiddleware()
-      
+
       expect(middleware).toBeDefined()
       expect(middleware.config.name).toBe('error-handler')
     })
@@ -66,7 +64,7 @@ describe('Error Middleware', () => {
   describe('correlationIdMiddleware', () => {
     it('should create correlation ID middleware', () => {
       const middleware = correlationIdMiddleware()
-      
+
       expect(middleware).toBeDefined()
       expect(middleware.config.name).toBe('correlation-id')
     })
@@ -75,7 +73,7 @@ describe('Error Middleware', () => {
   describe('requestContextMiddleware', () => {
     it('should create request context middleware', () => {
       const middleware = requestContextMiddleware()
-      
+
       expect(middleware).toBeDefined()
       expect(middleware.config.name).toBe('request-context')
     })
@@ -85,16 +83,16 @@ describe('Error Middleware', () => {
     it('should create full error handling middleware', () => {
       const middleware = fullErrorHandlingMiddleware({
         logger: mockLogger as any,
-        isDevelopment: false
+        isDevelopment: false,
       })
-      
+
       expect(middleware).toBeDefined()
       expect(middleware.config.name).toBe('full-error-handling')
     })
 
     it('should create full error handling middleware with default options', () => {
       const middleware = fullErrorHandlingMiddleware()
-      
+
       expect(middleware).toBeDefined()
       expect(middleware.config.name).toBe('full-error-handling')
     })
@@ -112,10 +110,10 @@ describe('Error Middleware', () => {
         enableCorrelationId: true,
         sanitizeErrors: true,
         customErrorMessages: {
-          'VALIDATION_ERROR': 'Custom message'
-        }
+          VALIDATION_ERROR: 'Custom message',
+        },
       })
-      
+
       expect(middleware).toBeDefined()
     })
   })

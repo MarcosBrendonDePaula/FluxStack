@@ -88,13 +88,9 @@ export interface MiddlewareContext {
   state: Record<string, any>
 }
 
-export interface RouteHandler {
-  (context: RequestContext): Promise<any> | any
-}
+export type RouteHandler = (context: RequestContext) => Promise<any> | any
 
-export interface MiddlewareHandler {
-  (context: MiddlewareContext): Promise<void> | void
-}
+export type MiddlewareHandler = (context: MiddlewareContext) => Promise<void> | void
 
 export interface ApiDocumentation {
   title: string

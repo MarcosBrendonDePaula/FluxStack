@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
-import { describe, it, expect } from 'vitest'
+
 import { render, screen } from '@testing-library/react'
-import { getErrorMessage, APIException } from '@/app/client/src/lib/eden-api'
+import { describe, expect, it } from 'vitest'
+import { APIException, getErrorMessage } from '@/app/client/src/lib/eden-api'
 
 // Simple component test without full App complexity
 function SimpleHeader({ title }: { title: string }) {
@@ -16,7 +17,7 @@ describe.skip('Simple App Components', () => {
   describe('Header Component', () => {
     it('should render header with title', () => {
       render(<SimpleHeader title="🔥 FluxStack v1.4.0" />)
-      
+
       expect(screen.getByText('🔥 FluxStack v1.4.0')).toBeInTheDocument()
     })
   })
@@ -26,7 +27,7 @@ describe.skip('Simple App Components', () => {
       const apiError = new APIException({
         message: 'Test error',
         status: 400,
-        code: 'TEST_ERROR'
+        code: 'TEST_ERROR',
       })
 
       const message = getErrorMessage(apiError)
@@ -36,7 +37,7 @@ describe.skip('Simple App Components', () => {
     it('should handle different status codes', () => {
       const unauthorizedError = new APIException({
         message: 'Unauthorized',
-        status: 401
+        status: 401,
       })
 
       const message = getErrorMessage(unauthorizedError)

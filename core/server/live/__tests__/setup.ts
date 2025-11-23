@@ -1,6 +1,6 @@
 // 🧪 Test Setup Configuration
 
-import { beforeAll, afterAll, beforeEach, afterEach } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach } from 'vitest'
 
 // Global test setup
 beforeAll(() => {
@@ -47,33 +47,33 @@ export const createMockWebSocket = () => ({
     components: new Map(),
     subscriptions: new Set(),
     userId: 'test-user',
-    connectionId: 'test-connection'
-  }
+    connectionId: 'test-connection',
+  },
 })
 
 export const createMockComponent = (initialState: any = {}) => {
   return class MockComponent {
     public id: string
     public state: any
-    
-    constructor(state: any, ws: any) {
+
+    constructor(state: any, _ws: any) {
       this.id = `mock-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
       this.state = { ...initialState, ...state }
     }
-    
+
     setState(updates: any) {
       this.state = { ...this.state, ...updates }
     }
-    
+
     getSerializableState() {
       return this.state
     }
-    
+
     destroy() {
       // Mock cleanup
     }
-    
-    emit(type: string, payload: any) {
+
+    emit(_type: string, _payload: any) {
       // Mock emit
     }
   }
@@ -87,7 +87,7 @@ export const generateTestUpload = (overrides: any = {}) => ({
   fileType: 'image/jpeg',
   fileSize: 1024 * 1024, // 1MB
   chunkSize: 64 * 1024, // 64KB
-  ...overrides
+  ...overrides,
 })
 
 export const generateTestChunk = (uploadId: string, chunkIndex: number, totalChunks: number) => ({
@@ -96,7 +96,7 @@ export const generateTestChunk = (uploadId: string, chunkIndex: number, totalChu
   uploadId,
   chunkIndex,
   totalChunks,
-  data: Buffer.from(`chunk-${chunkIndex}-data`).toString('base64')
+  data: Buffer.from(`chunk-${chunkIndex}-data`).toString('base64'),
 })
 
 // Performance test helpers
@@ -106,14 +106,14 @@ export const measureExecutionTime = async (fn: () => Promise<any>) => {
   return Date.now() - start
 }
 
-export const createPerformanceTestData = (componentId: string) => ({
+export const createPerformanceTestData = (_componentId: string) => ({
   renderTimes: [10, 20, 30, 40, 50],
   actionTimes: [100, 200, 150, 300, 250],
   memoryUsages: [10 * 1024 * 1024, 15 * 1024 * 1024, 12 * 1024 * 1024],
   networkActivity: [
     { type: 'sent' as const, bytes: 1024, latency: 50 },
-    { type: 'received' as const, bytes: 2048, latency: 75 }
-  ]
+    { type: 'received' as const, bytes: 2048, latency: 75 },
+  ],
 })
 
 // State signature test helpers
@@ -125,18 +125,22 @@ export const createTestState = (size: 'small' | 'medium' | 'large' = 'small') =>
       return {
         count: 100,
         items: Array.from({ length: 50 }, (_, i) => ({ id: i, value: `item-${i}` })),
-        metadata: { created: Date.now(), version: 1 }
+        metadata: { created: Date.now(), version: 1 },
       }
     case 'large':
       return {
         count: 1000,
         data: 'x'.repeat(2000),
-        items: Array.from({ length: 200 }, (_, i) => ({ 
-          id: i, 
+        items: Array.from({ length: 200 }, (_, i) => ({
+          id: i,
           value: `item-${i}`,
-          description: `This is a longer description for item ${i}`.repeat(3)
+          description: `This is a longer description for item ${i}`.repeat(3),
         })),
-        metadata: { created: Date.now(), version: 1, tags: Array.from({ length: 20 }, (_, i) => `tag-${i}`) }
+        metadata: {
+          created: Date.now(),
+          version: 1,
+          tags: Array.from({ length: 20 }, (_, i) => `tag-${i}`),
+        },
       }
   }
 }
@@ -148,7 +152,7 @@ export const createTestConnections = (count: number) => {
     connections.push({
       id: `connection-${i}`,
       ws: createMockWebSocket(),
-      poolId: i % 2 === 0 ? 'pool-a' : 'pool-b'
+      poolId: i % 2 === 0 ? 'pool-a' : 'pool-b',
     })
   }
   return connections
@@ -168,7 +172,7 @@ export const simulateFileSystemError = () => {
 }
 
 // Async test helpers
-export const waitFor = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+export const waitFor = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export const waitForCondition = async (condition: () => boolean, timeout: number = 5000) => {
   const start = Date.now()

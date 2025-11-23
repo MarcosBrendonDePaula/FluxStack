@@ -44,9 +44,7 @@ export interface MiddlewareOptions<TContext = any> {
  * app.use(myAuth)
  * ```
  */
-export function createMiddleware<TContext = any>(
-  options: MiddlewareOptions<TContext>
-) {
+export function createMiddleware<TContext = any>(options: MiddlewareOptions<TContext>) {
   const { name, handler, nonBlocking = false } = options
 
   if (nonBlocking) {
@@ -102,13 +100,12 @@ export function createGuard<TContext = any>(options: {
   check: (context: TContext) => boolean | Promise<boolean>
   onFail: (set: any, context: TContext) => any
 }) {
-  return new Elysia({ name: options.name })
-    .onBeforeHandle(async (ctx) => {
-      const passed = await options.check(ctx as TContext)
-      if (!passed) {
-        return options.onFail((ctx as any).set, ctx as TContext)
-      }
-    })
+  return new Elysia({ name: options.name }).onBeforeHandle(async (ctx) => {
+    const passed = await options.check(ctx as TContext)
+    if (!passed) {
+      return options.onFail((ctx as any).set, ctx as TContext)
+    }
+  })
 }
 
 /**
@@ -136,51 +133,51 @@ export function createRateLimit(options: {
     maxRequests,
     windowMs,
     keyGenerator = ({ request }: any) =>
-      request.headers.get('x-forwarded-for') ||
-      request.headers.get('x-real-ip') ||
-      'unknown',
-    message = 'Too many requests'
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+    message = 'Too many requests',
   } = options
 
   const requests = new Map<string, { count: number; resetTime: number }>()
 
   // Cleanup old entries periodically
-  setInterval(() => {
-    const now = Date.now()
-    for (const [key, data] of requests.entries()) {
-      if (now > data.resetTime) {
-        requests.delete(key)
-      }
-    }
-  }, Math.max(windowMs, 60000)) // At least every minute
-
-  return new Elysia({ name })
-    .onBeforeHandle((ctx) => {
-      const key = keyGenerator(ctx)
+  setInterval(
+    () => {
       const now = Date.now()
-      const entry = requests.get(key)
+      for (const [key, data] of requests.entries()) {
+        if (now > data.resetTime) {
+          requests.delete(key)
+        }
+      }
+    },
+    Math.max(windowMs, 60000),
+  ) // At least every minute
 
-      if (entry) {
-        if (now > entry.resetTime) {
-          // Reset window
-          requests.set(key, { count: 1, resetTime: now + windowMs })
-        } else if (entry.count >= maxRequests) {
-          // Rate limit exceeded
-          ;(ctx as any).set.status = 429
-          return {
-            success: false,
-            error: 'RATE_LIMIT_EXCEEDED',
-            message
-          }
-        } else {
-          // Increment count
-          entry.count++
+  return new Elysia({ name }).onBeforeHandle((ctx) => {
+    const key = keyGenerator(ctx)
+    const now = Date.now()
+    const entry = requests.get(key)
+
+    if (entry) {
+      if (now > entry.resetTime) {
+        // Reset window
+        requests.set(key, { count: 1, resetTime: now + windowMs })
+      } else if (entry.count >= maxRequests) {
+        // Rate limit exceeded
+        ;(ctx as any).set.status = 429
+        return {
+          success: false,
+          error: 'RATE_LIMIT_EXCEEDED',
+          message,
         }
       } else {
-        // First request
-        requests.set(key, { count: 1, resetTime: now + windowMs })
+        // Increment count
+        entry.count++
       }
-    })
+    } else {
+      // First request
+      requests.set(key, { count: 1, resetTime: now + windowMs })
+    }
+  })
 }
 
 /**
@@ -196,10 +193,7 @@ export function createRateLimit(options: {
  * app.use(protectedRoute).get('/protected', () => 'Protected content')
  * ```
  */
-export function composeMiddleware(options: {
-  name: string
-  middlewares: Elysia[]
-}) {
+export function composeMiddleware(options: { name: string; middlewares: Elysia[] }) {
   let composed = new Elysia({ name: options.name })
 
   for (const middleware of options.middlewares) {

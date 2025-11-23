@@ -3,7 +3,7 @@
  * Declarative logger config using FluxStack config system
  */
 
-import { defineConfig, config } from '@/core/utils/config-schema'
+import { config, defineConfig } from '@/core/utils/config-schema'
 
 export const loggerConfig = defineConfig({
   // Log level
@@ -20,7 +20,7 @@ export const loggerConfig = defineConfig({
 
   // Display options
   enableColors: config.boolean('LOG_COLORS', true),
-  enableStackTrace: config.boolean('LOG_STACK_TRACE', true)
+  enableStackTrace: config.boolean('LOG_STACK_TRACE', true),
 })
 
 export type LoggerConfig = typeof loggerConfig

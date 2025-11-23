@@ -1,6 +1,6 @@
-import type { FluxStackConfig } from "../../config/schema"
-import type { Logger } from "@/core/utils/logger/index"
-import type { PluginUtils } from "../../plugins/types"
+import type { Logger } from '@/core/utils/logger/index'
+import type { FluxStackConfig } from '../../config/schema'
+import type { PluginUtils } from '../../plugins/types'
 
 export interface GeneratorContext {
   workingDir: string
@@ -35,7 +35,11 @@ export interface Template {
   variables?: TemplateVariable[]
   hooks?: {
     beforeGenerate?: (context: GeneratorContext, options: GeneratorOptions) => Promise<void>
-    afterGenerate?: (context: GeneratorContext, options: GeneratorOptions, files: string[]) => Promise<void>
+    afterGenerate?: (
+      context: GeneratorContext,
+      options: GeneratorOptions,
+      files: string[],
+    ) => Promise<void>
   }
 }
 

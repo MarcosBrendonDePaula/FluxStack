@@ -3,9 +3,9 @@
  * Resolve e instala dependências de plugins automaticamente
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'fs'
-import { join, resolve } from 'path'
-import { execSync } from 'child_process'
+import { execSync } from 'node:child_process'
+import { existsSync, readFileSync } from 'node:fs'
+import { join, resolve } from 'node:path'
 import type { Logger } from '@/core/utils/logger'
 
 export interface PluginDependency {
@@ -49,10 +49,10 @@ export class PluginDependencyManager {
       autoInstall: true,
       packageManager: 'bun',
       workspaceRoot: process.cwd(),
-      ...config
+      ...config,
     }
     this.logger = config.logger
-    
+
     this.loadInstalledDependencies()
   }
 
@@ -63,7 +63,7 @@ export class PluginDependencyManager {
     this.pluginDependencies.set(pluginName, dependencies)
     this.logger?.debug(`Dependências registradas para plugin '${pluginName}'`, {
       plugin: pluginName,
-      dependencies: dependencies.length
+      dependencies: dependencies.length,
     })
   }
 
@@ -73,13 +73,13 @@ export class PluginDependencyManager {
   async resolvePluginDependencies(pluginPath: string): Promise<DependencyResolution> {
     const pluginName = this.getPluginNameFromPath(pluginPath)
     const packageJsonPath = join(pluginPath, 'package.json')
-    
+
     if (!existsSync(packageJsonPath)) {
       return {
         plugin: pluginName,
         dependencies: [],
         conflicts: [],
-        resolved: true
+        resolved: true,
       }
     }
 
@@ -93,7 +93,7 @@ export class PluginDependencyManager {
           dependencies.push({
             name,
             version: version as string,
-            type: 'dependency'
+            type: 'dependency',
           })
         }
       }
@@ -106,7 +106,7 @@ export class PluginDependencyManager {
             name,
             version: version as string,
             type: 'peerDependency',
-            optional: isOptional
+            optional: isOptional,
           })
         }
       }
@@ -121,7 +121,7 @@ export class PluginDependencyManager {
         plugin: pluginName,
         dependencies,
         conflicts,
-        resolved: conflicts.length === 0
+        resolved: conflicts.length === 0,
       }
     } catch (error) {
       this.logger?.error(`Erro ao resolver dependências do plugin '${pluginName}'`, { error })
@@ -129,7 +129,7 @@ export class PluginDependencyManager {
         plugin: pluginName,
         dependencies: [],
         conflicts: [],
-        resolved: false
+        resolved: false,
       }
     }
   }
@@ -155,11 +155,14 @@ export class PluginDependencyManager {
         continue
       }
 
-      this.logger?.debug(`📦 Instalando dependências localmente para plugin '${resolution.plugin}'`, {
-        plugin: resolution.plugin,
-        path: pluginPath,
-        dependencies: resolution.dependencies.length
-      })
+      this.logger?.debug(
+        `📦 Instalando dependências localmente para plugin '${resolution.plugin}'`,
+        {
+          plugin: resolution.plugin,
+          path: pluginPath,
+          dependencies: resolution.dependencies.length,
+        },
+      )
 
       try {
         // Instalar APENAS no node_modules local do plugin
@@ -167,7 +170,9 @@ export class PluginDependencyManager {
 
         this.logger?.debug(`✅ Dependências do plugin '${resolution.plugin}' instaladas localmente`)
       } catch (error) {
-        this.logger?.error(`❌ Erro ao instalar dependências do plugin '${resolution.plugin}'`, { error })
+        this.logger?.error(`❌ Erro ao instalar dependências do plugin '${resolution.plugin}'`, {
+          error,
+        })
         // Continuar com outros plugins
       }
     }
@@ -176,17 +181,20 @@ export class PluginDependencyManager {
   /**
    * Instalar dependências no diretório local do plugin
    */
-  async installPluginDependenciesLocally(pluginPath: string, dependencies: PluginDependency[]): Promise<void> {
+  async installPluginDependenciesLocally(
+    pluginPath: string,
+    dependencies: PluginDependency[],
+  ): Promise<void> {
     if (dependencies.length === 0) return
 
-    const regularDeps = dependencies.filter(d => d.type === 'dependency')
-    const peerDeps = dependencies.filter(d => d.type === 'peerDependency' && !d.optional)
+    const regularDeps = dependencies.filter((d) => d.type === 'dependency')
+    const peerDeps = dependencies.filter((d) => d.type === 'peerDependency' && !d.optional)
 
     const allDeps = [...regularDeps, ...peerDeps]
     if (allDeps.length === 0) return
 
     // Verificar quais dependências já estão instaladas localmente
-    const toInstall = allDeps.filter(dep => {
+    const toInstall = allDeps.filter((dep) => {
       const depPath = join(pluginPath, 'node_modules', dep.name, 'package.json')
       if (!existsSync(depPath)) {
         return true // Precisa instalar
@@ -198,12 +206,14 @@ export class PluginDependencyManager {
 
         // Verificar se a versão é compatível
         if (!this.isVersionCompatible(installedVersion, dep.version)) {
-          this.logger?.debug(`📦 Dependência '${dep.name}' está desatualizada (${installedVersion} → ${dep.version})`)
+          this.logger?.debug(
+            `📦 Dependência '${dep.name}' está desatualizada (${installedVersion} → ${dep.version})`,
+          )
           return true // Precisa atualizar
         }
 
         return false // Já está instalado corretamente
-      } catch (error) {
+      } catch (_error) {
         return true // Erro ao ler, melhor reinstalar
       }
     })
@@ -213,15 +223,17 @@ export class PluginDependencyManager {
       return
     }
 
-    const packages = toInstall.map(d => `${d.name}@${d.version}`).join(' ')
+    const packages = toInstall.map((d) => `${d.name}@${d.version}`).join(' ')
     const command = this.getInstallCommand(packages, false)
 
-    this.logger?.debug(`🔧 Instalando ${toInstall.length} dependência(s): ${command}`, { cwd: pluginPath })
+    this.logger?.debug(`🔧 Instalando ${toInstall.length} dependência(s): ${command}`, {
+      cwd: pluginPath,
+    })
 
     try {
       execSync(command, {
         cwd: pluginPath,
-        stdio: 'inherit'
+        stdio: 'inherit',
       })
       this.logger?.debug(`✅ Pacotes instalados localmente em ${pluginPath}`)
     } catch (error) {
@@ -234,10 +246,7 @@ export class PluginDependencyManager {
    * Encontrar diretório de um plugin pelo nome
    */
   private findPluginDirectory(pluginName: string): string | null {
-    const possiblePaths = [
-      `plugins/${pluginName}`,
-      `core/plugins/built-in/${pluginName}`
-    ]
+    const possiblePaths = [`plugins/${pluginName}`, `core/plugins/built-in/${pluginName}`]
 
     for (const path of possiblePaths) {
       if (existsSync(path)) {
@@ -251,7 +260,10 @@ export class PluginDependencyManager {
   /**
    * Detectar conflitos de versão
    */
-  private detectConflicts(pluginName: string, dependencies: PluginDependency[]): DependencyConflict[] {
+  private detectConflicts(
+    pluginName: string,
+    dependencies: PluginDependency[],
+  ): DependencyConflict[] {
     const conflicts: DependencyConflict[] = []
 
     for (const dep of dependencies) {
@@ -261,11 +273,11 @@ export class PluginDependencyManager {
       for (const [otherPlugin, otherDeps] of this.pluginDependencies.entries()) {
         if (otherPlugin === pluginName) continue
 
-        const conflictingDep = otherDeps.find(d => d.name === dep.name)
+        const conflictingDep = otherDeps.find((d) => d.name === dep.name)
         if (conflictingDep && !this.isVersionCompatible(conflictingDep.version, dep.version)) {
           existingVersions.push({
             plugin: otherPlugin,
-            version: conflictingDep.version
+            version: conflictingDep.version,
           })
         }
       }
@@ -273,12 +285,12 @@ export class PluginDependencyManager {
       if (existingVersions.length > 0) {
         existingVersions.push({
           plugin: pluginName,
-          version: dep.version
+          version: dep.version,
         })
 
         conflicts.push({
           package: dep.name,
-          versions: existingVersions
+          versions: existingVersions,
         })
       }
     }
@@ -287,72 +299,11 @@ export class PluginDependencyManager {
   }
 
   /**
-   * Resolver conflitos de dependências
-   */
-  private async resolveConflicts(conflicts: DependencyConflict[]): Promise<void> {
-    this.logger?.warn(`Detectados ${conflicts.length} conflitos de dependências`, {
-      conflicts: conflicts.map(c => ({
-        package: c.package,
-        versions: c.versions.length
-      }))
-    })
-
-    for (const conflict of conflicts) {
-      // Estratégia simples: usar a versão mais alta
-      const sortedVersions = conflict.versions.sort((a, b) => {
-        return this.compareVersions(b.version, a.version)
-      })
-
-      const resolution = sortedVersions[0].version
-      conflict.resolution = resolution
-
-      this.logger?.debug(`Conflito resolvido para '${conflict.package}': usando versão ${resolution}`, {
-        package: conflict.package,
-        resolution,
-        conflictingVersions: conflict.versions
-      })
-    }
-  }
-
-  /**
-   * Instalar dependências usando o package manager configurado
-   */
-  private async installDependencies(dependencies: PluginDependency[]): Promise<void> {
-    const regularDeps = dependencies.filter(d => d.type === 'dependency')
-    const peerDeps = dependencies.filter(d => d.type === 'peerDependency' && !d.optional)
-
-    if (regularDeps.length > 0) {
-      const packages = regularDeps.map(d => `${d.name}@${d.version}`).join(' ')
-      const command = this.getInstallCommand(packages, false)
-      
-      this.logger?.debug(`Executando: ${command}`)
-      execSync(command, { 
-        cwd: this.config.workspaceRoot,
-        stdio: 'inherit'
-      })
-    }
-
-    if (peerDeps.length > 0) {
-      const packages = peerDeps.map(d => `${d.name}@${d.version}`).join(' ')
-      const command = this.getInstallCommand(packages, false) // Peer deps como regulares
-      
-      this.logger?.debug(`Executando: ${command}`)
-      execSync(command, { 
-        cwd: this.config.workspaceRoot,
-        stdio: 'inherit'
-      })
-    }
-
-    // Recarregar dependências instaladas
-    this.loadInstalledDependencies()
-  }
-
-  /**
    * Obter comando de instalação baseado no package manager
    */
   private getInstallCommand(packages: string, dev: boolean): string {
     const devFlag = dev ? '--save-dev' : ''
-    
+
     switch (this.config.packageManager) {
       case 'npm':
         return `npm install ${devFlag} ${packages}`
@@ -372,14 +323,14 @@ export class PluginDependencyManager {
    */
   private loadInstalledDependencies(): void {
     const packageJsonPath = join(this.config.workspaceRoot!, 'package.json')
-    
+
     if (!existsSync(packageJsonPath)) {
       return
     }
 
     try {
       const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'))
-      
+
       // Carregar dependencies
       if (packageJson.dependencies) {
         for (const [name, version] of Object.entries(packageJson.dependencies)) {
@@ -407,7 +358,7 @@ export class PluginDependencyManager {
       const requiredVersion = required.slice(1)
       return this.compareVersions(installed, requiredVersion) >= 0
     }
-    
+
     return installed === required
   }
 
@@ -415,17 +366,23 @@ export class PluginDependencyManager {
    * Comparar versões (implementação simples)
    */
   private compareVersions(a: string, b: string): number {
-    const aParts = a.replace(/[^\d.]/g, '').split('.').map(Number)
-    const bParts = b.replace(/[^\d.]/g, '').split('.').map(Number)
-    
+    const aParts = a
+      .replace(/[^\d.]/g, '')
+      .split('.')
+      .map(Number)
+    const bParts = b
+      .replace(/[^\d.]/g, '')
+      .split('.')
+      .map(Number)
+
     for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
       const aPart = aParts[i] || 0
       const bPart = bParts[i] || 0
-      
+
       if (aPart > bPart) return 1
       if (aPart < bPart) return -1
     }
-    
+
     return 0
   }
 
@@ -442,10 +399,12 @@ export class PluginDependencyManager {
   getStats() {
     return {
       totalPlugins: this.pluginDependencies.size,
-      totalDependencies: Array.from(this.pluginDependencies.values())
-        .reduce((sum, deps) => sum + deps.length, 0),
+      totalDependencies: Array.from(this.pluginDependencies.values()).reduce(
+        (sum, deps) => sum + deps.length,
+        0,
+      ),
       installedDependencies: this.installedDependencies.size,
-      packageManager: this.config.packageManager
+      packageManager: this.config.packageManager,
     }
   }
 }

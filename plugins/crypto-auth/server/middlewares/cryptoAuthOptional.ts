@@ -12,15 +12,13 @@ export interface CryptoAuthMiddlewareOptions {
 }
 
 export const cryptoAuthOptional = (options: CryptoAuthMiddlewareOptions = {}) => {
-  return new Elysia({ name: 'crypto-auth-optional' })
-    .derive(async ({ request }) => {
-      const result = await validateAuthSync(request as Request, options.logger)
+  return new Elysia({ name: 'crypto-auth-optional' }).derive(async ({ request }) => {
+    const result = await validateAuthSync(request as Request, options.logger)
 
-      if (result.success && result.user) {
-        ;(request as any).user = result.user
-      }
+    if (result.success && result.user) {
+      ;(request as any).user = result.user
+    }
 
-      return {}
-    })
-
+    return {}
+  })
 }

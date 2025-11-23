@@ -19,16 +19,16 @@ export function setupFluxStackTests() {
     removeItem: vi.fn(),
     clear: vi.fn(),
     length: 0,
-    key: vi.fn()
+    key: vi.fn(),
   }
-  
+
   Object.defineProperty(window, 'localStorage', {
-    value: localStorageMock
+    value: localStorageMock,
   })
 
   // Mock sessionStorage
   Object.defineProperty(window, 'sessionStorage', {
-    value: localStorageMock
+    value: localStorageMock,
   })
 
   // Reset all mocks before each test
@@ -51,8 +51,8 @@ export function createMockLogger() {
       info: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
-      child: vi.fn()
-    })
+      child: vi.fn(),
+    }),
   }
 }
 
@@ -67,8 +67,8 @@ export function createMockServiceContext(overrides: any = {}) {
       get: vi.fn(),
       register: vi.fn(),
       has: vi.fn(),
-      remove: vi.fn()
+      remove: vi.fn(),
     },
-    ...overrides
+    ...overrides,
   }
 }

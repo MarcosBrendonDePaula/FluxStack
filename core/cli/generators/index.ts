@@ -1,10 +1,10 @@
-import type { CliCommand } from "../../plugins/types"
-import { ControllerGenerator } from "./controller"
-import { RouteGenerator } from "./route"
-import { ComponentGenerator } from "./component"
-import { ServiceGenerator } from "./service"
-import { PluginGenerator } from "./plugin"
-import type { GeneratorContext, GeneratorOptions } from "./types"
+import type { CliCommand } from '../../plugins/types'
+import { ComponentGenerator } from './component'
+import { ControllerGenerator } from './controller'
+import { PluginGenerator } from './plugin'
+import { RouteGenerator } from './route'
+import { ServiceGenerator } from './service'
+import type { GeneratorContext, GeneratorOptions } from './types'
 
 export interface Generator {
   name: string
@@ -47,7 +47,7 @@ export class GeneratorRegistry {
 export const generatorRegistry = new GeneratorRegistry()
 
 // Export additional commands
-export { interactiveGenerateCommand } from "./interactive"
+export { interactiveGenerateCommand } from './interactive'
 
 // CLI command for code generation
 export const generateCommand: CliCommand = {
@@ -61,7 +61,7 @@ export const generateCommand: CliCommand = {
     'flux generate component UserCard',
     'flux generate service auth',
     'flux generate route api/users',
-    'flux generate plugin my-plugin'
+    'flux generate plugin my-plugin',
   ],
   arguments: [
     {
@@ -69,45 +69,45 @@ export const generateCommand: CliCommand = {
       description: 'Type of code to generate',
       required: true,
       type: 'string',
-      choices: ['controller', 'route', 'component', 'service', 'plugin']
+      choices: ['controller', 'route', 'component', 'service', 'plugin'],
     },
     {
       name: 'name',
       description: 'Name of the generated item',
       required: true,
-      type: 'string'
-    }
+      type: 'string',
+    },
   ],
   options: [
     {
       name: 'path',
       short: 'p',
       description: 'Custom path for generated files',
-      type: 'string'
+      type: 'string',
     },
     {
       name: 'template',
       short: 't',
       description: 'Template variant to use',
-      type: 'string'
+      type: 'string',
     },
     {
       name: 'force',
       short: 'f',
       description: 'Overwrite existing files',
       type: 'boolean',
-      default: false
+      default: false,
     },
     {
       name: 'dry-run',
       description: 'Show what would be generated without creating files',
       type: 'boolean',
-      default: false
-    }
+      default: false,
+    },
   ],
   handler: async (args, options, context) => {
     const [type, name] = args
-    
+
     const generator = generatorRegistry.get(type)
     if (!generator) {
       console.error(`❌ Unknown generator type: ${type}`)
@@ -122,7 +122,7 @@ export const generateCommand: CliCommand = {
       workingDir: context.workingDir,
       config: context.config,
       logger: context.logger,
-      utils: context.utils
+      utils: context.utils,
     }
 
     const generatorOptions: GeneratorOptions = {
@@ -130,18 +130,21 @@ export const generateCommand: CliCommand = {
       path: options.path,
       template: options.template,
       force: options.force,
-      dryRun: options['dry-run']
+      dryRun: options['dry-run'],
     }
 
     try {
       await generator.generate(generatorContext, generatorOptions)
-      
+
       if (!options['dry-run']) {
         console.log(`✅ Successfully generated ${type}: ${name}`)
       }
     } catch (error) {
-      console.error(`❌ Failed to generate ${type}:`, error instanceof Error ? error.message : String(error))
+      console.error(
+        `❌ Failed to generate ${type}:`,
+        error instanceof Error ? error.message : String(error),
+      )
       throw error
     }
-  }
+  },
 }

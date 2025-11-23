@@ -4,22 +4,22 @@
  */
 
 import chalk from 'chalk'
-import { getCallerInfo, formatCallerInfo } from './stack-trace'
 import { getColorForModule } from './colors'
-import { getLoggerForModule } from './winston-logger'
 import {
-  formatMessage,
-  formatSection,
   formatImportant,
+  formatMessage,
   formatOperationStart,
-  formatOperationSuccess
+  formatOperationSuccess,
+  formatSection,
 } from './formatter'
+import { formatCallerInfo, getCallerInfo } from './stack-trace'
+import { getLoggerForModule } from './winston-logger'
 
+export { clearColorCache } from './colors'
+export type { LoggerConfig } from './config'
 // Re-export types and utilities
 export { LOGGER_CONFIG } from './config'
-export type { LoggerConfig } from './config'
 export type { CallerInfo } from './stack-trace'
-export { clearColorCache } from './colors'
 export { clearCallerCache } from './stack-trace'
 export { clearLoggerCache } from './winston-logger'
 
@@ -33,7 +33,11 @@ export { displayStartupBanner, type StartupInfo } from './startup-banner'
 /**
  * Core log function that handles all log levels
  */
-function logMessage(level: 'debug' | 'info' | 'warn' | 'error', message: unknown, ...args: unknown[]): void {
+function logMessage(
+  level: 'debug' | 'info' | 'warn' | 'error',
+  message: unknown,
+  ...args: unknown[]
+): void {
   const { file: callerFile, line: callerLine, function: callerFunction } = getCallerInfo()
   const logger = getLoggerForModule(callerFile)
   const moduleColor = getColorForModule(callerFile)
@@ -41,7 +45,7 @@ function logMessage(level: 'debug' | 'info' | 'warn' | 'error', message: unknown
   // Format caller context
   const context = formatCallerInfo(
     { file: callerFile, line: callerLine, function: callerFunction },
-    (str) => moduleColor(str)
+    (str) => moduleColor(str),
   )
 
   // Format the message
@@ -50,7 +54,7 @@ function logMessage(level: 'debug' | 'info' | 'warn' | 'error', message: unknown
   // Log with appropriate level
   logger.log({
     level,
-    message: `${context} ${finalMessage}`
+    message: `${context} ${finalMessage}`,
   })
 }
 
@@ -134,10 +138,13 @@ export function request(method: string, path: string, status?: number, duration?
   // Color based on HTTP status
   let statusColor = chalk.gray
   if (status) {
-    if (status >= 500) statusColor = chalk.red.bold        // Server errors
-    else if (status >= 400) statusColor = chalk.yellow     // Client errors
-    else if (status >= 300) statusColor = chalk.cyan       // Redirects
-    else if (status >= 200) statusColor = chalk.green      // Success
+    if (status >= 500)
+      statusColor = chalk.red.bold // Server errors
+    else if (status >= 400)
+      statusColor = chalk.yellow // Client errors
+    else if (status >= 300)
+      statusColor = chalk.cyan // Redirects
+    else if (status >= 200) statusColor = chalk.green // Success
   }
 
   // Color for HTTP method
@@ -225,7 +232,7 @@ export const logger = {
   plugin,
   framework,
   time,
-  timeEnd
+  timeEnd,
 }
 
 /**
@@ -240,7 +247,7 @@ export const log = {
   plugin,
   framework,
   time,
-  timeEnd
+  timeEnd,
 }
 
 /**
@@ -262,5 +269,5 @@ export default {
   timeEnd,
   logger,
   log,
-  clearCache
+  clearCache,
 }

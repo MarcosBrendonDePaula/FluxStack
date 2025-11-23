@@ -7,9 +7,9 @@
  * You can customize the configuration here if needed.
  */
 
-import { startBackend, createBackendConfig } from "@/core/server/backend-entry"
-import { appInstance } from "./app"
-import { serverConfig } from "@/config/server.config"
+import { serverConfig } from '@/config/server.config'
+import { createBackendConfig, startBackend } from '@/core/server/backend-entry'
+import { appInstance } from './app'
 
 // Create backend configuration from declarative config
 const backendConfig = createBackendConfig(serverConfig)

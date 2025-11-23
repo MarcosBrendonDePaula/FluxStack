@@ -3,36 +3,35 @@
  * Tests the main configuration loading system, including file loading, caching, and fallbacks
  */
 
-import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 // Mock fs module with proper default export
 vi.mock('fs', () => ({
   default: {
     existsSync: vi.fn(() => true),
     writeFileSync: vi.fn(),
-    unlinkSync: vi.fn()
+    unlinkSync: vi.fn(),
   },
   existsSync: vi.fn(() => true),
   writeFileSync: vi.fn(),
   unlinkSync: vi.fn(),
   promises: {
     readFile: vi.fn(),
-    access: vi.fn()
-  }
+    access: vi.fn(),
+  },
 }))
 
 vi.mock('fs/promises', () => ({
   readFile: vi.fn(),
-  access: vi.fn()
+  access: vi.fn(),
 }))
 
-import { 
-  getConfig, 
-  getConfigSync, 
-  reloadConfig,
+import {
+  createLegacyConfig,
   createPluginConfig,
+  getConfigSync,
   isFeatureEnabled,
-  createLegacyConfig
+  reloadConfig,
 } from '../index'
 import type { FluxStackConfig } from '../schema'
 
@@ -43,14 +42,22 @@ describe('Configuration Loader', () => {
     originalEnv = { ...process.env }
     // Clear relevant environment variables
     for (const key in process.env) {
-      if (key.startsWith('FLUXSTACK_') || key.startsWith('PORT') || key.startsWith('HOST') ||
-          key.startsWith('NODE_ENV') || key.startsWith('CORS_') || key.startsWith('LOG_') ||
-          key.startsWith('MONITORING_') || key.startsWith('METRICS_') || key.startsWith('PROFILING_') ||
-          key.startsWith('BUILD_')) {
+      if (
+        key.startsWith('FLUXSTACK_') ||
+        key.startsWith('PORT') ||
+        key.startsWith('HOST') ||
+        key.startsWith('NODE_ENV') ||
+        key.startsWith('CORS_') ||
+        key.startsWith('LOG_') ||
+        key.startsWith('MONITORING_') ||
+        key.startsWith('METRICS_') ||
+        key.startsWith('PROFILING_') ||
+        key.startsWith('BUILD_')
+      ) {
         delete process.env[key]
       }
     }
-    
+
     // Clear any cached configurations
     vi.clearAllMocks()
   })
@@ -119,7 +126,6 @@ describe('Configuration Loader', () => {
       expect(config.server?.cors?.credentials).toBe(true)
     })
 
-
     test('handles monitoring configuration', () => {
       process.env.MONITORING_ENABLED = 'true'
       process.env.METRICS_ENABLED = 'false'
@@ -174,9 +180,9 @@ describe('Configuration Loader', () => {
             methods: ['GET', 'POST'],
             headers: ['Content-Type'],
             credentials: false,
-            maxAge: 86400
+            maxAge: 86400,
           },
-          middleware: []
+          middleware: [],
         },
         client: {
           port: 5173,
@@ -185,8 +191,8 @@ describe('Configuration Loader', () => {
             target: 'es2020',
             outDir: 'dist/client',
             sourceMaps: true,
-            minify: false
-          }
+            minify: false,
+          },
         },
         build: {
           target: 'bun',
@@ -197,16 +203,14 @@ describe('Configuration Loader', () => {
             compress: false,
             treeshake: false,
             splitChunks: false,
-            bundleAnalyzer: false
+            bundleAnalyzer: false,
           },
-          sourceMaps: true
+          sourceMaps: true,
         },
         logging: {
           level: 'info',
           format: 'pretty',
-          transports: [
-            { type: 'console', level: 'info', format: 'pretty' }
-          ]
+          transports: [{ type: 'console', level: 'info', format: 'pretty' }],
         },
         monitoring: {
           enabled: false,
@@ -215,15 +219,15 @@ describe('Configuration Loader', () => {
             collectInterval: 60000,
             httpMetrics: true,
             systemMetrics: true,
-            customMetrics: false
+            customMetrics: false,
           },
           profiling: {
             enabled: false,
             sampleRate: 0.1,
             memoryProfiling: false,
-            cpuProfiling: false
+            cpuProfiling: false,
           },
-          exporters: []
+          exporters: [],
         },
         plugins: {
           enabled: [],
@@ -231,32 +235,32 @@ describe('Configuration Loader', () => {
           config: {
             vite: {
               port: 5174,
-              enabled: true
+              enabled: true,
             },
             logger: {
               logRequests: true,
-              logResponses: false
-            }
-          }
+              logResponses: false,
+            },
+          },
         },
         custom: {
           myPlugin: {
-            customSetting: 'value'
-          }
-        }
+            customSetting: 'value',
+          },
+        },
       } as FluxStackConfig
 
       // Test plugin config from plugins.config
       const viteConfig = createPluginConfig(mainConfig, 'vite')
       expect(viteConfig).toEqual({
         port: 5174,
-        enabled: true
+        enabled: true,
       })
 
       // Test plugin config from custom section
       const myPluginConfig = createPluginConfig(mainConfig, 'myPlugin')
       expect(myPluginConfig).toEqual({
-        customSetting: 'value'
+        customSetting: 'value',
       })
 
       // Test merging both sections
@@ -267,16 +271,16 @@ describe('Configuration Loader', () => {
           config: {
             ...mainConfig.plugins.config,
             myPlugin: {
-              baseSetting: 'base'
-            }
-          }
-        }
+              baseSetting: 'base',
+            },
+          },
+        },
       }
 
       const mergedConfig = createPluginConfig(combinedConfig, 'myPlugin')
       expect(mergedConfig).toEqual({
         baseSetting: 'base',
-        customSetting: 'value' // custom should override plugins.config
+        customSetting: 'value', // custom should override plugins.config
       })
     })
 
@@ -292,9 +296,9 @@ describe('Configuration Loader', () => {
             methods: ['GET', 'POST'],
             headers: ['Content-Type'],
             credentials: false,
-            maxAge: 86400
+            maxAge: 86400,
           },
-          middleware: []
+          middleware: [],
         },
         client: {
           port: 5173,
@@ -303,8 +307,8 @@ describe('Configuration Loader', () => {
             target: 'es2020',
             outDir: 'dist/client',
             sourceMaps: true,
-            minify: false
-          }
+            minify: false,
+          },
         },
         build: {
           target: 'bun',
@@ -315,16 +319,14 @@ describe('Configuration Loader', () => {
             compress: false,
             treeshake: false,
             splitChunks: false,
-            bundleAnalyzer: false
+            bundleAnalyzer: false,
           },
-          sourceMaps: true
+          sourceMaps: true,
         },
         logging: {
           level: 'info',
           format: 'pretty',
-          transports: [
-            { type: 'console', level: 'info', format: 'pretty' }
-          ]
+          transports: [{ type: 'console', level: 'info', format: 'pretty' }],
         },
         monitoring: {
           enabled: false,
@@ -333,21 +335,21 @@ describe('Configuration Loader', () => {
             collectInterval: 60000,
             httpMetrics: true,
             systemMetrics: true,
-            customMetrics: false
+            customMetrics: false,
           },
           profiling: {
             enabled: false,
             sampleRate: 0.1,
             memoryProfiling: false,
-            cpuProfiling: false
+            cpuProfiling: false,
           },
-          exporters: []
+          exporters: [],
         },
         plugins: {
           enabled: [],
           disabled: [],
-          config: {}
-        }
+          config: {},
+        },
       } as FluxStackConfig
 
       const config = createPluginConfig(mainConfig, 'nonexistent')
@@ -368,9 +370,9 @@ describe('Configuration Loader', () => {
             methods: ['GET', 'POST'],
             headers: ['Content-Type'],
             credentials: false,
-            maxAge: 86400
+            maxAge: 86400,
           },
-          middleware: []
+          middleware: [],
         },
         client: {
           port: 5173,
@@ -379,8 +381,8 @@ describe('Configuration Loader', () => {
             target: 'es2020',
             outDir: 'dist/client',
             sourceMaps: true,
-            minify: false
-          }
+            minify: false,
+          },
         },
         build: {
           target: 'bun',
@@ -391,16 +393,14 @@ describe('Configuration Loader', () => {
             compress: false,
             treeshake: false,
             splitChunks: false,
-            bundleAnalyzer: false
+            bundleAnalyzer: false,
           },
-          sourceMaps: true
+          sourceMaps: true,
         },
         logging: {
           level: 'info',
           format: 'pretty',
-          transports: [
-            { type: 'console', level: 'info', format: 'pretty' }
-          ]
+          transports: [{ type: 'console', level: 'info', format: 'pretty' }],
         },
         monitoring: {
           enabled: true,
@@ -409,24 +409,24 @@ describe('Configuration Loader', () => {
             collectInterval: 60000,
             httpMetrics: true,
             systemMetrics: true,
-            customMetrics: false
+            customMetrics: false,
           },
           profiling: {
             enabled: false,
             sampleRate: 0.1,
             memoryProfiling: false,
-            cpuProfiling: false
+            cpuProfiling: false,
           },
-          exporters: []
+          exporters: [],
         },
         plugins: {
           enabled: ['plugin1', 'plugin2'],
           disabled: ['plugin3'],
-          config: {}
+          config: {},
         },
         custom: {
-          customFeature: true
-        }
+          customFeature: true,
+        },
       } as FluxStackConfig
 
       expect(isFeatureEnabled(config, 'plugin1')).toBe(true)
@@ -454,9 +454,9 @@ describe('Configuration Loader', () => {
             methods: ['GET', 'POST', 'PUT'],
             headers: ['Content-Type', 'Authorization'],
             credentials: true,
-            maxAge: 86400
+            maxAge: 86400,
           },
-          middleware: []
+          middleware: [],
         },
         client: {
           port: 5174,
@@ -465,8 +465,8 @@ describe('Configuration Loader', () => {
             target: 'es2020',
             outDir: 'dist/client',
             sourceMaps: true,
-            minify: false
-          }
+            minify: false,
+          },
         },
         build: {
           target: 'docker',
@@ -477,16 +477,14 @@ describe('Configuration Loader', () => {
             compress: false,
             treeshake: false,
             splitChunks: false,
-            bundleAnalyzer: false
+            bundleAnalyzer: false,
           },
-          sourceMaps: true
+          sourceMaps: true,
         },
         logging: {
           level: 'info',
           format: 'pretty',
-          transports: [
-            { type: 'console', level: 'info', format: 'pretty' }
-          ]
+          transports: [{ type: 'console', level: 'info', format: 'pretty' }],
         },
         monitoring: {
           enabled: false,
@@ -495,21 +493,21 @@ describe('Configuration Loader', () => {
             collectInterval: 60000,
             httpMetrics: true,
             systemMetrics: true,
-            customMetrics: false
+            customMetrics: false,
           },
           profiling: {
             enabled: false,
             sampleRate: 0.1,
             memoryProfiling: false,
-            cpuProfiling: false
+            cpuProfiling: false,
           },
-          exporters: []
+          exporters: [],
         },
         plugins: {
           enabled: [],
           disabled: [],
-          config: {}
-        }
+          config: {},
+        },
       } as FluxStackConfig
 
       const legacyConfig = createLegacyConfig(config)
@@ -522,12 +520,12 @@ describe('Configuration Loader', () => {
         cors: {
           origins: ['http://localhost:3000', 'https://example.com'],
           methods: ['GET', 'POST', 'PUT'],
-          headers: ['Content-Type', 'Authorization']
+          headers: ['Content-Type', 'Authorization'],
         },
         build: {
           outDir: 'build',
-          target: 'docker'
-        }
+          target: 'docker',
+        },
       })
     })
   })

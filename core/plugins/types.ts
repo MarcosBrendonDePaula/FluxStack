@@ -1,5 +1,5 @@
-import type { FluxStackConfig } from "@/core/config/schema"
-import type { Logger } from "@/core/utils/logger/index"
+import type { FluxStackConfig } from '@/core/config/schema'
+import type { Logger } from '@/core/utils/logger/index'
 
 export type PluginHook =
   // Lifecycle hooks
@@ -139,77 +139,76 @@ export interface PluginConfigSchema {
 
 export namespace FluxStack {
   export interface Plugin {
-  name: string
-  version?: string
-  description?: string
-  author?: string
-  dependencies?: string[]
-  priority?: number | PluginPriority
-  category?: string
-  tags?: string[]
+    name: string
+    version?: string
+    description?: string
+    author?: string
+    dependencies?: string[]
+    priority?: number | PluginPriority
+    category?: string
+    tags?: string[]
 
-  // Lifecycle hooks
-  setup?: (context: PluginContext) => void | Promise<void>
-  onConfigLoad?: (context: ConfigLoadContext) => void | Promise<void>
-  onBeforeServerStart?: (context: PluginContext) => void | Promise<void>
-  onServerStart?: (context: PluginContext) => void | Promise<void>
-  onAfterServerStart?: (context: PluginContext) => void | Promise<void>
-  onBeforeServerStop?: (context: PluginContext) => void | Promise<void>
-  onServerStop?: (context: PluginContext) => void | Promise<void>
+    // Lifecycle hooks
+    setup?: (context: PluginContext) => void | Promise<void>
+    onConfigLoad?: (context: ConfigLoadContext) => void | Promise<void>
+    onBeforeServerStart?: (context: PluginContext) => void | Promise<void>
+    onServerStart?: (context: PluginContext) => void | Promise<void>
+    onAfterServerStart?: (context: PluginContext) => void | Promise<void>
+    onBeforeServerStop?: (context: PluginContext) => void | Promise<void>
+    onServerStop?: (context: PluginContext) => void | Promise<void>
 
-  // Request/Response pipeline hooks
-  onRequest?: (context: RequestContext) => void | Promise<void>
-  onBeforeRoute?: (context: RequestContext) => void | Promise<void>
-  onAfterRoute?: (context: RouteContext) => void | Promise<void>
-  onBeforeResponse?: (context: ResponseContext) => void | Promise<void>
-  onResponse?: (context: ResponseContext) => void | Promise<void>
-  onRequestValidation?: (context: ValidationContext) => void | Promise<void>
-  onResponseTransform?: (context: TransformContext) => void | Promise<void>
+    // Request/Response pipeline hooks
+    onRequest?: (context: RequestContext) => void | Promise<void>
+    onBeforeRoute?: (context: RequestContext) => void | Promise<void>
+    onAfterRoute?: (context: RouteContext) => void | Promise<void>
+    onBeforeResponse?: (context: ResponseContext) => void | Promise<void>
+    onResponse?: (context: ResponseContext) => void | Promise<void>
+    onRequestValidation?: (context: ValidationContext) => void | Promise<void>
+    onResponseTransform?: (context: TransformContext) => void | Promise<void>
 
-  // Error handling hooks
-  onError?: (context: ErrorContext) => void | Promise<void>
+    // Error handling hooks
+    onError?: (context: ErrorContext) => void | Promise<void>
 
-  // Build pipeline hooks
-  onBeforeBuild?: (context: BuildContext) => void | Promise<void>
-  onBuild?: (context: BuildContext) => void | Promise<void>
-  onBuildAsset?: (context: BuildAssetContext) => void | Promise<void>
-  onBuildComplete?: (context: BuildContext) => void | Promise<void>
-  onBuildError?: (context: BuildErrorContext) => void | Promise<void>
+    // Build pipeline hooks
+    onBeforeBuild?: (context: BuildContext) => void | Promise<void>
+    onBuild?: (context: BuildContext) => void | Promise<void>
+    onBuildAsset?: (context: BuildAssetContext) => void | Promise<void>
+    onBuildComplete?: (context: BuildContext) => void | Promise<void>
+    onBuildError?: (context: BuildErrorContext) => void | Promise<void>
 
-  // Plugin system hooks
-  onPluginRegister?: (context: PluginEventContext) => void | Promise<void>
-  onPluginUnregister?: (context: PluginEventContext) => void | Promise<void>
-  onPluginError?: (context: PluginEventContext & { error: Error }) => void | Promise<void>
+    // Plugin system hooks
+    onPluginRegister?: (context: PluginEventContext) => void | Promise<void>
+    onPluginUnregister?: (context: PluginEventContext) => void | Promise<void>
+    onPluginError?: (context: PluginEventContext & { error: Error }) => void | Promise<void>
 
-  // Configuration
-  /**
-   * @deprecated Use declarative config system instead (plugins/[name]/config/)
-   * Create a config/ folder with defineConfig() for type-safe configuration.
-   * This property is kept for backward compatibility with built-in plugins.
-   *
-   * @example
-   * // ✅ New way (recommended):
-   * // plugins/my-plugin/config/index.ts
-   * import { defineConfig, config } from '@/core/utils/config-schema'
-   * export const myConfig = defineConfig({ ... })
-   *
-   * // ❌ Old way (deprecated):
-   * configSchema: { type: 'object', properties: { ... } }
-   */
-  configSchema?: PluginConfigSchema
+    // Configuration
+    /**
+     * @deprecated Use declarative config system instead (plugins/[name]/config/)
+     * Create a config/ folder with defineConfig() for type-safe configuration.
+     * This property is kept for backward compatibility with built-in plugins.
+     *
+     * @example
+     * // ✅ New way (recommended):
+     * // plugins/my-plugin/config/index.ts
+     * import { defineConfig, config } from '@/core/utils/config-schema'
+     * export const myConfig = defineConfig({ ... })
+     *
+     * // ❌ Old way (deprecated):
+     * configSchema: { type: 'object', properties: { ... } }
+     */
+    configSchema?: PluginConfigSchema
 
-  /**
-   * @deprecated Use declarative config system with defineConfig()
-   * This property will be removed in a future major version.
-   * Use the config/ folder structure for automatic type inference.
-   */
-  defaultConfig?: any
+    /**
+     * @deprecated Use declarative config system with defineConfig()
+     * This property will be removed in a future major version.
+     * Use the config/ folder structure for automatic type inference.
+     */
+    defaultConfig?: any
 
-  // CLI commands
-  commands?: CliCommand[]
+    // CLI commands
+    commands?: CliCommand[]
   }
 }
-
 
 export interface PluginManifest {
   name: string
@@ -303,7 +302,7 @@ export interface HookExecutionOptions {
 }
 
 // Plugin lifecycle events
-export type PluginLifecycleEvent = 
+export type PluginLifecycleEvent =
   | 'plugin:registered'
   | 'plugin:unregistered'
   | 'plugin:enabled'

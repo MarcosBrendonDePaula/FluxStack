@@ -3,7 +3,7 @@
  * System information and environment variables
  */
 
-import { defineConfig, config } from '@/core/utils/config-schema'
+import { config, defineConfig } from '@/core/utils/config-schema'
 
 /**
  * System environment variables config
@@ -41,7 +41,7 @@ export const systemConfig = defineConfig({
 
   get isCI() {
     return this.ci
-  }
+  },
 })
 
 /**
@@ -66,12 +66,12 @@ export const systemRuntimeInfo = {
   },
 
   get cpuCount() {
-    return require('os').cpus().length
+    return require('node:os').cpus().length
   },
 
   get totalMemory() {
-    const os = require('os')
-    return Math.round(os.totalmem() / 1024 / 1024 / 1024 * 100) / 100 // GB
+    const os = require('node:os')
+    return Math.round((os.totalmem() / 1024 / 1024 / 1024) * 100) / 100 // GB
   },
 
   get workingDirectory() {
@@ -89,12 +89,12 @@ export const systemRuntimeInfo = {
   get memoryUsage() {
     const usage = process.memoryUsage()
     return {
-      rss: Math.round(usage.rss / 1024 / 1024 * 100) / 100, // MB
-      heapTotal: Math.round(usage.heapTotal / 1024 / 1024 * 100) / 100,
-      heapUsed: Math.round(usage.heapUsed / 1024 / 1024 * 100) / 100,
-      external: Math.round(usage.external / 1024 / 1024 * 100) / 100
+      rss: Math.round((usage.rss / 1024 / 1024) * 100) / 100, // MB
+      heapTotal: Math.round((usage.heapTotal / 1024 / 1024) * 100) / 100,
+      heapUsed: Math.round((usage.heapUsed / 1024 / 1024) * 100) / 100,
+      external: Math.round((usage.external / 1024 / 1024) * 100) / 100,
     }
-  }
+  },
 }
 
 // Export types

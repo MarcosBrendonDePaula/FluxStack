@@ -3,30 +3,24 @@
  * Main exports for the FluxStack framework
  */
 
-// Framework core (primary exports)
-export { FluxStackFramework } from './framework/server'
-export { FluxStackClient } from './framework/client'
-
-// Server components (includes config types via re-export)
-export * from './server'
-
-// Client components
-export * from './client'
-
-// Testing utilities
-export * from './testing'
-
 // Build system
 export * from './build'
-
 // CLI and generators
 export * from './cli/generators'
-
-// Plugin system (avoid wildcard to prevent conflicts)
-export { PluginRegistry } from './plugins/registry'
+// Client components
+export * from './client'
+export { FluxStackClient } from './framework/client'
+// Framework core (primary exports)
+export { FluxStackFramework } from './framework/server'
+export { PluginUtils } from './plugins'
 export { PluginDiscovery, pluginDiscovery } from './plugins/discovery'
 export { PluginManager } from './plugins/manager'
-export { PluginUtils } from './plugins'
+// Plugin system (avoid wildcard to prevent conflicts)
+export { PluginRegistry } from './plugins/registry'
+// Server components (includes config types via re-export)
+export * from './server'
+// Testing utilities
+export * from './testing'
 
 // Utilities
 export * from './utils/logger'

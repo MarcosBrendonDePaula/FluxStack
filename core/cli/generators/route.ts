@@ -1,6 +1,6 @@
-import type { Generator } from "./index"
-import type { GeneratorContext, GeneratorOptions, Template } from "./types"
-import { templateEngine } from "./template-engine"
+import type { Generator } from './index'
+import { templateEngine } from './template-engine'
+import type { GeneratorContext, GeneratorOptions, Template } from './types'
 
 export class RouteGenerator implements Generator {
   name = 'route'
@@ -8,13 +8,13 @@ export class RouteGenerator implements Generator {
 
   async generate(context: GeneratorContext, options: GeneratorOptions): Promise<void> {
     const template = this.getTemplate(options.template)
-    
+
     if (template.hooks?.beforeGenerate) {
       await template.hooks.beforeGenerate(context, options)
     }
 
     const files = await templateEngine.processTemplate(template, context, options)
-    
+
     if (options.dryRun) {
       console.log(`\n📋 Would generate route '${options.name}':\n`)
       for (const file of files) {
@@ -24,9 +24,9 @@ export class RouteGenerator implements Generator {
     }
 
     await templateEngine.generateFiles(files, options.dryRun)
-    
+
     if (template.hooks?.afterGenerate) {
-      const filePaths = files.map(f => f.path)
+      const filePaths = files.map((f) => f.path)
       await template.hooks.afterGenerate(context, options, filePaths)
     }
 
@@ -39,7 +39,6 @@ export class RouteGenerator implements Generator {
         return this.getMinimalTemplate()
       case 'auth':
         return this.getAuthTemplate()
-      case 'crud':
       default:
         return this.getCrudTemplate()
     }
@@ -189,7 +188,7 @@ export const {{camelName}}Routes = new Elysia({ prefix: '/api/{{kebabName}}s' })
       description: 'Search for {{camelName}}s using a query string'
     }
   })
-`
+`,
         },
         {
           path: 'app/server/routes/index.ts',
@@ -219,17 +218,19 @@ export const apiRoutes = new Elysia({ prefix: '/api' })
 
 export default apiRoutes
 `,
-          condition: (variables) => !variables.skipIndex
-        }
+          condition: (variables) => !variables.skipIndex,
+        },
       ],
       hooks: {
         afterGenerate: async (context, options, files) => {
           context.logger.info(`Generated route files:`)
-          files.forEach(file => {
+          files.forEach((file) => {
             context.logger.info(`  - ${file}`)
           })
           context.logger.info(`\nNext steps:`)
-          context.logger.info(`1. Generate the corresponding controller: flux generate controller ${options.name}`)
+          context.logger.info(
+            `1. Generate the corresponding controller: flux generate controller ${options.name}`,
+          )
           context.logger.info(`2. Import and use the routes in your main server file`)
           context.logger.info(`3. Test the API endpoints using the Swagger documentation`)
           context.logger.info(`\nAPI endpoints created:`)
@@ -239,8 +240,8 @@ export default apiRoutes
           context.logger.info(`  PUT    /api/${options.name}s/:id`)
           context.logger.info(`  DELETE /api/${options.name}s/:id`)
           context.logger.info(`  GET    /api/${options.name}s/search`)
-        }
-      }
+        },
+      },
     }
   }
 
@@ -293,9 +294,9 @@ export const {{camelName}}Routes = new Elysia({ prefix: '/api/{{kebabName}}s' })
       message: '{{pascalName}} deleted'
     }
   })
-`
-        }
-      ]
+`,
+        },
+      ],
     }
   }
 
@@ -467,7 +468,7 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
       description: 'Reset user password using reset token'
     }
   })
-`
+`,
         },
         {
           path: 'app/server/middleware/auth.middleware.ts',
@@ -521,9 +522,9 @@ export async function authMiddleware(context: Context) {
     throw new UnauthorizedError('Invalid or expired token')
   }
 }
-`
-        }
-      ]
+`,
+        },
+      ],
     }
   }
 }

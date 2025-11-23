@@ -3,7 +3,7 @@
  * Laravel-style declarative config with validation
  */
 
-import { defineConfig, config } from '@/core/utils/config-schema'
+import { config, defineConfig } from '@/core/utils/config-schema'
 
 /**
  * Database configuration schema
@@ -22,7 +22,7 @@ export const databaseConfig = defineConfig({
       }
       return true
     },
-    description: 'Full database connection URL (overrides individual settings)'
+    description: 'Full database connection URL (overrides individual settings)',
   },
 
   host: config.string('DB_HOST', 'localhost'),
@@ -34,21 +34,21 @@ export const databaseConfig = defineConfig({
     env: 'DB_NAME',
     default: undefined,
     required: false,
-    description: 'Database name'
+    description: 'Database name',
   },
 
   user: {
     type: 'string',
     env: 'DB_USER',
     default: undefined,
-    required: false
+    required: false,
   },
 
   password: {
     type: 'string',
     env: 'DB_PASSWORD',
     default: undefined,
-    required: false
+    required: false,
   },
 
   // Connection pool
@@ -56,14 +56,14 @@ export const databaseConfig = defineConfig({
     type: 'number',
     env: 'DB_POOL_MIN',
     default: 2,
-    validate: (value) => value >= 0 || 'Pool min must be >= 0'
+    validate: (value) => value >= 0 || 'Pool min must be >= 0',
   },
 
   poolMax: {
     type: 'number',
     env: 'DB_POOL_MAX',
     default: 10,
-    validate: (value) => value > 0 || 'Pool max must be > 0'
+    validate: (value) => value > 0 || 'Pool max must be > 0',
   },
 
   // SSL
@@ -74,14 +74,14 @@ export const databaseConfig = defineConfig({
     type: 'number',
     env: 'DB_CONNECTION_TIMEOUT',
     default: 30000,
-    description: 'Connection timeout in milliseconds'
+    description: 'Connection timeout in milliseconds',
   },
 
   queryTimeout: {
     type: 'number',
     env: 'DB_QUERY_TIMEOUT',
     default: 60000,
-    description: 'Query timeout in milliseconds'
+    description: 'Query timeout in milliseconds',
   },
 
   // Features
@@ -89,7 +89,7 @@ export const databaseConfig = defineConfig({
 
   enableMigrations: config.boolean('DB_ENABLE_MIGRATIONS', true),
 
-  migrationsTable: config.string('DB_MIGRATIONS_TABLE', 'migrations')
+  migrationsTable: config.string('DB_MIGRATIONS_TABLE', 'migrations'),
 })
 
 // Export type

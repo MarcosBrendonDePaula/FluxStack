@@ -1,11 +1,11 @@
 // 🔥 FluxStack Live Components - Component Registry
 
-import type { 
-  LiveComponent, 
-  LiveMessage, 
-  BroadcastMessage, 
+import type {
+  BroadcastMessage,
   ComponentDefinition,
-  WebSocketData 
+  LiveComponent,
+  LiveMessage,
+  WebSocketData,
 } from '@/core/types/types'
 
 export class ComponentRegistry {
@@ -14,7 +14,7 @@ export class ComponentRegistry {
   private rooms = new Map<string, Set<string>>() // roomId -> componentIds
   private wsConnections = new Map<string, any>() // componentId -> websocket
   private autoDiscoveredComponents = new Map<string, any>() // Auto-discovered component classes
-  
+
   // Register component definition
   registerComponent<TState>(definition: ComponentDefinition<TState>) {
     this.definitions.set(definition.name, definition)
@@ -30,9 +30,9 @@ export class ComponentRegistry {
   // Auto-discover components from directory
   async autoDiscoverComponents(componentsPath: string) {
     try {
-      const fs = await import('fs')
-      const path = await import('path')
-      
+      const fs = await import('node:fs')
+      const path = await import('node:path')
+
       if (!fs.existsSync(componentsPath)) {
         // In production, components are already bundled - no need to auto-discover
         const { appConfig } = await import('@/config/app.config')
@@ -43,20 +43,21 @@ export class ComponentRegistry {
       }
 
       const files = fs.readdirSync(componentsPath)
-      
+
       for (const file of files) {
         if (file.endsWith('.ts') || file.endsWith('.js')) {
           try {
             const fullPath = path.join(componentsPath, file)
             const module = await import(/* @vite-ignore */ fullPath)
-            
+
             // Look for exported classes that extend LiveComponent
-            Object.keys(module).forEach(exportName => {
+            Object.keys(module).forEach((exportName) => {
               const exportedItem = module[exportName]
-              if (typeof exportedItem === 'function' && 
-                  exportedItem.prototype && 
-                  this.isLiveComponentClass(exportedItem)) {
-                
+              if (
+                typeof exportedItem === 'function' &&
+                exportedItem.prototype &&
+                this.isLiveComponentClass(exportedItem)
+              ) {
                 const componentName = exportName.replace(/Component$/, '')
                 this.registerComponentClass(componentName, exportedItem)
               }
@@ -89,13 +90,13 @@ export class ComponentRegistry {
 
   // Mount component instance
   async mountComponent(
-    ws: any, 
-    componentName: string, 
+    ws: any,
+    componentName: string,
     props: any = {},
-    options?: { room?: string; userId?: string }
+    options?: { room?: string; userId?: string },
   ): Promise<string> {
     // Try to find component definition first
-    let definition = this.definitions.get(componentName)
+    const definition = this.definitions.get(componentName)
     let ComponentClass: any = null
     let initialState: any = {}
 
@@ -109,35 +110,33 @@ export class ComponentRegistry {
       if (!ComponentClass) {
         // Try variations of the name
         const variations = [
-          componentName + 'Component',
-          componentName.charAt(0).toUpperCase() + componentName.slice(1) + 'Component',
-          componentName.charAt(0).toUpperCase() + componentName.slice(1)
+          `${componentName}Component`,
+          `${componentName.charAt(0).toUpperCase() + componentName.slice(1)}Component`,
+          componentName.charAt(0).toUpperCase() + componentName.slice(1),
         ]
-        
+
         for (const variation of variations) {
           ComponentClass = this.autoDiscoveredComponents.get(variation)
           if (ComponentClass) break
         }
       }
-      
+
       if (!ComponentClass) {
         const availableComponents = [
           ...Array.from(this.definitions.keys()),
-          ...Array.from(this.autoDiscoveredComponents.keys())
+          ...Array.from(this.autoDiscoveredComponents.keys()),
         ]
-        throw new Error(`Component '${componentName}' not found. Available: ${availableComponents.join(', ')}`)
+        throw new Error(
+          `Component '${componentName}' not found. Available: ${availableComponents.join(', ')}`,
+        )
       }
-      
+
       // Create a default initial state for auto-discovered components
       initialState = {}
     }
 
     // Create component instance with registry methods
-    const component = new ComponentClass(
-      { ...initialState, ...props },
-      ws,
-      options
-    )
+    const component = new ComponentClass({ ...initialState, ...props }, ws, options)
 
     // Inject registry methods
     component.broadcastToRoom = (message: BroadcastMessage) => {
@@ -158,14 +157,14 @@ export class ComponentRegistry {
       ws.data = {
         components: new Map(),
         subscriptions: new Set(),
-        userId: options?.userId
+        userId: options?.userId,
       } as WebSocketData
     }
 
     ws.data.components.set(component.id, component)
 
     console.log(`🚀 Mounted component: ${componentName} (${component.id})`)
-    
+
     // Send initial state to client
     component.emit('STATE_UPDATE', { state: component.getSerializableState() })
 
@@ -179,10 +178,10 @@ export class ComponentRegistry {
 
     // Cleanup
     component.destroy()
-    
+
     // Remove from room subscriptions
     this.unsubscribeFromAllRooms(componentId)
-    
+
     // Remove from maps
     this.components.delete(componentId)
     this.wsConnections.delete(componentId)
@@ -200,7 +199,10 @@ export class ComponentRegistry {
     try {
       return await component.executeAction(action, payload)
     } catch (error: any) {
-      console.error(`❌ Error executing action '${action}' on component '${componentId}':`, error.message)
+      console.error(
+        `❌ Error executing action '${action}' on component '${componentId}':`,
+        error.message,
+      )
       throw error
     }
   }
@@ -224,7 +226,7 @@ export class ComponentRegistry {
     if (!this.rooms.has(roomId)) {
       this.rooms.set(roomId, new Set())
     }
-    
+
     this.rooms.get(roomId)!.add(componentId)
     console.log(`📡 Component '${componentId}' subscribed to room '${roomId}'`)
   }
@@ -262,14 +264,14 @@ export class ComponentRegistry {
       componentId: senderComponentId || 'system',
       payload: {
         type: message.type,
-        data: message.payload
+        data: message.payload,
       },
       timestamp: Date.now(),
-      room: message.room
+      room: message.room,
     }
 
     let broadcastCount = 0
-    
+
     for (const componentId of Array.from(roomComponents)) {
       // Skip sender if excludeUser is specified
       const component = this.components.get(componentId)
@@ -278,57 +280,57 @@ export class ComponentRegistry {
       }
 
       const ws = this.wsConnections.get(componentId)
-      if (ws && ws.send) {
+      if (ws?.send) {
         ws.send(JSON.stringify(broadcastMessage))
         broadcastCount++
       }
     }
 
-    console.log(`📡 Broadcast '${message.type}' to room '${message.room}': ${broadcastCount} recipients`)
+    console.log(
+      `📡 Broadcast '${message.type}' to room '${message.room}': ${broadcastCount} recipients`,
+    )
   }
 
   // Handle WebSocket message
   async handleMessage(ws: any, message: LiveMessage): Promise<any> {
     try {
       switch (message.type) {
-        case 'COMPONENT_MOUNT':
+        case 'COMPONENT_MOUNT': {
           const componentId = await this.mountComponent(
-            ws, 
-            message.payload.component, 
+            ws,
+            message.payload.component,
             message.payload.props,
-            { 
+            {
               room: message.payload.room,
-              userId: message.userId 
-            }
+              userId: message.userId,
+            },
           )
           return { success: true, result: { componentId } }
+        }
 
         case 'COMPONENT_UNMOUNT':
           await this.unmountComponent(message.componentId)
           return { success: true }
 
-        case 'CALL_ACTION':
+        case 'CALL_ACTION': {
           // Execute action - response depends on expectResponse flag
           const actionResult = await this.executeAction(
             message.componentId,
             message.action!,
-            message.payload
+            message.payload,
           )
-          
+
           // If client expects response, return it
           if (message.expectResponse) {
             return { success: true, result: actionResult }
           }
-          
+
           // Otherwise no return - if state changed, component will emit STATE_UPDATE automatically
           return null
+        }
 
         case 'PROPERTY_UPDATE':
-          this.updateProperty(
-            message.componentId,
-            message.property!,
-            message.payload.value
-          )
+          this.updateProperty(message.componentId, message.property!, message.payload.value)
           return { success: true }
 
         default:
@@ -337,7 +339,7 @@ export class ComponentRegistry {
       }
     } catch (error: any) {
       console.error('❌ Registry error:', error.message)
-      
+
       // Send error back to client
       const errorMessage: LiveMessage = {
         type: 'ERROR',
@@ -345,13 +347,13 @@ export class ComponentRegistry {
         payload: {
           error: error.message,
           action: message.action,
-          originalMessage: message.type
+          originalMessage: message.type,
         },
-        timestamp: Date.now()
+        timestamp: Date.now(),
       }
-      
+
       ws.send(JSON.stringify(errorMessage))
-      
+
       return { success: false, error: error.message }
     }
   }
@@ -361,12 +363,14 @@ export class ComponentRegistry {
     if (!ws.data?.components) return
 
     const componentsToCleanup = Array.from(ws.data.components.keys()) as string[]
-    
+
     for (const componentId of componentsToCleanup) {
       this.unmountComponent(componentId)
     }
 
-    console.log(`🧹 Cleaned up ${componentsToCleanup.length} components from disconnected WebSocket`)
+    console.log(
+      `🧹 Cleaned up ${componentsToCleanup.length} components from disconnected WebSocket`,
+    )
   }
 
   // Get statistics
@@ -377,11 +381,8 @@ export class ComponentRegistry {
       rooms: this.rooms.size,
       connections: this.wsConnections.size,
       roomDetails: Object.fromEntries(
-        Array.from(this.rooms.entries()).map(([roomId, components]) => [
-          roomId,
-          components.size
-        ])
-      )
+        Array.from(this.rooms.entries()).map(([roomId, components]) => [roomId, components.size]),
+      ),
     }
   }
 
@@ -394,7 +395,7 @@ export class ComponentRegistry {
   getRoomComponents(roomId: string): LiveComponent[] {
     const componentIds = this.rooms.get(roomId) || new Set()
     return Array.from(componentIds)
-      .map(id => this.components.get(id))
+      .map((id) => this.components.get(id))
       .filter(Boolean) as LiveComponent[]
   }
 }

@@ -5,27 +5,27 @@
 
 // Re-export all configuration types and utilities
 export type {
-  FluxStackConfig,
   AppConfig,
-  ServerConfig,
-  ClientConfig,
+  AuthConfig,
   BuildConfig,
+  BuildTarget,
+  ClientConfig,
+  DatabaseConfig,
+  EmailConfig,
+  FluxStackConfig,
+  LogFormat,
   LoggingConfig,
+  LogLevel,
   MonitoringConfig,
   PluginConfig,
-  DatabaseConfig,
-  AuthConfig,
-  EmailConfig,
+  ServerConfig,
   StorageConfig,
-  LogLevel,
-  BuildTarget,
-  LogFormat
 } from './schema'
 
 export {
   defaultFluxStackConfig,
   environmentDefaults,
-  fluxStackConfigSchema
+  fluxStackConfigSchema,
 } from './schema'
 
 export interface ConfigLoadOptions {
@@ -42,12 +42,12 @@ export interface ConfigLoadResult {
   errors: string[]
 }
 
-import { 
+import {
   loadConfig as _loadConfig,
   loadConfigSync as _loadConfigSync,
+  createConfigSubset,
   getConfigValue,
   hasConfigValue,
-  createConfigSubset
 } from './loader'
 
 import { environmentDefaults } from './schema'
@@ -57,42 +57,39 @@ export {
   _loadConfigSync as loadConfigSync,
   getConfigValue,
   hasConfigValue,
-  createConfigSubset
+  createConfigSubset,
 }
 
 export type {
-  ValidationResult,
-  ValidationError,
-  ValidationWarning
-} from './validator'
-
-export {
-  validateConfig,
-  validateConfigStrict,
-  createEnvironmentValidator,
-  validatePartialConfig,
-  getConfigSuggestions
-} from './validator'
-
-export type {
+  ConfigPrecedence,
   EnvironmentInfo,
-  ConfigPrecedence
 } from './env'
-
 export {
-  getEnvironmentInfo,
-  EnvConverter,
-  EnvironmentProcessor,
   ConfigMerger,
-  EnvironmentConfigApplier,
-  environmentProcessor,
   configMerger,
+  EnvConverter,
+  EnvironmentConfigApplier,
+  EnvironmentProcessor,
   environmentConfigApplier,
+  environmentProcessor,
+  getEnvironmentInfo,
+  getEnvironmentRecommendations,
   isDevelopment,
   isProduction,
   isTest,
-  getEnvironmentRecommendations
 } from './env'
+export type {
+  ValidationError,
+  ValidationResult,
+  ValidationWarning,
+} from './validator'
+export {
+  createEnvironmentValidator,
+  getConfigSuggestions,
+  validateConfig,
+  validateConfigStrict,
+  validatePartialConfig,
+} from './validator'
 
 // Main configuration loader with caching
 let cachedConfig: FluxStackConfig | null = null
@@ -106,14 +103,14 @@ export async function getConfig(options?: ConfigLoadOptions): Promise<FluxStackC
   if (cachedConfig && !options) {
     return cachedConfig
   }
-  
+
   if (configPromise && !options) {
     return configPromise
   }
-  
+
   configPromise = loadConfiguration(options)
   cachedConfig = await configPromise
-  
+
   return cachedConfig
 }
 
@@ -123,15 +120,15 @@ export async function getConfig(options?: ConfigLoadOptions): Promise<FluxStackC
  */
 export function getConfigSync(options?: ConfigLoadOptions): FluxStackConfig {
   const result = _loadConfigSync(options)
-  
+
   if (result.errors.length > 0) {
     console.warn('Configuration errors:', result.errors)
   }
-  
+
   if (result.warnings.length > 0) {
     console.warn('Configuration warnings:', result.warnings)
   }
-  
+
   return result.config
 }
 
@@ -150,66 +147,74 @@ export async function reloadConfig(options?: ConfigLoadOptions): Promise<FluxSta
 async function loadConfiguration(options?: ConfigLoadOptions): Promise<FluxStackConfig> {
   try {
     const result = await _loadConfig(options)
-    
+
     // Log warnings if any
     if (result.warnings.length > 0) {
       console.warn('Configuration warnings:')
-      result.warnings.forEach(warning => console.warn(`  - ${warning}`))
+      result.warnings.forEach((warning) => console.warn(`  - ${warning}`))
     }
-    
+
     // Throw on errors
     if (result.errors.length > 0) {
       const errorMessage = [
         'Configuration loading failed:',
-        ...result.errors.map(e => `  - ${e}`)
+        ...result.errors.map((e) => `  - ${e}`),
       ].join('\n')
-      
+
       throw new Error(errorMessage)
     }
-    
+
     return result.config
   } catch (error) {
     console.error('Failed to load FluxStack configuration:', error)
-    
+
     // Fall back to default configuration with environment variables and environment defaults
     const fallbackResult = _loadConfigSync(options)
     console.warn('Using fallback configuration with environment variables only')
-    
+
     // Apply environment defaults to fallback configuration
     const environment = process.env.NODE_ENV || 'development'
     const envDefaults = environmentDefaults[environment as keyof typeof environmentDefaults]
-    
+
     if (envDefaults) {
       // Simple merge for fallback with proper type casting
       const configWithDefaults = {
         ...fallbackResult.config,
         logging: {
           ...fallbackResult.config.logging,
-          ...((envDefaults as any).logging || {})
+          ...((envDefaults as any).logging || {}),
         },
-        server: (envDefaults as any).server ? {
-          ...fallbackResult.config.server,
-          ...(envDefaults as any).server
-        } : fallbackResult.config.server,
-        client: (envDefaults as any).client ? {
-          ...fallbackResult.config.client,
-          ...(envDefaults as any).client
-        } : fallbackResult.config.client,
-        build: (envDefaults as any).build ? {
-          ...fallbackResult.config.build,
-          optimization: {
-            ...fallbackResult.config.build.optimization,
-            ...((envDefaults as any).build.optimization || {})
-          }
-        } : fallbackResult.config.build,
-        monitoring: (envDefaults as any).monitoring ? {
-          ...fallbackResult.config.monitoring,
-          ...(envDefaults as any).monitoring
-        } : fallbackResult.config.monitoring
+        server: (envDefaults as any).server
+          ? {
+              ...fallbackResult.config.server,
+              ...(envDefaults as any).server,
+            }
+          : fallbackResult.config.server,
+        client: (envDefaults as any).client
+          ? {
+              ...fallbackResult.config.client,
+              ...(envDefaults as any).client,
+            }
+          : fallbackResult.config.client,
+        build: (envDefaults as any).build
+          ? {
+              ...fallbackResult.config.build,
+              optimization: {
+                ...fallbackResult.config.build.optimization,
+                ...((envDefaults as any).build.optimization || {}),
+              },
+            }
+          : fallbackResult.config.build,
+        monitoring: (envDefaults as any).monitoring
+          ? {
+              ...fallbackResult.config.monitoring,
+              ...(envDefaults as any).monitoring,
+            }
+          : fallbackResult.config.monitoring,
       } as FluxStackConfig
       return configWithDefaults
     }
-    
+
     return fallbackResult.config
   }
 }
@@ -217,13 +222,10 @@ async function loadConfiguration(options?: ConfigLoadOptions): Promise<FluxStack
 /**
  * Create a configuration subset for plugins or modules
  */
-export function createPluginConfig<T = any>(
-  config: FluxStackConfig,
-  pluginName: string
-): T {
+export function createPluginConfig<T = any>(config: FluxStackConfig, pluginName: string): T {
   const pluginConfig = config.plugins.config[pluginName] || {}
   const customConfig = config.custom?.[pluginName] || {}
-  
+
   return { ...pluginConfig, ...customConfig } as T
 }
 
@@ -235,20 +237,20 @@ export function isFeatureEnabled(config: FluxStackConfig, feature: string): bool
   if (config.plugins.enabled.includes(feature)) {
     return !config.plugins.disabled.includes(feature)
   }
-  
+
   // Check monitoring features
   if (feature === 'monitoring') {
     return config.monitoring.enabled
   }
-  
+
   if (feature === 'metrics') {
     return config.monitoring.enabled && config.monitoring.metrics.enabled
   }
-  
+
   if (feature === 'profiling') {
     return config.monitoring.enabled && config.monitoring.profiling.enabled
   }
-  
+
   // Check custom features
   return config.custom?.[feature] === true
 }
@@ -293,12 +295,12 @@ export function createLegacyConfig(config: FluxStackConfig) {
     cors: {
       origins: config.server.cors.origins,
       methods: config.server.cors.methods,
-      headers: config.server.cors.headers
+      headers: config.server.cors.headers,
     },
     build: {
       outDir: config.build.outDir,
-      target: config.build.target
-    }
+      target: config.build.target,
+    },
   }
 }
 
@@ -313,5 +315,5 @@ export const env = {
   isProduction: () => _getEnvironmentInfo().isProduction,
   isTest: () => _getEnvironmentInfo().isTest,
   getName: () => _getEnvironmentInfo().name,
-  getInfo: () => _getEnvironmentInfo()
+  getInfo: () => _getEnvironmentInfo(),
 }

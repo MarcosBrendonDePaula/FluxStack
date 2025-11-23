@@ -3,14 +3,14 @@
  * Tests for config/plugins.config.ts
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { pluginsConfig } from '@/config/plugins.config'
 
 describe('Plugins Configuration', () => {
   describe('Plugin Management', () => {
     it('should have enabled plugins array', () => {
       expect(Array.isArray(pluginsConfig.enabled)).toBe(true)
-      pluginsConfig.enabled.forEach(plugin => {
+      pluginsConfig.enabled.forEach((plugin) => {
         expect(typeof plugin).toBe('string')
       })
     })
@@ -32,7 +32,7 @@ describe('Plugins Configuration', () => {
   describe('Core Plugins', () => {
     it('should include essential plugins', () => {
       const essentialPlugins = ['logger', 'swagger', 'vite', 'cors']
-      essentialPlugins.forEach(plugin => {
+      essentialPlugins.forEach((plugin) => {
         expect(pluginsConfig.enabled).toContain(plugin)
       })
     })

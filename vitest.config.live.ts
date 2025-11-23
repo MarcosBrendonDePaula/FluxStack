@@ -1,7 +1,7 @@
 // 🧪 Vitest Configuration for Live Components Tests
 
+import path from 'node:path'
 import { defineConfig } from 'vitest/config'
-import path from 'path'
 
 export default defineConfig({
   test: {
@@ -9,35 +9,27 @@ export default defineConfig({
     root: './core/server/live',
     environment: 'node',
     setupFiles: ['./__tests__/setup.ts'],
-    include: [
-      '**/__tests__/**/*.test.ts'
-    ],
-    exclude: [
-      '**/node_modules/**',
-      '**/dist/**',
-      '**/.{idea,git,cache,output,temp}/**'
-    ],
+    include: ['**/__tests__/**/*.test.ts'],
+    exclude: ['**/node_modules/**', '**/dist/**', '**/.{idea,git,cache,output,temp}/**'],
     globals: true,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       reportsDirectory: './coverage/live-components',
-      include: [
-        'core/server/live/**/*.ts'
-      ],
+      include: ['core/server/live/**/*.ts'],
       exclude: [
         'core/server/live/**/__tests__/**',
         'core/server/live/**/*.test.ts',
-        'core/server/live/**/*.spec.ts'
+        'core/server/live/**/*.spec.ts',
       ],
       thresholds: {
         global: {
           branches: 80,
           functions: 80,
           lines: 80,
-          statements: 80
-        }
-      }
+          statements: 80,
+        },
+      },
     },
     testTimeout: 10000,
     hookTimeout: 10000,
@@ -48,21 +40,21 @@ export default defineConfig({
       threads: {
         singleThread: false,
         minThreads: 1,
-        maxThreads: 4
-      }
+        maxThreads: 4,
+      },
     },
     reporter: ['verbose', 'json'],
     outputFile: {
-      json: './test-results/live-components.json'
-    }
+      json: './test-results/live-components.json',
+    },
   },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './core'),
-      '@tests': path.resolve(__dirname, './core/server/live/__tests__')
-    }
+      '@tests': path.resolve(__dirname, './core/server/live/__tests__'),
+    },
   },
   esbuild: {
-    target: 'node18'
-  }
+    target: 'node18',
+  },
 })

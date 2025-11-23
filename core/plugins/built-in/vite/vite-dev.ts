@@ -1,5 +1,5 @@
-import type { PluginContext } from "@/core/plugins/types"
 import { clientConfig } from '@/config/client.config'
+import type { PluginContext } from '@/core/plugins/types'
 
 // Dynamic import type for vite
 type ViteDevServer = Awaited<ReturnType<typeof import('vite')['createServer']>>
@@ -10,7 +10,7 @@ let viteServer: ViteDevServer | null = null
 // Default configuration values
 const DEFAULTS = {
   port: clientConfig.vite.port,
-  host: clientConfig.vite.host
+  host: clientConfig.vite.host,
 }
 
 /**
@@ -19,7 +19,7 @@ const DEFAULTS = {
  */
 export async function setupViteDev(context: PluginContext): Promise<void> {
   const vitePort = DEFAULTS.port || clientConfig.vite.port || 5173
-  const viteHost = DEFAULTS.host || "localhost"
+  const viteHost = DEFAULTS.host || 'localhost'
 
   // Import group logger utilities
   const { endGroup } = await import('@/core/utils/logger/group-logger')
@@ -34,9 +34,9 @@ export async function setupViteDev(context: PluginContext): Promise<void> {
       server: {
         port: vitePort,
         host: viteHost,
-        strictPort: true
+        strictPort: true,
       },
-      logLevel: 'silent'
+      logLevel: 'silent',
     })
 
     await viteServer.listen()
@@ -48,7 +48,7 @@ export async function setupViteDev(context: PluginContext): Promise<void> {
     ;(context as any).viteConfig = {
       port: vitePort,
       host: viteHost,
-      server: viteServer
+      server: viteServer,
     }
 
     // Setup cleanup on process exit
@@ -63,13 +63,13 @@ export async function setupViteDev(context: PluginContext): Promise<void> {
     process.on('SIGINT', cleanup)
     process.on('SIGTERM', cleanup)
     process.on('exit', cleanup)
-
   } catch (error) {
     // Check if error is related to port already in use
     const errorMessage = error instanceof Error ? error.message : String(error)
-    const isPortInUse = errorMessage.includes('EADDRINUSE') ||
+    const isPortInUse =
+      errorMessage.includes('EADDRINUSE') ||
       errorMessage.includes('address already in use') ||
-      errorMessage.includes('Port') && errorMessage.includes('is in use')
+      (errorMessage.includes('Port') && errorMessage.includes('is in use'))
 
     if (isPortInUse) {
       endGroup()
@@ -78,7 +78,9 @@ export async function setupViteDev(context: PluginContext): Promise<void> {
       context.logger.info(`💡 Try one of these solutions:`)
       context.logger.info(`   1. Stop the process using port ${vitePort}`)
       context.logger.info(`   2. Change VITE_PORT in your .env file`)
-      context.logger.info(`   3. Kill the process: ${process.platform === 'win32' ? `netstat -ano | findstr :${vitePort}` : `lsof -ti:${vitePort} | xargs kill -9`}`)
+      context.logger.info(
+        `   3. Kill the process: ${process.platform === 'win32' ? `netstat -ano | findstr :${vitePort}` : `lsof -ti:${vitePort} | xargs kill -9`}`,
+      )
       process.exit(1)
     } else {
       context.logger.error('❌ Failed to start Vite server:', errorMessage)

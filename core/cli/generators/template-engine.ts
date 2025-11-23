@@ -1,7 +1,13 @@
-import type { GeneratorContext, GeneratorOptions, Template, TemplateFile, GeneratedFile, TemplateProcessor } from "./types"
-import { join, dirname } from "path"
-import { mkdir, writeFile, readFile, stat } from "fs/promises"
-import { existsSync } from "fs"
+import { existsSync } from 'node:fs'
+import { mkdir, writeFile } from 'node:fs/promises'
+import { dirname, join } from 'node:path'
+import type {
+  GeneratedFile,
+  GeneratorContext,
+  GeneratorOptions,
+  Template,
+  TemplateProcessor,
+} from './types'
 
 export class TemplateEngine {
   private processor: TemplateProcessor
@@ -13,7 +19,7 @@ export class TemplateEngine {
   async processTemplate(
     template: Template,
     context: GeneratorContext,
-    options: GeneratorOptions
+    options: GeneratorOptions,
   ): Promise<GeneratedFile[]> {
     const variables = await this.collectVariables(template, context, options)
     const files: GeneratedFile[] = []
@@ -44,7 +50,7 @@ export class TemplateEngine {
         path: fullPath,
         content: processedContent,
         exists,
-        action
+        action,
       })
     }
 
@@ -74,7 +80,7 @@ export class TemplateEngine {
   private async collectVariables(
     template: Template,
     context: GeneratorContext,
-    options: GeneratorOptions
+    options: GeneratorOptions,
   ): Promise<Record<string, any>> {
     const variables: Record<string, any> = {
       // Built-in variables
@@ -91,7 +97,7 @@ export class TemplateEngine {
       year: new Date().getFullYear(),
       author: 'FluxStack Developer',
       projectName: context.config.app?.name || 'fluxstack-app',
-      ...options
+      ...options,
     }
 
     // Process template-specific variables
@@ -130,7 +136,7 @@ export class TemplateEngine {
   }
 
   private toCamelCase(str: string): string {
-    return str.replace(/[-_\s]+(.)?/g, (_, char) => char ? char.toUpperCase() : '')
+    return str.replace(/[-_\s]+(.)?/g, (_, char) => (char ? char.toUpperCase() : ''))
   }
 
   private toPascalCase(str: string): string {

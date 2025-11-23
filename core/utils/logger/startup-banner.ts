@@ -10,7 +10,6 @@
 
 import chalk from 'chalk'
 import { LOG } from './index'
-import { FLUXSTACK_VERSION } from '../version'
 
 export interface StartupInfo {
   port: number
@@ -31,10 +30,10 @@ export function displayStartupBanner(info: StartupInfo): void {
   const {
     port,
     host = 'localhost',
-    apiPrefix = '/api',
+    apiPrefix: _apiPrefix = '/api',
     environment,
-    pluginCount = 0,
-    vitePort,
+    pluginCount: _pluginCount = 0,
+    vitePort: _vitePort,
     viteEmbedded = false,
     liveComponents = [],
   } = info
@@ -44,12 +43,18 @@ export function displayStartupBanner(info: StartupInfo): void {
   const serverUrl = `http://${displayHost}:${port}`
 
   // Simple ready message with URL
-  console.log(chalk.green('\nServer ready!') + chalk.gray(` Environment: ${environment}${viteEmbedded ? ' | Vite: embedded' : ''}`))
+  console.log(
+    chalk.green('\nServer ready!') +
+      chalk.gray(` Environment: ${environment}${viteEmbedded ? ' | Vite: embedded' : ''}`),
+  )
   console.log(chalk.cyan(`  → ${serverUrl}`))
 
   // Display Live Components
   if (liveComponents.length > 0) {
-    console.log(chalk.gray(`  Live Components (${liveComponents.length}): `) + chalk.yellow(liveComponents.join(', ')))
+    console.log(
+      chalk.gray(`  Live Components (${liveComponents.length}): `) +
+        chalk.yellow(liveComponents.join(', ')),
+    )
   }
 
   // Display plugins in compact format

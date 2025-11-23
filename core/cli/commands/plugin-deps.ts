@@ -2,12 +2,11 @@
  * Comando CLI para gerenciar dependências de plugins
  */
 
-import { Command } from 'commander'
+import { existsSync } from 'node:fs'
 import chalk from 'chalk'
+import { Command } from 'commander'
 import { PluginDependencyManager } from '@/core/plugins/dependency-manager'
 import { PluginRegistry } from '@/core/plugins/registry'
-import { existsSync, readFileSync } from 'fs'
-import { join } from 'path'
 
 export function createPluginDepsCommand(): Command {
   const command = new Command('plugin:deps')
@@ -32,19 +31,19 @@ function createInstallCommand(): Command {
         const dependencyManager = new PluginDependencyManager({
           autoInstall: !options.dryRun,
           packageManager: options.packageManager,
-          logger: createConsoleLogger() as any as any
+          logger: createConsoleLogger() as any as any,
         })
 
         const registry = new PluginRegistry({
-          logger: createConsoleLogger() as any as any
+          logger: createConsoleLogger() as any as any,
         })
 
         // Descobrir plugins
         const results = await registry.discoverPlugins({
-          directories: ['plugins', 'core/plugins/built-in']
+          directories: ['plugins', 'core/plugins/built-in'],
         })
 
-        const successfulPlugins = results.filter(r => r.success)
+        const successfulPlugins = results.filter((r) => r.success)
         console.log(chalk.green(`✅ Encontrados ${successfulPlugins.length} plugins\n`))
 
         // Resolver dependências
@@ -62,11 +61,11 @@ function createInstallCommand(): Command {
         // Mostrar resumo
         let totalDeps = 0
         let totalConflicts = 0
-        
+
         for (const resolution of resolutions) {
           totalDeps += resolution.dependencies.length
           totalConflicts += resolution.conflicts.length
-          
+
           if (resolution.dependencies.length > 0) {
             console.log(chalk.cyan(`📦 ${resolution.plugin}:`))
             for (const dep of resolution.dependencies) {
@@ -87,7 +86,6 @@ function createInstallCommand(): Command {
           await dependencyManager.installPluginDependencies(resolutions)
           console.log(chalk.green(`✅ ${totalDeps} dependências instaladas com sucesso!`))
         }
-
       } catch (error) {
         console.error(chalk.red('❌ Erro ao instalar dependências:'), error)
         process.exit(1)
@@ -104,16 +102,16 @@ function createListCommand(): Command {
 
       try {
         const registry = new PluginRegistry({
-          logger: createConsoleLogger() as any
+          logger: createConsoleLogger() as any,
         })
 
         const results = await registry.discoverPlugins({
-          directories: ['plugins', 'core/plugins/built-in']
+          directories: ['plugins', 'core/plugins/built-in'],
         })
 
         const dependencyManager = new PluginDependencyManager({
           autoInstall: false,
-          logger: createConsoleLogger() as any
+          logger: createConsoleLogger() as any,
         })
 
         for (const result of results) {
@@ -125,9 +123,9 @@ function createListCommand(): Command {
             const pluginDir = findPluginDirectory(result.plugin.name)
             if (pluginDir) {
               const resolution = await dependencyManager.resolvePluginDependencies(pluginDir)
-              
+
               console.log(chalk.cyan(`📦 ${resolution.plugin}`))
-              
+
               if (resolution.dependencies.length === 0) {
                 console.log(chalk.gray('  Nenhuma dependência'))
               } else {
@@ -146,7 +144,6 @@ function createListCommand(): Command {
             }
           }
         }
-
       } catch (error) {
         console.error(chalk.red('❌ Erro ao listar dependências:'), error)
         process.exit(1)
@@ -162,16 +159,16 @@ function createCheckCommand(): Command {
 
       try {
         const registry = new PluginRegistry({
-          logger: createConsoleLogger() as any
+          logger: createConsoleLogger() as any,
         })
 
         const results = await registry.discoverPlugins({
-          directories: ['plugins', 'core/plugins/built-in']
+          directories: ['plugins', 'core/plugins/built-in'],
         })
 
         const dependencyManager = new PluginDependencyManager({
           autoInstall: false,
-          logger: createConsoleLogger() as any
+          logger: createConsoleLogger() as any,
         })
 
         const resolutions = []
@@ -185,13 +182,13 @@ function createCheckCommand(): Command {
           }
         }
 
-        const allConflicts = resolutions.flatMap(r => r.conflicts)
-        
+        const allConflicts = resolutions.flatMap((r) => r.conflicts)
+
         if (allConflicts.length === 0) {
           console.log(chalk.green('✅ Nenhum conflito de dependências encontrado!'))
         } else {
           console.log(chalk.red(`❌ ${allConflicts.length} conflitos encontrados:\n`))
-          
+
           for (const conflict of allConflicts) {
             console.log(chalk.yellow(`⚠️  ${conflict.package}:`))
             for (const version of conflict.versions) {
@@ -203,7 +200,6 @@ function createCheckCommand(): Command {
             console.log()
           }
         }
-
       } catch (error) {
         console.error(chalk.red('❌ Erro ao verificar conflitos:'), error)
         process.exit(1)
@@ -228,10 +224,7 @@ function createCleanCommand(): Command {
 }
 
 function findPluginDirectory(pluginName: string): string | null {
-  const possiblePaths = [
-    `plugins/${pluginName}`,
-    `core/plugins/built-in/${pluginName}`
-  ]
+  const possiblePaths = [`plugins/${pluginName}`, `core/plugins/built-in/${pluginName}`]
 
   for (const path of possiblePaths) {
     if (existsSync(path)) {
@@ -266,6 +259,6 @@ function createConsoleLogger(): ConsoleLogger {
     error: (msg: string, meta?: unknown) => {
       console.log(chalk.red(`[ERROR] ${msg}`), meta || '')
     },
-    child: () => createConsoleLogger()
+    child: () => createConsoleLogger(),
   }
 }

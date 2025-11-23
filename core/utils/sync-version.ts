@@ -5,8 +5,8 @@
  * Ensures version consistency between package.json and version.ts
  */
 
-import { readFileSync, writeFileSync } from 'fs'
-import { join } from 'path'
+import { readFileSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 interface PackageJson {
   version: string

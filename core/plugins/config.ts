@@ -3,9 +3,9 @@
  * Handles plugin-specific configuration validation and management
  */
 
-import type { FluxStack, PluginConfigSchema, PluginValidationResult } from "./types"
-import type { FluxStackConfig } from "@/core/config/schema"
-import type { Logger } from "@/core/utils/logger/index"
+import type { FluxStackConfig } from '@/core/config/schema'
+import type { Logger } from '@/core/utils/logger/index'
+import type { FluxStack, PluginConfigSchema, PluginValidationResult } from './types'
 
 type Plugin = FluxStack.Plugin
 
@@ -17,10 +17,6 @@ export interface PluginConfigManager {
 }
 
 export class DefaultPluginConfigManager implements PluginConfigManager {
-  constructor(_logger?: Logger) {
-    // Logger stored but not used in current implementation
-  }
-
   /**
    * Validate plugin configuration against its schema
    */
@@ -28,7 +24,7 @@ export class DefaultPluginConfigManager implements PluginConfigManager {
     const result: PluginValidationResult = {
       valid: true,
       errors: [],
-      warnings: []
+      warnings: [],
     }
 
     if (!plugin.configSchema) {
@@ -40,7 +36,9 @@ export class DefaultPluginConfigManager implements PluginConfigManager {
       this.validateAgainstSchema(config, plugin.configSchema, plugin.name, result)
     } catch (error) {
       result.valid = false
-      result.errors.push(`Configuration validation failed: ${error instanceof Error ? error.message : String(error)}`)
+      result.errors.push(
+        `Configuration validation failed: ${error instanceof Error ? error.message : String(error)}`,
+      )
     }
 
     return result
@@ -51,7 +49,7 @@ export class DefaultPluginConfigManager implements PluginConfigManager {
    */
   mergePluginConfig(plugin: Plugin, userConfig: any): any {
     const defaultConfig = plugin.defaultConfig || {}
-    
+
     if (!userConfig) {
       return defaultConfig
     }
@@ -83,7 +81,7 @@ export class DefaultPluginConfigManager implements PluginConfigManager {
     data: any,
     schema: PluginConfigSchema,
     pluginName: string,
-    result: PluginValidationResult
+    result: PluginValidationResult,
   ): void {
     if (schema.type === 'object' && typeof data !== 'object') {
       result.valid = false
@@ -96,7 +94,9 @@ export class DefaultPluginConfigManager implements PluginConfigManager {
       for (const requiredProp of schema.required) {
         if (!(requiredProp in data)) {
           result.valid = false
-          result.errors.push(`Plugin '${pluginName}' configuration missing required property: ${requiredProp}`)
+          result.errors.push(
+            `Plugin '${pluginName}' configuration missing required property: ${requiredProp}`,
+          )
         }
       }
     }
@@ -114,10 +114,12 @@ export class DefaultPluginConfigManager implements PluginConfigManager {
     if (schema.additionalProperties === false) {
       const allowedProps = Object.keys(schema.properties || {})
       const actualProps = Object.keys(data)
-      
+
       for (const prop of actualProps) {
         if (!allowedProps.includes(prop)) {
-          result.warnings.push(`Plugin '${pluginName}' configuration has unexpected property: ${prop}`)
+          result.warnings.push(
+            `Plugin '${pluginName}' configuration has unexpected property: ${prop}`,
+          )
         }
       }
     }
@@ -126,7 +128,12 @@ export class DefaultPluginConfigManager implements PluginConfigManager {
   /**
    * Validate individual property
    */
-  private validateProperty(value: any, schema: any, path: string, result: PluginValidationResult): void {
+  private validateProperty(
+    value: any,
+    schema: any,
+    path: string,
+    result: PluginValidationResult,
+  ): void {
     if (schema.type) {
       const actualType = Array.isArray(value) ? 'array' : typeof value
       if (actualType !== schema.type) {
@@ -164,7 +171,12 @@ export class DefaultPluginConfigManager implements PluginConfigManager {
   /**
    * Validate string property
    */
-  private validateStringProperty(value: string, schema: any, path: string, result: PluginValidationResult): void {
+  private validateStringProperty(
+    value: string,
+    schema: any,
+    path: string,
+    result: PluginValidationResult,
+  ): void {
     if (schema.minLength && value.length < schema.minLength) {
       result.valid = false
       result.errors.push(`Property '${path}' must be at least ${schema.minLength} characters long`)
@@ -187,7 +199,12 @@ export class DefaultPluginConfigManager implements PluginConfigManager {
   /**
    * Validate number property
    */
-  private validateNumberProperty(value: number, schema: any, path: string, result: PluginValidationResult): void {
+  private validateNumberProperty(
+    value: number,
+    schema: any,
+    path: string,
+    result: PluginValidationResult,
+  ): void {
     if (schema.minimum !== undefined && value < schema.minimum) {
       result.valid = false
       result.errors.push(`Property '${path}' must be at least ${schema.minimum}`)
@@ -207,7 +224,12 @@ export class DefaultPluginConfigManager implements PluginConfigManager {
   /**
    * Validate array property
    */
-  private validateArrayProperty(value: any[], schema: any, path: string, result: PluginValidationResult): void {
+  private validateArrayProperty(
+    value: any[],
+    schema: any,
+    path: string,
+    result: PluginValidationResult,
+  ): void {
     if (schema.minItems && value.length < schema.minItems) {
       result.valid = false
       result.errors.push(`Property '${path}' must have at least ${schema.minItems} items`)
@@ -228,7 +250,12 @@ export class DefaultPluginConfigManager implements PluginConfigManager {
   /**
    * Validate object property
    */
-  private validateObjectProperty(value: any, schema: any, path: string, result: PluginValidationResult): void {
+  private validateObjectProperty(
+    value: any,
+    schema: any,
+    path: string,
+    result: PluginValidationResult,
+  ): void {
     if (schema.required) {
       for (const requiredProp of schema.required) {
         if (!(requiredProp in value)) {
@@ -270,8 +297,12 @@ export class DefaultPluginConfigManager implements PluginConfigManager {
     const result = { ...target }
 
     for (const key in source) {
-      if (source.hasOwnProperty(key)) {
-        if (typeof source[key] === 'object' && !Array.isArray(source[key]) && source[key] !== null) {
+      if (Object.hasOwn(source, key)) {
+        if (
+          typeof source[key] === 'object' &&
+          !Array.isArray(source[key]) &&
+          source[key] !== null
+        ) {
           result[key] = this.deepMerge(target[key], source[key])
         } else {
           result[key] = source[key]
@@ -295,7 +326,7 @@ export function createPluginUtils(logger?: Logger): PluginUtils {
           const duration = Date.now() - start
           logger?.debug(`Timer '${label}' completed`, { duration })
           return duration
-        }
+        },
       }
     },
 
@@ -304,7 +335,7 @@ export function createPluginUtils(logger?: Logger): PluginUtils {
       const k = 1024
       const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
       const i = Math.floor(Math.log(bytes) / Math.log(k))
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+      return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`
     },
 
     isProduction: (): boolean => {
@@ -324,7 +355,7 @@ export function createPluginUtils(logger?: Logger): PluginUtils {
       let hash = 0
       for (let i = 0; i < data.length; i++) {
         const char = data.charCodeAt(i)
-        hash = ((hash << 5) - hash) + char
+        hash = (hash << 5) - hash + char
         hash = hash & hash // Convert to 32-bit integer
       }
       return hash.toString(36)
@@ -340,11 +371,11 @@ export function createPluginUtils(logger?: Logger): PluginUtils {
       const result = manager.validatePluginConfig({ name: 'temp', configSchema: schema }, data)
       return {
         valid: result.valid,
-        errors: result.errors
+        errors: result.errors,
       }
-    }
+    },
   }
 }
 
 // Export types for plugin utilities
-import type { PluginUtils } from "./types"
+import type { PluginUtils } from './types'

@@ -62,8 +62,6 @@ export interface BuildStats {
   dependencies: string[]
 }
 
-
-
 export interface BundleResult {
   success: boolean
   duration: number

@@ -1,13 +1,21 @@
-import { copyFileSync, writeFileSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync } from "fs"
-import { join } from "path"
-import type { FluxStackConfig } from "../config"
-import type { BuildResult, BuildManifest } from "../types/build"
-import { Bundler } from "./bundler"
-import { Optimizer } from "./optimizer"
-import { FLUXSTACK_VERSION } from "../utils/version"
-import { buildLogger } from "../utils/build-logger"
-import type { PluginRegistry } from "../plugins/registry"
-import type { BuildContext, BuildAssetContext, BuildErrorContext } from "../plugins/types"
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs'
+import { join } from 'node:path'
+import type { FluxStackConfig } from '../config'
+import type { PluginRegistry } from '../plugins/registry'
+import type { BuildAssetContext, BuildContext, BuildErrorContext } from '../plugins/types'
+import type { BuildManifest, BuildResult } from '../types/build'
+import { buildLogger } from '../utils/build-logger'
+import { FLUXSTACK_VERSION } from '../utils/version'
+import { Bundler } from './bundler'
+import { Optimizer } from './optimizer'
 
 export class FluxStackBuilder {
   private config: FluxStackConfig
@@ -25,7 +33,7 @@ export class FluxStackBuilder {
       outDir: config.build.outDir,
       sourceMaps: config.build.sourceMaps,
       minify: config.build.minify,
-      external: config.build.external
+      external: config.build.external,
     })
 
     // Initialize optimizer with configuration
@@ -34,7 +42,7 @@ export class FluxStackBuilder {
       compress: config.build.compress || false,
       removeUnusedCSS: config.build.removeUnusedCSS || false,
       optimizeImages: config.build.optimizeImages || false,
-      bundleAnalysis: config.build.bundleAnalysis || false
+      bundleAnalysis: config.build.bundleAnalysis || false,
     })
   }
 
@@ -42,19 +50,19 @@ export class FluxStackBuilder {
     return await this.bundler.bundleClient({
       env: {
         VITE_BUILD_OUTDIR: this.config.client.build.outDir,
-        VITE_BUILD_SOURCEMAPS: this.config.client.build.sourceMaps.toString()
-      }
+        VITE_BUILD_SOURCEMAPS: this.config.client.build.sourceMaps.toString(),
+      },
     })
   }
 
   async buildServer() {
-    return await this.bundler.bundleServer("app/server/index.ts")
+    return await this.bundler.bundleServer('app/server/index.ts')
   }
 
-  async buildExecutable(outputName?: string, options?: import("../types/build").BundleOptions) {
+  async buildExecutable(outputName?: string, options?: import('../types/build').BundleOptions) {
     // Use app name from config as default, fallback to "FluxStack"
-    const name = outputName || this.config.app.name || "FluxStack"
-    return await this.bundler.compileToExecutable("app/server/index.ts", name, options)
+    const name = outputName || this.config.app.name || 'FluxStack'
+    return await this.bundler.compileToExecutable('app/server/index.ts', name, options)
   }
 
   async createDockerFiles() {
@@ -169,11 +177,11 @@ coverage
     // Escrever arquivos no dist
     try {
       buildLogger.step('Writing Dockerfile...')
-      writeFileSync(join(distDir, "Dockerfile"), dockerfile)
+      writeFileSync(join(distDir, 'Dockerfile'), dockerfile)
       buildLogger.step('Writing docker-compose.yml...')
-      writeFileSync(join(distDir, "docker-compose.yml"), dockerCompose)
+      writeFileSync(join(distDir, 'docker-compose.yml'), dockerCompose)
       buildLogger.step('Writing .dockerignore...')
-      writeFileSync(join(distDir, ".dockerignore"), dockerignore)
+      writeFileSync(join(distDir, '.dockerignore'), dockerignore)
     } catch (error) {
       buildLogger.error(`Error writing Docker files: ${error}`)
       throw error
@@ -182,7 +190,7 @@ coverage
     // Copiar .env ou criar um de exemplo
     const envPath = join(process.cwd(), '.env')
     const envExamplePath = join(process.cwd(), '.env.example')
-    const distEnvPath = join(distDir, ".env")
+    const distEnvPath = join(distDir, '.env')
 
     buildLogger.step('Configuring environment files...')
 
@@ -194,10 +202,10 @@ coverage
       envContent = envContent.replace(/VITE_NODE_ENV=development/g, 'VITE_NODE_ENV=production')
       // Write to dist
       writeFileSync(distEnvPath, envContent)
-      buildLogger.success("Environment file copied (NODE_ENV=production)")
+      buildLogger.success('Environment file copied (NODE_ENV=production)')
     } else if (existsSync(envExamplePath)) {
       copyFileSync(envExamplePath, distEnvPath)
-      buildLogger.success("Example environment file copied")
+      buildLogger.success('Example environment file copied')
     } else {
       // Criar um .env básico para produção
       const defaultEnv = `NODE_ENV=production
@@ -208,7 +216,7 @@ LOG_LEVEL=info
 MONITORING_ENABLED=true
 `
       writeFileSync(distEnvPath, defaultEnv)
-      buildLogger.success("Default environment file created")
+      buildLogger.success('Default environment file created')
     }
 
     // Copy package.json for Docker build
@@ -219,24 +227,23 @@ MONITORING_ENABLED=true
 
     if (existsSync(packageJsonPath)) {
       copyFileSync(packageJsonPath, distPackageJsonPath)
-      buildLogger.success("Package.json copied successfully")
+      buildLogger.success('Package.json copied successfully')
     } else {
-      buildLogger.warn("package.json not found, creating minimal version...")
+      buildLogger.warn('package.json not found, creating minimal version...')
       const minimalPackageJson = {
-        name: "fluxstack-app",
-        version: "1.0.0",
-        type: "module",
+        name: 'fluxstack-app',
+        version: '1.0.0',
+        type: 'module',
         scripts: {
-          start: "bun run index.js"
+          start: 'bun run index.js',
         },
-        dependencies: {}
+        dependencies: {},
       }
       writeFileSync(distPackageJsonPath, JSON.stringify(minimalPackageJson, null, 2))
     }
 
-    buildLogger.success("Docker configuration completed")
+    buildLogger.success('Docker configuration completed')
   }
-
 
   async build(): Promise<BuildResult> {
     buildLogger.header('⚡ FluxStack Build')
@@ -248,7 +255,7 @@ MONITORING_ENABLED=true
       target: this.config.build.target,
       outDir: this.config.build.outDir,
       mode: (this.config.build.mode || 'production') as 'development' | 'production',
-      config: this.config
+      config: this.config,
     }
 
     try {
@@ -275,14 +282,14 @@ MONITORING_ENABLED=true
 
       // Check if builds were successful
       if (!clientResult.success || !serverResult.success) {
-        const errorMessage = clientResult.error || serverResult.error || "Build failed"
+        const errorMessage = clientResult.error || serverResult.error || 'Build failed'
 
         // Execute onBuildError hooks
         const buildErrorContext: BuildErrorContext = {
           error: new Error(errorMessage),
           file: undefined,
           line: undefined,
-          column: undefined
+          column: undefined,
         }
         await this.executePluginHooks('onBuildError', buildErrorContext)
 
@@ -291,18 +298,20 @@ MONITORING_ENABLED=true
           duration: Date.now() - startTime,
           outputFiles: [],
           warnings: [],
-          errors: [{
-            message: errorMessage,
-            code: 'BUILD_FAILED'
-          }],
+          errors: [
+            {
+              message: errorMessage,
+              code: 'BUILD_FAILED',
+            },
+          ],
           stats: {
             totalSize: 0,
             gzippedSize: 0,
             chunkCount: 0,
             assetCount: 0,
             entryPoints: [],
-            dependencies: []
-          }
+            dependencies: [],
+          },
         }
       }
 
@@ -310,7 +319,9 @@ MONITORING_ENABLED=true
       await this.processAssets(this.config.build.outDir)
 
       // Optimize build if enabled
-      let optimizationResult
+      let optimizationResult:
+        | { originalSize?: number; optimizedSize?: number; reduction?: string }
+        | undefined
       if (this.config.build.optimize) {
         optimizationResult = await this.optimizer.optimize(this.config.build.outDir)
       }
@@ -319,7 +330,7 @@ MONITORING_ENABLED=true
       await this.createDockerFiles()
 
       // Generate build manifest
-      const manifest = await this.generateManifest(clientResult, serverResult, optimizationResult)
+      const _manifest = await this.generateManifest(clientResult, serverResult, optimizationResult)
 
       const duration = Date.now() - startTime
 
@@ -331,9 +342,17 @@ MONITORING_ENABLED=true
         { label: 'Build Time', value: buildLogger.formatDuration(duration), highlight: true },
         { label: 'Output Directory', value: this.config.build.outDir },
         { label: 'Client Assets', value: clientResult.assets?.length || 0 },
-        { label: 'Total Size', value: buildLogger.formatSize(optimizationResult?.optimizedSize || 0) },
-        { label: 'Compression', value: optimizationResult?.compressionRatio ? `${optimizationResult.compressionRatio.toFixed(2)}%` : 'N/A' },
-        { label: 'Docker Ready', value: '✓', highlight: true }
+        {
+          label: 'Total Size',
+          value: buildLogger.formatSize(optimizationResult?.optimizedSize || 0),
+        },
+        {
+          label: 'Compression',
+          value: optimizationResult?.compressionRatio
+            ? `${optimizationResult.compressionRatio.toFixed(2)}%`
+            : 'N/A',
+        },
+        { label: 'Docker Ready', value: '✓', highlight: true },
       ])
 
       return {
@@ -347,14 +366,13 @@ MONITORING_ENABLED=true
           gzippedSize: 0,
           chunkCount: 0,
           assetCount: clientResult.assets?.length || 0,
-          entryPoints: [serverResult.entryPoint || ""].filter(Boolean),
-          dependencies: []
-        }
+          entryPoints: [serverResult.entryPoint || ''].filter(Boolean),
+          dependencies: [],
+        },
       }
-
     } catch (error) {
       const duration = Date.now() - startTime
-      const errorMessage = error instanceof Error ? error.message : "Unknown build error"
+      const errorMessage = error instanceof Error ? error.message : 'Unknown build error'
 
       buildLogger.error(`Build failed: ${errorMessage}`)
 
@@ -363,7 +381,7 @@ MONITORING_ENABLED=true
         error: error instanceof Error ? error : new Error(errorMessage),
         file: undefined,
         line: undefined,
-        column: undefined
+        column: undefined,
       }
       await this.executePluginHooks('onBuildError', buildErrorContext)
 
@@ -372,19 +390,21 @@ MONITORING_ENABLED=true
         duration,
         outputFiles: [],
         warnings: [],
-        errors: [{
-          message: errorMessage,
-          code: 'BUILD_EXCEPTION',
-          stack: error instanceof Error ? error.stack : undefined
-        }],
+        errors: [
+          {
+            message: errorMessage,
+            code: 'BUILD_EXCEPTION',
+            stack: error instanceof Error ? error.stack : undefined,
+          },
+        ],
         stats: {
           totalSize: 0,
           gzippedSize: 0,
           chunkCount: 0,
           assetCount: 0,
           entryPoints: [],
-          dependencies: []
-        }
+          dependencies: [],
+        },
       }
     }
   }
@@ -392,9 +412,9 @@ MONITORING_ENABLED=true
   private async runPreBuildChecks(): Promise<void> {
     try {
       // Import and run version sync silently
-      const { syncVersion } = await import("../utils/sync-version")
+      const { syncVersion } = await import('../utils/sync-version')
       syncVersion(true) // Pass true for silent mode
-    } catch (error) {
+    } catch (_error) {
       // Silently handle pre-build check failures
       // Don't fail the build for pre-build check failures
     }
@@ -403,23 +423,23 @@ MONITORING_ENABLED=true
   private async validateConfig(): Promise<void> {
     // Validate build configuration
     if (!this.config.build.outDir) {
-      throw new Error("Build output directory not specified")
+      throw new Error('Build output directory not specified')
     }
 
     if (!this.config.build.target) {
-      throw new Error("Build target not specified")
+      throw new Error('Build target not specified')
     }
   }
 
   private async clean(): Promise<void> {
     // Clean output directory - implementation would go here
-    buildLogger.step("Cleaning output directory...")
+    buildLogger.step('Cleaning output directory...')
   }
 
   private async generateManifest(
     clientResult: any,
     serverResult: any,
-    optimizationResult?: any
+    optimizationResult?: any,
   ): Promise<BuildManifest> {
     return {
       version: this.config.app.version,
@@ -430,12 +450,12 @@ MONITORING_ENABLED=true
         entryPoints: [],
         chunks: [],
         assets: clientResult.assets || [],
-        publicPath: '/'
+        publicPath: '/',
       },
       server: {
         entryPoint: serverResult.entryPoint || '',
         dependencies: [],
-        externals: this.config.build.external || []
+        externals: this.config.build.external || [],
       },
       assets: [],
       optimization: {
@@ -444,7 +464,7 @@ MONITORING_ENABLED=true
         compressed: this.config.build.compress || false,
         originalSize: optimizationResult?.originalSize || 0,
         optimizedSize: optimizationResult?.optimizedSize || 0,
-        compressionRatio: optimizationResult?.compressionRatio || 0
+        compressionRatio: optimizationResult?.compressionRatio || 0,
       },
       metrics: {
         buildTime: clientResult.duration + serverResult.duration,
@@ -453,8 +473,8 @@ MONITORING_ENABLED=true
         totalSize: optimizationResult?.optimizedSize || 0,
         gzippedSize: 0,
         chunkCount: 0,
-        assetCount: clientResult.assets?.length || 0
-      }
+        assetCount: clientResult.assets?.length || 0,
+      },
     }
   }
 
@@ -475,7 +495,9 @@ MONITORING_ENABLED=true
         try {
           await hookFn(context)
         } catch (error) {
-          buildLogger.error(`Plugin '${pluginName}' ${hookName} hook failed: ${error instanceof Error ? error.message : String(error)}`)
+          buildLogger.error(
+            `Plugin '${pluginName}' ${hookName} hook failed: ${error instanceof Error ? error.message : String(error)}`,
+          )
         }
       }
     }
@@ -505,7 +527,7 @@ MONITORING_ENABLED=true
               assetPath: fullPath,
               assetType,
               size: stat.size,
-              content: undefined // Could read file if plugins need it
+              content: undefined, // Could read file if plugins need it
             }
 
             await this.executePluginHooks('onBuildAsset', assetContext)
@@ -515,7 +537,9 @@ MONITORING_ENABLED=true
 
       await processDirectory(outDir)
     } catch (error) {
-      buildLogger.warn(`Failed to process assets: ${error instanceof Error ? error.message : String(error)}`)
+      buildLogger.warn(
+        `Failed to process assets: ${error instanceof Error ? error.message : String(error)}`,
+      )
     }
   }
 
@@ -528,8 +552,17 @@ MONITORING_ENABLED=true
     if (ext === 'js' || ext === 'mjs' || ext === 'cjs') return 'js'
     if (ext === 'css') return 'css'
     if (ext === 'html' || ext === 'htm') return 'html'
-    if (ext === 'png' || ext === 'jpg' || ext === 'jpeg' || ext === 'gif' || ext === 'svg' || ext === 'webp') return 'image'
-    if (ext === 'woff' || ext === 'woff2' || ext === 'ttf' || ext === 'eot' || ext === 'otf') return 'font'
+    if (
+      ext === 'png' ||
+      ext === 'jpg' ||
+      ext === 'jpeg' ||
+      ext === 'gif' ||
+      ext === 'svg' ||
+      ext === 'webp'
+    )
+      return 'image'
+    if (ext === 'woff' || ext === 'woff2' || ext === 'ttf' || ext === 'eot' || ext === 'otf')
+      return 'font'
 
     return 'other'
   }

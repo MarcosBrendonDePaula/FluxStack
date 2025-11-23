@@ -30,7 +30,7 @@ export function startGroup(options: GroupOptions): void {
   } else {
     // Terminal fallback - use box drawing
     const coloredTitle = chalk[color].bold(`${icon} ${title}`)
-    console.log('\n' + coloredTitle)
+    console.log(`\n${coloredTitle}`)
     console.log(chalk.gray('─'.repeat(Math.min(title.length + 4, 60))))
   }
 }
@@ -60,7 +60,7 @@ export function logInGroup(message: string, icon?: string): void {
  */
 export async function withGroup<T>(
   options: GroupOptions,
-  callback: () => T | Promise<T>
+  callback: () => T | Promise<T>,
 ): Promise<T> {
   startGroup(options)
   try {
@@ -83,19 +83,23 @@ export function groupSummary(count: number, itemName: string, icon: string = '�
 /**
  * Create a boxed section for important info
  */
-export function logBox(title: string, content: string[], options: { color?: 'cyan' | 'green' | 'yellow' } = {}): void {
+export function logBox(
+  title: string,
+  content: string[],
+  options: { color?: 'cyan' | 'green' | 'yellow' } = {},
+): void {
   const { color = 'cyan' } = options
-  const maxWidth = Math.max(title.length, ...content.map(c => c.length)) + 4
+  const maxWidth = Math.max(title.length, ...content.map((c) => c.length)) + 4
 
   console.log('')
-  console.log(chalk[color]('┌' + '─'.repeat(maxWidth) + '┐'))
+  console.log(chalk[color](`┌${'─'.repeat(maxWidth)}┐`))
   console.log(chalk[color]('│ ') + chalk.bold(title.padEnd(maxWidth - 2)) + chalk[color](' │'))
-  console.log(chalk[color]('├' + '─'.repeat(maxWidth) + '┤'))
+  console.log(chalk[color](`├${'─'.repeat(maxWidth)}┤`))
 
   for (const line of content) {
     console.log(chalk[color]('│ ') + line.padEnd(maxWidth - 2) + chalk[color](' │'))
   }
 
-  console.log(chalk[color]('└' + '─'.repeat(maxWidth) + '┘'))
+  console.log(chalk[color](`└${'─'.repeat(maxWidth)}┘`))
   console.log('')
 }

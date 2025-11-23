@@ -1,15 +1,15 @@
-import { Elysia } from "elysia"
-import type { FluxStackConfig, FluxStackContext } from "@/core/types"
-import type { FluxStack, PluginContext, PluginUtils } from "@/core/plugins/types"
-import { PluginRegistry } from "@/core/plugins/registry"
-import { PluginManager } from "@/core/plugins/manager"
-import { getConfigSync, getEnvironmentInfo } from "@/core/config"
-import { logger } from "@/core/utils/logger"
-import { displayStartupBanner, type StartupInfo } from "@/core/utils/logger/startup-banner"
-import { componentRegistry } from "@/core/server/live/ComponentRegistry"
-import { createErrorHandler } from "@/core/utils/errors/handlers"
-import { createTimer, formatBytes, isProduction, isDevelopment } from "@/core/utils/helpers"
-import type { Plugin } from "@/core/plugins"
+import { Elysia } from 'elysia'
+import { getConfigSync, getEnvironmentInfo } from '@/core/config'
+import type { Plugin } from '@/core/plugins'
+import { PluginManager } from '@/core/plugins/manager'
+import { PluginRegistry } from '@/core/plugins/registry'
+import type { FluxStack, PluginContext, PluginUtils } from '@/core/plugins/types'
+import { componentRegistry } from '@/core/server/live/ComponentRegistry'
+import type { FluxStackConfig, FluxStackContext } from '@/core/types'
+import { createErrorHandler } from '@/core/utils/errors/handlers'
+import { createTimer, formatBytes, isDevelopment, isProduction } from '@/core/utils/helpers'
+import { logger } from '@/core/utils/logger'
+import { displayStartupBanner, type StartupInfo } from '@/core/utils/logger/startup-banner'
 
 export class FluxStackFramework {
   private app: Elysia
@@ -45,7 +45,7 @@ export class FluxStackFramework {
       isDevelopment: envInfo.isDevelopment,
       isProduction: envInfo.isProduction,
       isTest: envInfo.isTest,
-      environment: envInfo.name
+      environment: envInfo.name,
     }
 
     this.app = new Elysia()
@@ -53,8 +53,6 @@ export class FluxStackFramework {
 
     // Execute onConfigLoad hooks will be called during plugin initialization
     // We defer this until plugins are loaded in initializeAutomaticPlugins()
-
-
 
     // Create plugin utilities
     const pluginUtils: PluginUtils = {
@@ -64,7 +62,7 @@ export class FluxStackFramework {
       isDevelopment,
       getEnvironment: () => envInfo.name,
       createHash: (data: string) => {
-        const crypto = require('crypto')
+        const crypto = require('node:crypto')
         return crypto.createHash('sha256').update(data).digest('hex')
       },
       deepMerge: (target: any, source: any) => {
@@ -84,9 +82,12 @@ export class FluxStackFramework {
           // Basic validation logic
           return { valid: true, errors: [] }
         } catch (error) {
-          return { valid: false, errors: [error instanceof Error ? error.message : 'Validation failed'] }
+          return {
+            valid: false,
+            errors: [error instanceof Error ? error.message : 'Validation failed'],
+          }
         }
-      }
+      },
     }
 
     // Create plugin-compatible logger interface
@@ -106,25 +107,25 @@ export class FluxStackFramework {
       info: (message: string, meta?: unknown) => logger.info(message, meta),
       warn: (message: string, meta?: unknown) => logger.warn(message, meta),
       error: (message: string, meta?: unknown) => logger.error(message, meta),
-      child: (context: Record<string, unknown>) => pluginLogger,
+      child: (_context: Record<string, unknown>) => pluginLogger,
       time: (label: string) => logger.time(label),
       timeEnd: (label: string) => logger.timeEnd(label),
       request: (method: string, path: string, status?: number, duration?: number) =>
-        logger.request(method, path, status, duration)
+        logger.request(method, path, status, duration),
     }
 
     this.pluginContext = {
       config: fullConfig,
       logger: pluginLogger as any,
       app: this.app,
-      utils: pluginUtils
+      utils: pluginUtils,
     }
 
     // Initialize plugin manager
     this.pluginManager = new PluginManager({
       config: fullConfig,
       logger: pluginLogger as any,
-      app: this.app
+      app: this.app,
     })
 
     this.setupCors()
@@ -135,11 +136,11 @@ export class FluxStackFramework {
 
     logger.debug('FluxStack framework initialized', {
       environment: envInfo.name,
-      port: fullConfig.server.port
+      port: fullConfig.server.port,
     })
 
     // Initialize automatic plugin discovery in background
-    this.initializeAutomaticPlugins().catch(error => {
+    this.initializeAutomaticPlugins().catch((error) => {
       logger.error('Failed to initialize automatic plugins', { error })
     })
   }
@@ -153,17 +154,17 @@ export class FluxStackFramework {
       for (const plugin of discoveredPlugins) {
         if (!this.pluginRegistry.has(plugin.name)) {
           // Register in main registry (synchronously, will call setup in start())
-          (this.pluginRegistry as any).plugins.set(plugin.name, plugin)
+          ;(this.pluginRegistry as any).plugins.set(plugin.name, plugin)
           if (plugin.dependencies) {
-            (this.pluginRegistry as any).dependencies.set(plugin.name, plugin.dependencies)
+            ;(this.pluginRegistry as any).dependencies.set(plugin.name, plugin.dependencies)
           }
         }
       }
 
       // Update load order
       try {
-        (this.pluginRegistry as any).updateLoadOrder()
-      } catch (error) {
+        ;(this.pluginRegistry as any).updateLoadOrder()
+      } catch (_error) {
         // Fallback: create basic load order
         const plugins = (this.pluginRegistry as any).plugins as Map<string, FluxStack.Plugin>
         const loadOrder = Array.from(plugins.keys())
@@ -174,18 +175,18 @@ export class FluxStackFramework {
       const configLoadContext = {
         config: this.context.config,
         envVars: process.env as Record<string, string | undefined>,
-        configPath: undefined
+        configPath: undefined,
       }
 
       const loadOrder = this.pluginRegistry.getLoadOrder()
       for (const pluginName of loadOrder) {
         const plugin = this.pluginRegistry.get(pluginName)
-        if (plugin && plugin.onConfigLoad) {
+        if (plugin?.onConfigLoad) {
           try {
             await plugin.onConfigLoad(configLoadContext)
           } catch (error) {
             logger.error(`Plugin '${pluginName}' onConfigLoad hook failed`, {
-              error: error instanceof Error ? error.message : String(error)
+              error: error instanceof Error ? error.message : String(error),
             })
           }
         }
@@ -195,7 +196,7 @@ export class FluxStackFramework {
       logger.debug('Automatic plugins loaded successfully', {
         pluginCount: stats.totalPlugins,
         enabledPlugins: stats.enabledPlugins,
-        disabledPlugins: stats.disabledPlugins
+        disabledPlugins: stats.disabledPlugins,
       })
     } catch (error) {
       logger.error('Failed to initialize automatic plugins', { error })
@@ -207,22 +208,22 @@ export class FluxStackFramework {
 
     this.app
       .onRequest(({ set }) => {
-        set.headers["Access-Control-Allow-Origin"] = cors.origins.join(", ") || "*"
-        set.headers["Access-Control-Allow-Methods"] = cors.methods.join(", ") || "*"
-        set.headers["Access-Control-Allow-Headers"] = cors.headers.join(", ") || "*"
+        set.headers['Access-Control-Allow-Origin'] = cors.origins.join(', ') || '*'
+        set.headers['Access-Control-Allow-Methods'] = cors.methods.join(', ') || '*'
+        set.headers['Access-Control-Allow-Headers'] = cors.headers.join(', ') || '*'
         if (cors.credentials) {
-          set.headers["Access-Control-Allow-Credentials"] = "true"
+          set.headers['Access-Control-Allow-Credentials'] = 'true'
         }
       })
-      .options("*", ({ set }) => {
+      .options('*', ({ set }) => {
         set.status = 200
-        return ""
+        return ''
       })
   }
 
   private setupHeadHandler() {
     // Global HEAD handler to prevent Elysia's automatic HEAD conversion bug
-    this.app.head("*", ({ request, set }) => {
+    this.app.head('*', ({ request, set }) => {
       const url = this.parseRequestURL(request)
 
       // Handle API routes
@@ -230,7 +231,7 @@ export class FluxStackFramework {
         set.status = 200
         set.headers['Content-Type'] = 'application/json'
         set.headers['Content-Length'] = '0'
-        return ""
+        return ''
       }
 
       // Handle static files (assume they're HTML if no extension)
@@ -240,14 +241,14 @@ export class FluxStackFramework {
         set.headers['Content-Type'] = 'text/html'
         set.headers['Content-Length'] = '478' // approximate size of index.html
         set.headers['Cache-Control'] = 'no-cache'
-        return ""
+        return ''
       }
 
       // Handle other file types
       set.status = 200
       set.headers['Content-Type'] = 'application/octet-stream'
       set.headers['Content-Length'] = '0'
-      return ""
+      return ''
     })
   }
 
@@ -261,17 +262,19 @@ export class FluxStackFramework {
     const originalStderrWrite = process.stderr.write
 
     // Override stderr.write to filter Elysia HEAD bug errors
-    process.stderr.write = function (
+    process.stderr.write = (
       chunk: string | Uint8Array,
       encoding?: BufferEncoding | ((error?: Error) => void),
-      callback?: (error?: Error) => void
-    ): boolean {
+      callback?: (error?: Error) => void,
+    ): boolean => {
       const str = chunk.toString()
 
       // Filter out known Elysia HEAD bug error patterns
-      if (str.includes("TypeError: undefined is not an object (evaluating '_res.headers.set')") ||
-        str.includes("HEAD - / failed") ||
-        (str.includes("HEAD - ") && str.includes(" failed"))) {
+      if (
+        str.includes("TypeError: undefined is not an object (evaluating '_res.headers.set')") ||
+        str.includes('HEAD - / failed') ||
+        (str.includes('HEAD - ') && str.includes(' failed'))
+      ) {
         // Silently ignore these specific errors
         if (typeof encoding === 'function') {
           encoding() // encoding is actually the callback
@@ -289,8 +292,8 @@ export class FluxStackFramework {
       }
     }
 
-      // Store reference to restore original behavior if needed
-      ; (this as any)._originalStderrWrite = originalStderrWrite
+    // Store reference to restore original behavior if needed
+    ;(this as any)._originalStderrWrite = originalStderrWrite
   }
 
   private setupHooks() {
@@ -322,7 +325,7 @@ export class FluxStackFramework {
         body: undefined, // Will be populated if request has body
         startTime,
         handled: false,
-        response: undefined
+        response: undefined,
       }
 
       // Try to parse body for validation
@@ -330,10 +333,13 @@ export class FluxStackFramework {
         if (request.method !== 'GET' && request.method !== 'HEAD') {
           const contentType = request.headers.get('content-type')
           if (contentType?.includes('application/json')) {
-            requestContext.body = await request.clone().json().catch(() => undefined)
+            requestContext.body = await request
+              .clone()
+              .json()
+              .catch(() => undefined)
           }
         }
-      } catch (error) {
+      } catch (_error) {
         // Ignore body parsing errors for now
       }
 
@@ -344,19 +350,22 @@ export class FluxStackFramework {
       const validationContext = {
         ...requestContext,
         errors: [] as Array<{ field: string; message: string; code: string }>,
-        isValid: true
+        isValid: true,
       }
       await this.executePluginHooks('onRequestValidation', validationContext)
 
       // If validation failed, return error response
       if (!validationContext.isValid && validationContext.errors.length > 0) {
-        return new Response(JSON.stringify({
-          success: false,
-          errors: validationContext.errors
-        }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' }
-        })
+        return new Response(
+          JSON.stringify({
+            success: false,
+            errors: validationContext.errors,
+          }),
+          {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        )
       }
 
       // Execute onBeforeRoute hooks - allow plugins to handle requests before routing
@@ -401,14 +410,14 @@ export class FluxStackFramework {
         response: currentResponse,
         statusCode: Number((currentResponse as any)?.status || set.status || 200),
         duration,
-        startTime
+        startTime,
       }
 
       // Execute onAfterRoute hooks (route was matched, params available)
       const routeContext = {
         ...responseContext,
         route: path || url.pathname,
-        handler: undefined
+        handler: undefined,
       }
       await this.executePluginHooks('onAfterRoute', routeContext)
 
@@ -421,7 +430,7 @@ export class FluxStackFramework {
         ...responseContext,
         response: currentResponse,
         transformed: false,
-        originalResponse: currentResponse
+        originalResponse: currentResponse,
       }
       await this.executePluginHooks('onResponseTransform', transformContext)
 
@@ -434,9 +443,10 @@ export class FluxStackFramework {
       // Log the request automatically (if not disabled in config)
       if (this.context.config.server.enableRequestLogging !== false) {
         // Ensure status is always a number (HTTP status code)
-        const status = typeof responseContext.statusCode === 'number'
-          ? responseContext.statusCode
-          : Number(set.status) || 200
+        const status =
+          typeof responseContext.statusCode === 'number'
+            ? responseContext.statusCode
+            : Number(set.status) || 200
 
         logger.request(request.method, url.pathname, status, duration)
       }
@@ -452,10 +462,10 @@ export class FluxStackFramework {
   private setupErrorHandling() {
     const errorHandler = createErrorHandler({
       logger: this.pluginContext.logger,
-      isDevelopment: this.context.isDevelopment
+      isDevelopment: this.context.isDevelopment,
     })
 
-    this.app.onError(async ({ error, request, path, set }) => {
+    this.app.onError(async ({ error, request, path, set: _set }) => {
       const startTime = Date.now()
       const url = this.parseRequestURL(request)
 
@@ -475,7 +485,7 @@ export class FluxStackFramework {
         error: error instanceof Error ? error : new Error(String(error)),
         duration: Date.now() - startTime,
         handled: false,
-        startTime
+        startTime,
       }
 
       // Execute onError hooks for all plugins - allow them to handle the error
@@ -508,7 +518,7 @@ export class FluxStackFramework {
         } catch (error) {
           const err = error instanceof Error ? error : new Error(String(error))
           logger.error(`Plugin '${pluginName}' ${hookName} hook failed`, {
-            error: err.message
+            error: err.message,
           })
 
           // Execute onPluginError hooks on all plugins (except the one that failed)
@@ -518,7 +528,11 @@ export class FluxStackFramework {
     }
   }
 
-  private async executePluginErrorHook(pluginName: string, pluginVersion: string | undefined, error: Error): Promise<void> {
+  private async executePluginErrorHook(
+    pluginName: string,
+    pluginVersion: string | undefined,
+    error: Error,
+  ): Promise<void> {
     const loadOrder = this.pluginRegistry.getLoadOrder()
 
     for (const otherPluginName of loadOrder) {
@@ -534,11 +548,11 @@ export class FluxStackFramework {
             pluginName,
             pluginVersion,
             timestamp: Date.now(),
-            error
+            error,
           })
         } catch (hookError) {
           logger.error(`Plugin '${otherPluginName}' onPluginError hook failed`, {
-            error: hookError instanceof Error ? hookError.message : String(hookError)
+            error: hookError instanceof Error ? hookError.message : String(hookError),
           })
         }
       }
@@ -563,7 +577,7 @@ export class FluxStackFramework {
           }
         } catch (error) {
           logger.error(`Plugin '${pluginName}' onBeforeRoute hook failed`, {
-            error: (error as Error).message
+            error: (error as Error).message,
           })
         }
       }
@@ -596,7 +610,7 @@ export class FluxStackFramework {
           }
         } catch (error) {
           logger.error(`Plugin '${pluginName}' onError hook failed`, {
-            error: (error as Error).message
+            error: (error as Error).message,
           })
         }
       }
@@ -615,7 +629,7 @@ export class FluxStackFramework {
       // Forward request to Vite
       const response = await fetch(viteUrl, {
         method: errorContext.method,
-        headers: errorContext.headers
+        headers: errorContext.headers,
       })
 
       // Return a proper Response object with all headers and status
@@ -624,14 +638,13 @@ export class FluxStackFramework {
       return new Response(body, {
         status: response.status,
         statusText: response.statusText,
-        headers: response.headers
+        headers: response.headers,
       })
-
     } catch (viteError) {
       // If Vite fails, return error response
       return new Response(`Vite server not ready on port ${vitePort}. Error: ${viteError}`, {
         status: 503,
-        headers: { 'Content-Type': 'text/plain' }
+        headers: { 'Content-Type': 'text/plain' },
       })
     }
   }
@@ -642,33 +655,37 @@ export class FluxStackFramework {
       if (this.pluginRegistry.has(plugin.name)) {
         throw new Error(`Plugin '${plugin.name}' is already registered`)
       }
-
       // Store plugin without calling setup - setup will be called in start()
       // We need to manually set the plugin since register() is async but we need sync
-      (this.pluginRegistry as any).plugins.set(plugin.name, plugin)
+      ;(this.pluginRegistry as any).plugins.set(plugin.name, plugin)
 
       // Update dependencies tracking
       if ((plugin as FluxStack.Plugin).dependencies) {
-        (this.pluginRegistry as any).dependencies.set(plugin.name, (plugin as FluxStack.Plugin).dependencies)
+        ;(this.pluginRegistry as any).dependencies.set(
+          plugin.name,
+          (plugin as FluxStack.Plugin).dependencies,
+        )
       }
 
       // Update load order by calling the private method
       try {
-        (this.pluginRegistry as any).updateLoadOrder()
-      } catch (error) {
+        ;(this.pluginRegistry as any).updateLoadOrder()
+      } catch (_error) {
         // Fallback: create basic load order
         const plugins = (this.pluginRegistry as any).plugins as Map<string, Plugin>
         const loadOrder = Array.from(plugins.keys())
-          ; (this.pluginRegistry as any).loadOrder = loadOrder
+        ;(this.pluginRegistry as any).loadOrder = loadOrder
       }
 
       logger.debug(`Plugin '${plugin.name}' registered`, {
         version: (plugin as FluxStack.Plugin).version,
-        dependencies: (plugin as FluxStack.Plugin).dependencies
+        dependencies: (plugin as FluxStack.Plugin).dependencies,
       })
       return this
     } catch (error) {
-      logger.error(`Failed to register plugin '${plugin.name}'`, { error: (error as Error).message })
+      logger.error(`Failed to register plugin '${plugin.name}'`, {
+        error: (error as Error).message,
+      })
       throw error
     }
   }
@@ -691,7 +708,9 @@ export class FluxStackFramework {
         if (plugin.dependencies) {
           for (const depName of plugin.dependencies) {
             if (!plugins.has(depName)) {
-              throw new Error(`Plugin '${pluginName}' depends on '${depName}' which is not registered`)
+              throw new Error(
+                `Plugin '${pluginName}' depends on '${depName}' which is not registered`,
+              )
             }
           }
         }
@@ -749,9 +768,8 @@ export class FluxStackFramework {
 
       this.isStarted = true
       logger.debug('All plugins loaded successfully', {
-        pluginCount: loadOrder.length
+        pluginCount: loadOrder.length,
       })
-
     } catch (error) {
       logger.error('Failed to start framework', { error: (error as Error).message })
       throw error
@@ -787,7 +805,6 @@ export class FluxStackFramework {
 
       this.isStarted = false
       logger.framework('Framework stopped successfully')
-
     } catch (error) {
       logger.error('Error during framework shutdown', { error: (error as Error).message })
       throw error
@@ -827,7 +844,7 @@ export class FluxStackFramework {
         vitePort: this.context.config.client?.port,
         viteEmbedded: vitePluginActive, // Vite is embedded when plugin is active
         swaggerPath: '/swagger', // TODO: Get from swagger plugin config
-        liveComponents: componentRegistry.getRegisteredComponentNames()
+        liveComponents: componentRegistry.getRegisteredComponentNames(),
       }
 
       // Display banner if enabled

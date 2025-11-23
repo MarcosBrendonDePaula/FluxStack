@@ -1,9 +1,9 @@
 #!/usr/bin/env bun
 
-import { program } from 'commander'
-import { resolve, join, basename } from 'path'
-import { existsSync, mkdirSync, cpSync, writeFileSync, readFileSync, readdirSync } from 'fs'
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { basename, join, resolve } from 'node:path'
 import chalk from 'chalk'
+import { program } from 'commander'
 import ora from 'ora'
 import { FLUXSTACK_VERSION } from './core/utils/version'
 
@@ -50,10 +50,11 @@ program
     // - Explicit '.'
     // - Path ending with /. or \. (e.g., /path/to/dir/.)
     // - Path ending with / or \ (Bun normalizes path/. to path/)
-    const isCurrentDir = normalizedName === '.' ||
-                         projectName.endsWith('/.') ||
-                         projectName.endsWith('\\.') ||
-                         hasTrailingSlash
+    const isCurrentDir =
+      normalizedName === '.' ||
+      projectName.endsWith('/.') ||
+      projectName.endsWith('\\.') ||
+      hasTrailingSlash
 
     const projectPath = resolve(normalizedName)
     const displayName = isCurrentDir ? 'current directory' : projectName
@@ -66,16 +67,18 @@ program
 
     // Check if current directory is not empty (when using '.')
     if (isCurrentDir) {
-      const files = readdirSync(projectPath).filter(f => !f.startsWith('.'))
+      const files = readdirSync(projectPath).filter((f) => !f.startsWith('.'))
       if (files.length > 0) {
         console.log(chalk.yellow('⚠️  Current directory is not empty'))
-        console.log(chalk.gray(`Found ${files.length} file(s). FluxStack will be initialized here.`))
+        console.log(
+          chalk.gray(`Found ${files.length} file(s). FluxStack will be initialized here.`),
+        )
       }
     }
 
     console.log(chalk.cyan(`\n🚀 Creating FluxStack project: ${chalk.bold(displayName)}`))
     console.log(chalk.gray(`📁 Location: ${projectPath}`))
-    
+
     // Create project directory
     const spinner = ora('Creating project structure...').start()
 
@@ -84,22 +87,22 @@ program
       if (!isCurrentDir) {
         mkdirSync(projectPath, { recursive: true })
       }
-      
+
       // Copy only essential FluxStack files (not node_modules, not test apps, etc.)
       const frameworkDir = currentDir // Use current directory (framework root)
       const filesToCopy = [
         'core',
         'app',
-        'config',         // ✅ CRITICAL: Copy config folder with declarative configs
-        'plugins',     // TODO: Copy when crypto-auth plugin is complete
-        'ai-context',     // ✅ CRITICAL: Copy AI documentation for users
-        'bun.lock',       // ✅ CRITICAL: Copy lockfile to maintain working versions
-        'package.json',   // ✅ Copy real package.json from framework
+        'config', // ✅ CRITICAL: Copy config folder with declarative configs
+        'plugins', // TODO: Copy when crypto-auth plugin is complete
+        'ai-context', // ✅ CRITICAL: Copy AI documentation for users
+        'bun.lock', // ✅ CRITICAL: Copy lockfile to maintain working versions
+        'package.json', // ✅ Copy real package.json from framework
         'tsconfig.json',
         'vite.config.ts',
-        '.env.example',   // ✅ Use .env.example as template
-        'CLAUDE.md',      // ✅ Project instructions for AI assistants
-        'README.md'
+        '.env.example', // ✅ Use .env.example as template
+        'CLAUDE.md', // ✅ Project instructions for AI assistants
+        'README.md',
       ]
 
       for (const file of filesToCopy) {
@@ -224,7 +227,7 @@ export class MyPlugin implements FluxStack.Plugin {
 See the documentation for detailed examples and best practices.
 `
       writeFileSync(join(pluginsDir, 'README.md'), pluginsReadme)
-      
+
       // Generate .gitignore using template (instead of copying)
       const gitignoreContent = `# Dependencies
 node_modules/
@@ -341,7 +344,7 @@ public/uploads/
 bun.lockb
 `
       writeFileSync(join(projectPath, '.gitignore'), gitignoreContent)
-      
+
       // Customize package.json with project name
       const packageJsonPath = join(projectPath, 'package.json')
       const actualProjectName = isCurrentDir ? basename(projectPath) : normalizedName
@@ -353,7 +356,7 @@ bun.lockb
         // Update project-specific fields
         packageJson.name = actualProjectName
         packageJson.description = `${actualProjectName} - FluxStack application`
-        packageJson.version = "1.0.0"
+        packageJson.version = '1.0.0'
 
         writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2))
       }
@@ -366,7 +369,10 @@ bun.lockb
         // Set development mode
         envContent = envContent.replace('NODE_ENV=production', 'NODE_ENV=development')
         // Customize app name to match project name
-        envContent = envContent.replace('VITE_APP_NAME=FluxStack', `VITE_APP_NAME=${actualProjectName}`)
+        envContent = envContent.replace(
+          'VITE_APP_NAME=FluxStack',
+          `VITE_APP_NAME=${actualProjectName}`,
+        )
         writeFileSync(envPath, envContent)
       }
 
@@ -467,64 +473,67 @@ Built with ❤️ using FluxStack
 `
         writeFileSync(readmePath, readmeContent)
       }
-      
+
       spinner.succeed('✅ Project structure created!')
-      
+
       // Install dependencies with Bun (THE DIVINE RUNTIME)
       if (options.install) {
         const installSpinner = ora('📦 Installing dependencies with Bun...').start()
-        
+
         try {
           const proc = Bun.spawn(['bun', 'install'], {
             cwd: projectPath,
-            stdio: ['ignore', 'pipe', 'pipe']
+            stdio: ['ignore', 'pipe', 'pipe'],
           })
-          
+
           await proc.exited
-          
+
           if (proc.exitCode === 0) {
             installSpinner.succeed('✅ Dependencies installed!')
           } else {
             installSpinner.fail('❌ Failed to install dependencies')
             console.log(chalk.gray('You can install them manually with: bun install'))
           }
-        } catch (error) {
+        } catch (_error) {
           installSpinner.fail('❌ Failed to install dependencies')
           console.log(chalk.gray('You can install them manually with: bun install'))
         }
       }
-      
+
       // Initialize git
       if (options.git) {
         const gitSpinner = ora('📝 Initializing git repository...').start()
-        
+
         try {
           const initProc = Bun.spawn(['git', 'init'], {
             cwd: projectPath,
-            stdio: ['ignore', 'pipe', 'pipe']
+            stdio: ['ignore', 'pipe', 'pipe'],
           })
           await initProc.exited
-          
+
           // Create initial commit
           const addProc = Bun.spawn(['git', 'add', '.'], {
             cwd: projectPath,
-            stdio: ['ignore', 'pipe', 'pipe']
+            stdio: ['ignore', 'pipe', 'pipe'],
           })
           await addProc.exited
-          
-          const commitProc = Bun.spawn(['git', 'commit', '-m', `feat: initial ${actualProjectName} with FluxStack`], {
-            cwd: projectPath,
-            stdio: ['ignore', 'pipe', 'pipe']
-          })
+
+          const commitProc = Bun.spawn(
+            ['git', 'commit', '-m', `feat: initial ${actualProjectName} with FluxStack`],
+            {
+              cwd: projectPath,
+              stdio: ['ignore', 'pipe', 'pipe'],
+            },
+          )
           await commitProc.exited
-          
+
           gitSpinner.succeed('✅ Git repository initialized!')
-        } catch (error) {
+        } catch (_error) {
           gitSpinner.fail('❌ Failed to initialize git')
           console.log(chalk.gray('You can initialize it manually with: git init'))
         }
       }
-      
+
       // Success message
       console.log(chalk.green('\n🎉 Project created successfully!'))
       console.log(chalk.cyan('\nNext steps:'))
@@ -537,7 +546,6 @@ Built with ❤️ using FluxStack
       console.log(chalk.white(`  bun run dev`))
       console.log(chalk.magenta('\nHappy coding with the divine Bun runtime! ⚡🔥'))
       console.log(chalk.gray('\nVisit http://localhost:3000 when ready!'))
-      
     } catch (error) {
       spinner.fail('❌ Failed to create project')
       console.error(error)

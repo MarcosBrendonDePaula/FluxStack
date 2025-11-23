@@ -3,11 +3,8 @@
  * Tests configuration merging with precedence and environment-specific configs
  */
 
-import { describe, test, expect, beforeEach } from 'vitest'
-import { 
-  ConfigMerger, 
-  EnvironmentConfigApplier 
-} from '../env'
+import { beforeEach, describe, expect, test } from 'vitest'
+import { ConfigMerger, EnvironmentConfigApplier } from '../env'
 import type { FluxStackConfig } from '../schema'
 
 describe('ConfigMerger', () => {
@@ -22,17 +19,17 @@ describe('ConfigMerger', () => {
       const config1 = {
         config: {
           app: { name: 'TestApp', version: '1.0.0' },
-          server: { port: 3000 }
+          server: { port: 3000 },
         } as Partial<FluxStackConfig>,
-        source: 'default'
+        source: 'default',
       }
 
       const config2 = {
         config: {
           app: { version: '2.0.0' },
-          server: { host: 'localhost' }
+          server: { host: 'localhost' },
         } as Partial<FluxStackConfig>,
-        source: 'file'
+        source: 'file',
       }
 
       const result = merger.merge(config1, config2)
@@ -46,30 +43,30 @@ describe('ConfigMerger', () => {
     test('respects precedence order', () => {
       const defaultConfig = {
         config: {
-          server: { port: 3000, host: 'localhost' }
+          server: { port: 3000, host: 'localhost' },
         } as Partial<FluxStackConfig>,
-        source: 'default'
+        source: 'default',
       }
 
       const fileConfig = {
         config: {
-          server: { port: 4000 }
+          server: { port: 4000 },
         } as Partial<FluxStackConfig>,
-        source: 'file'
+        source: 'file',
       }
 
       const envConfig = {
         config: {
-          server: { port: 5000 }
+          server: { port: 5000 },
         } as Partial<FluxStackConfig>,
-        source: 'environment'
+        source: 'environment',
       }
 
       const overrideConfig = {
         config: {
-          server: { port: 6000 }
+          server: { port: 6000 },
         } as Partial<FluxStackConfig>,
-        source: 'override'
+        source: 'override',
       }
 
       const result = merger.merge(defaultConfig, fileConfig, envConfig, overrideConfig)
@@ -86,11 +83,11 @@ describe('ConfigMerger', () => {
             cors: {
               origins: ['http://localhost:3000'],
               methods: ['GET', 'POST'],
-              credentials: true
-            }
-          }
+              credentials: true,
+            },
+          },
         } as Partial<FluxStackConfig>,
-        source: 'default'
+        source: 'default',
       }
 
       const config2 = {
@@ -98,11 +95,11 @@ describe('ConfigMerger', () => {
           server: {
             cors: {
               origins: ['http://localhost:5173'],
-              headers: ['Content-Type']
-            }
-          }
+              headers: ['Content-Type'],
+            },
+          },
         } as Partial<FluxStackConfig>,
-        source: 'environment'
+        source: 'environment',
       }
 
       const result = merger.merge(config1, config2)
@@ -117,19 +114,19 @@ describe('ConfigMerger', () => {
       const config1 = {
         config: {
           plugins: {
-            enabled: ['plugin1', 'plugin2', 'plugin3']
-          }
+            enabled: ['plugin1', 'plugin2', 'plugin3'],
+          },
         } as Partial<FluxStackConfig>,
-        source: 'default'
+        source: 'default',
       }
 
       const config2 = {
         config: {
           plugins: {
-            enabled: ['plugin4', 'plugin5']
-          }
+            enabled: ['plugin4', 'plugin5'],
+          },
         } as Partial<FluxStackConfig>,
-        source: 'environment'
+        source: 'environment',
       }
 
       const result = merger.merge(config1, config2)
@@ -150,22 +147,22 @@ describe('ConfigMerger', () => {
               methods: ['GET', 'POST'],
               headers: ['Content-Type'],
               credentials: false,
-              maxAge: 86400
+              maxAge: 86400,
             },
-            middleware: []
-          }
+            middleware: [],
+          },
         } as Partial<FluxStackConfig>,
-        source: 'default'
+        source: 'default',
       }
 
       const config2 = {
         config: {
           server: {
             port: null,
-            apiPrefix: undefined
-          }
+            apiPrefix: undefined,
+          },
         } as any,
-        source: 'environment'
+        source: 'environment',
       }
 
       const result = merger.merge(config1, config2)
@@ -184,15 +181,15 @@ describe('ConfigMerger', () => {
               enabled: true,
               collectInterval: 5000,
               httpMetrics: true,
-              systemMetrics: false
+              systemMetrics: false,
             },
             profiling: {
               enabled: false,
-              sampleRate: 0.1
-            }
-          }
+              sampleRate: 0.1,
+            },
+          },
         } as Partial<FluxStackConfig>,
-        source: 'default'
+        source: 'default',
       }
 
       const config2 = {
@@ -201,15 +198,15 @@ describe('ConfigMerger', () => {
             metrics: {
               collectInterval: 10000,
               systemMetrics: true,
-              customMetrics: true
+              customMetrics: true,
             },
             profiling: {
               enabled: true,
-              memoryProfiling: true
-            }
-          }
+              memoryProfiling: true,
+            },
+          },
         } as Partial<FluxStackConfig>,
-        source: 'environment'
+        source: 'environment',
       }
 
       const result = merger.merge(config1, config2)
@@ -228,14 +225,14 @@ describe('ConfigMerger', () => {
     test('handles empty configurations', () => {
       const emptyConfig = {
         config: {} as Partial<FluxStackConfig>,
-        source: 'default'
+        source: 'default',
       }
 
       const config2 = {
         config: {
-          app: { name: 'TestApp' }
+          app: { name: 'TestApp' },
         } as Partial<FluxStackConfig>,
-        source: 'file'
+        source: 'file',
       }
 
       const result = merger.merge(emptyConfig, config2)
@@ -246,16 +243,16 @@ describe('ConfigMerger', () => {
     test('precedence works with same source priority', () => {
       const config1 = {
         config: {
-          server: { port: 3000 }
+          server: { port: 3000 },
         } as Partial<FluxStackConfig>,
-        source: 'file'
+        source: 'file',
       }
 
       const config2 = {
         config: {
-          server: { port: 4000 }
+          server: { port: 4000 },
         } as Partial<FluxStackConfig>,
-        source: 'file'
+        source: 'file',
       }
 
       const result = merger.merge(config1, config2)
@@ -286,9 +283,9 @@ describe('EnvironmentConfigApplier', () => {
             methods: ['GET', 'POST'],
             headers: ['Content-Type'],
             credentials: false,
-            maxAge: 86400
+            maxAge: 86400,
           },
-          middleware: []
+          middleware: [],
         },
         client: {
           port: 5173,
@@ -297,8 +294,8 @@ describe('EnvironmentConfigApplier', () => {
             target: 'es2020',
             outDir: 'dist/client',
             sourceMaps: true,
-            minify: false
-          }
+            minify: false,
+          },
         },
         build: {
           target: 'bun',
@@ -309,16 +306,14 @@ describe('EnvironmentConfigApplier', () => {
             compress: false,
             treeshake: false,
             splitChunks: false,
-            bundleAnalyzer: false
+            bundleAnalyzer: false,
           },
-          sourceMaps: true
+          sourceMaps: true,
         },
         logging: {
           level: 'info',
           format: 'pretty',
-          transports: [
-            { type: 'console', level: 'info', format: 'pretty' }
-          ]
+          transports: [{ type: 'console', level: 'info', format: 'pretty' }],
         },
         monitoring: {
           enabled: false,
@@ -327,52 +322,52 @@ describe('EnvironmentConfigApplier', () => {
             collectInterval: 60000,
             httpMetrics: true,
             systemMetrics: true,
-            customMetrics: false
+            customMetrics: false,
           },
           profiling: {
             enabled: false,
             sampleRate: 0.1,
             memoryProfiling: false,
-            cpuProfiling: false
+            cpuProfiling: false,
           },
-          exporters: []
+          exporters: [],
         },
         plugins: {
           enabled: [],
           disabled: [],
-          config: {}
+          config: {},
         },
         environments: {
           production: {
             logging: {
               level: 'warn',
-              format: 'json'
+              format: 'json',
             },
             build: {
               optimization: {
                 minify: true,
                 compress: true,
-                treeshake: true
+                treeshake: true,
               },
-              sourceMaps: false
+              sourceMaps: false,
             },
             monitoring: {
               enabled: true,
               metrics: {
                 enabled: true,
-                collectInterval: 30000
-              }
-            }
+                collectInterval: 30000,
+              },
+            },
           },
           development: {
             logging: {
-              level: 'debug'
+              level: 'debug',
             },
             monitoring: {
-              enabled: false
-            }
-          }
-        }
+              enabled: false,
+            },
+          },
+        },
       } as FluxStackConfig
 
       const result = applier.applyEnvironmentConfig(baseConfig, 'production')
@@ -404,9 +399,9 @@ describe('EnvironmentConfigApplier', () => {
             methods: ['GET', 'POST'],
             headers: ['Content-Type'],
             credentials: false,
-            maxAge: 86400
+            maxAge: 86400,
           },
-          middleware: []
+          middleware: [],
         },
         client: {
           port: 5173,
@@ -415,8 +410,8 @@ describe('EnvironmentConfigApplier', () => {
             target: 'es2020',
             outDir: 'dist/client',
             sourceMaps: true,
-            minify: false
-          }
+            minify: false,
+          },
         },
         build: {
           target: 'bun',
@@ -427,16 +422,14 @@ describe('EnvironmentConfigApplier', () => {
             compress: false,
             treeshake: false,
             splitChunks: false,
-            bundleAnalyzer: false
+            bundleAnalyzer: false,
           },
-          sourceMaps: true
+          sourceMaps: true,
         },
         logging: {
           level: 'info',
           format: 'pretty',
-          transports: [
-            { type: 'console', level: 'info', format: 'pretty' }
-          ]
+          transports: [{ type: 'console', level: 'info', format: 'pretty' }],
         },
         monitoring: {
           enabled: true,
@@ -445,31 +438,31 @@ describe('EnvironmentConfigApplier', () => {
             collectInterval: 60000,
             httpMetrics: true,
             systemMetrics: true,
-            customMetrics: false
+            customMetrics: false,
           },
           profiling: {
             enabled: false,
             sampleRate: 0.1,
             memoryProfiling: false,
-            cpuProfiling: false
+            cpuProfiling: false,
           },
-          exporters: []
+          exporters: [],
         },
         plugins: {
           enabled: [],
           disabled: [],
-          config: {}
+          config: {},
         },
         environments: {
           development: {
             logging: {
-              level: 'debug'
+              level: 'debug',
             },
             monitoring: {
-              enabled: false
-            }
-          }
-        }
+              enabled: false,
+            },
+          },
+        },
       } as FluxStackConfig
 
       const result = applier.applyEnvironmentConfig(baseConfig, 'development')
@@ -491,9 +484,9 @@ describe('EnvironmentConfigApplier', () => {
             methods: ['GET', 'POST'],
             headers: ['Content-Type'],
             credentials: false,
-            maxAge: 86400
+            maxAge: 86400,
           },
-          middleware: []
+          middleware: [],
         },
         client: {
           port: 5173,
@@ -502,8 +495,8 @@ describe('EnvironmentConfigApplier', () => {
             target: 'es2020',
             outDir: 'dist/client',
             sourceMaps: true,
-            minify: false
-          }
+            minify: false,
+          },
         },
         build: {
           target: 'bun',
@@ -514,16 +507,14 @@ describe('EnvironmentConfigApplier', () => {
             compress: false,
             treeshake: false,
             splitChunks: false,
-            bundleAnalyzer: false
+            bundleAnalyzer: false,
           },
-          sourceMaps: true
+          sourceMaps: true,
         },
         logging: {
           level: 'info',
           format: 'pretty',
-          transports: [
-            { type: 'console', level: 'info', format: 'pretty' }
-          ]
+          transports: [{ type: 'console', level: 'info', format: 'pretty' }],
         },
         monitoring: {
           enabled: false,
@@ -532,21 +523,21 @@ describe('EnvironmentConfigApplier', () => {
             collectInterval: 60000,
             httpMetrics: true,
             systemMetrics: true,
-            customMetrics: false
+            customMetrics: false,
           },
           profiling: {
             enabled: false,
             sampleRate: 0.1,
             memoryProfiling: false,
-            cpuProfiling: false
+            cpuProfiling: false,
           },
-          exporters: []
+          exporters: [],
         },
         plugins: {
           enabled: [],
           disabled: [],
-          config: {}
-        }
+          config: {},
+        },
       } as FluxStackConfig
 
       const result = applier.applyEnvironmentConfig(baseConfig, 'nonexistent')
@@ -562,8 +553,8 @@ describe('EnvironmentConfigApplier', () => {
           development: {},
           production: {},
           staging: {},
-          test: {}
-        }
+          test: {},
+        },
       } as FluxStackConfig
 
       const environments = applier.getAvailableEnvironments(config)
@@ -589,9 +580,9 @@ describe('EnvironmentConfigApplier', () => {
         environments: {
           production: {
             logging: { level: 'debug' as const }, // Invalid for production
-            monitoring: { enabled: false } // Invalid for production
-          }
-        }
+            monitoring: { enabled: false }, // Invalid for production
+          },
+        },
       } as FluxStackConfig
 
       const result = applier.validateEnvironmentConfig(config, 'production')
@@ -606,9 +597,9 @@ describe('EnvironmentConfigApplier', () => {
         server: { port: 3000 },
         environments: {
           staging: {
-            server: { port: 3000 } // Same as base - conflict
-          }
-        }
+            server: { port: 3000 }, // Same as base - conflict
+          },
+        },
       } as FluxStackConfig
 
       const result = applier.validateEnvironmentConfig(config, 'staging')
@@ -622,9 +613,9 @@ describe('EnvironmentConfigApplier', () => {
         server: { port: 3000 },
         environments: {
           development: {
-            server: { port: 3000 } // Same as base - allowed in development
-          }
-        }
+            server: { port: 3000 }, // Same as base - allowed in development
+          },
+        },
       } as FluxStackConfig
 
       const result = applier.validateEnvironmentConfig(config, 'development')
@@ -642,9 +633,9 @@ describe('EnvironmentConfigApplier', () => {
           production: {
             server: { port: 8080 }, // Different port
             logging: { level: 'warn' as const }, // Valid for production
-            monitoring: { enabled: true } // Valid for production
-          }
-        }
+            monitoring: { enabled: true }, // Valid for production
+          },
+        },
       } as FluxStackConfig
 
       const result = applier.validateEnvironmentConfig(config, 'production')

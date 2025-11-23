@@ -12,13 +12,13 @@ export const liveComponentsPlugin: Plugin = {
   priority: 500,
   category: 'development',
   tags: ['live-components', 'cli', 'generator'],
-  
+
   setup: async (context: PluginContext) => {
     context.logger.info('Live Components plugin initialized (CLI commands only)')
   },
-  
+
   // CLI commands
-  commands: [createLiveComponentCommand]
+  commands: [createLiveComponentCommand],
 }
 
 // Export commands for backward compatibility

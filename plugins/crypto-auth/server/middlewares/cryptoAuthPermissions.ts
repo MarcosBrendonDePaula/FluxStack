@@ -6,7 +6,7 @@
 import { Elysia } from 'elysia'
 import { createGuard } from '@/core/server/middleware/elysia-helpers'
 import type { Logger } from '@/core/utils/logger'
-import { validateAuthSync, type CryptoAuthUser } from './helpers'
+import { type CryptoAuthUser, validateAuthSync } from './helpers'
 
 export interface CryptoAuthMiddlewareOptions {
   logger?: Logger
@@ -14,7 +14,7 @@ export interface CryptoAuthMiddlewareOptions {
 
 export const cryptoAuthPermissions = (
   requiredPermissions: string[],
-  options: CryptoAuthMiddlewareOptions = {}
+  options: CryptoAuthMiddlewareOptions = {},
 ) => {
   return new Elysia({ name: 'crypto-auth-permissions' })
     .derive(async ({ request }) => {
@@ -36,7 +36,7 @@ export const cryptoAuthPermissions = (
 
           const userPermissions = user.permissions
           return requiredPermissions.every(
-            perm => userPermissions.includes(perm) || userPermissions.includes('admin')
+            (perm) => userPermissions.includes(perm) || userPermissions.includes('admin'),
           )
         },
         onFail: (set, { request }) => {
@@ -48,15 +48,15 @@ export const cryptoAuthPermissions = (
               error: {
                 message: 'Authentication required',
                 code: 'CRYPTO_AUTH_REQUIRED',
-                statusCode: 401
-              }
+                statusCode: 401,
+              },
             }
           }
 
           options.logger?.warn('Permission denied', {
-            publicKey: user.publicKey.substring(0, 8) + '...',
+            publicKey: `${user.publicKey.substring(0, 8)}...`,
             required: requiredPermissions,
-            has: user.permissions
+            has: user.permissions,
           })
 
           set.status = 403
@@ -66,11 +66,10 @@ export const cryptoAuthPermissions = (
               code: 'PERMISSION_DENIED',
               statusCode: 403,
               required: requiredPermissions,
-              yours: user.permissions
-            }
+              yours: user.permissions,
+            },
           }
-        }
-      })
+        },
+      }),
     )
-
 }

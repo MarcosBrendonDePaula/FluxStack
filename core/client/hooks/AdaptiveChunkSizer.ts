@@ -2,11 +2,11 @@
 // Automatically optimizes upload speed by adjusting chunk sizes
 
 export interface AdaptiveChunkConfig {
-  minChunkSize: number      // Minimum chunk size (default: 16KB)
-  maxChunkSize: number      // Maximum chunk size (default: 1MB)
-  initialChunkSize: number  // Starting chunk size (default: 64KB)
-  targetLatency: number     // Target latency per chunk in ms (default: 200ms)
-  adjustmentFactor: number  // How aggressively to adjust (default: 1.5)
+  minChunkSize: number // Minimum chunk size (default: 16KB)
+  maxChunkSize: number // Maximum chunk size (default: 1MB)
+  initialChunkSize: number // Starting chunk size (default: 64KB)
+  targetLatency: number // Target latency per chunk in ms (default: 200ms)
+  adjustmentFactor: number // How aggressively to adjust (default: 1.5)
   measurementWindow: number // Number of chunks to measure (default: 3)
 }
 
@@ -29,12 +29,12 @@ export class AdaptiveChunkSizer {
 
   constructor(config: Partial<AdaptiveChunkConfig> = {}) {
     this.config = {
-      minChunkSize: config.minChunkSize ?? 16 * 1024,      // 16KB
-      maxChunkSize: config.maxChunkSize ?? 1024 * 1024,    // 1MB
+      minChunkSize: config.minChunkSize ?? 16 * 1024, // 16KB
+      maxChunkSize: config.maxChunkSize ?? 1024 * 1024, // 1MB
       initialChunkSize: config.initialChunkSize ?? 64 * 1024, // 64KB
-      targetLatency: config.targetLatency ?? 200,          // 200ms
+      targetLatency: config.targetLatency ?? 200, // 200ms
       adjustmentFactor: config.adjustmentFactor ?? 1.5,
-      measurementWindow: config.measurementWindow ?? 3
+      measurementWindow: config.measurementWindow ?? 3,
     }
 
     this.currentChunkSize = this.config.initialChunkSize
@@ -50,7 +50,7 @@ export class AdaptiveChunkSizer {
   /**
    * Record the start of a chunk upload
    */
-  recordChunkStart(chunkIndex: number): number {
+  recordChunkStart(_chunkIndex: number): number {
     return Date.now()
   }
 
@@ -61,7 +61,7 @@ export class AdaptiveChunkSizer {
     chunkIndex: number,
     chunkSize: number,
     startTime: number,
-    success: boolean
+    success: boolean,
   ): void {
     const endTime = Date.now()
     const latency = endTime - startTime
@@ -74,7 +74,7 @@ export class AdaptiveChunkSizer {
       endTime,
       latency,
       throughput,
-      success
+      success,
     }
 
     this.metrics.push(metric)
@@ -100,7 +100,7 @@ export class AdaptiveChunkSizer {
       latency: `${latency}ms`,
       throughput: `${this.formatBytes(throughput)}/s`,
       avgThroughput: `${this.formatBytes(this.getAverageThroughput())}/s`,
-      success
+      success,
     })
   }
 
@@ -116,13 +116,17 @@ export class AdaptiveChunkSizer {
 
     // Calculate new chunk size based on how much faster we are than target
     const latencyRatio = this.config.targetLatency / latency
-    let newSize = Math.floor(this.currentChunkSize * Math.min(latencyRatio, this.config.adjustmentFactor))
+    let newSize = Math.floor(
+      this.currentChunkSize * Math.min(latencyRatio, this.config.adjustmentFactor),
+    )
 
     // Cap at max chunk size
     newSize = Math.min(newSize, this.config.maxChunkSize)
 
     if (newSize > this.currentChunkSize) {
-      console.log(`⬆️ Increasing chunk size: ${this.formatBytes(this.currentChunkSize)} → ${this.formatBytes(newSize)}`)
+      console.log(
+        `⬆️ Increasing chunk size: ${this.formatBytes(this.currentChunkSize)} → ${this.formatBytes(newSize)}`,
+      )
       this.currentChunkSize = newSize
     }
   }
@@ -140,7 +144,9 @@ export class AdaptiveChunkSizer {
     newSize = Math.max(newSize, this.config.minChunkSize)
 
     if (newSize < this.currentChunkSize) {
-      console.log(`⬇️ Decreasing chunk size: ${this.formatBytes(this.currentChunkSize)} → ${this.formatBytes(newSize)}`)
+      console.log(
+        `⬇️ Decreasing chunk size: ${this.formatBytes(this.currentChunkSize)} → ${this.formatBytes(newSize)}`,
+      )
       this.currentChunkSize = newSize
     }
   }
@@ -153,7 +159,7 @@ export class AdaptiveChunkSizer {
 
     const recentMetrics = this.metrics
       .slice(-this.config.measurementWindow)
-      .filter(m => m.success)
+      .filter((m) => m.success)
 
     if (recentMetrics.length === 0) return 0
 
@@ -169,7 +175,7 @@ export class AdaptiveChunkSizer {
 
     const recentMetrics = this.metrics
       .slice(-this.config.measurementWindow)
-      .filter(m => m.success)
+      .filter((m) => m.success)
 
     if (recentMetrics.length === 0) return 0
 
@@ -188,7 +194,7 @@ export class AdaptiveChunkSizer {
       consecutiveSuccesses: this.consecutiveSuccesses,
       consecutiveErrors: this.consecutiveErrors,
       totalMeasurements: this.metrics.length,
-      config: this.config
+      config: this.config,
     }
   }
 
@@ -210,6 +216,6 @@ export class AdaptiveChunkSizer {
     const k = 1024
     const sizes = ['B', 'KB', 'MB', 'GB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
+    return `${Math.round((bytes / k ** i) * 100) / 100} ${sizes[i]}`
   }
 }

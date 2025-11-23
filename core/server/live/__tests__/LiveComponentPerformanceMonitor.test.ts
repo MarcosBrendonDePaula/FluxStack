@@ -1,6 +1,6 @@
 // 🧪 LiveComponentPerformanceMonitor Tests
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { LiveComponentPerformanceMonitor } from '../LiveComponentPerformanceMonitor'
 
 describe('LiveComponentPerformanceMonitor', () => {
@@ -15,9 +15,9 @@ describe('LiveComponentPerformanceMonitor', () => {
       renderTimeThreshold: 100,
       memoryThreshold: 50 * 1024 * 1024,
       actionTimeThreshold: 1000,
-      dashboardUpdateInterval: 1000
+      dashboardUpdateInterval: 1000,
     })
-    
+
     monitor.initializeComponent(componentId, componentName)
   })
 
@@ -28,7 +28,7 @@ describe('LiveComponentPerformanceMonitor', () => {
   describe('Component Initialization', () => {
     it('should initialize component metrics', () => {
       const metrics = monitor.getComponentMetrics(componentId)
-      
+
       expect(metrics).toBeTruthy()
       expect(metrics?.componentId).toBe(componentId)
       expect(metrics?.componentName).toBe(componentName)
@@ -39,10 +39,10 @@ describe('LiveComponentPerformanceMonitor', () => {
     it('should not initialize when disabled', () => {
       const disabledMonitor = new LiveComponentPerformanceMonitor({ enabled: false })
       disabledMonitor.initializeComponent('disabled-component', 'DisabledComponent')
-      
+
       const metrics = disabledMonitor.getComponentMetrics('disabled-component')
       expect(metrics).toBeNull()
-      
+
       disabledMonitor.shutdown()
     })
   })
@@ -50,7 +50,7 @@ describe('LiveComponentPerformanceMonitor', () => {
   describe('Render Performance Tracking', () => {
     it('should record render time', () => {
       monitor.recordRenderTime(componentId, 50)
-      
+
       const metrics = monitor.getComponentMetrics(componentId)
       expect(metrics?.renderMetrics.totalRenders).toBe(1)
       expect(metrics?.renderMetrics.lastRenderTime).toBe(50)
@@ -63,7 +63,7 @@ describe('LiveComponentPerformanceMonitor', () => {
       monitor.recordRenderTime(componentId, 30)
       monitor.recordRenderTime(componentId, 70)
       monitor.recordRenderTime(componentId, 50)
-      
+
       const metrics = monitor.getComponentMetrics(componentId)
       expect(metrics?.renderMetrics.totalRenders).toBe(3)
       expect(metrics?.renderMetrics.averageRenderTime).toBe(50)
@@ -73,7 +73,7 @@ describe('LiveComponentPerformanceMonitor', () => {
 
     it('should detect slow renders', () => {
       monitor.recordRenderTime(componentId, 150) // Above threshold of 100ms
-      
+
       const metrics = monitor.getComponentMetrics(componentId)
       expect(metrics?.renderMetrics.slowRenderCount).toBe(1)
     })
@@ -81,7 +81,7 @@ describe('LiveComponentPerformanceMonitor', () => {
     it('should record render errors', () => {
       const error = new Error('Render failed')
       monitor.recordRenderTime(componentId, 0, error)
-      
+
       const metrics = monitor.getComponentMetrics(componentId)
       expect(metrics?.renderMetrics.renderErrorCount).toBe(1)
     })
@@ -90,7 +90,7 @@ describe('LiveComponentPerformanceMonitor', () => {
       for (let i = 0; i < 5; i++) {
         monitor.recordRenderTime(componentId, i * 10)
       }
-      
+
       const metrics = monitor.getComponentMetrics(componentId)
       expect(metrics?.renderMetrics.renderTimeHistory).toHaveLength(5)
       expect(metrics?.renderMetrics.renderTimeHistory).toEqual([0, 10, 20, 30, 40])
@@ -100,7 +100,7 @@ describe('LiveComponentPerformanceMonitor', () => {
   describe('Action Performance Tracking', () => {
     it('should record action time', () => {
       monitor.recordActionTime(componentId, 'testAction', 200)
-      
+
       const metrics = monitor.getComponentMetrics(componentId)
       expect(metrics?.actionMetrics.totalActions).toBe(1)
       expect(metrics?.actionMetrics.averageActionTime).toBe(200)
@@ -113,7 +113,7 @@ describe('LiveComponentPerformanceMonitor', () => {
       monitor.recordActionTime(componentId, 'action1', 100)
       monitor.recordActionTime(componentId, 'action2', 200)
       monitor.recordActionTime(componentId, 'action1', 150)
-      
+
       const metrics = monitor.getComponentMetrics(componentId)
       expect(metrics?.actionMetrics.totalActions).toBe(3)
       expect(metrics?.actionMetrics.actionsByType.action1.count).toBe(2)
@@ -124,7 +124,7 @@ describe('LiveComponentPerformanceMonitor', () => {
     it('should record action errors', () => {
       const error = new Error('Action failed')
       monitor.recordActionTime(componentId, 'failingAction', 0, error)
-      
+
       const metrics = monitor.getComponentMetrics(componentId)
       expect(metrics?.actionMetrics.failedActions).toBe(1)
       expect(metrics?.actionMetrics.actionsByType.failingAction.errorCount).toBe(1)
@@ -132,10 +132,10 @@ describe('LiveComponentPerformanceMonitor', () => {
 
     it('should detect slow actions', () => {
       monitor.recordActionTime(componentId, 'slowAction', 1500) // Above threshold of 1000ms
-      
+
       const alerts = monitor.getComponentAlerts(componentId)
-      const slowActionAlert = alerts.find(alert => 
-        alert.category === 'action' && alert.message.includes('slowAction')
+      const slowActionAlert = alerts.find(
+        (alert) => alert.category === 'action' && alert.message.includes('slowAction'),
       )
       expect(slowActionAlert).toBeTruthy()
     })
@@ -145,7 +145,7 @@ describe('LiveComponentPerformanceMonitor', () => {
     it('should record memory usage', () => {
       const memoryUsage = 10 * 1024 * 1024 // 10MB
       monitor.recordMemoryUsage(componentId, memoryUsage)
-      
+
       const metrics = monitor.getComponentMetrics(componentId)
       expect(metrics?.memoryMetrics.currentUsage).toBe(memoryUsage)
       expect(metrics?.memoryMetrics.peakUsage).toBe(memoryUsage)
@@ -156,7 +156,7 @@ describe('LiveComponentPerformanceMonitor', () => {
       monitor.recordMemoryUsage(componentId, 10 * 1024 * 1024)
       monitor.recordMemoryUsage(componentId, 20 * 1024 * 1024)
       monitor.recordMemoryUsage(componentId, 15 * 1024 * 1024)
-      
+
       const metrics = monitor.getComponentMetrics(componentId)
       expect(metrics?.memoryMetrics.peakUsage).toBe(20 * 1024 * 1024)
       expect(metrics?.memoryMetrics.currentUsage).toBe(15 * 1024 * 1024)
@@ -165,7 +165,7 @@ describe('LiveComponentPerformanceMonitor', () => {
     it('should track state size', () => {
       const stateSize = 5000
       monitor.recordMemoryUsage(componentId, 10 * 1024 * 1024, stateSize)
-      
+
       const metrics = monitor.getComponentMetrics(componentId)
       expect(metrics?.memoryMetrics.stateSize).toBe(stateSize)
       expect(metrics?.memoryMetrics.stateSizeHistory).toContain(stateSize)
@@ -174,10 +174,10 @@ describe('LiveComponentPerformanceMonitor', () => {
     it('should detect high memory usage', () => {
       const highMemoryUsage = 60 * 1024 * 1024 // Above threshold of 50MB
       monitor.recordMemoryUsage(componentId, highMemoryUsage)
-      
+
       const alerts = monitor.getComponentAlerts(componentId)
-      const memoryAlert = alerts.find(alert => 
-        alert.category === 'memory' && alert.type === 'critical'
+      const memoryAlert = alerts.find(
+        (alert) => alert.category === 'memory' && alert.type === 'critical',
       )
       expect(memoryAlert).toBeTruthy()
     })
@@ -187,7 +187,7 @@ describe('LiveComponentPerformanceMonitor', () => {
     it('should record network activity', () => {
       monitor.recordNetworkActivity(componentId, 'sent', 1024, 50)
       monitor.recordNetworkActivity(componentId, 'received', 2048, 75)
-      
+
       const metrics = monitor.getComponentMetrics(componentId)
       expect(metrics?.networkMetrics.messagesSent).toBe(1)
       expect(metrics?.networkMetrics.messagesReceived).toBe(1)
@@ -201,7 +201,7 @@ describe('LiveComponentPerformanceMonitor', () => {
       monitor.recordUserInteraction(componentId, 'click', 100)
       monitor.recordUserInteraction(componentId, 'input', 200)
       monitor.recordUserInteraction(componentId, 'submit', 300)
-      
+
       const metrics = monitor.getComponentMetrics(componentId)
       expect(metrics?.userInteractionMetrics.clickCount).toBe(1)
       expect(metrics?.userInteractionMetrics.inputChangeCount).toBe(1)
@@ -215,7 +215,7 @@ describe('LiveComponentPerformanceMonitor', () => {
       monitor.recordUserInteraction(componentId, 'click', 150)
       monitor.recordUserInteraction(componentId, 'input', 200)
       monitor.recordUserInteraction(componentId, 'submit', 300)
-      
+
       const metrics = monitor.getComponentMetrics(componentId)
       expect(metrics?.userInteractionMetrics.engagementScore).toBeGreaterThan(0)
     })
@@ -225,11 +225,11 @@ describe('LiveComponentPerformanceMonitor', () => {
     it('should create alerts for performance issues', () => {
       // Trigger a slow render alert
       monitor.recordRenderTime(componentId, 250) // Well above threshold
-      
+
       const alerts = monitor.getComponentAlerts(componentId)
       expect(alerts.length).toBeGreaterThan(0)
-      
-      const renderAlert = alerts.find(alert => alert.category === 'render')
+
+      const renderAlert = alerts.find((alert) => alert.category === 'render')
       expect(renderAlert).toBeTruthy()
       expect(renderAlert?.type).toBe('warning')
     })
@@ -237,10 +237,10 @@ describe('LiveComponentPerformanceMonitor', () => {
     it('should resolve alerts', () => {
       // Create an alert
       monitor.recordRenderTime(componentId, 250)
-      
+
       const alerts = monitor.getComponentAlerts(componentId)
       const alert = alerts[0]
-      
+
       const resolved = monitor.resolveAlert(alert.id)
       expect(resolved).toBe(true)
       expect(alert.resolved).toBe(true)
@@ -251,10 +251,10 @@ describe('LiveComponentPerformanceMonitor', () => {
       monitor.recordRenderTime(componentId, 250)
       monitor.recordRenderTime(componentId, 260)
       monitor.recordRenderTime(componentId, 270)
-      
+
       const alerts = monitor.getComponentAlerts(componentId)
       // Should only have one alert due to cooldown
-      const renderAlerts = alerts.filter(alert => alert.category === 'render')
+      const renderAlerts = alerts.filter((alert) => alert.category === 'render')
       expect(renderAlerts.length).toBe(1)
     })
   })
@@ -265,18 +265,18 @@ describe('LiveComponentPerformanceMonitor', () => {
       for (let i = 0; i < 5; i++) {
         monitor.recordRenderTime(componentId, 90) // Just below threshold but consistently slow
       }
-      
+
       const suggestions = monitor.getComponentSuggestions(componentId)
-      const renderSuggestion = suggestions.find(s => s.type === 'render')
+      const renderSuggestion = suggestions.find((s) => s.type === 'render')
       expect(renderSuggestion).toBeTruthy()
     })
 
     it('should generate suggestions for memory issues', () => {
       // Create large state size
       monitor.recordMemoryUsage(componentId, 30 * 1024 * 1024, 150 * 1024) // 150KB state
-      
+
       const suggestions = monitor.getComponentSuggestions(componentId)
-      const memorySuggestion = suggestions.find(s => s.type === 'memory')
+      const memorySuggestion = suggestions.find((s) => s.type === 'memory')
       expect(memorySuggestion).toBeTruthy()
     })
   })
@@ -291,14 +291,14 @@ describe('LiveComponentPerformanceMonitor', () => {
 
     it('should generate performance dashboard', () => {
       const dashboard = monitor.generateDashboard()
-      
+
       expect(dashboard).toHaveProperty('overview')
       expect(dashboard).toHaveProperty('topPerformers')
       expect(dashboard).toHaveProperty('worstPerformers')
       expect(dashboard).toHaveProperty('recentAlerts')
       expect(dashboard).toHaveProperty('suggestions')
       expect(dashboard).toHaveProperty('trends')
-      
+
       expect(dashboard.overview.totalComponents).toBe(1)
       expect(dashboard.overview.healthyComponents).toBeGreaterThanOrEqual(0)
     })
@@ -308,9 +308,9 @@ describe('LiveComponentPerformanceMonitor', () => {
       const componentId2 = 'slow-component'
       monitor.initializeComponent(componentId2, 'SlowComponent')
       monitor.recordRenderTime(componentId2, 200) // Slower
-      
+
       const dashboard = monitor.generateDashboard()
-      
+
       expect(dashboard.topPerformers.length).toBeGreaterThan(0)
       expect(dashboard.worstPerformers.length).toBeGreaterThan(0)
     })
@@ -320,9 +320,9 @@ describe('LiveComponentPerformanceMonitor', () => {
     it('should remove component from monitoring', () => {
       const metrics = monitor.getComponentMetrics(componentId)
       expect(metrics).toBeTruthy()
-      
+
       monitor.removeComponent(componentId)
-      
+
       const metricsAfterRemoval = monitor.getComponentMetrics(componentId)
       expect(metricsAfterRemoval).toBeNull()
     })
@@ -332,16 +332,16 @@ describe('LiveComponentPerformanceMonitor', () => {
     it('should respect sample rate', () => {
       const sampledMonitor = new LiveComponentPerformanceMonitor({
         enabled: true,
-        sampleRate: 0.0 // Never sample
+        sampleRate: 0.0, // Never sample
       })
-      
+
       sampledMonitor.initializeComponent(componentId, componentName)
       sampledMonitor.recordRenderTime(componentId, 50)
-      
+
       const metrics = sampledMonitor.getComponentMetrics(componentId)
       // Should still have metrics object but no recorded data due to sampling
       expect(metrics).toBeTruthy()
-      
+
       sampledMonitor.shutdown()
     })
   })

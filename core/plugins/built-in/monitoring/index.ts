@@ -3,13 +3,19 @@
  * Provides performance monitoring, metrics collection, and system monitoring
  */
 
-import type { FluxStack, PluginContext, RequestContext, ResponseContext, ErrorContext } from "@/core/plugins/types"
-import { MetricsCollector } from "@/core/utils/monitoring"
+import * as fs from 'node:fs'
+import * as os from 'node:os'
+import * as path from 'node:path'
 import { appConfig } from '@/config/app.config'
 import { monitoringConfig } from '@/config/monitoring.config'
-import * as os from 'os'
-import * as fs from 'fs'
-import * as path from 'path'
+import type {
+  ErrorContext,
+  FluxStack,
+  PluginContext,
+  RequestContext,
+  ResponseContext,
+} from '@/core/plugins/types'
+import { MetricsCollector } from '@/core/utils/monitoring'
 
 // Enhanced metrics interfaces
 interface Metric {
@@ -75,34 +81,34 @@ const DEFAULTS = {
   retentionPeriod: monitoringConfig.metrics.retentionPeriod,
   exporters: [
     {
-      type: "console" as "console" | "prometheus" | "json" | "file",
+      type: 'console' as 'console' | 'prometheus' | 'json' | 'file',
       interval: 30000,
-      enabled: monitoringConfig.metrics.exportToConsole
+      enabled: monitoringConfig.metrics.exportToConsole,
     },
     {
-      type: "prometheus" as "console" | "prometheus" | "json" | "file",
-      endpoint: "/metrics",
+      type: 'prometheus' as 'console' | 'prometheus' | 'json' | 'file',
+      endpoint: '/metrics',
       enabled: true,
-      format: "text" as const
-    }
+      format: 'text' as const,
+    },
   ] as MetricsExporter[],
   thresholds: {
     responseTime: 1000, // ms
     errorRate: 0.05, // 5%
     memoryUsage: 0.8, // 80%
-    cpuUsage: 0.8 // 80%
+    cpuUsage: 0.8, // 80%
   },
-  alerts: [] as AlertThreshold[]
+  alerts: [] as AlertThreshold[],
 }
 
 export const monitoringPlugin: Plugin = {
-  name: "monitoring",
-  version: "1.0.0",
-  description: "Performance monitoring plugin with metrics collection and system monitoring",
-  author: "FluxStack Team",
+  name: 'monitoring',
+  version: '1.0.0',
+  description: 'Performance monitoring plugin with metrics collection and system monitoring',
+  author: 'FluxStack Team',
   priority: 900, // Should run early to capture all metrics
-  category: "monitoring",
-  tags: ["monitoring", "metrics", "performance", "observability"],
+  category: 'monitoring',
+  tags: ['monitoring', 'metrics', 'performance', 'observability'],
   dependencies: [],
 
   setup: async (context: PluginContext) => {
@@ -116,14 +122,14 @@ export const monitoringPlugin: Plugin = {
       systemMetrics: DEFAULTS.systemMetrics,
       customMetrics: DEFAULTS.customMetrics,
       exporters: DEFAULTS.exporters.length,
-      alerts: DEFAULTS.alerts.length
+      alerts: DEFAULTS.alerts.length,
     })
 
     // Initialize enhanced metrics registry
     const metricsRegistry: MetricsRegistry = {
       counters: new Map(),
       gauges: new Map(),
-      histograms: new Map()
+      histograms: new Map(),
     }
 
     // Initialize metrics collector
@@ -165,14 +171,14 @@ export const monitoringPlugin: Plugin = {
       context.logger.info('Monitoring plugin: Server monitoring started', {
         pid: process.pid,
         nodeVersion: process.version,
-        platform: process.platform
+        platform: process.platform,
       })
 
       // Record server start metric
       const metricsRegistry = (context as any).metricsRegistry as MetricsRegistry
       if (metricsRegistry) {
         recordCounter(metricsRegistry, 'server_starts_total', 1, {
-          version: appConfig.version
+          version: appConfig.version,
         })
       }
     }
@@ -191,14 +197,14 @@ export const monitoringPlugin: Plugin = {
       // Cleanup intervals
       const intervals = (context as any).monitoringIntervals as NodeJS.Timeout[]
       if (intervals) {
-        intervals.forEach(interval => clearInterval(interval))
+        intervals.forEach((interval) => clearInterval(interval))
       }
     }
   },
 
   onRequest: async (requestContext: RequestContext) => {
     const startTime = Date.now()
-    
+
     // Store start time for duration calculation
     ;(requestContext as any).monitoringStartTime = startTime
 
@@ -210,22 +216,22 @@ export const monitoringPlugin: Plugin = {
     // Record request metrics
     recordCounter(metricsRegistry, 'http_requests_total', 1, {
       method: requestContext.method,
-      path: requestContext.path
+      path: requestContext.path,
     })
 
     // Record request size if available
     const contentLength = requestContext.headers['content-length']
     if (contentLength) {
-      const size = parseInt(contentLength)
+      const size = parseInt(contentLength, 10)
       recordHistogram(metricsRegistry, 'http_request_size_bytes', size, {
-        method: requestContext.method
+        method: requestContext.method,
       })
     }
 
     // Record in collector as well
     const counter = metricsCollector.getAllMetrics().get('http_requests_total')
     if (counter && typeof (counter as any).inc === 'function') {
-      (counter as any).inc(1, { method: requestContext.method, path: requestContext.path })
+      ;(counter as any).inc(1, { method: requestContext.method, path: requestContext.path })
     }
   },
 
@@ -241,21 +247,21 @@ export const monitoringPlugin: Plugin = {
     recordHistogram(metricsRegistry, 'http_request_duration_ms', duration, {
       method: responseContext.method,
       path: responseContext.path,
-      status_code: responseContext.statusCode.toString()
+      status_code: responseContext.statusCode.toString(),
     })
 
     // Record response size
     if (responseContext.size) {
       recordHistogram(metricsRegistry, 'http_response_size_bytes', responseContext.size, {
         method: responseContext.method,
-        status_code: responseContext.statusCode.toString()
+        status_code: responseContext.statusCode.toString(),
       })
     }
 
     // Record status code
     recordCounter(metricsRegistry, 'http_responses_total', 1, {
       method: responseContext.method,
-      status_code: responseContext.statusCode.toString()
+      status_code: responseContext.statusCode.toString(),
     })
 
     // Record in collector
@@ -264,19 +270,22 @@ export const monitoringPlugin: Plugin = {
       responseContext.path,
       responseContext.statusCode,
       duration,
-      parseInt(responseContext.headers['content-length'] || '0') || undefined,
-      responseContext.size
+      parseInt(responseContext.headers['content-length'] || '0', 10) || undefined,
+      responseContext.size,
     )
 
     // Check thresholds and log warnings
     if (DEFAULTS.thresholds.responseTime && duration > DEFAULTS.thresholds.responseTime) {
       const logger = (responseContext as any).logger || console
-      logger.warn(`Slow request detected: ${responseContext.method} ${responseContext.path} took ${duration}ms`, {
-        method: responseContext.method,
-        path: responseContext.path,
-        duration,
-        threshold: DEFAULTS.thresholds.responseTime
-      })
+      logger.warn(
+        `Slow request detected: ${responseContext.method} ${responseContext.path} took ${duration}ms`,
+        {
+          method: responseContext.method,
+          path: responseContext.path,
+          duration,
+          threshold: DEFAULTS.thresholds.responseTime,
+        },
+      )
     }
   },
 
@@ -289,13 +298,13 @@ export const monitoringPlugin: Plugin = {
     recordCounter(metricsRegistry, 'http_errors_total', 1, {
       method: errorContext.method,
       path: errorContext.path,
-      error_type: errorContext.error.name
+      error_type: errorContext.error.name,
     })
 
     // Record error duration
     recordHistogram(metricsRegistry, 'http_error_duration_ms', errorContext.duration, {
       method: errorContext.method,
-      error_type: errorContext.error.name
+      error_type: errorContext.error.name,
     })
 
     // Record in collector (treat as 500 error)
@@ -303,19 +312,19 @@ export const monitoringPlugin: Plugin = {
       errorContext.method,
       errorContext.path,
       500,
-      errorContext.duration
+      errorContext.duration,
     )
 
     // Increment error counter in collector
     const errorCounter = metricsCollector.getAllMetrics().get('http_errors_total')
     if (errorCounter && typeof (errorCounter as any).inc === 'function') {
-      (errorCounter as any).inc(1, { 
-        method: errorContext.method, 
+      ;(errorCounter as any).inc(1, {
+        method: errorContext.method,
         path: errorContext.path,
-        error_type: errorContext.error.name
+        error_type: errorContext.error.name,
       })
     }
-  }
+  },
 }
 
 // Helper functions
@@ -343,9 +352,21 @@ function initializeHttpMetrics(registry: MetricsRegistry, collector: MetricsColl
   collector.createCounter('http_requests_total', 'Total number of HTTP requests')
   collector.createCounter('http_responses_total', 'Total number of HTTP responses')
   collector.createCounter('http_errors_total', 'Total number of HTTP errors')
-  collector.createHistogram('http_request_duration_seconds', 'HTTP request duration in seconds', [0.1, 0.5, 1, 2.5, 5, 10])
-  collector.createHistogram('http_request_size_bytes', 'HTTP request size in bytes', [100, 1000, 10000, 100000, 1000000])
-  collector.createHistogram('http_response_size_bytes', 'HTTP response size in bytes', [100, 1000, 10000, 100000, 1000000])
+  collector.createHistogram(
+    'http_request_duration_seconds',
+    'HTTP request duration in seconds',
+    [0.1, 0.5, 1, 2.5, 5, 10],
+  )
+  collector.createHistogram(
+    'http_request_size_bytes',
+    'HTTP request size in bytes',
+    [100, 1000, 10000, 100000, 1000000],
+  )
+  collector.createHistogram(
+    'http_response_size_bytes',
+    'HTTP response size in bytes',
+    [100, 1000, 10000, 100000, 1000000],
+  )
 }
 
 function startSystemMetricsCollection(context: PluginContext, collector: MetricsCollector) {
@@ -361,7 +382,7 @@ function startSystemMetricsCollection(context: PluginContext, collector: Metrics
   collector.createGauge('process_uptime_seconds', 'Process uptime in seconds')
   collector.createGauge('process_pid', 'Process ID')
   collector.createGauge('nodejs_version_info', 'Node.js version info')
-  
+
   if (process.platform !== 'win32') {
     collector.createGauge('system_load_average_1m', 'System load average over 1 minute')
     collector.createGauge('system_load_average_5m', 'System load average over 5 minutes')
@@ -414,7 +435,6 @@ function startSystemMetricsCollection(context: PluginContext, collector: Metrics
         const lag = Number(process.hrtime.bigint() - start) / 1e6 // Convert to milliseconds
         recordGauge(metricsRegistry, 'nodejs_eventloop_lag_seconds', lag / 1000)
       })
-
     } catch (error) {
       context.logger.error('Error collecting system metrics', { error })
     }
@@ -429,29 +449,39 @@ function startSystemMetricsCollection(context: PluginContext, collector: Metrics
   ;(context as any).monitoringIntervals = intervals
 }
 
-function setupMetricsEndpoint(context: PluginContext, _registry: MetricsRegistry, collector: MetricsCollector) {
+function setupMetricsEndpoint(
+  context: PluginContext,
+  _registry: MetricsRegistry,
+  collector: MetricsCollector,
+) {
   // Find Prometheus exporter configuration
-  const prometheusExporter = DEFAULTS.exporters.find((e: any) => e.type === 'prometheus' && e.enabled)
+  const prometheusExporter = DEFAULTS.exporters.find(
+    (e: any) => e.type === 'prometheus' && e.enabled,
+  )
   if (!prometheusExporter) return
 
   const endpoint = prometheusExporter.endpoint || '/metrics'
-  
+
   // Add metrics endpoint to the app
   if (context.app && typeof context.app.get === 'function') {
     context.app.get(endpoint, () => {
       const prometheusData = collector.exportPrometheus()
       return new Response(prometheusData, {
         headers: {
-          'Content-Type': 'text/plain; version=0.0.4; charset=utf-8'
-        }
+          'Content-Type': 'text/plain; version=0.0.4; charset=utf-8',
+        },
       })
     })
-    
+
     context.logger.info(`Metrics endpoint available at ${endpoint}`)
   }
 }
 
-function startMetricsExporters(context: PluginContext, registry: MetricsRegistry, collector: MetricsCollector) {
+function startMetricsExporters(
+  context: PluginContext,
+  registry: MetricsRegistry,
+  collector: MetricsCollector,
+) {
   const intervals: NodeJS.Timeout[] = (context as any).monitoringIntervals || []
 
   for (const exporterConfig of DEFAULTS.exporters) {
@@ -500,33 +530,34 @@ function setupAlertMonitoring(context: PluginContext, registry: MetricsRegistry)
       try {
         const metricValue = getMetricValue(registry, alert.metric)
         if (metricValue !== null && evaluateThreshold(metricValue, alert.operator, alert.value)) {
-          const message = alert.message || `Alert: ${alert.metric} ${alert.operator} ${alert.value} (current: ${metricValue})`
-          
+          const message =
+            alert.message ||
+            `Alert: ${alert.metric} ${alert.operator} ${alert.value} (current: ${metricValue})`
+
           switch (alert.severity) {
             case 'critical':
             case 'error':
-              context.logger.error(message, { 
-                metric: alert.metric, 
-                value: metricValue, 
+              context.logger.error(message, {
+                metric: alert.metric,
+                value: metricValue,
                 threshold: alert.value,
-                severity: alert.severity
+                severity: alert.severity,
               })
               break
             case 'warning':
-              context.logger.warn(message, { 
-                metric: alert.metric, 
-                value: metricValue, 
+              context.logger.warn(message, {
+                metric: alert.metric,
+                value: metricValue,
                 threshold: alert.value,
-                severity: alert.severity
+                severity: alert.severity,
               })
               break
-            case 'info':
             default:
-              context.logger.info(message, { 
-                metric: alert.metric, 
-                value: metricValue, 
+              context.logger.info(message, {
+                metric: alert.metric,
+                value: metricValue,
                 threshold: alert.value,
-                severity: alert.severity
+                severity: alert.severity,
               })
               break
           }
@@ -579,10 +610,15 @@ function setupMetricsCleanup(context: PluginContext, registry: MetricsRegistry) 
 }
 
 // Metrics recording functions
-function recordCounter(registry: MetricsRegistry, name: string, value: number, labels?: Record<string, string>) {
+function recordCounter(
+  registry: MetricsRegistry,
+  name: string,
+  value: number,
+  labels?: Record<string, string>,
+) {
   const key = createMetricKey(name, labels)
   const existing = registry.counters.get(key)
-  
+
   registry.counters.set(key, {
     type: 'counter',
     name,
@@ -595,13 +631,18 @@ function recordCounter(registry: MetricsRegistry, name: string, value: number, l
         metric.value += incValue
         metric.timestamp = Date.now()
       }
-    }
+    },
   })
 }
 
-function recordGauge(registry: MetricsRegistry, name: string, value: number, labels?: Record<string, string>) {
+function recordGauge(
+  registry: MetricsRegistry,
+  name: string,
+  value: number,
+  labels?: Record<string, string>,
+) {
   const key = createMetricKey(name, labels)
-  
+
   registry.gauges.set(key, {
     type: 'gauge',
     name,
@@ -628,13 +669,18 @@ function recordGauge(registry: MetricsRegistry, name: string, value: number, lab
         metric.value -= decValue
         metric.timestamp = Date.now()
       }
-    }
+    },
   })
 }
 
-function recordHistogram(registry: MetricsRegistry, name: string, value: number, labels?: Record<string, string>) {
+function recordHistogram(
+  registry: MetricsRegistry,
+  name: string,
+  value: number,
+  labels?: Record<string, string>,
+) {
   const key = createMetricKey(name, labels)
-  
+
   const existing = registry.histograms.get(key)
   if (existing) {
     existing.values.push(value)
@@ -654,7 +700,7 @@ function recordHistogram(registry: MetricsRegistry, name: string, value: number,
           metric.values.push(observeValue)
           metric.timestamp = Date.now()
         }
-      }
+      },
     })
   }
 }
@@ -663,12 +709,12 @@ function createMetricKey(name: string, labels?: Record<string, string>): string 
   if (!labels || Object.keys(labels).length === 0) {
     return name
   }
-  
+
   const labelString = Object.entries(labels)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([key, value]) => `${key}="${value}"`)
     .join(',')
-  
+
   return `${name}{${labelString}}`
 }
 
@@ -692,13 +738,20 @@ function getMetricValue(registry: MetricsRegistry, metricName: string): number |
 
 function evaluateThreshold(value: number, operator: string, threshold: number): boolean {
   switch (operator) {
-    case '>': return value > threshold
-    case '<': return value < threshold
-    case '>=': return value >= threshold
-    case '<=': return value <= threshold
-    case '==': return value === threshold
-    case '!=': return value !== threshold
-    default: return false
+    case '>':
+      return value > threshold
+    case '<':
+      return value < threshold
+    case '>=':
+      return value >= threshold
+    case '<=':
+      return value <= threshold
+    case '==':
+      return value === threshold
+    case '!=':
+      return value !== threshold
+    default:
+      return false
   }
 }
 
@@ -707,7 +760,7 @@ function exportToConsole(registry: MetricsRegistry, collector: MetricsCollector,
   const metrics = {
     counters: Array.from(registry.counters.values()),
     gauges: Array.from(registry.gauges.values()),
-    histograms: Array.from(registry.histograms.values())
+    histograms: Array.from(registry.histograms.values()),
   }
 
   const systemMetrics = collector.getSystemMetrics()
@@ -720,22 +773,27 @@ function exportToConsole(registry: MetricsRegistry, collector: MetricsCollector,
     histograms: metrics.histograms.length,
     system: systemMetrics,
     http: httpMetrics,
-    metrics
+    metrics,
   })
 }
 
-function exportToPrometheus(_registry: MetricsRegistry, collector: MetricsCollector, config: any, logger: any) {
+function exportToPrometheus(
+  _registry: MetricsRegistry,
+  collector: MetricsCollector,
+  config: any,
+  logger: any,
+) {
   const prometheusData = collector.exportPrometheus()
-  
+
   if (config.endpoint && config.endpoint !== '/metrics') {
     // POST to Prometheus pushgateway
     fetch(config.endpoint, {
       method: 'POST',
       headers: {
-        'Content-Type': 'text/plain; version=0.0.4; charset=utf-8'
+        'Content-Type': 'text/plain; version=0.0.4; charset=utf-8',
       },
-      body: prometheusData
-    }).catch(error => {
+      body: prometheusData,
+    }).catch((error) => {
       logger.error('Failed to push metrics to Prometheus', { error, endpoint: config.endpoint })
     })
   } else {
@@ -743,33 +801,46 @@ function exportToPrometheus(_registry: MetricsRegistry, collector: MetricsCollec
   }
 }
 
-function exportToJson(registry: MetricsRegistry, collector: MetricsCollector, config: any, logger: any) {
+function exportToJson(
+  registry: MetricsRegistry,
+  collector: MetricsCollector,
+  config: any,
+  logger: any,
+) {
   const data = {
     timestamp: new Date().toISOString(),
     system: collector.getSystemMetrics(),
     http: collector.getHttpMetrics(),
     counters: Object.fromEntries(registry.counters.entries()),
     gauges: Object.fromEntries(registry.gauges.entries()),
-    histograms: Object.fromEntries(registry.histograms.entries())
+    histograms: Object.fromEntries(registry.histograms.entries()),
   }
-  
+
   if (config.endpoint) {
     // POST to JSON endpoint
     fetch(config.endpoint, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(data)
-    }).catch(error => {
-      logger.error('Failed to export metrics to JSON endpoint', { error, endpoint: config.endpoint })
+      body: JSON.stringify(data),
+    }).catch((error) => {
+      logger.error('Failed to export metrics to JSON endpoint', {
+        error,
+        endpoint: config.endpoint,
+      })
     })
   } else {
     logger.info('JSON metrics export', data)
   }
 }
 
-function exportToFile(registry: MetricsRegistry, collector: MetricsCollector, config: any, logger: any) {
+function exportToFile(
+  registry: MetricsRegistry,
+  collector: MetricsCollector,
+  config: any,
+  logger: any,
+) {
   if (!config.filePath) {
     logger.warn('File exporter configured but no filePath specified')
     return
@@ -781,12 +852,11 @@ function exportToFile(registry: MetricsRegistry, collector: MetricsCollector, co
     http: collector.getHttpMetrics(),
     counters: Object.fromEntries(registry.counters.entries()),
     gauges: Object.fromEntries(registry.gauges.entries()),
-    histograms: Object.fromEntries(registry.histograms.entries())
+    histograms: Object.fromEntries(registry.histograms.entries()),
   }
 
-  const content = config.format === 'json' 
-    ? JSON.stringify(data, null, 2)
-    : collector.exportPrometheus()
+  const content =
+    config.format === 'json' ? JSON.stringify(data, null, 2) : collector.exportPrometheus()
 
   try {
     // Ensure directory exists
@@ -807,11 +877,11 @@ export function formatPrometheusLabels(labels?: Record<string, string>): string 
   if (!labels || Object.keys(labels).length === 0) {
     return ''
   }
-  
+
   const labelPairs = Object.entries(labels)
     .map(([key, value]) => `${key}="${value}"`)
     .join(',')
-  
+
   return `{${labelPairs}}`
 }
 

@@ -1,8 +1,8 @@
-import { readFileSync, writeFileSync, statSync, readdirSync } from "fs"
-import { join, extname } from "path"
-import { gzipSync } from "zlib"
-import type { OptimizationConfig, OptimizationResult } from "../types/build"
-import { buildLogger } from "../utils/build-logger"
+import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { extname, join } from 'node:path'
+import { gzipSync } from 'node:zlib'
+import type { OptimizationResult } from '../types/build'
+import { buildLogger } from '../utils/build-logger'
 
 export interface OptimizerConfig {
   treeshake: boolean
@@ -29,7 +29,7 @@ export class Optimizer {
       originalSize: 0,
       optimizedSize: 0,
       compressionRatio: 0,
-      optimizations: []
+      optimizations: [],
     }
 
     try {
@@ -57,19 +57,22 @@ export class Optimizer {
 
       // Calculate final size and compression ratio
       results.optimizedSize = await this.calculateDirectorySize(buildPath)
-      results.compressionRatio = results.originalSize > 0
-        ? ((results.originalSize - results.optimizedSize) / results.originalSize) * 100
-        : 0
+      results.compressionRatio =
+        results.originalSize > 0
+          ? ((results.originalSize - results.optimizedSize) / results.originalSize) * 100
+          : 0
 
       results.duration = Date.now() - startTime
 
-      buildLogger.success(`Optimization completed in ${buildLogger.formatDuration(results.duration)}`)
+      buildLogger.success(
+        `Optimization completed in ${buildLogger.formatDuration(results.duration)}`,
+      )
 
       // Create optimization summary table
-      const optimizationData = results.optimizations.map(opt => ({
+      const optimizationData = results.optimizations.map((opt) => ({
         type: opt.type,
         description: opt.description,
-        saved: buildLogger.formatSize(opt.sizeSaved)
+        saved: buildLogger.formatSize(opt.sizeSaved),
       }))
 
       if (optimizationData.length > 0) {
@@ -77,18 +80,17 @@ export class Optimizer {
           [
             { header: 'Optimization', key: 'type', width: 20, align: 'left', color: 'cyan' },
             { header: 'Description', key: 'description', width: 35, align: 'left' },
-            { header: 'Size Saved', key: 'saved', width: 12, align: 'right', color: 'green' }
+            { header: 'Size Saved', key: 'saved', width: 12, align: 'right', color: 'green' },
           ],
-          optimizationData
+          optimizationData,
         )
       }
 
       return results
-
     } catch (error) {
       results.success = false
       results.duration = Date.now() - startTime
-      results.error = error instanceof Error ? error.message : "Unknown optimization error"
+      results.error = error instanceof Error ? error.message : 'Unknown optimization error'
 
       buildLogger.error(`Optimization failed: ${results.error}`)
       return results
@@ -98,25 +100,25 @@ export class Optimizer {
   // Minification methods removed for compatibility with Bun bundler
 
   private async compressAssets(buildPath: string, results: OptimizationResult): Promise<void> {
-    buildLogger.step("Compressing assets...")
+    buildLogger.step('Compressing assets...')
 
     const files = this.getFilesRecursively(buildPath)
     let compressedCount = 0
 
     for (const file of files) {
       const ext = extname(file).toLowerCase()
-      
+
       if (['.js', '.css', '.html', '.json', '.svg'].includes(ext)) {
         try {
           const content = readFileSync(file)
           const compressed = gzipSync(content)
-          
+
           // Only create .gz file if it's significantly smaller
           if (compressed.length < content.length * 0.9) {
-            writeFileSync(file + '.gz', compressed)
+            writeFileSync(`${file}.gz`, compressed)
             compressedCount++
           }
-        } catch (error) {
+        } catch (_error) {
           // Silently skip files that can't be compressed
         }
       }
@@ -126,38 +128,38 @@ export class Optimizer {
     results.optimizations.push({
       type: 'compression',
       description: `Created gzip versions for ${compressedCount} files`,
-      sizeSaved: 0
+      sizeSaved: 0,
     })
   }
 
-  private async removeUnusedCSS(buildPath: string, results: OptimizationResult): Promise<void> {
-    buildLogger.step("Analyzing CSS...")
+  private async removeUnusedCSS(_buildPath: string, results: OptimizationResult): Promise<void> {
+    buildLogger.step('Analyzing CSS...')
 
     // This is a placeholder - real implementation would use PurgeCSS or similar
     results.optimizations.push({
       type: 'css-purging',
       description: 'CSS purging not implemented yet',
-      sizeSaved: 0
+      sizeSaved: 0,
     })
   }
 
-  private async optimizeImages(buildPath: string, results: OptimizationResult): Promise<void> {
-    buildLogger.step("Optimizing images...")
+  private async optimizeImages(_buildPath: string, results: OptimizationResult): Promise<void> {
+    buildLogger.step('Optimizing images...')
 
     // This is a placeholder - real implementation would use imagemin or similar
     results.optimizations.push({
       type: 'image-optimization',
       description: 'Image optimization not implemented yet',
-      sizeSaved: 0
+      sizeSaved: 0,
     })
   }
 
   private async analyzeBundles(buildPath: string, results: OptimizationResult): Promise<void> {
-    buildLogger.step("Analyzing bundles...")
-    
+    buildLogger.step('Analyzing bundles...')
+
     const files = this.getFilesRecursively(buildPath)
-    const jsFiles = files.filter(f => extname(f) === '.js')
-    
+    const jsFiles = files.filter((f) => extname(f) === '.js')
+
     let totalJSSize = 0
     for (const file of jsFiles) {
       totalJSSize += statSync(file).size
@@ -166,44 +168,44 @@ export class Optimizer {
     results.optimizations.push({
       type: 'bundle-analysis',
       description: `Analyzed ${jsFiles.length} JS bundles (${(totalJSSize / 1024).toFixed(2)} KB total)`,
-      sizeSaved: 0
+      sizeSaved: 0,
     })
   }
 
   private async calculateDirectorySize(dirPath: string): Promise<number> {
     const files = this.getFilesRecursively(dirPath)
     let totalSize = 0
-    
+
     for (const file of files) {
       try {
         totalSize += statSync(file).size
-      } catch (error) {
+      } catch (_error) {
         // Ignore files that can't be read
       }
     }
-    
+
     return totalSize
   }
 
   private getFilesRecursively(dir: string): string[] {
     const files: string[] = []
-    
+
     try {
       const items = readdirSync(dir, { withFileTypes: true })
-      
+
       for (const item of items) {
         const fullPath = join(dir, item.name)
-        
+
         if (item.isDirectory()) {
           files.push(...this.getFilesRecursively(fullPath))
         } else {
           files.push(fullPath)
         }
       }
-    } catch (error) {
+    } catch (_error) {
       // Ignore directories that can't be read
     }
-    
+
     return files
   }
 
@@ -220,11 +222,14 @@ export class Optimizer {
 
 ## Optimizations Applied
 
-${result.optimizations.map(opt => 
-  `### ${opt.type.charAt(0).toUpperCase() + opt.type.slice(1)}
+${result.optimizations
+  .map(
+    (opt) =>
+      `### ${opt.type.charAt(0).toUpperCase() + opt.type.slice(1)}
 - ${opt.description}
-- Size Saved: ${(opt.sizeSaved / 1024).toFixed(2)} KB`
-).join('\n\n')}
+- Size Saved: ${(opt.sizeSaved / 1024).toFixed(2)} KB`,
+  )
+  .join('\n\n')}
 
 ${result.error ? `## Error\n${result.error}` : ''}
 

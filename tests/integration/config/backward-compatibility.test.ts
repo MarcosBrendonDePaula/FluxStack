@@ -3,9 +3,9 @@
  * Tests for compatibility with old config system (core/config/schema.ts)
  */
 
-import { describe, it, expect } from 'vitest'
-import { config as fluxStackConfig } from '@/fluxstack.config'
+import { describe, expect, it } from 'vitest'
 import type { FluxStackConfig } from '@/core/config/schema'
+import { config as fluxStackConfig } from '@/fluxstack.config'
 
 describe('Backward Compatibility', () => {
   describe('FluxStackConfig Type', () => {

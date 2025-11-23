@@ -2,17 +2,17 @@
  * Tests for Configuration Loader
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { 
-  loadConfig, 
-  loadConfigSync,
+import { existsSync, unlinkSync, writeFileSync } from 'node:fs'
+import * as path from 'node:path'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import {
+  createConfigSubset,
   getConfigValue,
   hasConfigValue,
-  createConfigSubset
+  loadConfig,
+  loadConfigSync,
 } from '../loader'
 import { defaultFluxStackConfig } from '../schema'
-import { writeFileSync, unlinkSync, existsSync } from 'fs'
-import * as path from 'path'
 
 describe('Configuration Loader', () => {
   const testConfigPath = path.join(process.cwd(), 'test.config.ts')
@@ -20,10 +20,22 @@ describe('Configuration Loader', () => {
 
   beforeEach(() => {
     // Clean up environment
-    Object.keys(process.env).forEach(key => {
-      if (key.startsWith('FLUXSTACK_') || key.startsWith('TEST_') || 
-          ['PORT', 'HOST', 'LOG_LEVEL', 'CORS_ORIGINS', 'CORS_METHODS', 'CORS_HEADERS', 
-           'CORS_CREDENTIALS', 'MONITORING_ENABLED', 'VITE_PORT'].includes(key)) {
+    Object.keys(process.env).forEach((key) => {
+      if (
+        key.startsWith('FLUXSTACK_') ||
+        key.startsWith('TEST_') ||
+        [
+          'PORT',
+          'HOST',
+          'LOG_LEVEL',
+          'CORS_ORIGINS',
+          'CORS_METHODS',
+          'CORS_HEADERS',
+          'CORS_CREDENTIALS',
+          'MONITORING_ENABLED',
+          'VITE_PORT',
+        ].includes(key)
+      ) {
         delete process.env[key]
       }
     })
@@ -32,7 +44,7 @@ describe('Configuration Loader', () => {
   afterEach(() => {
     // Restore original environment
     process.env = { ...originalEnv }
-    
+
     // Clean up test files
     if (existsSync(testConfigPath)) {
       unlinkSync(testConfigPath)
@@ -42,7 +54,7 @@ describe('Configuration Loader', () => {
   describe('loadConfigSync', () => {
     it('should load default configuration', () => {
       const result = loadConfigSync({ environment: 'development' })
-      
+
       expect(result.config).toBeDefined()
       expect(result.sources).toContain('defaults')
       expect(result.errors).toHaveLength(0)
@@ -54,7 +66,7 @@ describe('Configuration Loader', () => {
       process.env.LOG_LEVEL = 'debug'
 
       const result = loadConfigSync({ environment: 'development' })
-      
+
       expect(result.config.server.port).toBe(4000)
       expect(result.config.app.name).toBe('test-app')
       expect(result.config.logging.level).toBe('debug')
@@ -67,7 +79,7 @@ describe('Configuration Loader', () => {
       process.env.MONITORING_ENABLED = 'true'
 
       const result = loadConfigSync()
-      
+
       expect(result.config.server.cors.credentials).toBe(true)
       expect(result.config.build.optimization.minify).toBe(false)
       expect(result.config.monitoring.enabled).toBe(true)
@@ -78,11 +90,11 @@ describe('Configuration Loader', () => {
       process.env.CORS_METHODS = 'GET,POST,PUT,DELETE'
 
       const result = loadConfigSync()
-      
+
       expect(result.config.server.cors.origins).toEqual([
         'http://localhost:3000',
-        'http://localhost:5173', 
-        'https://example.com'
+        'http://localhost:5173',
+        'https://example.com',
       ])
       expect(result.config.server.cors.methods).toEqual(['GET', 'POST', 'PUT', 'DELETE'])
     })
@@ -92,7 +104,7 @@ describe('Configuration Loader', () => {
       process.env.FLUXSTACK_CUSTOM_TIMEOUT = '5000'
 
       const result = loadConfigSync({ environment: 'development' })
-      
+
       expect(result.config.custom?.['custom.feature']).toBe('enabled')
       expect(result.config.custom?.['custom.timeout']).toBe(5000)
     })
@@ -102,7 +114,7 @@ describe('Configuration Loader', () => {
       process.env.NODE_ENV = 'development'
 
       const result = loadConfigSync()
-      
+
       expect(result.config.logging.level).toBe('debug')
       expect(result.config.logging.format).toBe('pretty')
       expect(result.sources).toContain('environment:development')
@@ -133,11 +145,11 @@ describe('Configuration Loader', () => {
           }
         }
       `
-      
+
       writeFileSync(testConfigPath, testConfig)
 
       const result = await loadConfig({ configPath: testConfigPath, environment: 'development' })
-      
+
       expect(result.config.app.name).toBe('file-test-app')
       expect(result.config.server.port).toBe(8080)
       expect(result.config.server.host).toBe('test-host')
@@ -167,11 +179,11 @@ describe('Configuration Loader', () => {
           }
         }
       `
-      
+
       writeFileSync(testConfigPath, testConfig)
 
       const result = await loadConfig({ configPath: testConfigPath, environment: 'development' })
-      
+
       // Environment variables should override file config
       expect(result.config.server.port).toBe(9000)
       expect(result.config.app.name).toBe('env-override')
@@ -181,7 +193,7 @@ describe('Configuration Loader', () => {
 
     it('should handle configuration file errors gracefully', async () => {
       const result = await loadConfig({ configPath: 'non-existent-config.ts' })
-      
+
       expect(result.errors.length).toBeGreaterThan(0)
       expect(result.config).toBeDefined() // Should fall back to defaults
     })
@@ -195,14 +207,14 @@ describe('Configuration Loader', () => {
           }
         }
       `
-      
+
       writeFileSync(testConfigPath, invalidConfig)
 
-      const result = await loadConfig({ 
+      const result = await loadConfig({
         configPath: testConfigPath,
-        validateSchema: true 
+        validateSchema: true,
       })
-      
+
       // Current implementation is lenient - doesn't fail on minor validation issues
       expect(result.errors.length).toBe(0)
       expect(result.config).toBeDefined()
@@ -213,31 +225,37 @@ describe('Configuration Loader', () => {
   describe('getConfigValue', () => {
     it('should get nested configuration values', () => {
       const config = defaultFluxStackConfig
-      
+
       expect(getConfigValue(config, 'app.name', '')).toBe(config.app.name)
       expect(getConfigValue(config, 'server.port', 0)).toBe(config.server.port)
-      expect(getConfigValue(config, 'server.cors.origins', [] as string[])).toEqual(config.server.cors.origins)
+      expect(getConfigValue(config, 'server.cors.origins', [] as string[])).toEqual(
+        config.server.cors.origins,
+      )
     })
 
     it('should return default value for missing paths', () => {
       const config = defaultFluxStackConfig
-      
+
       expect(getConfigValue(config, 'nonexistent.path', 'default')).toBe('default')
       expect(getConfigValue(config, 'app.nonexistent', null)).toBe(null)
     })
 
     it('should handle deep nested paths', () => {
       const config = defaultFluxStackConfig
-      
-      expect(getConfigValue(config, 'build.optimization.minify', false)).toBe(config.build.optimization.minify)
-      expect(getConfigValue(config, 'monitoring.metrics.enabled', false)).toBe(config.monitoring.metrics.enabled)
+
+      expect(getConfigValue(config, 'build.optimization.minify', false)).toBe(
+        config.build.optimization.minify,
+      )
+      expect(getConfigValue(config, 'monitoring.metrics.enabled', false)).toBe(
+        config.monitoring.metrics.enabled,
+      )
     })
   })
 
   describe('hasConfigValue', () => {
     it('should check if configuration values exist', () => {
       const config = defaultFluxStackConfig
-      
+
       expect(hasConfigValue(config, 'app.name')).toBe(true)
       expect(hasConfigValue(config, 'server.port')).toBe(true)
       expect(hasConfigValue(config, 'nonexistent.path')).toBe(false)
@@ -245,7 +263,7 @@ describe('Configuration Loader', () => {
 
     it('should handle optional configurations', () => {
       const config = { ...defaultFluxStackConfig, database: { url: 'test://db' } }
-      
+
       expect(hasConfigValue(config, 'database.url')).toBe(true)
       expect(hasConfigValue(config, 'database.host')).toBe(false)
     })
@@ -255,9 +273,9 @@ describe('Configuration Loader', () => {
     it('should create configuration subset', () => {
       const config = defaultFluxStackConfig
       const paths = ['app.name', 'server.port', 'logging.level']
-      
+
       const subset = createConfigSubset(config, paths)
-      
+
       expect(subset.app.name).toBe(config.app.name)
       expect(subset.server.port).toBe(config.server.port)
       expect(subset.logging.level).toBe(config.logging.level)
@@ -267,9 +285,9 @@ describe('Configuration Loader', () => {
     it('should handle missing paths gracefully', () => {
       const config = defaultFluxStackConfig
       const paths = ['app.name', 'nonexistent.path', 'server.port']
-      
+
       const subset = createConfigSubset(config, paths)
-      
+
       expect(subset.app.name).toBe(config.app.name)
       expect(subset.server.port).toBe(config.server.port)
       expect(subset.nonexistent).toBeUndefined()
@@ -279,11 +297,11 @@ describe('Configuration Loader', () => {
   describe('Environment Handling', () => {
     it('should handle different NODE_ENV values', () => {
       const environments = ['development', 'production', 'test']
-      
-      environments.forEach(env => {
+
+      environments.forEach((env) => {
         process.env.NODE_ENV = env
         const result = loadConfigSync({ environment: env })
-        
+
         expect(result.sources).toContain(`environment:${env}`)
         expect(result.config).toBeDefined()
       })
@@ -292,7 +310,7 @@ describe('Configuration Loader', () => {
     it('should apply correct environment defaults', () => {
       process.env.NODE_ENV = 'production'
       const result = loadConfigSync({ environment: 'production' })
-      
+
       expect(result.config.logging.level).toBe('warn')
       expect(result.config.logging.format).toBe('json')
       expect(result.config.monitoring.enabled).toBe(true)
@@ -300,7 +318,7 @@ describe('Configuration Loader', () => {
 
     it('should handle custom environment names', () => {
       const result = loadConfigSync({ environment: 'staging' })
-      
+
       expect(result.sources).toContain('environment:staging')
       expect(result.config).toBeDefined()
     })
@@ -309,9 +327,9 @@ describe('Configuration Loader', () => {
   describe('Error Handling', () => {
     it('should collect and report warnings', () => {
       process.env.INVALID_ENV_VAR = 'invalid-json-{'
-      
+
       const result = loadConfigSync()
-      
+
       // Should not fail, but may have warnings
       expect(result.config).toBeDefined()
       expect(result.errors).toBeDefined()
@@ -320,9 +338,9 @@ describe('Configuration Loader', () => {
     it('should handle malformed environment variables', () => {
       process.env.PORT = 'not-a-number'
       process.env.MONITORING_ENABLED = 'maybe'
-      
+
       const result = loadConfigSync()
-      
+
       // Should use defaults for invalid values
       expect(typeof result.config.server.port).toBe('number')
       expect(typeof result.config.monitoring.enabled).toBe('boolean')

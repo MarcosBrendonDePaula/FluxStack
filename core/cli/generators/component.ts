@@ -1,61 +1,61 @@
-import type { Generator } from "./index"
-import type { GeneratorContext, GeneratorOptions, Template } from "./types"
-import { templateEngine } from "./template-engine"
+import type { Generator } from './index'
+import { templateEngine } from './template-engine'
+import type { GeneratorContext, GeneratorOptions, Template } from './types'
 
 export class ComponentGenerator implements Generator {
-    name = 'component'
-    description = 'Generate a new React component'
+  name = 'component'
+  description = 'Generate a new React component'
 
-    async generate(context: GeneratorContext, options: GeneratorOptions): Promise<void> {
-        const template = this.getTemplate(options.template)
+  async generate(context: GeneratorContext, options: GeneratorOptions): Promise<void> {
+    const template = this.getTemplate(options.template)
 
-        if (template.hooks?.beforeGenerate) {
-            await template.hooks.beforeGenerate(context, options)
-        }
-
-        const files = await templateEngine.processTemplate(template, context, options)
-
-        if (options.dryRun) {
-            console.log(`\n📋 Would generate component '${options.name}':\n`)
-            for (const file of files) {
-                console.log(`${file.action === 'create' ? '📄' : '✏️'} ${file.path}`)
-            }
-            return
-        }
-
-        await templateEngine.generateFiles(files, options.dryRun)
-
-        if (template.hooks?.afterGenerate) {
-            const filePaths = files.map(f => f.path)
-            await template.hooks.afterGenerate(context, options, filePaths)
-        }
-
-        console.log(`\n✅ Generated component '${options.name}' with ${files.length} files`)
+    if (template.hooks?.beforeGenerate) {
+      await template.hooks.beforeGenerate(context, options)
     }
 
-    private getTemplate(templateName?: string): Template {
-        switch (templateName) {
-            case 'functional':
-                return this.getFunctionalTemplate()
-            case 'page':
-                return this.getPageTemplate()
-            case 'form':
-                return this.getFormTemplate()
-            case 'full':
-                return this.getFullTemplate()
-            default:
-                return this.getBasicTemplate()
-        }
+    const files = await templateEngine.processTemplate(template, context, options)
+
+    if (options.dryRun) {
+      console.log(`\n📋 Would generate component '${options.name}':\n`)
+      for (const file of files) {
+        console.log(`${file.action === 'create' ? '📄' : '✏️'} ${file.path}`)
+      }
+      return
     }
 
-    private getBasicTemplate(): Template {
-        return {
-            name: 'basic-component',
-            description: 'Basic React component with TypeScript',
-            files: [
-                {
-                    path: 'app/client/src/components/{{pascalName}}/{{pascalName}}.tsx',
-                    content: `import React from 'react'
+    await templateEngine.generateFiles(files, options.dryRun)
+
+    if (template.hooks?.afterGenerate) {
+      const filePaths = files.map((f) => f.path)
+      await template.hooks.afterGenerate(context, options, filePaths)
+    }
+
+    console.log(`\n✅ Generated component '${options.name}' with ${files.length} files`)
+  }
+
+  private getTemplate(templateName?: string): Template {
+    switch (templateName) {
+      case 'functional':
+        return this.getFunctionalTemplate()
+      case 'page':
+        return this.getPageTemplate()
+      case 'form':
+        return this.getFormTemplate()
+      case 'full':
+        return this.getFullTemplate()
+      default:
+        return this.getBasicTemplate()
+    }
+  }
+
+  private getBasicTemplate(): Template {
+    return {
+      name: 'basic-component',
+      description: 'Basic React component with TypeScript',
+      files: [
+        {
+          path: 'app/client/src/components/{{pascalName}}/{{pascalName}}.tsx',
+          content: `import React from 'react'
 import './{{pascalName}}.css'
 
 export interface {{pascalName}}Props {
@@ -77,11 +77,11 @@ export const {{pascalName}}: React.FC<{{pascalName}}Props> = ({
 }
 
 export default {{pascalName}}
-`
-                },
-                {
-                    path: 'app/client/src/components/{{pascalName}}/{{pascalName}}.css',
-                    content: `.{{kebabName}} {
+`,
+        },
+        {
+          path: 'app/client/src/components/{{pascalName}}/{{pascalName}}.css',
+          content: `.{{kebabName}} {
   /* Add your styles here */
   padding: 1rem;
   border: 1px solid #e2e8f0;
@@ -106,37 +106,37 @@ export default {{pascalName}}
     font-size: 1.125rem;
   }
 }
-`
-                },
-                {
-                    path: 'app/client/src/components/{{pascalName}}/index.ts',
-                    content: `export { {{pascalName}}, type {{pascalName}}Props } from './{{pascalName}}'
+`,
+        },
+        {
+          path: 'app/client/src/components/{{pascalName}}/index.ts',
+          content: `export { {{pascalName}}, type {{pascalName}}Props } from './{{pascalName}}'
 export { default } from './{{pascalName}}'
-`
-                }
-            ],
-            hooks: {
-                afterGenerate: async (context, options, files) => {
-                    context.logger.info(`Generated component files:`)
-                    files.forEach(file => {
-                        context.logger.info(`  - ${file}`)
-                    })
-                    context.logger.info(`\nUsage example:`)
-                    context.logger.info(`import { ${options.name} } from './components/${options.name}'`)
-                    context.logger.info(`\n<${options.name}>Content here</${options.name}>`)
-                }
-            }
-        }
+`,
+        },
+      ],
+      hooks: {
+        afterGenerate: async (context, options, files) => {
+          context.logger.info(`Generated component files:`)
+          files.forEach((file) => {
+            context.logger.info(`  - ${file}`)
+          })
+          context.logger.info(`\nUsage example:`)
+          context.logger.info(`import { ${options.name} } from './components/${options.name}'`)
+          context.logger.info(`\n<${options.name}>Content here</${options.name}>`)
+        },
+      },
     }
+  }
 
-    private getFunctionalTemplate(): Template {
-        return {
-            name: 'functional-component',
-            description: 'Functional component with hooks',
-            files: [
-                {
-                    path: 'app/client/src/components/{{pascalName}}/{{pascalName}}.tsx',
-                    content: `import React, { useState, useEffect } from 'react'
+  private getFunctionalTemplate(): Template {
+    return {
+      name: 'functional-component',
+      description: 'Functional component with hooks',
+      files: [
+        {
+          path: 'app/client/src/components/{{pascalName}}/{{pascalName}}.tsx',
+          content: `import React, { useState, useEffect } from 'react'
 import './{{pascalName}}.css'
 
 export interface {{pascalName}}Props {
@@ -202,11 +202,11 @@ export const {{pascalName}}: React.FC<{{pascalName}}Props> = ({
 }
 
 export default {{pascalName}}
-`
-                },
-                {
-                    path: 'app/client/src/components/{{pascalName}}/{{pascalName}}.css',
-                    content: `.{{kebabName}} {
+`,
+        },
+        {
+          path: 'app/client/src/components/{{pascalName}}/{{pascalName}}.css',
+          content: `.{{kebabName}} {
   padding: 1.5rem;
   border: 1px solid #e2e8f0;
   border-radius: 0.75rem;
@@ -274,26 +274,26 @@ export default {{pascalName}}
     font-size: 1.25rem;
   }
 }
-`
-                },
-                {
-                    path: 'app/client/src/components/{{pascalName}}/index.ts',
-                    content: `export { {{pascalName}}, type {{pascalName}}Props } from './{{pascalName}}'
+`,
+        },
+        {
+          path: 'app/client/src/components/{{pascalName}}/index.ts',
+          content: `export { {{pascalName}}, type {{pascalName}}Props } from './{{pascalName}}'
 export { default } from './{{pascalName}}'
-`
-                }
-            ]
-        }
+`,
+        },
+      ],
     }
+  }
 
-    private getPageTemplate(): Template {
-        return {
-            name: 'page-component',
-            description: 'Page component with layout and SEO',
-            files: [
-                {
-                    path: 'app/client/src/pages/{{pascalName}}Page/{{pascalName}}Page.tsx',
-                    content: `import React, { useEffect } from 'react'
+  private getPageTemplate(): Template {
+    return {
+      name: 'page-component',
+      description: 'Page component with layout and SEO',
+      files: [
+        {
+          path: 'app/client/src/pages/{{pascalName}}Page/{{pascalName}}Page.tsx',
+          content: `import React, { useEffect } from 'react'
 import './{{pascalName}}Page.css'
 
 export interface {{pascalName}}PageProps {
@@ -339,11 +339,11 @@ export const {{pascalName}}Page: React.FC<{{pascalName}}PageProps> = ({
 }
 
 export default {{pascalName}}Page
-`
-                },
-                {
-                    path: 'app/client/src/pages/{{pascalName}}Page/{{pascalName}}Page.css',
-                    content: `.{{kebabName}}-page {
+`,
+        },
+        {
+          path: 'app/client/src/pages/{{pascalName}}Page/{{pascalName}}Page.css',
+          content: `.{{kebabName}}-page {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -419,26 +419,26 @@ export default {{pascalName}}Page
     font-size: 1.5rem;
   }
 }
-`
-                },
-                {
-                    path: 'app/client/src/pages/{{pascalName}}Page/index.ts',
-                    content: `export { {{pascalName}}Page, type {{pascalName}}PageProps } from './{{pascalName}}Page'
+`,
+        },
+        {
+          path: 'app/client/src/pages/{{pascalName}}Page/index.ts',
+          content: `export { {{pascalName}}Page, type {{pascalName}}PageProps } from './{{pascalName}}Page'
 export { default } from './{{pascalName}}Page'
-`
-                }
-            ]
-        }
+`,
+        },
+      ],
     }
+  }
 
-    private getFormTemplate(): Template {
-        return {
-            name: 'form-component',
-            description: 'Form component with validation',
-            files: [
-                {
-                    path: 'app/client/src/components/{{pascalName}}Form/{{pascalName}}Form.tsx',
-                    content: `import React, { useState } from 'react'
+  private getFormTemplate(): Template {
+    return {
+      name: 'form-component',
+      description: 'Form component with validation',
+      files: [
+        {
+          path: 'app/client/src/components/{{pascalName}}Form/{{pascalName}}Form.tsx',
+          content: `import React, { useState } from 'react'
 import './{{pascalName}}Form.css'
 
 export interface {{pascalName}}FormData {
@@ -578,11 +578,11 @@ export const {{pascalName}}Form: React.FC<{{pascalName}}FormProps> = ({
 }
 
 export default {{pascalName}}Form
-`
-                },
-                {
-                    path: 'app/client/src/components/{{pascalName}}Form/{{pascalName}}Form.css',
-                    content: `.{{kebabName}}-form {
+`,
+        },
+        {
+          path: 'app/client/src/components/{{pascalName}}Form/{{pascalName}}Form.css',
+          content: `.{{kebabName}}-form {
   max-width: 500px;
   padding: 2rem;
   border: 1px solid #e2e8f0;
@@ -673,27 +673,27 @@ export default {{pascalName}}Form
     font-size: 1.25rem;
   }
 }
-`
-                },
-                {
-                    path: 'app/client/src/components/{{pascalName}}Form/index.ts',
-                    content: `export { {{pascalName}}Form, type {{pascalName}}FormProps, type {{pascalName}}FormData } from './{{pascalName}}Form'
+`,
+        },
+        {
+          path: 'app/client/src/components/{{pascalName}}Form/index.ts',
+          content: `export { {{pascalName}}Form, type {{pascalName}}FormProps, type {{pascalName}}FormData } from './{{pascalName}}Form'
 export { default } from './{{pascalName}}Form'
-`
-                }
-            ]
-        }
+`,
+        },
+      ],
     }
+  }
 
-    private getFullTemplate(): Template {
-        return {
-            name: 'full-component',
-            description: 'Complete component with tests and stories',
-            files: [
-                ...this.getBasicTemplate().files,
-                {
-                    path: 'app/client/src/components/{{pascalName}}/{{pascalName}}.test.tsx',
-                    content: `import React from 'react'
+  private getFullTemplate(): Template {
+    return {
+      name: 'full-component',
+      description: 'Complete component with tests and stories',
+      files: [
+        ...this.getBasicTemplate().files,
+        {
+          path: 'app/client/src/components/{{pascalName}}/{{pascalName}}.test.tsx',
+          content: `import React from 'react'
 import { render, screen } from '@testing-library/react'
 import { {{pascalName}} } from './{{pascalName}}'
 
@@ -717,11 +717,11 @@ describe('{{pascalName}}', () => {
     expect(screen.getByText('Test content')).toBeInTheDocument()
   })
 })
-`
-                },
-                {
-                    path: 'app/client/src/components/{{pascalName}}/{{pascalName}}.stories.tsx',
-                    content: `import type { Meta, StoryObj } from '@storybook/react'
+`,
+        },
+        {
+          path: 'app/client/src/components/{{pascalName}}/{{pascalName}}.stories.tsx',
+          content: `import type { Meta, StoryObj } from '@storybook/react'
 import { {{pascalName}} } from './{{pascalName}}'
 
 const meta: Meta<typeof {{pascalName}}> = {
@@ -762,9 +762,9 @@ export const WithChildren: Story = {
     ),
   },
 }
-`
-                }
-            ]
-        }
+`,
+        },
+      ],
     }
+  }
 }

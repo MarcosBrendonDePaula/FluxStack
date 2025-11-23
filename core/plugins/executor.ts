@@ -3,15 +3,15 @@
  * Handles plugin execution with priority and dependency resolution
  */
 
-import type { 
-  FluxStack, 
-  PluginHook, 
+import { FluxStackError } from '@/core/utils/errors'
+import type { Logger } from '@/core/utils/logger/index'
+import type {
+  FluxStack,
+  HookExecutionOptions,
+  PluginHook,
   PluginHookResult,
   PluginPriority,
-  HookExecutionOptions
-} from "./types"
-import type { Logger } from "@/core/utils/logger/index"
-import { FluxStackError } from "@/core/utils/errors"
+} from './types'
 
 export interface PluginExecutionPlan {
   hook: PluginHook
@@ -43,18 +43,18 @@ export class PluginExecutor {
   createExecutionPlan(
     plugins: Plugin[],
     hook: PluginHook,
-    options: HookExecutionOptions = {}
+    options: HookExecutionOptions = {},
   ): PluginExecutionPlan {
     const { parallel = false } = options
 
     // Filter plugins that implement this hook
-    const applicablePlugins = plugins.filter(plugin => {
+    const applicablePlugins = plugins.filter((plugin) => {
       const hookFunction = plugin[hook]
       return hookFunction && typeof hookFunction === 'function'
     })
 
     // Create execution steps
-    const steps = applicablePlugins.map(plugin => this.createExecutionStep(plugin, plugins))
+    const steps = applicablePlugins.map((plugin) => this.createExecutionStep(plugin, plugins))
 
     // Sort by priority and dependencies
     const sortedSteps = this.sortExecutionSteps(steps, hook)
@@ -63,7 +63,7 @@ export class PluginExecutor {
       hook,
       plugins: sortedSteps,
       parallel,
-      totalPlugins: applicablePlugins.length
+      totalPlugins: applicablePlugins.length,
     }
   }
 
@@ -73,27 +73,25 @@ export class PluginExecutor {
   async executePlan(
     plan: PluginExecutionPlan,
     context: any,
-    executor: (plugin: Plugin, hook: PluginHook, context: any) => Promise<PluginHookResult>
+    executor: (plugin: Plugin, hook: PluginHook, context: any) => Promise<PluginHookResult>,
   ): Promise<PluginHookResult[]> {
     const results: PluginHookResult[] = []
 
     this.logger.debug(`Executing plan for hook '${plan.hook}'`, {
       hook: plan.hook,
       totalPlugins: plan.totalPlugins,
-      parallel: plan.parallel
+      parallel: plan.parallel,
     })
 
     if (plan.parallel) {
       // Execute in parallel groups based on dependencies
       const groups = this.createParallelGroups(plan.plugins)
-      
+
       for (const group of groups) {
-        const groupPromises = group.map(step => 
-          executor(step.plugin, plan.hook, context)
-        )
-        
+        const groupPromises = group.map((step) => executor(step.plugin, plan.hook, context))
+
         const groupResults = await Promise.allSettled(groupPromises)
-        
+
         for (let i = 0; i < groupResults.length; i++) {
           const result = groupResults[i]
           if (result.status === 'fulfilled') {
@@ -104,7 +102,7 @@ export class PluginExecutor {
               error: result.reason,
               duration: 0,
               plugin: group[i].plugin.name,
-              hook: plan.hook
+              hook: plan.hook,
             })
           }
         }
@@ -143,7 +141,7 @@ export class PluginExecutor {
       visiting.add(step.plugin.name)
 
       for (const depName of step.dependencies) {
-        const depStep = plan.plugins.find(s => s.plugin.name === depName)
+        const depStep = plan.plugins.find((s) => s.plugin.name === depName)
         if (depStep) {
           checkCircular(depStep)
         }
@@ -160,7 +158,7 @@ export class PluginExecutor {
     // Check for missing dependencies
     for (const step of plan.plugins) {
       for (const depName of step.dependencies) {
-        const depExists = plan.plugins.some(s => s.plugin.name === depName)
+        const depExists = plan.plugins.some((s) => s.plugin.name === depName)
         if (!depExists) {
           errors.push(`Plugin '${step.plugin.name}' depends on '${depName}' which is not available`)
         }
@@ -169,7 +167,7 @@ export class PluginExecutor {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     }
   }
 
@@ -179,11 +177,11 @@ export class PluginExecutor {
   private createExecutionStep(plugin: Plugin, allPlugins: Plugin[]): PluginExecutionStep {
     const priority = this.normalizePriority(plugin.priority)
     const dependencies = plugin.dependencies || []
-    
+
     // Find dependents
     const dependents = allPlugins
-      .filter(p => p.dependencies?.includes(plugin.name))
-      .map(p => p.name)
+      .filter((p) => p.dependencies?.includes(plugin.name))
+      .map((p) => p.name)
 
     // Determine if can execute in parallel
     const canExecuteInParallel = dependencies.length === 0
@@ -193,14 +191,17 @@ export class PluginExecutor {
       priority,
       dependencies,
       dependents,
-      canExecuteInParallel
+      canExecuteInParallel,
     }
   }
 
   /**
    * Sort execution steps by priority and dependencies
    */
-  private sortExecutionSteps(steps: PluginExecutionStep[], hook: PluginHook): PluginExecutionStep[] {
+  private sortExecutionSteps(
+    steps: PluginExecutionStep[],
+    hook: PluginHook,
+  ): PluginExecutionStep[] {
     // Topological sort with priority consideration
     const sorted: PluginExecutionStep[] = []
     const visited = new Set<string>()
@@ -211,7 +212,7 @@ export class PluginExecutor {
         throw new FluxStackError(
           `Circular dependency detected involving plugin '${step.plugin.name}' for hook '${hook}'`,
           'CIRCULAR_DEPENDENCY',
-          400
+          400,
         )
       }
 
@@ -223,7 +224,7 @@ export class PluginExecutor {
 
       // Visit dependencies first
       for (const depName of step.dependencies) {
-        const depStep = steps.find(s => s.plugin.name === depName)
+        const depStep = steps.find((s) => s.plugin.name === depName)
         if (depStep) {
           visit(depStep)
         }
@@ -236,7 +237,7 @@ export class PluginExecutor {
 
     // Sort by priority first, then visit
     const prioritySorted = [...steps].sort((a, b) => b.priority - a.priority)
-    
+
     for (const step of prioritySorted) {
       visit(step)
     }
@@ -260,8 +261,8 @@ export class PluginExecutor {
         }
 
         // Check if all dependencies are already processed
-        const canExecute = step.dependencies.every(dep => processed.has(dep))
-        
+        const canExecute = step.dependencies.every((dep) => processed.has(dep))
+
         if (canExecute) {
           currentGroup.push(step)
           processed.add(step.plugin.name)
@@ -270,11 +271,11 @@ export class PluginExecutor {
 
       if (currentGroup.length === 0) {
         // This shouldn't happen if dependencies are valid
-        const remaining = steps.filter(s => !processed.has(s.plugin.name))
+        const remaining = steps.filter((s) => !processed.has(s.plugin.name))
         throw new FluxStackError(
-          `Unable to resolve dependencies for plugins: ${remaining.map(s => s.plugin.name).join(', ')}`,
+          `Unable to resolve dependencies for plugins: ${remaining.map((s) => s.plugin.name).join(', ')}`,
           'DEPENDENCY_RESOLUTION_ERROR',
-          400
+          400,
         )
       }
 
@@ -295,12 +296,18 @@ export class PluginExecutor {
     }
 
     switch (priority) {
-      case 'highest': return 1000
-      case 'high': return 750
-      case 'normal': return 500
-      case 'low': return 250
-      case 'lowest': return 0
-      default: return 500 // default to normal
+      case 'highest':
+        return 1000
+      case 'high':
+        return 750
+      case 'normal':
+        return 500
+      case 'low':
+        return 250
+      case 'lowest':
+        return 0
+      default:
+        return 500 // default to normal
     }
   }
 }
@@ -323,7 +330,7 @@ export interface PluginExecutionStats {
  */
 export function calculateExecutionStats(results: PluginHookResult[]): PluginExecutionStats {
   const totalPlugins = results.length
-  const successfulPlugins = results.filter(r => r.success).length
+  const successfulPlugins = results.filter((r) => r.success).length
   const failedPlugins = totalPlugins - successfulPlugins
   const totalDuration = results.reduce((sum, r) => sum + r.duration, 0)
   const averageDuration = totalPlugins > 0 ? totalDuration / totalPlugins : 0
@@ -335,7 +342,7 @@ export function calculateExecutionStats(results: PluginHookResult[]): PluginExec
     if (!slowestPlugin || result.duration > slowestPlugin.duration) {
       slowestPlugin = { name: result.plugin, duration: result.duration }
     }
-    
+
     if (!fastestPlugin || result.duration < fastestPlugin.duration) {
       fastestPlugin = { name: result.plugin, duration: result.duration }
     }
@@ -348,6 +355,6 @@ export function calculateExecutionStats(results: PluginHookResult[]): PluginExec
     totalDuration,
     averageDuration,
     slowestPlugin,
-    fastestPlugin
+    fastestPlugin,
   }
 }

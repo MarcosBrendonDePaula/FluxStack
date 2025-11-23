@@ -3,7 +3,7 @@
  * Formats log messages with proper object inspection
  */
 
-import { inspect } from 'util'
+import { inspect } from 'node:util'
 import { LOGGER_CONFIG } from './config'
 
 /**
@@ -14,7 +14,7 @@ export function formatMessage(message: unknown, args: unknown[] = []): string {
     depth: LOGGER_CONFIG.objectDepth,
     colors: LOGGER_CONFIG.enableColors,
     compact: false,
-    breakLength: 100
+    breakLength: 100,
   }
 
   // Format the main message
@@ -35,8 +35,8 @@ export function formatMessage(message: unknown, args: unknown[] = []): string {
   // Format additional arguments (skip undefined values)
   if (args.length > 0) {
     const formattedArgs = args
-      .filter(arg => arg !== undefined) // Skip undefined values
-      .map(arg => {
+      .filter((arg) => arg !== undefined) // Skip undefined values
+      .map((arg) => {
         if (typeof arg === 'object' && arg !== null) {
           return inspect(arg, inspectOptions)
         }

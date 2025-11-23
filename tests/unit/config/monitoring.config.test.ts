@@ -3,7 +3,7 @@
  * Tests for config/monitoring.config.ts (nested: monitoring, metrics, profiling)
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { monitoringConfig } from '@/config/monitoring.config'
 
 describe('Monitoring Configuration', () => {

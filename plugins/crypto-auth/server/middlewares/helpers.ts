@@ -69,7 +69,7 @@ export function extractAuthHeaders(request: Request): {
   }
 
   const timestamp = parseInt(timestampStr, 10)
-  if (isNaN(timestamp)) {
+  if (Number.isNaN(timestamp)) {
     return null
   }
 
@@ -87,7 +87,10 @@ export function buildMessage(request: Request): string {
 /**
  * Validate authentication synchronously
  */
-export async function validateAuthSync(request: Request, logger?: Logger): Promise<{
+export async function validateAuthSync(
+  request: Request,
+  logger?: Logger,
+): Promise<{
   success: boolean
   user?: CryptoAuthUser
   error?: string
@@ -98,7 +101,7 @@ export async function validateAuthSync(request: Request, logger?: Logger): Promi
     if (!authHeaders) {
       return {
         success: false,
-        error: 'Missing authentication headers'
+        error: 'Missing authentication headers',
       }
     }
 
@@ -110,7 +113,7 @@ export async function validateAuthSync(request: Request, logger?: Logger): Promi
       timestamp: authHeaders.timestamp,
       nonce: authHeaders.nonce,
       signature: authHeaders.signature,
-      message
+      message,
     })
 
     return result
@@ -118,7 +121,7 @@ export async function validateAuthSync(request: Request, logger?: Logger): Promi
     logger?.error('Auth validation error', { error })
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     }
   }
 }

@@ -3,8 +3,8 @@
  * Handles environment variable processing and precedence
  */
 
-import { env, helpers } from '@/core/utils/env'
-import type { FluxStackConfig, LogLevel, BuildTarget, LogFormat } from './schema'
+import { env } from '@/core/utils/env'
+import type { BuildTarget, FluxStackConfig, LogFormat, LogLevel } from './schema'
 
 export interface EnvironmentInfo {
   name: string
@@ -32,7 +32,7 @@ export function getEnvironmentInfo(): EnvironmentInfo {
     isDevelopment: nodeEnv === 'development',
     isProduction: nodeEnv === 'production',
     isTest: nodeEnv === 'test',
-    nodeEnv
+    nodeEnv,
   }
 }
 
@@ -43,7 +43,7 @@ export class EnvConverter {
   static toNumber(value: string | undefined, defaultValue: number): number {
     if (!value) return defaultValue
     const parsed = parseInt(value, 10)
-    return isNaN(parsed) ? defaultValue : parsed
+    return Number.isNaN(parsed) ? defaultValue : parsed
   }
 
   static toBoolean(value: string | undefined, defaultValue: boolean): boolean {
@@ -54,7 +54,10 @@ export class EnvConverter {
 
   static toArray(value: string | undefined, defaultValue: string[] = []): string[] {
     if (!value) return defaultValue
-    return value.split(',').map(v => v.trim()).filter(Boolean)
+    return value
+      .split(',')
+      .map((v) => v.trim())
+      .filter(Boolean)
   }
 
   static toLogLevel(value: string | undefined, defaultValue: LogLevel): LogLevel {
@@ -114,7 +117,12 @@ export class EnvironmentProcessor {
     this.setConfigValue(config, 'server.cors.origins', corsOriginsStr, 'array')
     this.setConfigValue(config, 'server.cors.methods', corsMethodsStr, 'array')
     this.setConfigValue(config, 'server.cors.headers', corsHeadersStr, 'array')
-    this.setConfigValue(config, 'server.cors.credentials', env.CORS_CREDENTIALS?.toString(), 'boolean')
+    this.setConfigValue(
+      config,
+      'server.cors.credentials',
+      env.CORS_CREDENTIALS?.toString(),
+      'boolean',
+    )
     this.setConfigValue(config, 'server.cors.maxAge', env.CORS_MAX_AGE?.toString(), 'number')
 
     // Client configuration
@@ -130,7 +138,12 @@ export class EnvironmentProcessor {
 
     // Monitoring configuration
     this.setConfigValue(config, 'monitoring.enabled', env.ENABLE_MONITORING?.toString(), 'boolean')
-    this.setConfigValue(config, 'monitoring.metrics.enabled', env.ENABLE_METRICS?.toString(), 'boolean')
+    this.setConfigValue(
+      config,
+      'monitoring.metrics.enabled',
+      env.ENABLE_METRICS?.toString(),
+      'boolean',
+    )
 
     // Database configuration
     this.setConfigValue(config, 'database.url', env.DATABASE_URL, 'string')
@@ -156,12 +169,7 @@ export class EnvironmentProcessor {
     return this.cleanEmptyObjects(config)
   }
 
-  private setConfigValue(
-    config: any,
-    path: string,
-    value: string | undefined,
-    type: string
-  ): void {
+  private setConfigValue(config: any, path: string, value: string | undefined, type: string): void {
     if (value === undefined) return
 
     const convertedValue = this.convertValue(value, type)
@@ -173,7 +181,7 @@ export class EnvironmentProcessor {
         source: 'environment',
         path,
         value: convertedValue,
-        priority: 3 // Environment variables have high priority
+        priority: 3, // Environment variables have high priority
       })
     }
   }
@@ -184,9 +192,10 @@ export class EnvironmentProcessor {
         return value
       case 'number':
         return EnvConverter.toNumber(value, 0)
-      case 'boolean':
+      case 'boolean': {
         const boolValue = EnvConverter.toBoolean(value, false)
         return boolValue
+      }
       case 'array':
         return EnvConverter.toArray(value)
       case 'logLevel':
@@ -261,8 +270,8 @@ export class ConfigMerger {
    * Merge configurations with precedence handling
    * Higher precedence values override lower ones
    */
-  merge(...configs: Array<{ config: Partial<FluxStackConfig>, source: string }>): FluxStackConfig {
-    let result: any = {}
+  merge(...configs: Array<{ config: Partial<FluxStackConfig>; source: string }>): FluxStackConfig {
+    const result: any = {}
     const precedenceMap: Map<string, ConfigPrecedence> = new Map()
 
     // Process configs in precedence order
@@ -278,7 +287,7 @@ export class ConfigMerger {
     source: any,
     sourceName: string,
     precedenceMap: Map<string, ConfigPrecedence>,
-    currentPath = ''
+    currentPath = '',
   ): void {
     if (!source || typeof source !== 'object') return
 
@@ -304,7 +313,7 @@ export class ConfigMerger {
             source: sourceName as any,
             path: fullPath,
             value,
-            priority: sourcePriority
+            priority: sourcePriority,
           })
         }
       }
@@ -319,10 +328,7 @@ export class EnvironmentConfigApplier {
   /**
    * Apply environment-specific configuration overrides
    */
-  applyEnvironmentConfig(
-    baseConfig: FluxStackConfig,
-    environment: string
-  ): FluxStackConfig {
+  applyEnvironmentConfig(baseConfig: FluxStackConfig, environment: string): FluxStackConfig {
     const envConfig = baseConfig.environments?.[environment]
 
     if (!envConfig) {
@@ -332,7 +338,7 @@ export class EnvironmentConfigApplier {
     const merger = new ConfigMerger()
     return merger.merge(
       { config: baseConfig, source: 'base' },
-      { config: envConfig, source: `environment:${environment}` }
+      { config: envConfig, source: `environment:${environment}` },
     )
   }
 
@@ -348,7 +354,7 @@ export class EnvironmentConfigApplier {
    */
   validateEnvironmentConfig(
     config: FluxStackConfig,
-    environment: string
+    environment: string,
   ): { valid: boolean; errors: string[] } {
     const envConfig = config.environments?.[environment]
 
@@ -376,7 +382,7 @@ export class EnvironmentConfigApplier {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     }
   }
 }
@@ -411,7 +417,9 @@ export function getEnvironmentRecommendations(environment: string): Partial<Flux
         logging: {
           level: 'debug' as const,
           format: 'pretty' as const,
-          transports: [{ type: 'console' as const, level: 'debug' as const, format: 'pretty' as const }]
+          transports: [
+            { type: 'console' as const, level: 'debug' as const, format: 'pretty' as const },
+          ],
         },
         build: {
           target: 'bun' as const,
@@ -424,9 +432,9 @@ export function getEnvironmentRecommendations(environment: string): Partial<Flux
             compress: false,
             treeshake: false,
             splitChunks: false,
-            bundleAnalyzer: false
+            bundleAnalyzer: false,
           },
-          sourceMaps: true
+          sourceMaps: true,
         },
         monitoring: {
           enabled: false,
@@ -435,16 +443,16 @@ export function getEnvironmentRecommendations(environment: string): Partial<Flux
             collectInterval: 60000,
             httpMetrics: true,
             systemMetrics: true,
-            customMetrics: false
+            customMetrics: false,
           },
           profiling: {
             enabled: false,
             sampleRate: 0.1,
             memoryProfiling: false,
-            cpuProfiling: false
+            cpuProfiling: false,
           },
-          exporters: []
-        }
+          exporters: [],
+        },
       }
 
     case 'production':
@@ -454,8 +462,13 @@ export function getEnvironmentRecommendations(environment: string): Partial<Flux
           format: 'json' as const,
           transports: [
             { type: 'console' as const, level: 'warn' as const, format: 'json' as const },
-            { type: 'file' as const, level: 'warn' as const, format: 'json' as const, options: { filename: 'app.log' } }
-          ]
+            {
+              type: 'file' as const,
+              level: 'warn' as const,
+              format: 'json' as const,
+              options: { filename: 'app.log' },
+            },
+          ],
         },
         build: {
           target: 'bun' as const,
@@ -468,9 +481,9 @@ export function getEnvironmentRecommendations(environment: string): Partial<Flux
             compress: true,
             treeshake: true,
             splitChunks: true,
-            bundleAnalyzer: false
+            bundleAnalyzer: false,
           },
-          sourceMaps: false
+          sourceMaps: false,
         },
         monitoring: {
           enabled: true,
@@ -479,16 +492,16 @@ export function getEnvironmentRecommendations(environment: string): Partial<Flux
             collectInterval: 30000,
             httpMetrics: true,
             systemMetrics: true,
-            customMetrics: false
+            customMetrics: false,
           },
           profiling: {
             enabled: true,
             sampleRate: 0.01,
             memoryProfiling: true,
-            cpuProfiling: true
+            cpuProfiling: true,
           },
-          exporters: ['prometheus']
-        }
+          exporters: ['prometheus'],
+        },
       }
 
     case 'test':
@@ -496,7 +509,9 @@ export function getEnvironmentRecommendations(environment: string): Partial<Flux
         logging: {
           level: 'error' as const,
           format: 'json' as const,
-          transports: [{ type: 'console' as const, level: 'error' as const, format: 'json' as const }]
+          transports: [
+            { type: 'console' as const, level: 'error' as const, format: 'json' as const },
+          ],
         },
         server: {
           port: 0, // Random port
@@ -507,9 +522,9 @@ export function getEnvironmentRecommendations(environment: string): Partial<Flux
             methods: ['GET', 'POST', 'PUT', 'DELETE'],
             headers: ['Content-Type', 'Authorization'],
             credentials: false,
-            maxAge: 86400
+            maxAge: 86400,
           },
-          middleware: []
+          middleware: [],
         },
         client: {
           port: 0,
@@ -518,8 +533,8 @@ export function getEnvironmentRecommendations(environment: string): Partial<Flux
             target: 'es2020' as const,
             outDir: 'dist/client',
             sourceMaps: false,
-            minify: false
-          }
+            minify: false,
+          },
         },
         monitoring: {
           enabled: false,
@@ -528,16 +543,16 @@ export function getEnvironmentRecommendations(environment: string): Partial<Flux
             collectInterval: 60000,
             httpMetrics: true,
             systemMetrics: true,
-            customMetrics: false
+            customMetrics: false,
           },
           profiling: {
             enabled: false,
             sampleRate: 0.1,
             memoryProfiling: false,
-            cpuProfiling: false
+            cpuProfiling: false,
           },
-          exporters: []
-        }
+          exporters: [],
+        },
       }
 
     default:

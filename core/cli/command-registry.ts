@@ -1,7 +1,7 @@
-import type { CliCommand, CliContext, CliArgument, CliOption } from "../plugins/types"
-import { getConfigSync } from "@/core/config"
-import { logger } from "@/core/utils/logger"
-import { createTimer, formatBytes, isProduction, isDevelopment } from "../utils/helpers"
+import { getConfigSync } from '@/core/config'
+import { logger } from '@/core/utils/logger'
+import type { CliCommand, CliContext } from '../plugins/types'
+import { createTimer, formatBytes, isDevelopment, isProduction } from '../utils/helpers'
 
 export class CliCommandRegistry {
   private commands = new Map<string, CliCommand>()
@@ -21,14 +21,17 @@ export class CliCommandRegistry {
         isDevelopment,
         getEnvironment: () => process.env.NODE_ENV || 'development',
         createHash: (data: string) => {
-          const crypto = require('crypto')
+          const crypto = require('node:crypto')
           return crypto.createHash('sha256').update(data).digest('hex')
         },
         deepMerge: (target: Record<string, unknown>, source: Record<string, unknown>) => {
           const result = { ...target }
           for (const key in source) {
             if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
-              result[key] = this.context.utils.deepMerge(result[key] as Record<string, unknown> || {}, source[key] as Record<string, unknown>)
+              result[key] = this.context.utils.deepMerge(
+                (result[key] as Record<string, unknown>) || {},
+                source[key] as Record<string, unknown>,
+              )
             } else {
               result[key] = source[key]
             }
@@ -39,22 +42,25 @@ export class CliCommandRegistry {
           try {
             return { valid: true, errors: [] }
           } catch (error) {
-            return { valid: false, errors: [error instanceof Error ? error.message : 'Validation failed'] }
+            return {
+              valid: false,
+              errors: [error instanceof Error ? error.message : 'Validation failed'],
+            }
           }
-        }
+        },
       },
       workingDir: process.cwd(),
       packageInfo: {
         name: 'fluxstack',
-        version: '1.0.0'
-      }
+        version: '1.0.0',
+      },
     }
   }
 
   register(command: CliCommand): void {
     // Register main command
     this.commands.set(command.name, command)
-    
+
     // Register aliases
     if (command.aliases) {
       for (const alias of command.aliases) {
@@ -67,13 +73,13 @@ export class CliCommandRegistry {
     // Check direct command
     const command = this.commands.get(name)
     if (command) return command
-    
+
     // Check alias
     const aliasTarget = this.aliases.get(name)
     if (aliasTarget) {
       return this.commands.get(aliasTarget)
     }
-    
+
     return undefined
   }
 
@@ -87,23 +93,23 @@ export class CliCommandRegistry {
 
   getAllByCategory(): Map<string, CliCommand[]> {
     const categories = new Map<string, CliCommand[]>()
-    
+
     for (const command of this.commands.values()) {
       if (command.hidden) continue
-      
+
       const category = command.category || 'General'
       if (!categories.has(category)) {
         categories.set(category, [])
       }
       categories.get(category)!.push(command)
     }
-    
+
     return categories
   }
 
   async execute(commandName: string, args: string[]): Promise<number> {
     const command = this.get(commandName)
-    
+
     if (!command) {
       console.error(`❌ Unknown command: ${commandName}`)
       this.showHelp()
@@ -113,7 +119,7 @@ export class CliCommandRegistry {
     try {
       // Parse arguments and options
       const { parsedArgs, parsedOptions } = this.parseArgs(command, args)
-      
+
       // Validate required arguments
       if (command.arguments) {
         for (let i = 0; i < command.arguments.length; i++) {
@@ -125,7 +131,7 @@ export class CliCommandRegistry {
           }
         }
       }
-      
+
       // Validate required options
       if (command.options) {
         for (const option of command.options) {
@@ -140,26 +146,28 @@ export class CliCommandRegistry {
       // Execute command
       await command.handler(parsedArgs, parsedOptions, this.context)
       return 0
-      
     } catch (error) {
       console.error(`❌ Command failed:`, error instanceof Error ? error.message : String(error))
       return 1
     }
   }
 
-  private parseArgs(command: CliCommand, args: string[]): { parsedArgs: any[], parsedOptions: any } {
+  private parseArgs(
+    command: CliCommand,
+    args: string[],
+  ): { parsedArgs: any[]; parsedOptions: any } {
     const parsedArgs: any[] = []
     const parsedOptions: any = {}
-    
+
     let i = 0
     while (i < args.length) {
       const arg = args[i]
-      
+
       // Handle options (--name or -n)
       if (arg.startsWith('--')) {
         const optionName = arg.slice(2)
-        const option = command.options?.find(o => o.name === optionName)
-        
+        const option = command.options?.find((o) => o.name === optionName)
+
         if (option) {
           if (option.type === 'boolean') {
             parsedOptions[optionName] = true
@@ -174,12 +182,12 @@ export class CliCommandRegistry {
             }
           }
         }
-      } 
+      }
       // Handle short options (-n)
       else if (arg.startsWith('-') && arg.length === 2) {
         const shortName = arg.slice(1)
-        const option = command.options?.find(o => o.short === shortName)
-        
+        const option = command.options?.find((o) => o.short === shortName)
+
         if (option) {
           if (option.type === 'boolean') {
             parsedOptions[option.name] = true
@@ -194,17 +202,17 @@ export class CliCommandRegistry {
       else {
         const argIndex = parsedArgs.length
         const argDef = command.arguments?.[argIndex]
-        
+
         if (argDef) {
           parsedArgs.push(this.convertType(arg, argDef.type))
         } else {
           parsedArgs.push(arg)
         }
       }
-      
+
       i++
     }
-    
+
     // Apply defaults
     if (command.arguments) {
       for (let i = 0; i < command.arguments.length; i++) {
@@ -213,7 +221,7 @@ export class CliCommandRegistry {
         }
       }
     }
-    
+
     if (command.options) {
       for (const option of command.options) {
         if (!(option.name in parsedOptions) && option.default !== undefined) {
@@ -221,7 +229,7 @@ export class CliCommandRegistry {
         }
       }
     }
-    
+
     return { parsedArgs, parsedOptions }
   }
 
@@ -244,7 +252,7 @@ Usage:
 Built-in Commands:`)
 
     const categories = this.getAllByCategory()
-    
+
     for (const [category, commands] of categories) {
       console.log(`\n${category}:`)
       for (const command of commands) {
@@ -265,12 +273,12 @@ Use "flux help <command>" for more information about a specific command.`)
 
   showCommandHelp(command: CliCommand): void {
     console.log(`\n${command.description}`)
-    
+
     if (command.usage) {
       console.log(`\nUsage:\n  ${command.usage}`)
     } else {
       let usage = `flux ${command.name}`
-      
+
       if (command.arguments) {
         for (const arg of command.arguments) {
           if (arg.required) {
@@ -280,14 +288,14 @@ Use "flux help <command>" for more information about a specific command.`)
           }
         }
       }
-      
+
       if (command.options?.length) {
         usage += ` [options]`
       }
-      
+
       console.log(`\nUsage:\n  ${usage}`)
     }
-    
+
     if (command.arguments?.length) {
       console.log(`\nArguments:`)
       for (const arg of command.arguments) {
@@ -296,24 +304,26 @@ Use "flux help <command>" for more information about a specific command.`)
         console.log(`  ${arg.name.padEnd(15)} ${arg.description}${required}${defaultValue}`)
       }
     }
-    
+
     if (command.options?.length) {
       console.log(`\nOptions:`)
       for (const option of command.options) {
         const short = option.short ? `-${option.short}, ` : '    '
         const required = option.required ? ' (required)' : ''
         const defaultValue = option.default !== undefined ? ` (default: ${option.default})` : ''
-        console.log(`  ${short}--${option.name.padEnd(15)} ${option.description}${required}${defaultValue}`)
+        console.log(
+          `  ${short}--${option.name.padEnd(15)} ${option.description}${required}${defaultValue}`,
+        )
       }
     }
-    
+
     if (command.examples?.length) {
       console.log(`\nExamples:`)
       for (const example of command.examples) {
         console.log(`  ${example}`)
       }
     }
-    
+
     if (command.aliases?.length) {
       console.log(`\nAliases: ${command.aliases.join(', ')}`)
     }

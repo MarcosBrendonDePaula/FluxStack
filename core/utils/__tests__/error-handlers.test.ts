@@ -2,36 +2,34 @@
  * Tests for Error Handlers
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
-  EnhancedErrorHandler,
-  RetryRecoveryStrategy,
-  FallbackRecoveryStrategy,
-  errorHandler,
-  createErrorHandler,
-  type ErrorHandlerContext,
-  type ErrorHandlerOptions,
-  type ErrorMetricsCollector
-} from '../errors/handlers'
-import {
-  FluxStackError,
-  ValidationError,
-  InternalServerError,
   ExternalServiceError,
-  DatabaseError
+  FluxStackError,
+  InternalServerError,
+  ValidationError,
 } from '../errors'
+import {
+  createErrorHandler,
+  EnhancedErrorHandler,
+  type ErrorHandlerContext,
+  type ErrorMetricsCollector,
+  errorHandler,
+  FallbackRecoveryStrategy,
+  RetryRecoveryStrategy,
+} from '../errors/handlers'
 
 // Mock logger
 const mockLogger = {
   error: vi.fn(),
   warn: vi.fn(),
   info: vi.fn(),
-  debug: vi.fn()
+  debug: vi.fn(),
 }
 
 // Mock metrics collector
 const mockMetricsCollector: ErrorMetricsCollector = {
-  recordError: vi.fn()
+  recordError: vi.fn(),
 }
 
 describe('Enhanced Error Handler', () => {
@@ -48,7 +46,7 @@ describe('Enhanced Error Handler', () => {
       userId: 'user-456',
       path: '/api/test',
       method: 'POST',
-      metricsCollector: mockMetricsCollector
+      metricsCollector: mockMetricsCollector,
     }
   })
 
@@ -109,8 +107,8 @@ describe('Enhanced Error Handler', () => {
         expect.objectContaining({
           code: 'VALIDATION_ERROR',
           statusCode: 400,
-          isOperational: true
-        })
+          isOperational: true,
+        }),
       )
     })
 
@@ -123,8 +121,8 @@ describe('Enhanced Error Handler', () => {
         expect.objectContaining({
           code: 'INTERNAL_SERVER_ERROR',
           statusCode: 500,
-          isOperational: false
-        })
+          isOperational: false,
+        }),
       )
     })
 
@@ -154,7 +152,7 @@ describe('Enhanced Error Handler', () => {
 
       expect(mockMetricsCollector.recordError).toHaveBeenCalledWith(
         expect.any(FluxStackError),
-        context
+        context,
       )
     })
 
@@ -162,7 +160,7 @@ describe('Enhanced Error Handler', () => {
       const failingMetricsCollector = {
         recordError: vi.fn().mockImplementation(() => {
           throw new Error('Metrics failed')
-        })
+        }),
       }
       const contextWithFailingMetrics = { ...context, metricsCollector: failingMetricsCollector }
       const error = new ValidationError('Test')
@@ -172,7 +170,7 @@ describe('Enhanced Error Handler', () => {
       expect(response.error.code).toBe('VALIDATION_ERROR')
       expect(mockLogger.warn).toHaveBeenCalledWith(
         'Failed to record error metrics',
-        expect.objectContaining({ error: 'Metrics failed' })
+        expect.objectContaining({ error: 'Metrics failed' }),
       )
     })
   })
@@ -201,8 +199,8 @@ describe('Enhanced Error Handler', () => {
     it('should use custom error messages when configured', async () => {
       const handler = new EnhancedErrorHandler({
         customErrorMessages: {
-          'VALIDATION_ERROR': 'Custom validation message'
-        }
+          VALIDATION_ERROR: 'Custom validation message',
+        },
       })
       const error = new ValidationError('Test')
       const response = await handler.handle(error, context)
@@ -222,7 +220,7 @@ describe('Recovery Strategies', () => {
     context = {
       logger: mockLogger as any,
       isDevelopment: false,
-      correlationId: 'test-123'
+      correlationId: 'test-123',
     }
   })
 
@@ -261,8 +259,8 @@ describe('Recovery Strategies', () => {
         expect.objectContaining({
           errorCode: 'EXTERNAL_SERVICE_ERROR',
           retryCount: 1,
-          maxRetries: 3
-        })
+          maxRetries: 3,
+        }),
       )
     })
   })
@@ -286,14 +284,14 @@ describe('Recovery Strategies', () => {
 
       expect(result).toEqual({
         data: fallbackData,
-        warning: 'Fallback data provided due to service unavailability'
+        warning: 'Fallback data provided due to service unavailability',
       })
 
       expect(mockLogger.info).toHaveBeenCalledWith(
         'Using fallback recovery',
         expect.objectContaining({
-          errorCode: 'EXTERNAL_SERVICE_ERROR'
-        })
+          errorCode: 'EXTERNAL_SERVICE_ERROR',
+        }),
       )
     })
   })
@@ -326,7 +324,7 @@ describe('Legacy Error Handler Functions', () => {
     it('should handle errors using enhanced handler', async () => {
       const context: ErrorHandlerContext = {
         logger: mockLogger as any,
-        isDevelopment: false
+        isDevelopment: false,
       }
       const error = new ValidationError('Test')
 
@@ -341,7 +339,7 @@ describe('Legacy Error Handler Functions', () => {
     it('should create error handler with base context', async () => {
       const baseContext = {
         logger: mockLogger as any,
-        isDevelopment: false
+        isDevelopment: false,
       }
       const handler = createErrorHandler(baseContext)
       const error = new ValidationError('Test')
@@ -355,7 +353,7 @@ describe('Legacy Error Handler Functions', () => {
     it('should merge request context with base context', async () => {
       const baseContext = {
         logger: mockLogger as any,
-        isDevelopment: false
+        isDevelopment: false,
       }
       const handler = createErrorHandler(baseContext)
       const mockRequest = { method: 'GET' } as Request

@@ -1,8 +1,8 @@
 import { swagger } from '@elysiajs/swagger'
-import type { FluxStack, PluginContext } from '@/core/plugins/types'
 import { appConfig } from '@/config/app.config'
-import { serverConfig } from '@/config/server.config'
 import { pluginsConfig } from '@/config/plugins.config'
+import { serverConfig } from '@/config/server.config'
+import type { FluxStack, PluginContext } from '@/core/plugins/types'
 
 type Plugin = FluxStack.Plugin
 
@@ -10,18 +10,23 @@ type Plugin = FluxStack.Plugin
  * Parse servers from config string
  * Format: "url1|description1,url2|description2"
  */
-function parseServersFromConfig(serversString: string): Array<{ url: string; description: string }> {
+function parseServersFromConfig(
+  serversString: string,
+): Array<{ url: string; description: string }> {
   if (!serversString || serversString.trim() === '') {
     return []
   }
 
-  return serversString.split(',').map(server => {
-    const [url, description] = server.split('|').map(s => s.trim())
-    return {
-      url: url || '',
-      description: description || 'Server'
-    }
-  }).filter(s => s.url !== '')
+  return serversString
+    .split(',')
+    .map((server) => {
+      const [url, description] = server.split('|').map((s) => s.trim())
+      return {
+        url: url || '',
+        description: description || 'Server',
+      }
+    })
+    .filter((s) => s.url !== '')
 }
 
 // Configuration from config/plugins.config.ts (user editable)
@@ -40,7 +45,7 @@ const DEFAULTS = {
     displayRequestDuration: pluginsConfig.swaggerDisplayRequestDuration,
     filter: pluginsConfig.swaggerEnableFilter,
     showExtensions: pluginsConfig.swaggerShowExtensions,
-    tryItOutEnabled: pluginsConfig.swaggerTryItOutEnabled
+    tryItOutEnabled: pluginsConfig.swaggerTryItOutEnabled,
   },
 
   // Authentication
@@ -50,7 +55,7 @@ const DEFAULTS = {
 
   // Security (can be extended via env vars if needed)
   securitySchemes: {},
-  globalSecurity: [] as Array<Record<string, any>>
+  globalSecurity: [] as Array<Record<string, any>>,
 }
 
 export const swaggerPlugin: Plugin = {
@@ -71,18 +76,21 @@ export const swaggerPlugin: Plugin = {
 
     try {
       // Build servers list
-      const servers = DEFAULTS.servers.length > 0 ? DEFAULTS.servers : [
-        {
-          url: `http://${serverConfig.server.host}:${serverConfig.server.port}`,
-          description: 'Development server'
-        }
-      ]
+      const servers =
+        DEFAULTS.servers.length > 0
+          ? DEFAULTS.servers
+          : [
+              {
+                url: `http://${serverConfig.server.host}:${serverConfig.server.port}`,
+                description: 'Development server',
+              },
+            ]
 
       // Add production server if in production
       if (context.utils.isProduction()) {
         servers.push({
           url: 'https://api.example.com', // This would be configured
-          description: 'Production server'
+          description: 'Production server',
         })
       }
 
@@ -93,24 +101,27 @@ export const swaggerPlugin: Plugin = {
           info: {
             title: DEFAULTS.title || appConfig.name || 'FluxStack API',
             version: DEFAULTS.version || appConfig.version,
-            description: DEFAULTS.description || appConfig.description || 'Modern full-stack TypeScript framework with type-safe API endpoints'
+            description:
+              DEFAULTS.description ||
+              appConfig.description ||
+              'Modern full-stack TypeScript framework with type-safe API endpoints',
           },
           servers,
 
           // Add security schemes if defined
           ...(Object.keys(DEFAULTS.securitySchemes).length > 0 && {
             components: {
-              securitySchemes: DEFAULTS.securitySchemes
-            }
+              securitySchemes: DEFAULTS.securitySchemes,
+            },
           }),
 
           // Add global security if defined
           ...(DEFAULTS.globalSecurity.length > 0 && {
-            security: DEFAULTS.globalSecurity
-          })
+            security: DEFAULTS.globalSecurity,
+          }),
         },
         exclude: DEFAULTS.excludePaths,
-        swaggerOptions: DEFAULTS.swaggerOptions
+        swaggerOptions: DEFAULTS.swaggerOptions,
       }
 
       // Add Basic Auth middleware if enabled
@@ -128,7 +139,7 @@ export const swaggerPlugin: Plugin = {
             set.headers['WWW-Authenticate'] = 'Basic realm="Swagger Documentation"'
             return {
               error: 'Authentication required',
-              message: 'Please provide valid credentials to access Swagger documentation'
+              message: 'Please provide valid credentials to access Swagger documentation',
             }
           }
 
@@ -143,14 +154,16 @@ export const swaggerPlugin: Plugin = {
             set.headers['WWW-Authenticate'] = 'Basic realm="Swagger Documentation"'
             return {
               error: 'Invalid credentials',
-              message: 'The provided username or password is incorrect'
+              message: 'The provided username or password is incorrect',
             }
           }
 
           // Credentials valid, continue to Swagger
         })
 
-        context.logger.debug(`🔒 Swagger authentication enabled (username: ${DEFAULTS.authUsername})`)
+        context.logger.debug(
+          `🔒 Swagger authentication enabled (username: ${DEFAULTS.authUsername})`,
+        )
       }
 
       // That's it! Elysia Swagger auto-discovers everything else
@@ -160,7 +173,7 @@ export const swaggerPlugin: Plugin = {
         title: swaggerConfig.documentation.info.title,
         version: swaggerConfig.documentation.info.version,
         servers: servers.length,
-        authEnabled: DEFAULTS.authEnabled
+        authEnabled: DEFAULTS.authEnabled,
       })
     } catch (error) {
       context.logger.error('Failed to setup Swagger plugin', { error })
@@ -173,7 +186,7 @@ export const swaggerPlugin: Plugin = {
       const swaggerUrl = `http://${serverConfig.server.host}:${serverConfig.server.port}${DEFAULTS.path}`
       context.logger.debug(`📋 Swagger documentation available at: ${swaggerUrl}`)
     }
-  }
+  },
 }
 
 // ==========================================

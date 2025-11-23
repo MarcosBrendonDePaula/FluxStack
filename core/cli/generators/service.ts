@@ -1,6 +1,6 @@
-import type { Generator } from "./index"
-import type { GeneratorContext, GeneratorOptions, Template } from "./types"
-import { templateEngine } from "./template-engine"
+import type { Generator } from './index'
+import { templateEngine } from './template-engine'
+import type { GeneratorContext, GeneratorOptions, Template } from './types'
 
 export class ServiceGenerator implements Generator {
   name = 'service'
@@ -8,13 +8,13 @@ export class ServiceGenerator implements Generator {
 
   async generate(context: GeneratorContext, options: GeneratorOptions): Promise<void> {
     const template = this.getTemplate(options.template)
-    
+
     if (template.hooks?.beforeGenerate) {
       await template.hooks.beforeGenerate(context, options)
     }
 
     const files = await templateEngine.processTemplate(template, context, options)
-    
+
     if (options.dryRun) {
       console.log(`\n📋 Would generate service '${options.name}':\n`)
       for (const file of files) {
@@ -24,9 +24,9 @@ export class ServiceGenerator implements Generator {
     }
 
     await templateEngine.generateFiles(files, options.dryRun)
-    
+
     if (template.hooks?.afterGenerate) {
-      const filePaths = files.map(f => f.path)
+      const filePaths = files.map((f) => f.path)
       await template.hooks.afterGenerate(context, options, filePaths)
     }
 
@@ -39,7 +39,6 @@ export class ServiceGenerator implements Generator {
         return this.getMinimalTemplate()
       case 'repository':
         return this.getRepositoryTemplate()
-      case 'crud':
       default:
         return this.getCrudTemplate()
     }
@@ -262,7 +261,7 @@ export class {{pascalName}}Service {
     return \`{{kebabName}}_\${Date.now()}_\${Math.random().toString(36).substr(2, 9)}\`
   }
 }
-`
+`,
         },
         {
           path: 'app/server/repositories/{{kebabName}}.repository.ts',
@@ -332,21 +331,23 @@ export class {{pascalName}}Repository {
     {{camelName}}Store = []
   }
 }
-`
-        }
+`,
+        },
       ],
       hooks: {
-        afterGenerate: async (context, options, files) => {
+        afterGenerate: async (context, _options, files) => {
           context.logger.info(`Generated service files:`)
-          files.forEach(file => {
+          files.forEach((file) => {
             context.logger.info(`  - ${file}`)
           })
           context.logger.info(`\nNext steps:`)
-          context.logger.info(`1. Replace the in-memory repository with your database implementation`)
+          context.logger.info(
+            `1. Replace the in-memory repository with your database implementation`,
+          )
           context.logger.info(`2. Add any additional business logic methods`)
           context.logger.info(`3. Configure proper error handling and logging`)
-        }
-      }
+        },
+      },
     }
   }
 
@@ -383,9 +384,9 @@ export class {{pascalName}}Repository {
     return true
   }
 }
-`
-        }
-      ]
+`,
+        },
+      ],
     }
   }
 
@@ -427,7 +428,7 @@ export class {{pascalName}}Service {
     return await this.repository.delete(id)
   }
 }
-`
+`,
         },
         {
           path: 'app/server/repositories/{{kebabName}}.repository.ts',
@@ -457,9 +458,9 @@ export class {{pascalName}}Service {
     return true
   }
 }
-`
-        }
-      ]
+`,
+        },
+      ],
     }
   }
 }

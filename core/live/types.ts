@@ -1,7 +1,16 @@
 // 🔥 FluxStack Live Components - Core Types
 
 export interface LiveMessage {
-  type: 'COMPONENT_MOUNT' | 'COMPONENT_UNMOUNT' | 'COMPONENT_ACTION' | 'CALL_ACTION' | 'ACTION_RESPONSE' | 'PROPERTY_UPDATE' | 'STATE_UPDATE' | 'ERROR' | 'BROADCAST'
+  type:
+    | 'COMPONENT_MOUNT'
+    | 'COMPONENT_UNMOUNT'
+    | 'COMPONENT_ACTION'
+    | 'CALL_ACTION'
+    | 'ACTION_RESPONSE'
+    | 'PROPERTY_UPDATE'
+    | 'STATE_UPDATE'
+    | 'ERROR'
+    | 'BROADCAST'
   componentId: string
   action?: string
   property?: string
@@ -19,7 +28,10 @@ export interface ComponentState {
   [key: string]: any
 }
 
-export interface LiveComponentInstance<TState = ComponentState, TActions = Record<string, Function>> {
+export interface LiveComponentInstance<
+  TState = ComponentState,
+  TActions = Record<string, Function>,
+> {
   id: string
   state: TState
   call: <T extends keyof TActions>(action: T, ...args: any[]) => Promise<any>
@@ -85,10 +97,10 @@ export abstract class LiveComponent<TState = ComponentState> {
       const result = await method.call(this, payload)
       return result
     } catch (error: any) {
-      this.emit('ERROR', { 
-        action, 
+      this.emit('ERROR', {
+        action,
         error: error.message,
-        stack: error.stack 
+        stack: error.stack,
       })
       throw error
     }
@@ -102,10 +114,10 @@ export abstract class LiveComponent<TState = ComponentState> {
       payload,
       timestamp: Date.now(),
       userId: this.userId,
-      room: this.room
+      room: this.room,
     }
 
-    if (this.ws && this.ws.send) {
+    if (this.ws?.send) {
       this.ws.send(JSON.stringify(message))
     }
   }
@@ -116,7 +128,7 @@ export abstract class LiveComponent<TState = ComponentState> {
       type,
       payload,
       room: this.room,
-      excludeUser: excludeCurrentUser ? this.userId : undefined
+      excludeUser: excludeCurrentUser ? this.userId : undefined,
     }
 
     // This will be handled by the registry
@@ -157,8 +169,14 @@ export type ComponentActions<T> = {
   [K in keyof T]: T[K] extends (...args: any[]) => any ? T[K] : never
 }
 
-export type ComponentProps<T extends LiveComponent> = T extends LiveComponent<infer TState> ? TState : never
+export type ComponentProps<T extends LiveComponent> = T extends LiveComponent<infer TState>
+  ? TState
+  : never
 
-export type ActionParameters<T, K extends keyof T> = T[K] extends (...args: infer P) => any ? P : never
+export type ActionParameters<T, K extends keyof T> = T[K] extends (...args: infer P) => any
+  ? P
+  : never
 
-export type ActionReturnType<T, K extends keyof T> = T[K] extends (...args: any[]) => infer R ? R : never
+export type ActionReturnType<T, K extends keyof T> = T[K] extends (...args: any[]) => infer R
+  ? R
+  : never

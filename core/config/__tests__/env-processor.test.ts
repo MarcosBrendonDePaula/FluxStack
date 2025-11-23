@@ -3,12 +3,8 @@
  * Tests environment variable processing, type conversion, and precedence handling
  */
 
-import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest'
-import { 
-  EnvironmentProcessor, 
-  EnvConverter, 
-  getEnvironmentInfo 
-} from '../env'
+import { afterEach, beforeEach, describe, expect, test } from 'vitest'
+import { EnvConverter, EnvironmentProcessor, getEnvironmentInfo } from '../env'
 
 describe('EnvConverter', () => {
   describe('toNumber', () => {
@@ -134,10 +130,20 @@ describe('EnvironmentProcessor', () => {
     originalEnv = { ...process.env }
     // Clear environment variables
     for (const key in process.env) {
-      if (key.startsWith('FLUXSTACK_') || key.startsWith('PORT') || key.startsWith('HOST') || 
-          key.startsWith('CORS_') || key.startsWith('LOG_') || key.startsWith('BUILD_') ||
-          key.startsWith('VITE_') || key.startsWith('API_') || key.startsWith('CLIENT_') ||
-          key.startsWith('MONITORING_') || key.startsWith('METRICS_') || key.startsWith('PROFILING_')) {
+      if (
+        key.startsWith('FLUXSTACK_') ||
+        key.startsWith('PORT') ||
+        key.startsWith('HOST') ||
+        key.startsWith('CORS_') ||
+        key.startsWith('LOG_') ||
+        key.startsWith('BUILD_') ||
+        key.startsWith('VITE_') ||
+        key.startsWith('API_') ||
+        key.startsWith('CLIENT_') ||
+        key.startsWith('MONITORING_') ||
+        key.startsWith('METRICS_') ||
+        key.startsWith('PROFILING_')
+      ) {
         delete process.env[key]
       }
     }
@@ -232,9 +238,6 @@ describe('EnvironmentProcessor', () => {
       expect(config.monitoring?.profiling?.sampleRate).toBe(0) // parseInt converts '0.1' to 0
     })
 
-
-
-
     test('processes plugin configuration', () => {
       process.env.FLUXSTACK_PLUGINS_ENABLED = 'plugin1,plugin2,plugin3'
       process.env.FLUXSTACK_PLUGINS_DISABLED = 'plugin4,plugin5'
@@ -304,9 +307,9 @@ describe('EnvironmentProcessor', () => {
     test('clears precedence tracking', () => {
       process.env.PORT = '3000'
       processor.processEnvironmentVariables()
-      
+
       expect(processor.getPrecedenceInfo().size).toBeGreaterThan(0)
-      
+
       processor.clearPrecedence()
       expect(processor.getPrecedenceInfo().size).toBe(0)
     })

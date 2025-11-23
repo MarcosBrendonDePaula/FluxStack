@@ -1,31 +1,27 @@
 // 🧪 Integration Tests for Live Components System
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { ComponentRegistry } from '../ComponentRegistry'
-import { WebSocketConnectionManager } from '../WebSocketConnectionManager'
-import { LiveComponentPerformanceMonitor } from '../LiveComponentPerformanceMonitor'
-import { FileUploadManager } from '../FileUploadManager'
-import { StateSignature } from '../StateSignature'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { LiveComponent } from '@/core/plugins/types'
+import { ComponentRegistry } from '../ComponentRegistry'
+import { FileUploadManager } from '../FileUploadManager'
+import { LiveComponentPerformanceMonitor } from '../LiveComponentPerformanceMonitor'
+import { StateSignature } from '../StateSignature'
+import { WebSocketConnectionManager } from '../WebSocketConnectionManager'
 import { createMockWebSocket, createTestState, waitFor } from './setup'
 
 // Test component for integration tests
 class IntegrationTestComponent extends LiveComponent {
-  constructor(initialState: any, ws: any) {
-    super(initialState, ws)
-  }
-
   async incrementCounter() {
-    this.setState({ 
+    this.setState({
       count: (this.state.count || 0) + 1,
-      lastUpdated: Date.now()
+      lastUpdated: Date.now(),
     })
     return { success: true, newCount: this.state.count }
   }
 
   async slowAction() {
     // Simulate slow operation
-    await new Promise(resolve => setTimeout(resolve, 100))
+    await new Promise((resolve) => setTimeout(resolve, 100))
     this.setState({ slowActionCalled: true })
     return { success: true }
   }
@@ -48,13 +44,13 @@ describe('Live Components System Integration', () => {
     connectionManager = new WebSocketConnectionManager({
       maxConnections: 10,
       heartbeatInterval: 1000,
-      healthCheckInterval: 2000
+      healthCheckInterval: 2000,
     })
     performanceMonitor = new LiveComponentPerformanceMonitor({
       enabled: true,
       sampleRate: 1.0,
       renderTimeThreshold: 50,
-      actionTimeThreshold: 200
+      actionTimeThreshold: 200,
     })
     uploadManager = new FileUploadManager()
     stateSignature = new StateSignature('integration-test-key')
@@ -81,7 +77,7 @@ describe('Live Components System Integration', () => {
         mockWs,
         'IntegrationTestComponent',
         { count: 0 },
-        { room: 'test-room', userId: 'test-user' }
+        { room: 'test-room', userId: 'test-user' },
       )
 
       expect(mountResult.componentId).toBeTruthy()
@@ -98,7 +94,7 @@ describe('Live Components System Integration', () => {
         componentId: mountResult.componentId,
         action: 'incrementCounter',
         payload: {},
-        expectResponse: true
+        expectResponse: true,
       }
 
       const actionResult = await registry.handleMessage(mockWs, actionMessage)
@@ -112,7 +108,7 @@ describe('Live Components System Integration', () => {
       // Cleanup
       await registry.handleMessage(mockWs, {
         type: 'COMPONENT_UNMOUNT',
-        componentId: mountResult.componentId
+        componentId: mountResult.componentId,
       })
 
       // Verify cleanup
@@ -122,11 +118,10 @@ describe('Live Components System Integration', () => {
 
     it('should handle state signing and validation throughout lifecycle', async () => {
       // Mount component
-      const mountResult = await registry.mountComponent(
-        mockWs,
-        'IntegrationTestComponent',
-        { count: 5, data: 'test' }
-      )
+      const mountResult = await registry.mountComponent(mockWs, 'IntegrationTestComponent', {
+        count: 5,
+        data: 'test',
+      })
 
       // Verify signed state
       expect(mountResult.signedState).toBeTruthy()
@@ -146,11 +141,9 @@ describe('Live Components System Integration', () => {
     let componentId: string
 
     beforeEach(async () => {
-      const mountResult = await registry.mountComponent(
-        mockWs,
-        'IntegrationTestComponent',
-        { count: 0 }
-      )
+      const mountResult = await registry.mountComponent(mockWs, 'IntegrationTestComponent', {
+        count: 0,
+      })
       componentId = mountResult.componentId
     })
 
@@ -161,7 +154,7 @@ describe('Live Components System Integration', () => {
         componentId,
         action: 'slowAction',
         payload: {},
-        expectResponse: true
+        expectResponse: true,
       }
 
       const result = await registry.handleMessage(mockWs, actionMessage)
@@ -171,8 +164,8 @@ describe('Live Components System Integration', () => {
       await waitFor(100) // Give time for monitoring to process
 
       const alerts = performanceMonitor.getComponentAlerts(componentId)
-      const slowActionAlert = alerts.find(alert => 
-        alert.category === 'action' && alert.message.includes('slowAction')
+      const slowActionAlert = alerts.find(
+        (alert) => alert.category === 'action' && alert.message.includes('slowAction'),
       )
       expect(slowActionAlert).toBeTruthy()
     })
@@ -186,7 +179,7 @@ describe('Live Components System Integration', () => {
       const suggestions = performanceMonitor.getComponentSuggestions(componentId)
       expect(suggestions.length).toBeGreaterThan(0)
 
-      const renderSuggestion = suggestions.find(s => s.type === 'render')
+      const renderSuggestion = suggestions.find((s) => s.type === 'render')
       expect(renderSuggestion).toBeTruthy()
       expect(renderSuggestion?.priority).toBeTruthy()
     })
@@ -224,7 +217,7 @@ describe('Live Components System Integration', () => {
       const messages = [
         { type: 'test1', data: 'message1' },
         { type: 'test2', data: 'message2' },
-        { type: 'test3', data: 'message3' }
+        { type: 'test3', data: 'message3' },
       ]
 
       for (const message of messages) {
@@ -244,7 +237,7 @@ describe('Live Components System Integration', () => {
         ...createMockWebSocket(),
         send: vi.fn().mockImplementation(() => {
           throw new Error('Connection failed')
-        })
+        }),
       }
 
       connectionManager.registerConnection(failingWs, connectionId)
@@ -252,7 +245,7 @@ describe('Live Components System Integration', () => {
       // Try to send message to failing connection
       const success = await connectionManager.sendMessage(
         { type: 'test', data: 'fail' },
-        { connectionId }
+        { connectionId },
       )
 
       expect(success).toBe(false)
@@ -262,7 +255,7 @@ describe('Live Components System Integration', () => {
   describe('File Upload Integration', () => {
     it('should handle complete file upload workflow', async () => {
       const uploadId = 'integration-upload'
-      
+
       // Start upload
       const startResult = await uploadManager.startUpload({
         type: 'FILE_UPLOAD_START',
@@ -271,31 +264,37 @@ describe('Live Components System Integration', () => {
         filename: 'integration-test.jpg',
         fileType: 'image/jpeg',
         fileSize: 1024,
-        chunkSize: 512
+        chunkSize: 512,
       })
 
       expect(startResult.success).toBe(true)
 
       // Send chunks
-      const chunk1Result = await uploadManager.receiveChunk({
-        type: 'FILE_UPLOAD_CHUNK',
-        componentId: 'test-component',
-        uploadId,
-        chunkIndex: 0,
-        totalChunks: 2,
-        data: Buffer.from('first chunk').toString('base64')
-      }, mockWs)
+      const chunk1Result = await uploadManager.receiveChunk(
+        {
+          type: 'FILE_UPLOAD_CHUNK',
+          componentId: 'test-component',
+          uploadId,
+          chunkIndex: 0,
+          totalChunks: 2,
+          data: Buffer.from('first chunk').toString('base64'),
+        },
+        mockWs,
+      )
 
       expect(chunk1Result?.progress).toBe(50)
 
-      const chunk2Result = await uploadManager.receiveChunk({
-        type: 'FILE_UPLOAD_CHUNK',
-        componentId: 'test-component',
-        uploadId,
-        chunkIndex: 1,
-        totalChunks: 2,
-        data: Buffer.from('second chunk').toString('base64')
-      }, mockWs)
+      const chunk2Result = await uploadManager.receiveChunk(
+        {
+          type: 'FILE_UPLOAD_CHUNK',
+          componentId: 'test-component',
+          uploadId,
+          chunkIndex: 1,
+          totalChunks: 2,
+          data: Buffer.from('second chunk').toString('base64'),
+        },
+        mockWs,
+      )
 
       expect(chunk2Result?.progress).toBe(100)
 
@@ -303,7 +302,7 @@ describe('Live Components System Integration', () => {
       const completeResult = await uploadManager.completeUpload({
         type: 'FILE_UPLOAD_COMPLETE',
         componentId: 'test-component',
-        uploadId
+        uploadId,
       })
 
       expect(completeResult.success).toBe(true)
@@ -315,11 +314,9 @@ describe('Live Components System Integration', () => {
     let componentId: string
 
     beforeEach(async () => {
-      const mountResult = await registry.mountComponent(
-        mockWs,
-        'IntegrationTestComponent',
-        { count: 0 }
-      )
+      const mountResult = await registry.mountComponent(mockWs, 'IntegrationTestComponent', {
+        count: 0,
+      })
       componentId = mountResult.componentId
     })
 
@@ -329,7 +326,7 @@ describe('Live Components System Integration', () => {
         componentId,
         action: 'errorAction',
         payload: {},
-        expectResponse: true
+        expectResponse: true,
       }
 
       const result = await registry.handleMessage(mockWs, errorMessage)
@@ -362,14 +359,13 @@ describe('Live Components System Integration', () => {
   describe('State Management Integration', () => {
     it('should handle state compression and encryption', async () => {
       const largeState = createTestState('large')
-      
+
       // Sign state with compression and encryption
-      const signedState = await stateSignature.signState(
-        'test-component',
-        largeState,
-        1,
-        { compress: true, encrypt: true, backup: true }
-      )
+      const signedState = await stateSignature.signState('test-component', largeState, 1, {
+        compress: true,
+        encrypt: true,
+        backup: true,
+      })
 
       expect(signedState.compressed).toBe(true)
       expect(signedState.encrypted).toBe(true)
@@ -391,7 +387,7 @@ describe('Live Components System Integration', () => {
       stateSignature.registerMigration('1', '2', (state: any) => ({
         ...state,
         version: 2,
-        migratedField: 'added in v2'
+        migratedField: 'added in v2',
       }))
 
       const oldState = { version: 1, data: 'test' }
@@ -411,8 +407,12 @@ describe('Live Components System Integration', () => {
   describe('System Health and Monitoring', () => {
     it('should provide comprehensive system health status', async () => {
       // Create multiple components with different health states
-      const healthyComponent = await registry.mountComponent(mockWs, 'IntegrationTestComponent', { count: 0 })
-      const degradedComponent = await registry.mountComponent(mockWs, 'IntegrationTestComponent', { count: 0 })
+      const _healthyComponent = await registry.mountComponent(mockWs, 'IntegrationTestComponent', {
+        count: 0,
+      })
+      const degradedComponent = await registry.mountComponent(mockWs, 'IntegrationTestComponent', {
+        count: 0,
+      })
 
       // Make one component degraded
       for (let i = 0; i < 3; i++) {
@@ -423,8 +423,8 @@ describe('Live Components System Integration', () => {
       const allHealth = registry.getAllComponentHealth()
       expect(allHealth.length).toBe(2)
 
-      const healthyCount = allHealth.filter(h => h.status === 'healthy').length
-      const degradedCount = allHealth.filter(h => h.status === 'degraded').length
+      const healthyCount = allHealth.filter((h) => h.status === 'healthy').length
+      const degradedCount = allHealth.filter((h) => h.status === 'degraded').length
 
       expect(healthyCount).toBeGreaterThan(0)
       expect(degradedCount).toBeGreaterThan(0)

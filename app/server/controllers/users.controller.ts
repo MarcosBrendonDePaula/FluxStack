@@ -18,7 +18,7 @@ export class UsersController {
    */
   static async getUsers() {
     return {
-      users
+      users,
     }
   }
 
@@ -26,7 +26,7 @@ export class UsersController {
    * Get user by ID
    */
   static async getUserById(id: number) {
-    const user = users.find(u => u.id === id)
+    const user = users.find((u) => u.id === id)
     if (!user) {
       return null
     }
@@ -38,11 +38,11 @@ export class UsersController {
    */
   static async createUser(data: CreateUserRequest) {
     // Check for duplicate email
-    const existingUser = users.find(u => u.email === data.email)
+    const existingUser = users.find((u) => u.email === data.email)
     if (existingUser) {
       return {
         success: false,
-        message: 'Email já está em uso'
+        message: 'Email já está em uso',
       }
     }
 
@@ -51,14 +51,14 @@ export class UsersController {
       id: nextId++,
       name: data.name,
       email: data.email,
-      createdAt: new Date()
+      createdAt: new Date(),
     }
 
     users.push(newUser)
 
     return {
       success: true,
-      user: newUser
+      user: newUser,
     }
   }
 
@@ -66,12 +66,12 @@ export class UsersController {
    * Delete user by ID
    */
   static async deleteUser(id: number) {
-    const userIndex = users.findIndex(u => u.id === id)
+    const userIndex = users.findIndex((u) => u.id === id)
 
     if (userIndex === -1) {
       return {
         success: false,
-        message: 'Usuário não encontrado'
+        message: 'Usuário não encontrado',
       }
     }
 
@@ -81,7 +81,7 @@ export class UsersController {
     return {
       success: true,
       user: deletedUser,
-      message: 'Usuário deletado com sucesso'
+      message: 'Usuário deletado com sucesso',
     }
   }
 

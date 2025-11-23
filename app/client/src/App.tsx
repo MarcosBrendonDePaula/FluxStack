@@ -1,26 +1,26 @@
-import { useState, useEffect } from 'react'
-import { api } from './lib/eden-api'
-import { FaFire, FaBook, FaGithub, FaClock, FaImage } from 'react-icons/fa'
+import { useCallback, useEffect, useState } from 'react'
+import { FaBook, FaClock, FaFire, FaGithub, FaImage } from 'react-icons/fa'
 import { LiveComponentsProvider } from '@/core/client'
 import { FileUploadExample } from './components/FileUploadExample'
+import { api } from './lib/eden-api'
 import { MinimalLiveClock } from './live/MinimalLiveClock'
 
 function AppContent() {
   const [apiStatus, setApiStatus] = useState<'checking' | 'online' | 'offline'>('checking')
   const [showDemo, setShowDemo] = useState(false)
 
-  useEffect(() => {
-    checkApiStatus()
-  }, [])
-
-  const checkApiStatus = async () => {
+  const checkApiStatus = useCallback(async () => {
     try {
       const { error } = await api.health.get()
       setApiStatus(error ? 'offline' : 'online')
     } catch {
       setApiStatus('offline')
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    checkApiStatus()
+  }, [checkApiStatus])
 
   // If demo mode is active, show demo content
   if (showDemo) {
@@ -30,6 +30,7 @@ function AppContent() {
           {/* Header with back button */}
           <div className="flex items-center gap-4 mb-8">
             <button
+              type="button"
               onClick={() => setShowDemo(false)}
               className="px-4 py-2 bg-white/10 backdrop-blur-sm border border-white/20 text-white rounded-lg font-medium hover:bg-white/20 transition-all"
             >
@@ -70,17 +71,31 @@ function AppContent() {
 
         {/* API Status Badge */}
         <div className="mb-12">
-          <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-            apiStatus === 'online'
-              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-              : apiStatus === 'offline'
-              ? 'bg-red-500/20 text-red-300 border border-red-500/30'
-              : 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30'
-          }`}>
-            <div className={`w-2 h-2 rounded-full ${
-              apiStatus === 'online' ? 'bg-emerald-400' : apiStatus === 'offline' ? 'bg-red-400' : 'bg-yellow-400'
-            }`}></div>
-            <span>{apiStatus === 'checking' ? 'Checking API...' : apiStatus === 'online' ? 'API Online' : 'API Offline'}</span>
+          <div
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              apiStatus === 'online'
+                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                : apiStatus === 'offline'
+                  ? 'bg-red-500/20 text-red-300 border border-red-500/30'
+                  : 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30'
+            }`}
+          >
+            <div
+              className={`w-2 h-2 rounded-full ${
+                apiStatus === 'online'
+                  ? 'bg-emerald-400'
+                  : apiStatus === 'offline'
+                    ? 'bg-red-400'
+                    : 'bg-yellow-400'
+              }`}
+            ></div>
+            <span>
+              {apiStatus === 'checking'
+                ? 'Checking API...'
+                : apiStatus === 'online'
+                  ? 'API Online'
+                  : 'API Offline'}
+            </span>
           </div>
         </div>
 
@@ -120,6 +135,7 @@ function AppContent() {
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-4 justify-center">
           <button
+            type="button"
             onClick={() => setShowDemo(true)}
             className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-emerald-500/50 transition-all"
           >

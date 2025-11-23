@@ -11,60 +11,60 @@ export const formatBytes = (bytes: number, decimals: number = 2): string => {
 
   const i = Math.floor(Math.log(bytes) / Math.log(k))
 
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
+  return `${parseFloat((bytes / k ** i).toFixed(dm))} ${sizes[i]}`
 }
 
 export const createTimer = (label: string) => {
   const start = Date.now()
-  
+
   return {
     end: (): number => {
       const duration = Date.now() - start
       return duration
     },
-    label
+    label,
   }
 }
 
 export const delay = (ms: number): Promise<void> => {
-  return new Promise(resolve => setTimeout(resolve, ms))
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 export const retry = async <T>(
   fn: () => Promise<T>,
   maxAttempts: number = 3,
-  delayMs: number = 1000
+  delayMs: number = 1000,
 ): Promise<T> => {
   let lastError: Error
-  
+
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       return await fn()
     } catch (error) {
       lastError = error as Error
-      
+
       if (attempt === maxAttempts) {
         throw lastError
       }
-      
+
       await delay(delayMs * attempt) // Exponential backoff
     }
   }
-  
+
   throw lastError!
 }
 
 export const debounce = <T extends (...args: any[]) => any>(
   func: T,
-  wait: number
+  wait: number,
 ): ((...args: Parameters<T>) => void) => {
   let timeout: NodeJS.Timeout | null = null
-  
+
   return (...args: Parameters<T>) => {
     if (timeout) {
       clearTimeout(timeout)
     }
-    
+
     timeout = setTimeout(() => {
       func(...args)
     }, wait)
@@ -73,15 +73,15 @@ export const debounce = <T extends (...args: any[]) => any>(
 
 export const throttle = <T extends (...args: any[]) => any>(
   func: T,
-  limit: number
+  limit: number,
 ): ((...args: Parameters<T>) => void) => {
   let inThrottle: boolean = false
-  
+
   return (...args: Parameters<T>) => {
     if (!inThrottle) {
       func(...args)
       inThrottle = true
-      setTimeout(() => inThrottle = false, limit)
+      setTimeout(() => (inThrottle = false), limit)
     }
   }
 }
@@ -111,12 +111,12 @@ export const isTest = (): boolean => {
 
 export const deepMerge = <T extends Record<string, any>>(target: T, source: Partial<T>): T => {
   const result = { ...target }
-  
+
   for (const key in source) {
-    if (source.hasOwnProperty(key)) {
+    if (Object.hasOwn(source, key)) {
       const sourceValue = source[key]
       const targetValue = result[key]
-      
+
       if (
         sourceValue &&
         typeof sourceValue === 'object' &&
@@ -131,46 +131,46 @@ export const deepMerge = <T extends Record<string, any>>(target: T, source: Part
       }
     }
   }
-  
+
   return result
 }
 
 export const pick = <T extends Record<string, any>, K extends keyof T>(
   obj: T,
-  keys: K[]
+  keys: K[],
 ): Pick<T, K> => {
   const result = {} as Pick<T, K>
-  
+
   for (const key of keys) {
     if (key in obj) {
       result[key] = obj[key]
     }
   }
-  
+
   return result
 }
 
 export const omit = <T extends Record<string, any>, K extends keyof T>(
   obj: T,
-  keys: K[]
+  keys: K[],
 ): Omit<T, K> => {
   const result = { ...obj }
-  
+
   for (const key of keys) {
     delete result[key]
   }
-  
+
   return result
 }
 
 export const generateId = (length: number = 8): string => {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
   let result = ''
-  
+
   for (let i = 0; i < length; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length))
   }
-  
+
   return result
 }
 

@@ -2,11 +2,11 @@
  * Tests for Monitoring Plugin
  */
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
-import { monitoringPlugin } from '../built-in/monitoring'
-import type { PluginContext, RequestContext, ResponseContext, ErrorContext } from '../types'
-import type { Logger } from '@/core/utils/logger/index'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FluxStackConfig } from '@/config/schema'
+import type { Logger } from '@/core/utils/logger/index'
+import { monitoringPlugin } from '../built-in/monitoring'
+import type { ErrorContext, PluginContext, RequestContext, ResponseContext } from '../types'
 
 // Mock logger
 const mockLogger: Logger = {
@@ -17,7 +17,7 @@ const mockLogger: Logger = {
   child: vi.fn(() => mockLogger),
   time: vi.fn(),
   timeEnd: vi.fn(),
-  request: vi.fn()
+  request: vi.fn(),
 }
 
 // Mock utils
@@ -29,7 +29,7 @@ const mockUtils = {
   getEnvironment: vi.fn(() => 'development'),
   createHash: vi.fn(() => 'hash123'),
   deepMerge: vi.fn((a, b) => ({ ...a, ...b })),
-  validateSchema: vi.fn(() => ({ valid: true, errors: [] }))
+  validateSchema: vi.fn(() => ({ valid: true, errors: [] })),
 }
 
 // Mock config
@@ -42,9 +42,9 @@ const mockConfig: FluxStackConfig = {
     cors: {
       origins: ['*'],
       methods: ['GET', 'POST'],
-      headers: ['Content-Type']
+      headers: ['Content-Type'],
     },
-    middleware: []
+    middleware: [],
   },
   client: {
     port: 5173,
@@ -53,8 +53,8 @@ const mockConfig: FluxStackConfig = {
       sourceMaps: true,
       minify: false,
       target: 'esnext',
-      outDir: 'dist/client'
-    }
+      outDir: 'dist/client',
+    },
   },
   build: {
     target: 'bun',
@@ -64,10 +64,10 @@ const mockConfig: FluxStackConfig = {
       treeshake: false,
       compress: false,
       splitChunks: false,
-      bundleAnalyzer: false
+      bundleAnalyzer: false,
     },
     sourceMaps: true,
-    clean: true
+    clean: true,
   },
   plugins: {
     enabled: [],
@@ -84,22 +84,22 @@ const mockConfig: FluxStackConfig = {
           {
             type: 'console',
             interval: 2000,
-            enabled: true
-          }
+            enabled: true,
+          },
         ],
         thresholds: {
           responseTime: 500,
           errorRate: 0.1,
           memoryUsage: 0.9,
-          cpuUsage: 0.9
-        }
-      }
-    }
+          cpuUsage: 0.9,
+        },
+      },
+    },
   },
   logging: {
     level: 'info',
     format: 'pretty',
-    transports: []
+    transports: [],
   },
   monitoring: {
     enabled: true,
@@ -108,16 +108,16 @@ const mockConfig: FluxStackConfig = {
       collectInterval: 5000,
       httpMetrics: true,
       systemMetrics: true,
-      customMetrics: true
+      customMetrics: true,
     },
     profiling: {
       enabled: false,
       sampleRate: 0.1,
       memoryProfiling: false,
-      cpuProfiling: false
+      cpuProfiling: false,
     },
-    exporters: []
-  }
+    exporters: [],
+  },
 }
 
 describe('Monitoring Plugin', () => {
@@ -128,7 +128,7 @@ describe('Monitoring Plugin', () => {
       config: mockConfig,
       logger: mockLogger,
       app: { use: vi.fn(), get: vi.fn() },
-      utils: mockUtils
+      utils: mockUtils,
     }
     vi.clearAllMocks()
   })
@@ -137,7 +137,7 @@ describe('Monitoring Plugin', () => {
     // Clean up any intervals that might have been created
     const intervals = (context as any).monitoringIntervals as NodeJS.Timeout[]
     if (intervals) {
-      intervals.forEach(interval => clearInterval(interval))
+      intervals.forEach((interval) => clearInterval(interval))
     }
   })
 
@@ -167,8 +167,11 @@ describe('Monitoring Plugin', () => {
   describe('Plugin Setup', () => {
     it('should setup successfully when enabled', async () => {
       await monitoringPlugin.setup!(context)
-      
-      expect(mockLogger.info).toHaveBeenCalledWith('Initializing monitoring plugin', expect.any(Object))
+
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Initializing monitoring plugin',
+        expect.any(Object),
+      )
       expect(mockLogger.info).toHaveBeenCalledWith('Monitoring plugin initialized successfully')
       expect((context as any).metricsRegistry).toBeDefined()
     })
@@ -180,22 +183,22 @@ describe('Monitoring Plugin', () => {
           ...mockConfig.plugins,
           config: {
             monitoring: {
-              enabled: false
-            }
-          }
-        }
+              enabled: false,
+            },
+          },
+        },
       }
 
       const disabledContext = { ...context, config: disabledConfig }
       await monitoringPlugin.setup!(disabledContext)
-      
+
       expect(mockLogger.info).toHaveBeenCalledWith('Monitoring plugin disabled by configuration')
       expect((disabledContext as any).metricsRegistry).toBeUndefined()
     })
 
     it('should initialize metrics registry', async () => {
       await monitoringPlugin.setup!(context)
-      
+
       const registry = (context as any).metricsRegistry
       expect(registry).toBeDefined()
       expect(registry.counters).toBeInstanceOf(Map)
@@ -211,14 +214,14 @@ describe('Monitoring Plugin', () => {
 
     it('should handle server start', async () => {
       await monitoringPlugin.onServerStart!(context)
-      
+
       expect(mockLogger.info).toHaveBeenCalledWith(
         'Monitoring plugin: Server monitoring started',
         expect.objectContaining({
           pid: expect.any(Number),
           nodeVersion: expect.any(String),
-          platform: expect.any(String)
-        })
+          platform: expect.any(String),
+        }),
       )
 
       // Check that server start metric was recorded
@@ -228,7 +231,7 @@ describe('Monitoring Plugin', () => {
 
     it('should handle server stop', async () => {
       await monitoringPlugin.onServerStop!(context)
-      
+
       expect(mockLogger.info).toHaveBeenCalledWith('Monitoring plugin: Server monitoring stopped')
 
       // Check that server stop metric was recorded
@@ -250,14 +253,14 @@ describe('Monitoring Plugin', () => {
         headers: { 'content-length': '100' },
         query: {},
         params: {},
-        startTime: Date.now()
+        startTime: Date.now(),
       }
 
       // Add metrics registry to request context for testing
       ;(requestContext as any).metricsRegistry = (context as any).metricsRegistry
 
       await monitoringPlugin.onRequest!(requestContext)
-      
+
       const registry = (context as any).metricsRegistry
       expect(registry.counters.size).toBeGreaterThan(0)
       expect(registry.histograms.size).toBeGreaterThan(0)
@@ -275,14 +278,14 @@ describe('Monitoring Plugin', () => {
         response: new Response('OK'),
         statusCode: 200,
         duration: 100,
-        size: 50
+        size: 50,
       }
 
       // Add metrics registry to response context for testing
       ;(responseContext as any).metricsRegistry = (context as any).metricsRegistry
 
       await monitoringPlugin.onResponse!(responseContext)
-      
+
       const registry = (context as any).metricsRegistry
       expect(registry.counters.size).toBeGreaterThan(0)
       expect(registry.histograms.size).toBeGreaterThan(0)
@@ -299,14 +302,14 @@ describe('Monitoring Plugin', () => {
         startTime: Date.now() - 100,
         error: new Error('Test error'),
         duration: 100,
-        handled: false
+        handled: false,
       }
 
       // Add metrics registry to error context for testing
       ;(errorContext as any).metricsRegistry = (context as any).metricsRegistry
 
       await monitoringPlugin.onError!(errorContext)
-      
+
       const registry = (context as any).metricsRegistry
       expect(registry.counters.size).toBeGreaterThan(0)
       expect(registry.histograms.size).toBeGreaterThan(0)
@@ -316,28 +319,28 @@ describe('Monitoring Plugin', () => {
   describe('System Metrics', () => {
     it('should collect system metrics', async () => {
       await monitoringPlugin.setup!(context)
-      
+
       // Wait a bit for system metrics to be collected
-      await new Promise(resolve => setTimeout(resolve, 1100))
-      
+      await new Promise((resolve) => setTimeout(resolve, 1100))
+
       const registry = (context as any).metricsRegistry
       expect(registry.gauges.size).toBeGreaterThan(0)
-      
+
       // Check for specific system metrics
       const gaugeKeys = Array.from(registry.gauges.keys()) as string[]
-      expect(gaugeKeys.some(key => key.includes('process_memory'))).toBe(true)
-      expect(gaugeKeys.some(key => key.includes('process_cpu'))).toBe(true)
-      expect(gaugeKeys.some(key => key.includes('process_uptime'))).toBe(true)
+      expect(gaugeKeys.some((key) => key.includes('process_memory'))).toBe(true)
+      expect(gaugeKeys.some((key) => key.includes('process_cpu'))).toBe(true)
+      expect(gaugeKeys.some((key) => key.includes('process_uptime'))).toBe(true)
     })
   })
 
   describe('Metrics Export', () => {
     it('should export metrics to console', async () => {
       await monitoringPlugin.setup!(context)
-      
+
       // Wait for export interval
-      await new Promise(resolve => setTimeout(resolve, 2100))
-      
+      await new Promise((resolve) => setTimeout(resolve, 2100))
+
       // Should have logged metrics
       expect(mockLogger.info).toHaveBeenCalledWith(
         'Metrics snapshot',
@@ -346,8 +349,8 @@ describe('Monitoring Plugin', () => {
           counters: expect.any(Number),
           gauges: expect.any(Number),
           histograms: expect.any(Number),
-          metrics: expect.any(Object)
-        })
+          metrics: expect.any(Object),
+        }),
       )
     })
   })
@@ -360,13 +363,13 @@ describe('Monitoring Plugin', () => {
           ...mockConfig,
           plugins: {
             ...mockConfig.plugins,
-            config: {}
-          }
-        }
+            config: {},
+          },
+        },
       }
 
       await monitoringPlugin.setup!(contextWithoutConfig)
-      
+
       // Should still initialize with defaults
       expect((contextWithoutConfig as any).metricsRegistry).toBeDefined()
     })
@@ -380,21 +383,21 @@ describe('Monitoring Plugin', () => {
             monitoring: {
               enabled: true,
               httpMetrics: false,
-              systemMetrics: true
-            }
-          }
-        }
+              systemMetrics: true,
+            },
+          },
+        },
       }
 
       const customContext = { ...context, config: customConfig }
       await monitoringPlugin.setup!(customContext)
-      
+
       expect(mockLogger.info).toHaveBeenCalledWith(
         'Initializing monitoring plugin',
         expect.objectContaining({
           httpMetrics: false,
-          systemMetrics: true
-        })
+          systemMetrics: true,
+        }),
       )
     })
   })

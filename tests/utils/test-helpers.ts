@@ -1,31 +1,28 @@
+import { type RenderOptions, render } from '@testing-library/react'
 import type { ReactElement } from 'react'
-import { render, type RenderOptions } from '@testing-library/react'
 
 // Custom render function that can include providers
-const customRender = (
-  ui: ReactElement,
-  options?: Omit<RenderOptions, 'wrapper'>
-) => render(ui, {
-  // Add any providers here (e.g., ThemeProvider, QueryClient, etc.)
-  ...options,
-})
+const customRender = (ui: ReactElement, options?: Omit<RenderOptions, 'wrapper'>) =>
+  render(ui, {
+    // Add any providers here (e.g., ThemeProvider, QueryClient, etc.)
+    ...options,
+  })
 
 export * from '@testing-library/react'
 export { customRender as render }
 
 // Test utilities
-export const waitForLoadingToFinish = () => 
-  new Promise(resolve => setTimeout(resolve, 0))
+export const waitForLoadingToFinish = () => new Promise((resolve) => setTimeout(resolve, 0))
 
 export const createMockUser = (overrides = {}) => ({
   id: Math.floor(Math.random() * 1000),
   name: 'Test User',
   email: 'test@example.com',
   createdAt: new Date(),
-  ...overrides
+  ...overrides,
 })
 
-export const createMockRequest = (url: string, options: RequestInit = {}) => 
+export const createMockRequest = (url: string, options: RequestInit = {}) =>
   new Request(url, {
     headers: {
       'Content-Type': 'application/json',
@@ -38,13 +35,13 @@ export const createMockRequest = (url: string, options: RequestInit = {}) =>
 export const mockApiSuccess = <T>(data: T) => ({
   data,
   status: 200,
-  ok: true
+  ok: true,
 })
 
 export const mockApiError = (message: string, status = 400) => ({
   error: message,
   status,
-  ok: false
+  ok: false,
 })
 
 // Environment helpers
@@ -55,7 +52,7 @@ export const setTestEnv = (vars: Record<string, string>) => {
 }
 
 export const resetTestEnv = (keys: string[]) => {
-  keys.forEach(key => {
+  keys.forEach((key) => {
     delete Bun.env[key]
   })
 }

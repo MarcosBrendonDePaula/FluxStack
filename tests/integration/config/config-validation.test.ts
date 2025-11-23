@@ -3,14 +3,14 @@
  * Tests for config schema validation and error handling
  */
 
-import { describe, it, expect } from 'vitest'
-import { defineConfig, config as configHelpers } from '@/core/utils/config-schema'
+import { describe, expect, it } from 'vitest'
+import { config as configHelpers, defineConfig } from '@/core/utils/config-schema'
 
 describe('Config Schema Validation', () => {
   describe('Schema Helpers', () => {
     it('should validate string fields', () => {
       const schema = {
-        name: configHelpers.string('TEST_NAME', 'default', true)
+        name: configHelpers.string('TEST_NAME', 'default', true),
       }
 
       const result = defineConfig(schema)
@@ -19,7 +19,7 @@ describe('Config Schema Validation', () => {
 
     it('should validate number fields', () => {
       const schema = {
-        port: configHelpers.number('TEST_PORT', 3000, true)
+        port: configHelpers.number('TEST_PORT', 3000, true),
       }
 
       const result = defineConfig(schema)
@@ -28,7 +28,7 @@ describe('Config Schema Validation', () => {
 
     it('should validate boolean fields', () => {
       const schema = {
-        enabled: configHelpers.boolean('TEST_ENABLED', false)
+        enabled: configHelpers.boolean('TEST_ENABLED', false),
       }
 
       const result = defineConfig(schema)
@@ -37,7 +37,7 @@ describe('Config Schema Validation', () => {
 
     it('should validate array fields', () => {
       const schema = {
-        items: configHelpers.array('TEST_ITEMS', ['a', 'b'])
+        items: configHelpers.array('TEST_ITEMS', ['a', 'b']),
       }
 
       const result = defineConfig(schema)
@@ -46,11 +46,7 @@ describe('Config Schema Validation', () => {
 
     it('should validate enum fields', () => {
       const schema = {
-        env: configHelpers.enum(
-          'TEST_ENV',
-          ['dev', 'prod'] as const,
-          'dev'
-        )
+        env: configHelpers.enum('TEST_ENV', ['dev', 'prod'] as const, 'dev'),
       }
 
       const result = defineConfig(schema)
@@ -71,8 +67,8 @@ describe('Config Schema Validation', () => {
               return 'Port must be between 1 and 65535'
             }
             return true
-          }
-        }
+          },
+        },
       }
 
       const result = defineConfig(schema)
@@ -86,8 +82,8 @@ describe('Config Schema Validation', () => {
           type: 'string' as const,
           env: 'TEST_TRANSFORM',
           default: 'test',
-          transform: (value: string) => value.toUpperCase()
-        }
+          transform: (value: string) => value.toUpperCase(),
+        },
       }
 
       const result = defineConfig(schema)
@@ -98,7 +94,7 @@ describe('Config Schema Validation', () => {
   describe('Default Values', () => {
     it('should use default values when env var is not set', () => {
       const schema = {
-        withDefault: configHelpers.string('NONEXISTENT_VAR_12345', 'default-value')
+        withDefault: configHelpers.string('NONEXISTENT_VAR_12345', 'default-value'),
       }
 
       const result = defineConfig(schema)
@@ -107,7 +103,7 @@ describe('Config Schema Validation', () => {
 
     it('should handle optional fields', () => {
       const schema = {
-        optional: configHelpers.string('OPTIONAL_VAR_12345', undefined, false)
+        optional: configHelpers.string('OPTIONAL_VAR_12345', undefined, false),
       }
 
       const result = defineConfig(schema)
@@ -122,7 +118,7 @@ describe('Config Schema Validation', () => {
         numberField: configHelpers.number('TEST_NUM', 42),
         boolField: configHelpers.boolean('TEST_BOOL', true),
         arrayField: configHelpers.array('TEST_ARR', ['a']),
-        enumField: configHelpers.enum('TEST_ENUM', ['a', 'b'] as const, 'a')
+        enumField: configHelpers.enum('TEST_ENUM', ['a', 'b'] as const, 'a'),
       }
 
       const result = defineConfig(schema)
@@ -145,11 +141,11 @@ describe('Config Schema Validation', () => {
   describe('Nested Config Support', () => {
     it('should support nested config structures', () => {
       const schema1 = {
-        field1: configHelpers.string('NESTED1', 'value1')
+        field1: configHelpers.string('NESTED1', 'value1'),
       }
 
       const schema2 = {
-        field2: configHelpers.number('NESTED2', 100)
+        field2: configHelpers.number('NESTED2', 100),
       }
 
       const config1 = defineConfig(schema1)
@@ -157,7 +153,7 @@ describe('Config Schema Validation', () => {
 
       const nested = {
         group1: config1,
-        group2: config2
+        group2: config2,
       }
 
       expect(nested.group1.field1).toBe('value1')
@@ -173,8 +169,8 @@ describe('Config Schema Validation', () => {
             type: 'string' as const,
             env: 'ABSOLUTELY_NONEXISTENT_REQUIRED_VAR',
             default: undefined,
-            required: true
-          }
+            required: true,
+          },
         }
 
         defineConfig(schema)
@@ -185,7 +181,7 @@ describe('Config Schema Validation', () => {
   describe('Type Safety Validation', () => {
     it('should preserve const types', () => {
       const schema = {
-        literal: configHelpers.enum('TEST_LITERAL', ['a', 'b', 'c'] as const, 'a')
+        literal: configHelpers.enum('TEST_LITERAL', ['a', 'b', 'c'] as const, 'a'),
       } as const
 
       const result = defineConfig(schema)

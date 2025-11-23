@@ -1,8 +1,8 @@
 // 🚀 FluxStack Plugins - Auto Registration Generator
 // Automatically generates plugin registration during build time
 
-import { existsSync, readdirSync, writeFileSync, unlinkSync, readFileSync, statSync } from 'fs'
-import { join, extname, basename } from 'path'
+import { existsSync, readdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from 'node:fs'
+import { basename, join } from 'node:path'
 import { buildLogger } from '../utils/build-logger'
 
 export interface PluginInfo {
@@ -15,7 +15,6 @@ export interface PluginInfo {
 
 export class FluxPluginsGenerator {
   private pluginsPath: string
-  private builtInPluginsPath: string
   private registrationFilePath: string
   private backupFilePath: string
 
@@ -48,7 +47,10 @@ export class FluxPluginsGenerator {
   /**
    * Discover plugins in a specific directory
    */
-  private discoverPluginsInDirectory(directory: string, type: 'external' | 'built-in'): PluginInfo[] {
+  private discoverPluginsInDirectory(
+    directory: string,
+    type: 'external' | 'built-in',
+  ): PluginInfo[] {
     const plugins: PluginInfo[] = []
 
     try {
@@ -56,7 +58,7 @@ export class FluxPluginsGenerator {
 
       for (const entry of entries) {
         const pluginDir = join(directory, entry)
-        
+
         // Skip files, only process directories
         if (!statSync(pluginDir).isDirectory()) {
           continue
@@ -65,16 +67,15 @@ export class FluxPluginsGenerator {
         // Look for plugin entry point
         const entryFile = this.findPluginEntryFile(pluginDir)
         if (entryFile) {
-          const relativePath = type === 'external' 
-            ? `../../plugins/${entry}`
-            : `./built-in/${entry}`
+          const relativePath =
+            type === 'external' ? `../../plugins/${entry}` : `./built-in/${entry}`
 
           plugins.push({
             pluginDir,
             pluginName: entry,
             entryFile,
             relativePath,
-            type
+            type,
           })
 
           buildLogger.step(`Discovered ${type} plugin: ${entry} (${entryFile})`)
@@ -82,7 +83,7 @@ export class FluxPluginsGenerator {
           buildLogger.warn(`Plugin '${entry}' has no valid entry point`)
         }
       }
-    } catch (error) {
+    } catch (_error) {
       // Silently skip directories that can't be scanned
     }
 
@@ -100,7 +101,7 @@ export class FluxPluginsGenerator {
       'plugin',
       'src/index.ts',
       'src/index',
-      'dist/index'
+      'dist/index',
     ]
 
     for (const file of possibleFiles) {
@@ -124,22 +125,23 @@ export class FluxPluginsGenerator {
     }
 
     // All discovered plugins are external (built-in are handled by core)
-    const externalPlugins = plugins
+    const _externalPlugins = plugins
 
     // Generate imports
     const imports = plugins
-      .map(plugin => {
+      .map((plugin) => {
         const importName = this.getImportName(plugin.pluginName)
-        const importPath = plugin.entryFile === 'index.ts' || plugin.entryFile === 'index'
-          ? plugin.relativePath
-          : `${plugin.relativePath}/${plugin.entryFile.replace(/\.(ts|js)$/, '')}`
+        const importPath =
+          plugin.entryFile === 'index.ts' || plugin.entryFile === 'index'
+            ? plugin.relativePath
+            : `${plugin.relativePath}/${plugin.entryFile.replace(/\.(ts|js)$/, '')}`
         return `import ${importName} from "${importPath}"`
       })
       .join('\n')
 
     // Generate plugin array
     const pluginsList = plugins
-      .map(plugin => {
+      .map((plugin) => {
         const importName = this.getImportName(plugin.pluginName)
         return `  ${importName}`
       })
@@ -204,10 +206,10 @@ console.log('🔍 Auto-discovered ${plugins.length} external plugins' + (pluginN
    */
   private getImportName(pluginName: string): string {
     // Convert kebab-case to PascalCase for import names
-    return pluginName
+    return `${pluginName
       .split('-')
-      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-      .join('') + 'Plugin'
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join('')}Plugin`
   }
 
   /**
@@ -252,19 +254,19 @@ console.log('🔍 Auto-discovered ${plugins.length} external plugins' + (pluginN
     }
 
     // Create table of discovered plugins
-    const pluginData = plugins.map(p => ({
+    const pluginData = plugins.map((p) => ({
       plugin: p.pluginName,
       type: p.type,
-      entry: p.entryFile
+      entry: p.entryFile,
     }))
 
     buildLogger.table(
       [
         { header: 'Plugin', key: 'plugin', width: 25, align: 'left', color: 'cyan' },
         { header: 'Type', key: 'type', width: 12, align: 'left', color: 'yellow' },
-        { header: 'Entry Point', key: 'entry', width: 20, align: 'left', color: 'gray' }
+        { header: 'Entry Point', key: 'entry', width: 20, align: 'left', color: 'gray' },
       ],
-      pluginData
+      pluginData,
     )
 
     this.generateRegistrationFile(plugins)
@@ -298,7 +300,7 @@ console.log('🔍 Auto-discovered ${plugins.length} external plugins' + (pluginN
 
     const plugins = this.discoverPlugins()
     const currentContent = readFileSync(this.registrationFilePath, 'utf-8')
-    
+
     // Check if all discovered plugins are in the current file
     for (const plugin of plugins) {
       const importName = this.getImportName(plugin.pluginName)

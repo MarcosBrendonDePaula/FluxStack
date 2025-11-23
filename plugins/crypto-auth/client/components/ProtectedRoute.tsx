@@ -6,7 +6,8 @@
  * A autenticação real acontece no backend via validação de assinatura.
  */
 
-import React, { type ReactNode } from 'react'
+import type React from 'react'
+import type { ReactNode } from 'react'
 import { useAuth } from './AuthProvider'
 
 export interface ProtectedRouteProps {
@@ -20,7 +21,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   fallback,
   loadingComponent,
-  unauthorizedComponent
+  unauthorizedComponent,
 }) => {
   const { hasKeys, isLoading, error } = useAuth()
 
@@ -36,19 +37,26 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const defaultUnauthorizedComponent = (
     <div className="flex flex-col items-center justify-center p-8 bg-red-50 border border-red-200 rounded-lg">
       <div className="text-red-600 mb-4">
-        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        <svg
+          className="w-12 h-12"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+          />
         </svg>
       </div>
       <h3 className="text-lg font-semibold text-red-800 mb-2">Chaves Não Encontradas</h3>
       <p className="text-red-600 text-center">
         Você precisa gerar chaves criptográficas para acessar esta página.
       </p>
-      {error && (
-        <p className="text-red-500 text-sm mt-2">
-          Erro: {error}
-        </p>
-      )}
+      {error && <p className="text-red-500 text-sm mt-2">Erro: {error}</p>}
     </div>
   )
 
@@ -73,7 +81,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
  */
 export function withAuth<P extends object>(
   Component: React.ComponentType<P>,
-  options: Omit<ProtectedRouteProps, 'children'> = {}
+  options: Omit<ProtectedRouteProps, 'children'> = {},
 ) {
   const WrappedComponent = (props: P) => (
     <ProtectedRoute {...options}>

@@ -52,7 +52,7 @@ export const api = treaty<App>(getBaseUrl(), {
     }
 
     return res
-  }) as typeof fetch
+  }) as typeof fetch,
 }).api // ← expose the generated API object
 
 /**

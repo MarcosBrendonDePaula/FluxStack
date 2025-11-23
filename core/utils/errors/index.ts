@@ -35,7 +35,7 @@ export class FluxStackError extends Error {
     context?: any,
     metadata: ErrorMetadata = {},
     isOperational: boolean = true,
-    userMessage?: string
+    userMessage?: string,
   ) {
     super(message)
     this.name = 'FluxStackError'
@@ -46,7 +46,7 @@ export class FluxStackError extends Error {
     this.metadata = metadata
     this.isOperational = isOperational
     this.userMessage = userMessage
-    
+
     // Maintain proper stack trace
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, FluxStackError)
@@ -64,7 +64,7 @@ export class FluxStackError extends Error {
       metadata: this.metadata,
       isOperational: this.isOperational,
       userMessage: this.userMessage,
-      stack: this.stack
+      stack: this.stack,
     }
   }
 
@@ -77,8 +77,8 @@ export class FluxStackError extends Error {
         ...(this.context && { details: this.context }),
         timestamp: this.timestamp.toISOString(),
         ...(this.metadata.correlationId && { correlationId: this.metadata.correlationId }),
-        ...(isDevelopment && { stack: this.stack })
-      }
+        ...(isDevelopment && { stack: this.stack }),
+      },
     }
   }
 
@@ -90,7 +90,7 @@ export class FluxStackError extends Error {
       this.context,
       { ...this.metadata, ...metadata },
       this.isOperational,
-      this.userMessage
+      this.userMessage,
     )
   }
 
@@ -103,13 +103,13 @@ export class FluxStackError extends Error {
 export class ValidationError extends FluxStackError {
   constructor(message: string, context?: any, metadata?: ErrorMetadata) {
     super(
-      message, 
-      'VALIDATION_ERROR', 
-      400, 
-      context, 
-      metadata, 
+      message,
+      'VALIDATION_ERROR',
+      400,
+      context,
+      metadata,
       true,
-      'Please check your input and try again'
+      'Please check your input and try again',
     )
     this.name = 'ValidationError'
   }
@@ -124,7 +124,7 @@ export class InvalidInputError extends FluxStackError {
       { field, value },
       metadata,
       true,
-      `The value provided for ${field} is not valid`
+      `The value provided for ${field} is not valid`,
     )
     this.name = 'InvalidInputError'
   }
@@ -139,7 +139,7 @@ export class MissingRequiredFieldError extends FluxStackError {
       { field },
       metadata,
       true,
-      `The field ${field} is required`
+      `The field ${field} is required`,
     )
     this.name = 'MissingRequiredFieldError'
   }
@@ -147,15 +147,19 @@ export class MissingRequiredFieldError extends FluxStackError {
 
 // Authentication Errors (401)
 export class UnauthorizedError extends FluxStackError {
-  constructor(message: string = 'Authentication required', context?: any, metadata?: ErrorMetadata) {
+  constructor(
+    message: string = 'Authentication required',
+    context?: any,
+    metadata?: ErrorMetadata,
+  ) {
     super(
-      message, 
-      'UNAUTHORIZED', 
-      401, 
-      context, 
-      metadata, 
+      message,
+      'UNAUTHORIZED',
+      401,
+      context,
+      metadata,
       true,
-      'Please log in to access this resource'
+      'Please log in to access this resource',
     )
     this.name = 'UnauthorizedError'
   }
@@ -170,7 +174,7 @@ export class InvalidTokenError extends FluxStackError {
       undefined,
       metadata,
       true,
-      'Your session has expired. Please log in again'
+      'Your session has expired. Please log in again',
     )
     this.name = 'InvalidTokenError'
   }
@@ -185,7 +189,7 @@ export class TokenExpiredError extends FluxStackError {
       undefined,
       metadata,
       true,
-      'Your session has expired. Please log in again'
+      'Your session has expired. Please log in again',
     )
     this.name = 'TokenExpiredError'
   }
@@ -195,13 +199,13 @@ export class TokenExpiredError extends FluxStackError {
 export class ForbiddenError extends FluxStackError {
   constructor(message: string = 'Access forbidden', context?: any, metadata?: ErrorMetadata) {
     super(
-      message, 
-      'FORBIDDEN', 
-      403, 
-      context, 
-      metadata, 
+      message,
+      'FORBIDDEN',
+      403,
+      context,
+      metadata,
       true,
-      'You do not have permission to access this resource'
+      'You do not have permission to access this resource',
     )
     this.name = 'ForbiddenError'
   }
@@ -216,7 +220,7 @@ export class InsufficientPermissionsError extends FluxStackError {
       { requiredPermission },
       metadata,
       true,
-      'You do not have the required permissions for this action'
+      'You do not have the required permissions for this action',
     )
     this.name = 'InsufficientPermissionsError'
   }
@@ -226,13 +230,13 @@ export class InsufficientPermissionsError extends FluxStackError {
 export class NotFoundError extends FluxStackError {
   constructor(resource: string, context?: any, metadata?: ErrorMetadata) {
     super(
-      `${resource} not found`, 
-      'NOT_FOUND', 
-      404, 
-      context, 
-      metadata, 
+      `${resource} not found`,
+      'NOT_FOUND',
+      404,
+      context,
+      metadata,
       true,
-      'The requested resource could not be found'
+      'The requested resource could not be found',
     )
     this.name = 'NotFoundError'
   }
@@ -247,7 +251,7 @@ export class ResourceNotFoundError extends FluxStackError {
       { resourceType, identifier },
       metadata,
       true,
-      `The requested ${resourceType.toLowerCase()} could not be found`
+      `The requested ${resourceType.toLowerCase()} could not be found`,
     )
     this.name = 'ResourceNotFoundError'
   }
@@ -262,7 +266,7 @@ export class EndpointNotFoundError extends FluxStackError {
       { method, path },
       metadata,
       true,
-      'The requested API endpoint does not exist'
+      'The requested API endpoint does not exist',
     )
     this.name = 'EndpointNotFoundError'
   }
@@ -272,13 +276,13 @@ export class EndpointNotFoundError extends FluxStackError {
 export class ConflictError extends FluxStackError {
   constructor(message: string, context?: any, metadata?: ErrorMetadata) {
     super(
-      message, 
-      'CONFLICT', 
-      409, 
-      context, 
-      metadata, 
+      message,
+      'CONFLICT',
+      409,
+      context,
+      metadata,
       true,
-      'There was a conflict with the current state of the resource'
+      'There was a conflict with the current state of the resource',
     )
     this.name = 'ConflictError'
   }
@@ -293,7 +297,7 @@ export class ResourceAlreadyExistsError extends FluxStackError {
       { resourceType, identifier },
       metadata,
       true,
-      `A ${resourceType.toLowerCase()} with that identifier already exists`
+      `A ${resourceType.toLowerCase()} with that identifier already exists`,
     )
     this.name = 'ResourceAlreadyExistsError'
   }
@@ -309,7 +313,7 @@ export class RateLimitExceededError extends FluxStackError {
       { limit, windowMs },
       metadata,
       true,
-      'Too many requests. Please try again later'
+      'Too many requests. Please try again later',
     )
     this.name = 'RateLimitExceededError'
   }
@@ -319,13 +323,13 @@ export class RateLimitExceededError extends FluxStackError {
 export class InternalServerError extends FluxStackError {
   constructor(message: string = 'Internal server error', context?: any, metadata?: ErrorMetadata) {
     super(
-      message, 
-      'INTERNAL_SERVER_ERROR', 
-      500, 
-      context, 
-      metadata, 
+      message,
+      'INTERNAL_SERVER_ERROR',
+      500,
+      context,
+      metadata,
       false,
-      'An unexpected error occurred. Please try again later'
+      'An unexpected error occurred. Please try again later',
     )
     this.name = 'InternalServerError'
   }
@@ -340,7 +344,7 @@ export class DatabaseError extends FluxStackError {
       { operation, details },
       metadata,
       false,
-      'A database error occurred. Please try again later'
+      'A database error occurred. Please try again later',
     )
     this.name = 'DatabaseError'
   }
@@ -355,7 +359,7 @@ export class ExternalServiceError extends FluxStackError {
       { service, details },
       metadata,
       false,
-      'An external service is currently unavailable. Please try again later'
+      'An external service is currently unavailable. Please try again later',
     )
     this.name = 'ExternalServiceError'
   }
@@ -365,13 +369,13 @@ export class ExternalServiceError extends FluxStackError {
 export class ServiceUnavailableError extends FluxStackError {
   constructor(message: string = 'Service unavailable', context?: any, metadata?: ErrorMetadata) {
     super(
-      message, 
-      'SERVICE_UNAVAILABLE', 
-      503, 
-      context, 
-      metadata, 
+      message,
+      'SERVICE_UNAVAILABLE',
+      503,
+      context,
+      metadata,
       true,
-      'The service is temporarily unavailable. Please try again later'
+      'The service is temporarily unavailable. Please try again later',
     )
     this.name = 'ServiceUnavailableError'
   }
@@ -386,9 +390,9 @@ export class MaintenanceModeError extends FluxStackError {
       { estimatedDuration },
       metadata,
       true,
-      estimatedDuration 
+      estimatedDuration
         ? `The service is under maintenance. Expected to be back ${estimatedDuration}`
-        : 'The service is under maintenance. Please try again later'
+        : 'The service is under maintenance. Please try again later',
     )
     this.name = 'MaintenanceModeError'
   }
@@ -404,7 +408,7 @@ export class PluginError extends FluxStackError {
       { pluginName, ...context },
       metadata,
       false,
-      'A plugin error occurred. Please contact support if this persists'
+      'A plugin error occurred. Please contact support if this persists',
     )
     this.name = 'PluginError'
   }
@@ -419,7 +423,7 @@ export class PluginNotFoundError extends FluxStackError {
       { pluginName },
       metadata,
       true,
-      `The requested plugin '${pluginName}' is not available`
+      `The requested plugin '${pluginName}' is not available`,
     )
     this.name = 'PluginNotFoundError'
   }
@@ -435,7 +439,7 @@ export class ConfigError extends FluxStackError {
       context,
       metadata,
       false,
-      'A configuration error occurred. Please check your settings'
+      'A configuration error occurred. Please check your settings',
     )
     this.name = 'ConfigError'
   }
@@ -450,7 +454,7 @@ export class InvalidConfigError extends FluxStackError {
       { field, value },
       metadata,
       false,
-      'Invalid configuration detected. Please check your settings'
+      'Invalid configuration detected. Please check your settings',
     )
     this.name = 'InvalidConfigError'
   }
@@ -466,7 +470,7 @@ export class BuildError extends FluxStackError {
       context,
       metadata,
       false,
-      'A build error occurred'
+      'A build error occurred',
     )
     this.name = 'BuildError'
   }
@@ -481,7 +485,7 @@ export class CompilationError extends FluxStackError {
       { file, details },
       metadata,
       false,
-      'Compilation failed'
+      'Compilation failed',
     )
     this.name = 'CompilationError'
   }
@@ -497,10 +501,10 @@ export const isOperationalError = (error: any): boolean => {
 }
 
 export const createErrorFromCode = (
-  code: string, 
-  message?: string, 
-  context?: any, 
-  metadata?: ErrorMetadata
+  code: string,
+  message?: string,
+  context?: any,
+  metadata?: ErrorMetadata,
 ): FluxStackError => {
   switch (code) {
     case 'VALIDATION_ERROR':
@@ -523,15 +527,15 @@ export const createErrorFromCode = (
       return new NotFoundError(context?.resource || 'Resource', context, metadata)
     case 'RESOURCE_NOT_FOUND':
       return new ResourceNotFoundError(
-        context?.resourceType || 'Resource', 
-        context?.identifier || 'unknown', 
-        metadata
+        context?.resourceType || 'Resource',
+        context?.identifier || 'unknown',
+        metadata,
       )
     case 'ENDPOINT_NOT_FOUND':
       return new EndpointNotFoundError(
-        context?.method || 'GET', 
-        context?.path || '/unknown', 
-        metadata
+        context?.method || 'GET',
+        context?.path || '/unknown',
+        metadata,
       )
     case 'CONFLICT':
       return new ConflictError(message || 'Resource conflict', context, metadata)
@@ -539,14 +543,10 @@ export const createErrorFromCode = (
       return new ResourceAlreadyExistsError(
         context?.resourceType || 'Resource',
         context?.identifier || 'unknown',
-        metadata
+        metadata,
       )
     case 'RATE_LIMIT_EXCEEDED':
-      return new RateLimitExceededError(
-        context?.limit || 100,
-        context?.windowMs || 60000,
-        metadata
-      )
+      return new RateLimitExceededError(context?.limit || 100, context?.windowMs || 60000, metadata)
     case 'INTERNAL_SERVER_ERROR':
       return new InternalServerError(message, context, metadata)
     case 'DATABASE_ERROR':
@@ -562,7 +562,7 @@ export const createErrorFromCode = (
         context?.pluginName || 'unknown',
         message || 'Plugin error',
         context,
-        metadata
+        metadata,
       )
     case 'PLUGIN_NOT_FOUND':
       return new PluginNotFoundError(context?.pluginName || 'unknown', metadata)
@@ -583,7 +583,7 @@ export const wrapError = (error: Error, metadata?: ErrorMetadata): FluxStackErro
   if (isFluxStackError(error)) {
     return metadata ? error.withMetadata(metadata) : error
   }
-  
+
   return new InternalServerError(error.message, { originalError: error.name }, metadata)
 }
 

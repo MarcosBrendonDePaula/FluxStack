@@ -2,11 +2,11 @@
  * Tests for Plugin Manager
  */
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { FluxStackConfig } from '@/config/schema'
+import type { Logger } from '@/core/utils/logger/index'
 import { PluginManager } from '../manager'
 import type { Plugin, PluginContext } from '../types'
-import type { Logger } from '@/core/utils/logger/index'
-import type { FluxStackConfig } from '@/config/schema'
 
 // Mock logger
 const mockLogger: Logger = {
@@ -17,7 +17,7 @@ const mockLogger: Logger = {
   child: vi.fn(() => mockLogger),
   time: vi.fn(),
   timeEnd: vi.fn(),
-  request: vi.fn()
+  request: vi.fn(),
 }
 
 // Mock config
@@ -30,9 +30,9 @@ const mockConfig: FluxStackConfig = {
     cors: {
       origins: ['*'],
       methods: ['GET', 'POST'],
-      headers: ['Content-Type']
+      headers: ['Content-Type'],
     },
-    middleware: []
+    middleware: [],
   },
   client: {
     port: 5173,
@@ -41,8 +41,8 @@ const mockConfig: FluxStackConfig = {
       sourceMaps: true,
       minify: false,
       target: 'esnext',
-      outDir: 'dist/client'
-    }
+      outDir: 'dist/client',
+    },
   },
   build: {
     target: 'bun',
@@ -52,20 +52,20 @@ const mockConfig: FluxStackConfig = {
       treeshake: false,
       compress: false,
       splitChunks: false,
-      bundleAnalyzer: false
+      bundleAnalyzer: false,
     },
     sourceMaps: true,
-    clean: true
+    clean: true,
   },
   plugins: {
     enabled: [], // Enable all plugins by default for testing
     disabled: [],
-    config: {}
+    config: {},
   },
   logging: {
     level: 'info',
     format: 'pretty',
-    transports: []
+    transports: [],
   },
   monitoring: {
     enabled: false,
@@ -74,16 +74,16 @@ const mockConfig: FluxStackConfig = {
       collectInterval: 5000,
       httpMetrics: false,
       systemMetrics: false,
-      customMetrics: false
+      customMetrics: false,
     },
     profiling: {
       enabled: false,
       sampleRate: 0.1,
       memoryProfiling: false,
-      cpuProfiling: false
+      cpuProfiling: false,
     },
-    exporters: []
-  }
+    exporters: [],
+  },
 }
 
 describe('PluginManager', () => {
@@ -95,7 +95,7 @@ describe('PluginManager', () => {
     manager = new PluginManager({
       config: mockConfig,
       logger: mockLogger,
-      app: mockApp
+      app: mockApp,
     })
     vi.clearAllMocks()
   })
@@ -110,14 +110,17 @@ describe('PluginManager', () => {
     it('should initialize successfully', async () => {
       await manager.initialize()
       expect(mockLogger.info).toHaveBeenCalledWith('Initializing plugin manager')
-      expect(mockLogger.info).toHaveBeenCalledWith('Plugin manager initialized successfully', expect.any(Object))
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Plugin manager initialized successfully',
+        expect.any(Object),
+      )
     }, 10000)
 
     it('should not initialize twice', async () => {
       mockLogger.info.mockClear() // Clear previous calls
       await manager.initialize()
       await manager.initialize() // Second call should be ignored
-      
+
       // Should only log initialization once
       expect(mockLogger.info).toHaveBeenCalledTimes(5) // init start + plugin discovery start + discovery complete + init complete + (possibly more)
     })
@@ -127,11 +130,11 @@ describe('PluginManager', () => {
     it('should register a plugin', async () => {
       const plugin: Plugin = {
         name: 'test-plugin',
-        setup: vi.fn()
+        setup: vi.fn(),
       }
 
       await manager.registerPlugin(plugin)
-      
+
       const registry = manager.getRegistry()
       expect(registry.get('test-plugin')).toBe(plugin)
     })
@@ -140,23 +143,23 @@ describe('PluginManager', () => {
       const setupSpy = vi.fn()
       const plugin: Plugin = {
         name: 'test-plugin',
-        setup: setupSpy
+        setup: setupSpy,
       }
 
       await manager.initialize()
       await manager.registerPlugin(plugin)
-      
+
       expect(setupSpy).toHaveBeenCalled()
     })
 
     it('should unregister a plugin', async () => {
       const plugin: Plugin = {
-        name: 'removable-plugin'
+        name: 'removable-plugin',
       }
 
       await manager.registerPlugin(plugin)
       manager.unregisterPlugin('removable-plugin')
-      
+
       const registry = manager.getRegistry()
       expect(registry.get('removable-plugin')).toBeUndefined()
     })
@@ -169,21 +172,21 @@ describe('PluginManager', () => {
 
       const plugin1: Plugin = {
         name: 'plugin-1',
-        setup: setupSpy1
+        setup: setupSpy1,
       }
 
       const plugin2: Plugin = {
         name: 'plugin-2',
-        setup: setupSpy2
+        setup: setupSpy2,
       }
 
       await manager.registerPlugin(plugin1)
       await manager.registerPlugin(plugin2)
 
       const results = await manager.executeHook('setup')
-      
+
       expect(results).toHaveLength(2)
-      expect(results.every(r => r.success)).toBe(true)
+      expect(results.every((r) => r.success)).toBe(true)
       expect(setupSpy1).toHaveBeenCalled()
       expect(setupSpy2).toHaveBeenCalled()
     })
@@ -193,20 +196,24 @@ describe('PluginManager', () => {
 
       const pluginA: Plugin = {
         name: 'plugin-a',
-        setup: () => { executionOrder.push('plugin-a') }
+        setup: () => {
+          executionOrder.push('plugin-a')
+        },
       }
 
       const pluginB: Plugin = {
         name: 'plugin-b',
         dependencies: ['plugin-a'],
-        setup: () => { executionOrder.push('plugin-b') }
+        setup: () => {
+          executionOrder.push('plugin-b')
+        },
       }
 
       await manager.registerPlugin(pluginA)
       await manager.registerPlugin(pluginB)
 
       await manager.executeHook('setup')
-      
+
       expect(executionOrder).toEqual(['plugin-a', 'plugin-b'])
     })
 
@@ -216,21 +223,27 @@ describe('PluginManager', () => {
       const lowPriorityPlugin: Plugin = {
         name: 'low-priority',
         priority: 1,
-        setup: () => { executionOrder.push('low-priority') }
+        setup: () => {
+          executionOrder.push('low-priority')
+        },
       }
 
       const highPriorityPlugin: Plugin = {
         name: 'high-priority',
         priority: 10,
-        setup: () => { executionOrder.push('high-priority') }
+        setup: () => {
+          executionOrder.push('high-priority')
+        },
       }
 
       await manager.registerPlugin(lowPriorityPlugin)
       await manager.registerPlugin(highPriorityPlugin)
 
       await manager.executeHook('setup')
-      
-      expect(executionOrder.indexOf('high-priority')).toBeLessThan(executionOrder.indexOf('low-priority'))
+
+      expect(executionOrder.indexOf('high-priority')).toBeLessThan(
+        executionOrder.indexOf('low-priority'),
+      )
     })
 
     it('should handle plugin hook errors gracefully', async () => {
@@ -238,22 +251,22 @@ describe('PluginManager', () => {
         name: 'error-plugin',
         setup: () => {
           throw new Error('Plugin setup failed')
-        }
+        },
       }
 
       const goodPlugin: Plugin = {
         name: 'good-plugin',
-        setup: vi.fn()
+        setup: vi.fn(),
       }
 
       await manager.registerPlugin(errorPlugin)
       await manager.registerPlugin(goodPlugin)
 
       const results = await manager.executeHook('setup')
-      
+
       expect(results).toHaveLength(2)
-      expect(results.find(r => r.plugin === 'error-plugin')?.success).toBe(false)
-      expect(results.find(r => r.plugin === 'good-plugin')?.success).toBe(true)
+      expect(results.find((r) => r.plugin === 'error-plugin')?.success).toBe(false)
+      expect(results.find((r) => r.plugin === 'good-plugin')?.success).toBe(true)
     })
 
     it('should execute hooks in parallel when specified', async () => {
@@ -264,25 +277,25 @@ describe('PluginManager', () => {
         name: 'plugin-1',
         setup: async () => {
           startTimes['plugin-1'] = Date.now()
-          await new Promise(resolve => setTimeout(resolve, 50))
+          await new Promise((resolve) => setTimeout(resolve, 50))
           endTimes['plugin-1'] = Date.now()
-        }
+        },
       }
 
       const plugin2: Plugin = {
         name: 'plugin-2',
         setup: async () => {
           startTimes['plugin-2'] = Date.now()
-          await new Promise(resolve => setTimeout(resolve, 50))
+          await new Promise((resolve) => setTimeout(resolve, 50))
           endTimes['plugin-2'] = Date.now()
-        }
+        },
       }
 
       await manager.registerPlugin(plugin1)
       await manager.registerPlugin(plugin2)
 
       await manager.executeHook('setup', undefined, { parallel: true })
-      
+
       // In parallel execution, both should start around the same time
       const timeDiff = Math.abs(startTimes['plugin-1'] - startTimes['plugin-2'])
       expect(timeDiff).toBeLessThan(20) // Allow for small timing differences
@@ -292,14 +305,14 @@ describe('PluginManager', () => {
       const slowPlugin: Plugin = {
         name: 'slow-plugin',
         setup: async () => {
-          await new Promise(resolve => setTimeout(resolve, 200))
-        }
+          await new Promise((resolve) => setTimeout(resolve, 200))
+        },
       }
 
       await manager.registerPlugin(slowPlugin)
 
       const results = await manager.executeHook('setup', undefined, { timeout: 100 })
-      
+
       expect(results).toHaveLength(1)
       expect(results[0].success).toBe(false)
       expect(results[0].error?.message).toContain('timed out')
@@ -314,12 +327,12 @@ describe('PluginManager', () => {
         name: 'context-plugin',
         setup: (context) => {
           receivedContext = context
-        }
+        },
       }
 
       await manager.registerPlugin(plugin)
       await manager.executeHook('setup')
-      
+
       expect(receivedContext).toBeDefined()
       expect(receivedContext?.config).toBe(mockConfig)
       expect(receivedContext?.app).toBe(mockApp)
@@ -332,12 +345,12 @@ describe('PluginManager', () => {
         name: 'logger-plugin',
         setup: (_context) => {
           // Logger context is available but not used in this test
-        }
+        },
       }
 
       await manager.registerPlugin(plugin)
       await manager.executeHook('setup')
-      
+
       expect(mockLogger.child).toHaveBeenCalledWith({ plugin: 'logger-plugin' })
     })
   })
@@ -347,13 +360,13 @@ describe('PluginManager', () => {
       const plugin: Plugin = {
         name: 'metrics-plugin',
         setup: async () => {
-          await new Promise(resolve => setTimeout(resolve, 10))
-        }
+          await new Promise((resolve) => setTimeout(resolve, 10))
+        },
       }
 
       await manager.registerPlugin(plugin)
       await manager.executeHook('setup')
-      
+
       const metrics = manager.getPluginMetrics('metrics-plugin')
       expect(metrics).toBeDefined()
       expect(typeof metrics).toBe('object')
@@ -367,7 +380,7 @@ describe('PluginManager', () => {
       await manager.registerPlugin(plugin1)
       await manager.registerPlugin(plugin2)
       await manager.executeHook('setup')
-      
+
       const allMetrics = manager.getPluginMetrics()
       expect(allMetrics instanceof Map).toBe(true)
       expect((allMetrics as Map<string, any>).size).toBe(2)
@@ -377,16 +390,16 @@ describe('PluginManager', () => {
   describe('Shutdown', () => {
     it('should shutdown gracefully', async () => {
       const shutdownSpy = vi.fn()
-      
+
       const plugin: Plugin = {
         name: 'shutdown-plugin',
-        onServerStop: shutdownSpy
+        onServerStop: shutdownSpy,
       }
 
       await manager.registerPlugin(plugin)
       await manager.initialize()
       await manager.shutdown()
-      
+
       expect(shutdownSpy).toHaveBeenCalled()
       expect(mockLogger.info).toHaveBeenCalledWith('Shutting down plugin manager')
     })

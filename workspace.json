@@ -1,6 +1,4 @@
 {
   "name": "fluxstack-workspace",
-  "workspaces": [
-    "./packages/*"
-  ]
+  "workspaces": ["./packages/*"]
 }

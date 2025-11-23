@@ -3,7 +3,7 @@
  * Laravel-style declarative config for third-party services
  */
 
-import { defineConfig, defineNestedConfig, config } from '@/core/utils/config-schema'
+import { config, defineNestedConfig } from '@/core/utils/config-schema'
 
 /**
  * Email service configuration
@@ -16,7 +16,7 @@ const emailSchema = {
     type: 'number' as const,
     env: 'SMTP_PORT',
     default: 587,
-    validate: (value: number) => value > 0 || 'SMTP port must be positive'
+    validate: (value: number) => value > 0 || 'SMTP port must be positive',
   },
 
   user: config.string('SMTP_USER'),
@@ -31,10 +31,10 @@ const emailSchema = {
     validate: (value: string) => {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
       return emailRegex.test(value) || 'From email must be valid'
-    }
+    },
   },
 
-  replyTo: config.string('SMTP_REPLY_TO')
+  replyTo: config.string('SMTP_REPLY_TO'),
 }
 
 /**
@@ -52,7 +52,7 @@ const jwtSchema = {
         return 'JWT secret must be at least 32 characters for security'
       }
       return true
-    }
+    },
   },
 
   expiresIn: config.string('JWT_EXPIRES_IN', '24h'),
@@ -60,23 +60,19 @@ const jwtSchema = {
   algorithm: config.enum(
     'JWT_ALGORITHM',
     ['HS256', 'HS384', 'HS512', 'RS256', 'RS384', 'RS512'] as const,
-    'HS256'
+    'HS256',
   ),
 
   issuer: config.string('JWT_ISSUER', 'fluxstack'),
 
-  audience: config.string('JWT_AUDIENCE')
+  audience: config.string('JWT_AUDIENCE'),
 }
 
 /**
  * Storage configuration
  */
 const storageSchema = {
-  provider: config.enum(
-    'STORAGE_PROVIDER',
-    ['local', 's3', 'gcs', 'azure'] as const,
-    'local'
-  ),
+  provider: config.enum('STORAGE_PROVIDER', ['local', 's3', 'gcs', 'azure'] as const, 'local'),
 
   uploadPath: config.string('UPLOAD_PATH', './uploads'),
 
@@ -84,7 +80,7 @@ const storageSchema = {
     type: 'number' as const,
     env: 'MAX_FILE_SIZE',
     default: 10485760, // 10MB
-    validate: (value: number) => value > 0 || 'Max file size must be positive'
+    validate: (value: number) => value > 0 || 'Max file size must be positive',
   },
 
   allowedTypes: config.array('ALLOWED_FILE_TYPES', ['image/*', 'application/pdf']),
@@ -93,7 +89,7 @@ const storageSchema = {
   s3Bucket: config.string('S3_BUCKET'),
   s3Region: config.string('S3_REGION', 'us-east-1'),
   s3AccessKey: config.string('S3_ACCESS_KEY'),
-  s3SecretKey: config.string('S3_SECRET_KEY')
+  s3SecretKey: config.string('S3_SECRET_KEY'),
 }
 
 /**
@@ -107,7 +103,7 @@ const redisSchema = {
 
   keyPrefix: config.string('REDIS_KEY_PREFIX', 'fluxstack:'),
 
-  enableTls: config.boolean('REDIS_TLS', false)
+  enableTls: config.boolean('REDIS_TLS', false),
 }
 
 /**
@@ -117,7 +113,7 @@ export const servicesConfig = defineNestedConfig({
   email: emailSchema,
   jwt: jwtSchema,
   storage: storageSchema,
-  redis: redisSchema
+  redis: redisSchema,
 })
 
 // Export types

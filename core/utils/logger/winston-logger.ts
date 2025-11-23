@@ -3,13 +3,13 @@
  * Creates Winston logger instances for each module
  */
 
+import { existsSync, mkdirSync } from 'node:fs'
+import { join } from 'node:path'
+import chalk from 'chalk'
 import winston from 'winston'
 import DailyRotateFile from 'winston-daily-rotate-file'
-import { join, dirname } from 'path'
-import { existsSync, mkdirSync } from 'fs'
-import chalk from 'chalk'
+import { LEVEL_COLORS, LOG_SYMBOLS } from './colors'
 import { LOGGER_CONFIG } from './config'
-import { LOG_SYMBOLS, LEVEL_COLORS } from './colors'
 
 // Cache for module loggers
 const moduleLoggers = new Map<string, winston.Logger>()
@@ -66,9 +66,9 @@ function createLogger(modulePath: string): winston.Logger {
     new winston.transports.Console({
       format: winston.format.combine(
         winston.format.timestamp({ format: LOGGER_CONFIG.dateFormat }),
-        createConsoleFormat()
-      )
-    })
+        createConsoleFormat(),
+      ),
+    }),
   ]
 
   // Add file transports if enabled
@@ -82,7 +82,7 @@ function createLogger(modulePath: string): winston.Logger {
 
     const commonFileFormat = winston.format.combine(
       winston.format.timestamp({ format: LOGGER_CONFIG.dateFormat }),
-      createFileFormat()
+      createFileFormat(),
     )
 
     // All logs
@@ -93,8 +93,8 @@ function createLogger(modulePath: string): winston.Logger {
         maxSize: LOGGER_CONFIG.maxSize,
         maxFiles: LOGGER_CONFIG.maxFiles,
         level: LOGGER_CONFIG.level,
-        format: commonFileFormat
-      })
+        format: commonFileFormat,
+      }),
     )
 
     // Error logs
@@ -105,8 +105,8 @@ function createLogger(modulePath: string): winston.Logger {
         maxSize: LOGGER_CONFIG.maxSize,
         maxFiles: LOGGER_CONFIG.maxFiles,
         level: 'error',
-        format: commonFileFormat
-      })
+        format: commonFileFormat,
+      }),
     )
 
     // Warning logs
@@ -117,8 +117,8 @@ function createLogger(modulePath: string): winston.Logger {
         maxSize: LOGGER_CONFIG.maxSize,
         maxFiles: LOGGER_CONFIG.maxFiles,
         level: 'warn',
-        format: commonFileFormat
-      })
+        format: commonFileFormat,
+      }),
     )
 
     // Info logs
@@ -129,14 +129,14 @@ function createLogger(modulePath: string): winston.Logger {
         maxSize: LOGGER_CONFIG.maxSize,
         maxFiles: LOGGER_CONFIG.maxFiles,
         level: 'info',
-        format: commonFileFormat
-      })
+        format: commonFileFormat,
+      }),
     )
   }
 
   return winston.createLogger({
     level: LOGGER_CONFIG.level,
-    transports
+    transports,
   })
 }
 

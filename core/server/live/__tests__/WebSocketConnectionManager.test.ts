@@ -1,13 +1,13 @@
 // 🧪 WebSocketConnectionManager Tests
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { WebSocketConnectionManager } from '../WebSocketConnectionManager'
 
 // Mock WebSocket
 class MockWebSocket {
   readyState = 1 // WebSocket.OPEN
   data: any = {}
-  
+
   constructor() {
     this.data = {}
   }
@@ -28,9 +28,9 @@ describe('WebSocketConnectionManager', () => {
       connectionTimeout: 5000,
       heartbeatInterval: 1000,
       healthCheckInterval: 2000,
-      messageQueueSize: 100
+      messageQueueSize: 100,
     })
-    
+
     mockWs = new MockWebSocket()
   })
 
@@ -41,9 +41,9 @@ describe('WebSocketConnectionManager', () => {
   describe('Connection Registration', () => {
     it('should register a connection successfully', () => {
       const connectionId = 'test-connection-1'
-      
+
       connectionManager.registerConnection(mockWs as any, connectionId, 'test-pool')
-      
+
       const metrics = connectionManager.getConnectionMetrics(connectionId)
       expect(metrics).toBeTruthy()
       expect(metrics?.id).toBe(connectionId)
@@ -67,9 +67,9 @@ describe('WebSocketConnectionManager', () => {
     it('should add connection to specified pool', () => {
       const connectionId = 'test-connection-1'
       const poolId = 'test-pool'
-      
+
       connectionManager.registerConnection(mockWs as any, connectionId, poolId)
-      
+
       const poolStats = connectionManager.getPoolStats(poolId)
       expect(poolStats).toBeTruthy()
       expect(poolStats?.totalConnections).toBe(1)
@@ -86,9 +86,9 @@ describe('WebSocketConnectionManager', () => {
 
     it('should send message to specific connection', async () => {
       const message = { type: 'test', data: 'hello' }
-      
+
       const success = await connectionManager.sendMessage(message, { connectionId })
-      
+
       expect(success).toBe(true)
       expect(mockWs.send).toHaveBeenCalledWith(JSON.stringify(message))
     })
@@ -97,11 +97,11 @@ describe('WebSocketConnectionManager', () => {
       // Add another connection to the pool
       const ws2 = new MockWebSocket()
       connectionManager.registerConnection(ws2 as any, 'connection-2', 'test-pool')
-      
+
       const message = { type: 'test', data: 'hello' }
-      
+
       const success = await connectionManager.sendMessage(message, { poolId: 'test-pool' })
-      
+
       expect(success).toBe(true)
       // One of the connections should have received the message
       expect(mockWs.send.mock.calls.length + (ws2.send as any).mock.calls.length).toBe(1)
@@ -111,11 +111,11 @@ describe('WebSocketConnectionManager', () => {
       // Add another connection
       const ws2 = new MockWebSocket()
       connectionManager.registerConnection(ws2 as any, 'connection-2')
-      
+
       const message = { type: 'broadcast', data: 'hello all' }
-      
+
       const success = await connectionManager.sendMessage(message)
-      
+
       expect(success).toBe(true)
       expect(mockWs.send).toHaveBeenCalledWith(JSON.stringify(message))
       expect(ws2.send).toHaveBeenCalledWith(JSON.stringify(message))
@@ -123,14 +123,14 @@ describe('WebSocketConnectionManager', () => {
 
     it('should queue message when connection is not ready', async () => {
       mockWs.readyState = 0 // WebSocket.CONNECTING
-      
+
       const message = { type: 'test', data: 'queued' }
-      
-      const success = await connectionManager.sendMessage(message, { 
+
+      const success = await connectionManager.sendMessage(message, {
         connectionId,
-        queueIfOffline: true 
+        queueIfOffline: true,
       })
-      
+
       expect(success).toBe(true)
       // Message should be queued, not sent immediately
       expect(mockWs.send).not.toHaveBeenCalled()
@@ -150,7 +150,7 @@ describe('WebSocketConnectionManager', () => {
       const messages = [
         { type: 'msg1', data: '1' },
         { type: 'msg2', data: '2' },
-        { type: 'msg3', data: '3' }
+        { type: 'msg3', data: '3' },
       ]
 
       for (const message of messages) {
@@ -174,7 +174,7 @@ describe('WebSocketConnectionManager', () => {
     it('should track connection metrics', async () => {
       // Send a message to update metrics
       await connectionManager.sendMessage({ type: 'test' }, { connectionId })
-      
+
       const metrics = connectionManager.getConnectionMetrics(connectionId)
       expect(metrics?.messagesSent).toBe(1)
       expect(metrics?.lastActivity).toBeTruthy()
@@ -199,7 +199,7 @@ describe('WebSocketConnectionManager', () => {
 
     it('should provide system statistics', () => {
       const stats = connectionManager.getSystemStats()
-      
+
       expect(stats).toHaveProperty('totalConnections')
       expect(stats).toHaveProperty('activeConnections')
       expect(stats).toHaveProperty('maxConnections')
@@ -210,7 +210,7 @@ describe('WebSocketConnectionManager', () => {
 
     it('should calculate connection utilization', () => {
       const stats = connectionManager.getSystemStats()
-      
+
       expect(stats.connectionUtilization).toBe(30) // 3/10 * 100
     })
   })
@@ -218,13 +218,13 @@ describe('WebSocketConnectionManager', () => {
   describe('Pool Management', () => {
     it('should create and manage pools', () => {
       const poolId = 'test-pool'
-      
+
       // Add connections to pool
       for (let i = 0; i < 2; i++) {
         const ws = new MockWebSocket()
         connectionManager.registerConnection(ws as any, `connection-${i}`, poolId)
       }
-      
+
       const poolStats = connectionManager.getPoolStats(poolId)
       expect(poolStats).toBeTruthy()
       expect(poolStats?.totalConnections).toBe(2)
@@ -247,10 +247,10 @@ describe('WebSocketConnectionManager', () => {
 
     it('should cleanup connection properly', () => {
       connectionManager.cleanupConnection(connectionId)
-      
+
       const metrics = connectionManager.getConnectionMetrics(connectionId)
       expect(metrics).toBeNull()
-      
+
       const poolStats = connectionManager.getPoolStats('test-pool')
       expect(poolStats?.totalConnections).toBe(0)
     })
@@ -258,9 +258,9 @@ describe('WebSocketConnectionManager', () => {
     it('should cleanup all connections on shutdown', () => {
       const initialStats = connectionManager.getSystemStats()
       expect(initialStats.totalConnections).toBe(1)
-      
+
       connectionManager.shutdown()
-      
+
       const finalStats = connectionManager.getSystemStats()
       expect(finalStats.totalConnections).toBe(0)
     })
@@ -270,25 +270,25 @@ describe('WebSocketConnectionManager', () => {
     it('should handle send errors gracefully', async () => {
       const connectionId = 'test-connection-1'
       connectionManager.registerConnection(mockWs as any, connectionId)
-      
+
       // Make send throw an error
       mockWs.send.mockImplementation(() => {
         throw new Error('Send failed')
       })
-      
+
       const message = { type: 'test', data: 'error test' }
       const success = await connectionManager.sendMessage(message, { connectionId })
-      
+
       // Should handle error gracefully
       expect(success).toBe(false)
     })
 
     it('should handle connection not found', async () => {
       const message = { type: 'test', data: 'not found' }
-      const success = await connectionManager.sendMessage(message, { 
-        connectionId: 'non-existent' 
+      const success = await connectionManager.sendMessage(message, {
+        connectionId: 'non-existent',
       })
-      
+
       expect(success).toBe(false)
     })
   })

@@ -3,8 +3,7 @@
  * Declarative plugin management configuration
  */
 
-import { defineConfig, config } from '@/core/utils/config-schema'
-import { env } from '@/core/utils/env'
+import { config, defineConfig } from '@/core/utils/config-schema'
 import { FLUXSTACK_VERSION } from '@/core/utils/version'
 
 /**
@@ -12,10 +11,14 @@ import { FLUXSTACK_VERSION } from '@/core/utils/version'
  */
 const pluginsConfigSchema = {
   // Plugin management
-  enabled: config.array(
-    'FLUXSTACK_PLUGINS_ENABLED',
-    ['logger', 'swagger', 'vite', 'cors', 'static-files', 'crypto-auth']
-  ),
+  enabled: config.array('FLUXSTACK_PLUGINS_ENABLED', [
+    'logger',
+    'swagger',
+    'vite',
+    'cors',
+    'static-files',
+    'crypto-auth',
+  ]),
 
   disabled: config.array('FLUXSTACK_PLUGINS_DISABLED', []),
 
@@ -34,7 +37,7 @@ const pluginsConfigSchema = {
   swaggerVersion: config.string('SWAGGER_VERSION', FLUXSTACK_VERSION),
   swaggerDescription: config.string(
     'SWAGGER_DESCRIPTION',
-    'API documentation for FluxStack application'
+    'API documentation for FluxStack application',
   ),
   swaggerPath: config.string('SWAGGER_PATH', '/swagger'),
 
@@ -68,7 +71,7 @@ const pluginsConfigSchema = {
 
   // CORS plugin (configuration via server.config.ts)
   // Vite plugin
-  viteEnabled: config.boolean('VITE_PLUGIN_ENABLED', true)
+  viteEnabled: config.boolean('VITE_PLUGIN_ENABLED', true),
 } as const
 
 export const pluginsConfig = defineConfig(pluginsConfigSchema)

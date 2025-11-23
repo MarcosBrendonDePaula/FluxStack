@@ -35,11 +35,10 @@ export const cryptoAuthRequired = (options: CryptoAuthMiddlewareOptions = {}) =>
             error: {
               message: 'Authentication required',
               code: 'CRYPTO_AUTH_REQUIRED',
-              statusCode: 401
-            }
+              statusCode: 401,
+            },
           }
-        }
-      })
+        },
+      }),
     )
-
 }

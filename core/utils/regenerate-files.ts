@@ -5,8 +5,8 @@
  * accidentally deleted by developers.
  */
 
-import { join } from "path"
-import { existsSync } from "fs"
+import { existsSync } from 'node:fs'
+import { join } from 'node:path'
 
 const BACKEND_ONLY_TEMPLATE = `/**
  * Backend Standalone Entry Point
@@ -32,17 +32,17 @@ startBackend(apiRoutes, backendConfig)
  * Check if backend-only.ts exists, regenerate if missing
  */
 export async function ensureBackendEntry(projectRoot: string = process.cwd()): Promise<boolean> {
-  const backendOnlyPath = join(projectRoot, "app/server/backend-only.ts")
+  const backendOnlyPath = join(projectRoot, 'app/server/backend-only.ts')
 
   if (!existsSync(backendOnlyPath)) {
-    console.log("⚠️  backend-only.ts not found, regenerating...")
+    console.log('⚠️  backend-only.ts not found, regenerating...')
 
     try {
       await Bun.write(backendOnlyPath, BACKEND_ONLY_TEMPLATE)
-      console.log("✅ backend-only.ts regenerated successfully")
+      console.log('✅ backend-only.ts regenerated successfully')
       return true
     } catch (error) {
-      console.error("❌ Failed to regenerate backend-only.ts:", error)
+      console.error('❌ Failed to regenerate backend-only.ts:', error)
       return false
     }
   }
@@ -53,17 +53,19 @@ export async function ensureBackendEntry(projectRoot: string = process.cwd()): P
 /**
  * Regenerate backend-only.ts file
  */
-export async function regenerateBackendEntry(projectRoot: string = process.cwd()): Promise<boolean> {
-  const backendOnlyPath = join(projectRoot, "app/server/backend-only.ts")
+export async function regenerateBackendEntry(
+  projectRoot: string = process.cwd(),
+): Promise<boolean> {
+  const backendOnlyPath = join(projectRoot, 'app/server/backend-only.ts')
 
-  console.log("🔄 Regenerating backend-only.ts...")
+  console.log('🔄 Regenerating backend-only.ts...')
 
   try {
     await Bun.write(backendOnlyPath, BACKEND_ONLY_TEMPLATE)
-    console.log("✅ backend-only.ts regenerated successfully")
+    console.log('✅ backend-only.ts regenerated successfully')
     return true
   } catch (error) {
-    console.error("❌ Failed to regenerate backend-only.ts:", error)
+    console.error('❌ Failed to regenerate backend-only.ts:', error)
     return false
   }
 }

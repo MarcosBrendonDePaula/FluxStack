@@ -3,7 +3,7 @@
  * Tests for config/server.config.ts (nested structure)
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { serverConfig } from '@/config/server.config'
 
 describe('Server Configuration', () => {
@@ -55,7 +55,7 @@ describe('Server Configuration', () => {
     it('should have origins array', () => {
       expect(Array.isArray(serverConfig.cors.origins)).toBe(true)
       expect(serverConfig.cors.origins.length).toBeGreaterThan(0)
-      serverConfig.cors.origins.forEach(origin => {
+      serverConfig.cors.origins.forEach((origin) => {
         expect(typeof origin).toBe('string')
       })
     })
@@ -65,7 +65,7 @@ describe('Server Configuration', () => {
       expect(serverConfig.cors.methods.length).toBeGreaterThan(0)
 
       const validMethods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD']
-      serverConfig.cors.methods.forEach(method => {
+      serverConfig.cors.methods.forEach((method) => {
         expect(validMethods).toContain(method)
       })
     })

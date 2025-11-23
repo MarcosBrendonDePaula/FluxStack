@@ -3,55 +3,55 @@
  * Demonstra como usar dependências externas em plugins
  */
 
-import type { Plugin, PluginContext, RequestContext, ResponseContext } from "@/core/plugins/types"
 import axios from 'axios'
-import { debounce } from 'lodash'
 import { format } from 'date-fns'
+import { debounce } from 'lodash'
+import type { Plugin, PluginContext, RequestContext, ResponseContext } from '@/core/plugins/types'
 
 export const examplePlugin: Plugin = {
-  name: "example-plugin",
-  version: "1.0.0",
-  description: "Plugin de exemplo que demonstra uso de dependências externas",
-  author: "FluxStack Team",
-  priority: "normal",
-  category: "utility",
-  tags: ["http", "utility", "example"],
+  name: 'example-plugin',
+  version: '1.0.0',
+  description: 'Plugin de exemplo que demonstra uso de dependências externas',
+  author: 'FluxStack Team',
+  priority: 'normal',
+  category: 'utility',
+  tags: ['http', 'utility', 'example'],
   dependencies: [], // Dependências de outros plugins (se houver)
-  
+
   configSchema: {
-    type: "object",
+    type: 'object',
     properties: {
       enabled: {
-        type: "boolean",
-        description: "Habilitar plugin de exemplo"
+        type: 'boolean',
+        description: 'Habilitar plugin de exemplo',
       },
       apiUrl: {
-        type: "string",
-        description: "URL da API externa para integração"
+        type: 'string',
+        description: 'URL da API externa para integração',
       },
       debounceMs: {
-        type: "number",
+        type: 'number',
         minimum: 100,
-        description: "Tempo de debounce em millisegundos"
+        description: 'Tempo de debounce em millisegundos',
       },
       logRequests: {
-        type: "boolean",
-        description: "Logar requisições processadas"
-      }
+        type: 'boolean',
+        description: 'Logar requisições processadas',
+      },
     },
-    additionalProperties: false
+    additionalProperties: false,
   },
-  
+
   defaultConfig: {
     enabled: true,
-    apiUrl: "https://api.example.com",
+    apiUrl: 'https://api.example.com',
     debounceMs: 1000,
-    logRequests: true
+    logRequests: true,
   },
 
   setup: async (context: PluginContext) => {
     const config = getPluginConfig(context)
-    
+
     if (!config.enabled) {
       context.logger.info('Plugin de exemplo desabilitado por configuração')
       return
@@ -62,8 +62,8 @@ export const examplePlugin: Plugin = {
       baseURL: config.apiUrl,
       timeout: 5000,
       headers: {
-        'User-Agent': 'FluxStack-Example-Plugin/1.0.0'
-      }
+        'User-Agent': 'FluxStack-Example-Plugin/1.0.0',
+      },
     })
 
     // Armazenar cliente no contexto para uso posterior
@@ -76,19 +76,19 @@ export const examplePlugin: Plugin = {
 
     ;(context as any).debouncedLog = debouncedLog
 
-    context.logger.info("Plugin de exemplo inicializado com sucesso", {
+    context.logger.info('Plugin de exemplo inicializado com sucesso', {
       apiUrl: config.apiUrl,
       debounceMs: config.debounceMs,
-      logRequests: config.logRequests
+      logRequests: config.logRequests,
     })
 
     // Testar conectividade com API externa (opcional)
     try {
       await apiClient.get('/health', { timeout: 2000 })
-      context.logger.info("Conectividade com API externa verificada")
+      context.logger.info('Conectividade com API externa verificada')
     } catch (error) {
-      context.logger.warn("Não foi possível conectar com API externa", {
-        error: error instanceof Error ? error.message : String(error)
+      context.logger.warn('Não foi possível conectar com API externa', {
+        error: error instanceof Error ? error.message : String(error),
       })
     }
   },
@@ -96,23 +96,22 @@ export const examplePlugin: Plugin = {
   onRequest: async (context: RequestContext) => {
     const pluginContext = (context as any).pluginContext
     const config = getPluginConfig(pluginContext)
-    
+
     if (!config.enabled || !config.logRequests) return
 
     // Usar date-fns para formatação de data
     const timestamp = format(new Date(), 'yyyy-MM-dd HH:mm:ss')
-    
+
     // Usar lodash debounce para evitar spam de logs
     const debouncedLog = pluginContext?.debouncedLog
     if (debouncedLog) {
-      debouncedLog("Requisição processada", {
+      debouncedLog('Requisição processada', {
         timestamp,
         method: context.method,
         path: context.path,
-        userAgent: context.headers['user-agent']
+        userAgent: context.headers['user-agent'],
       })
     }
-
     // Adicionar timestamp customizado ao contexto
     ;(context as any).exampleTimestamp = timestamp
   },
@@ -120,7 +119,7 @@ export const examplePlugin: Plugin = {
   onResponse: async (context: ResponseContext) => {
     const pluginContext = (context as any).pluginContext
     const config = getPluginConfig(pluginContext)
-    
+
     if (!config.enabled) return
 
     // Exemplo de integração com API externa
@@ -135,10 +134,10 @@ export const examplePlugin: Plugin = {
             path: context.path,
             statusCode: context.statusCode,
             duration: context.duration,
-            error: "Server error occurred"
+            error: 'Server error occurred',
           })
         } catch (error) {
-          pluginContext?.logger?.warn("Erro ao enviar dados para API externa", { error })
+          pluginContext?.logger?.warn('Erro ao enviar dados para API externa', { error })
         }
       }
     }
@@ -149,7 +148,7 @@ export const examplePlugin: Plugin = {
       path: context.path,
       statusCode: context.statusCode,
       duration: context.duration,
-      timestamp: (context as any).exampleTimestamp
+      timestamp: (context as any).exampleTimestamp,
     }
 
     // Exemplo de uso do lodash
@@ -158,11 +157,11 @@ export const examplePlugin: Plugin = {
       pathSegments: context.path.split('/').filter(Boolean),
       isSuccess: context.statusCode < 400,
       isError: context.statusCode >= 400,
-      responseTime: `${context.duration}ms`
+      responseTime: `${context.duration}ms`,
     }
 
-    pluginContext?.logger?.debug("Resposta processada", processedData)
-  }
+    pluginContext?.logger?.debug('Resposta processada', processedData)
+  },
 }
 
 // Helper function para obter configuração do plugin

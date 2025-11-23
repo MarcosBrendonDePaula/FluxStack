@@ -11,23 +11,23 @@ import type { BaseUser, BaseUserStore } from '../state/index'
 export function createAuthHook(useUserStore: () => BaseUserStore) {
   return function useAuth() {
     const store = useUserStore()
-    
+
     return {
       // State
       currentUser: store.currentUser,
       isAuthenticated: store.isAuthenticated,
       isLoading: store.isLoading,
       error: store.error,
-      
+
       // Computed
       isAdmin: store.currentUser?.role === 'admin',
-      
+
       // Actions
       login: store.login,
       register: store.register,
       logout: store.logout,
       updateProfile: store.updateProfile,
-      clearError: store.clearError
+      clearError: store.clearError,
     }
   }
 }

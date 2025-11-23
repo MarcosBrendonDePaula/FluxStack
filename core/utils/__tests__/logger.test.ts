@@ -2,7 +2,7 @@
  * Tests for Unified Logger
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
 // Set test environment
 process.env.NODE_ENV = 'test'
@@ -10,7 +10,19 @@ process.env.LOG_TO_FILE = 'false' // Disable file logging in tests
 process.env.LOG_LEVEL = 'debug' // Enable all log levels in tests
 
 // Import the logger
-import { LOG, WARN, ERROR, DEBUG, START, SUCCESS, IMPORTANT, SECTION, logger, log, clearCache } from '../logger'
+import {
+  clearCache,
+  DEBUG,
+  ERROR,
+  IMPORTANT,
+  LOG,
+  log,
+  logger,
+  SECTION,
+  START,
+  SUCCESS,
+  WARN,
+} from '../logger'
 
 describe('Unified Logger', () => {
   afterEach(() => {
@@ -152,7 +164,9 @@ describe('Unified Logger', () => {
     })
 
     it('should log plugin messages with metadata', () => {
-      expect(() => logger.plugin('test-plugin', 'Plugin initialized', { version: '1.0.0' })).not.toThrow()
+      expect(() =>
+        logger.plugin('test-plugin', 'Plugin initialized', { version: '1.0.0' }),
+      ).not.toThrow()
     })
 
     it('should log framework messages', () => {
@@ -175,7 +189,7 @@ describe('Unified Logger', () => {
     it('should handle async operations', async () => {
       expect(async () => {
         logger.time('async-operation')
-        await new Promise(resolve => setTimeout(resolve, 10))
+        await new Promise((resolve) => setTimeout(resolve, 10))
         logger.timeEnd('async-operation')
       }).not.toThrow()
     })

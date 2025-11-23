@@ -3,8 +3,8 @@
  * Implementa resolução em cascata: plugin local → projeto principal
  */
 
-import { existsSync } from 'fs'
-import { join, resolve } from 'path'
+import { existsSync } from 'node:fs'
+import { join, resolve } from 'node:path'
 import type { Logger } from '@/core/utils/logger'
 
 export interface ModuleResolverConfig {
@@ -178,7 +178,7 @@ export class PluginModuleResolver {
    */
   private existsWithExtension(basePath: string): boolean {
     const extensions = ['', '.js', '.ts', '.mjs', '.cjs', '.jsx', '.tsx', '/index.js', '/index.ts']
-    return extensions.some(ext => existsSync(basePath + ext))
+    return extensions.some((ext) => existsSync(basePath + ext))
   }
 
   /**
@@ -210,7 +210,7 @@ export class PluginModuleResolver {
   getStats() {
     return {
       cachedModules: this.resolveCache.size,
-      projectRoot: this.config.projectRoot
+      projectRoot: this.config.projectRoot,
     }
   }
 }

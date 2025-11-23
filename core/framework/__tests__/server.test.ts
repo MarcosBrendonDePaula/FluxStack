@@ -2,9 +2,9 @@
  * Tests for FluxStack Framework Server
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { FluxStackFramework } from '../server'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Plugin } from '../../plugins/types'
+import { FluxStackFramework } from '../server'
 
 // Mock dependencies
 vi.mock('@/config', () => ({
@@ -16,20 +16,20 @@ vi.mock('@/config', () => ({
         origins: ['*'],
         methods: ['GET', 'POST'],
         headers: ['Content-Type'],
-        credentials: false
-      }
+        credentials: false,
+      },
     },
     app: {
       name: 'test-app',
-      version: '1.0.0'
-    }
+      version: '1.0.0',
+    },
   })),
   getEnvironmentInfo: vi.fn(() => ({
     isDevelopment: true,
     isProduction: false,
     isTest: true,
-    name: 'test'
-  }))
+    name: 'test',
+  })),
 }))
 
 vi.mock('@/core/utils/logger', () => ({
@@ -40,13 +40,13 @@ vi.mock('@/core/utils/logger', () => ({
     child: vi.fn(() => ({
       framework: vi.fn(),
       warn: vi.fn(),
-      error: vi.fn()
-    }))
-  }
+      error: vi.fn(),
+    })),
+  },
 }))
 
 vi.mock('@/core/utils/errors/handlers', () => ({
-  createErrorHandler: vi.fn(() => vi.fn())
+  createErrorHandler: vi.fn(() => vi.fn()),
 }))
 
 vi.mock('elysia', () => ({
@@ -58,8 +58,8 @@ vi.mock('elysia', () => ({
     use: vi.fn().mockReturnThis(),
     listen: vi.fn((_port, callback) => {
       if (callback) callback()
-    })
-  }))
+    }),
+  })),
 }))
 
 describe('FluxStackFramework', () => {
@@ -92,22 +92,22 @@ describe('FluxStackFramework', () => {
             methods: ['GET', 'POST'],
             headers: ['Content-Type'],
             credentials: false,
-            maxAge: 86400
+            maxAge: 86400,
           },
-          middleware: []
-        }
+          middleware: [],
+        },
       }
-      
+
       const customFramework = new FluxStackFramework(customConfig)
       const context = customFramework.getContext()
-      
+
       expect(context.config.server.port).toBe(4000)
       expect(context.config.server.apiPrefix).toBe('/custom-api')
     })
 
     it('should set up context correctly', () => {
       const context = framework.getContext()
-      
+
       expect(context.isDevelopment).toBe(true)
       expect(context.isProduction).toBe(false)
       expect(context.isTest).toBe(true)
@@ -119,7 +119,7 @@ describe('FluxStackFramework', () => {
     it('should register plugins successfully', () => {
       const mockPlugin: Plugin = {
         name: 'test-plugin',
-        setup: vi.fn()
+        setup: vi.fn(),
       }
 
       expect(() => framework.use(mockPlugin)).not.toThrow()
@@ -129,7 +129,7 @@ describe('FluxStackFramework', () => {
     it('should throw error when registering duplicate plugin', () => {
       const mockPlugin: Plugin = {
         name: 'duplicate-plugin',
-        setup: vi.fn()
+        setup: vi.fn(),
       }
 
       framework.use(mockPlugin)
@@ -139,13 +139,13 @@ describe('FluxStackFramework', () => {
     it('should validate plugin dependencies', async () => {
       const pluginA: Plugin = {
         name: 'plugin-a',
-        setup: vi.fn()
+        setup: vi.fn(),
       }
 
       const pluginB: Plugin = {
         name: 'plugin-b',
         dependencies: ['plugin-a'],
-        setup: vi.fn()
+        setup: vi.fn(),
       }
 
       framework.use(pluginA)
@@ -158,7 +158,7 @@ describe('FluxStackFramework', () => {
       const pluginWithMissingDep: Plugin = {
         name: 'plugin-with-missing-dep',
         dependencies: ['non-existent-plugin'],
-        setup: vi.fn()
+        setup: vi.fn(),
       }
 
       framework.use(pluginWithMissingDep)
@@ -171,7 +171,7 @@ describe('FluxStackFramework', () => {
       const mockPlugin: Plugin = {
         name: 'lifecycle-plugin',
         setup: vi.fn(),
-        onServerStart: vi.fn()
+        onServerStart: vi.fn(),
       }
 
       framework.use(mockPlugin)
@@ -186,7 +186,7 @@ describe('FluxStackFramework', () => {
         name: 'lifecycle-plugin',
         setup: vi.fn(),
         onServerStart: vi.fn(),
-        onServerStop: vi.fn()
+        onServerStop: vi.fn(),
       }
 
       framework.use(mockPlugin)
@@ -199,7 +199,7 @@ describe('FluxStackFramework', () => {
     it('should not start framework twice', async () => {
       await framework.start()
       await framework.start() // Should not throw or cause issues
-      
+
       // Should log warning about already started
       const { logger } = await import('@/core/utils/logger')
       expect(logger.warn).toHaveBeenCalled()
@@ -208,7 +208,7 @@ describe('FluxStackFramework', () => {
     it('should handle plugin setup errors', async () => {
       const errorPlugin: Plugin = {
         name: 'error-plugin',
-        setup: vi.fn().mockRejectedValue(new Error('Setup failed'))
+        setup: vi.fn().mockRejectedValue(new Error('Setup failed')),
       }
 
       framework.use(errorPlugin)
@@ -219,7 +219,7 @@ describe('FluxStackFramework', () => {
   describe('Routes', () => {
     it('should add routes to the app', () => {
       const mockRouteModule = { get: vi.fn() }
-      
+
       expect(() => framework.routes(mockRouteModule)).not.toThrow()
     })
   })

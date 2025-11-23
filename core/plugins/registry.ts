@@ -1,13 +1,14 @@
-import type { FluxStack, PluginManifest, PluginLoadResult, PluginDiscoveryOptions } from "./types"
+import type { FluxStack, PluginDiscoveryOptions, PluginLoadResult, PluginManifest } from './types'
 
 type FluxStackPlugin = FluxStack.Plugin
-import type { FluxStackConfig } from "@/core/config/schema"
-import type { Logger } from "@/core/utils/logger"
-import { FluxStackError } from "@/core/utils/errors"
-import { PluginDependencyManager } from "./dependency-manager"
-import { readdir, readFile } from "fs/promises"
-import { join, resolve } from "path"
-import { existsSync } from "fs"
+
+import { existsSync } from 'node:fs'
+import { readdir, readFile } from 'node:fs/promises'
+import { join, resolve } from 'node:path'
+import type { FluxStackConfig } from '@/core/config/schema'
+import { FluxStackError } from '@/core/utils/errors'
+import type { Logger } from '@/core/utils/logger'
+import { PluginDependencyManager } from './dependency-manager'
 
 export interface PluginRegistryConfig {
   logger?: Logger
@@ -31,7 +32,7 @@ export class PluginRegistry {
     this.dependencyManager = new PluginDependencyManager({
       logger: this.logger,
       autoInstall: true,
-      packageManager: 'bun'
+      packageManager: 'bun',
     })
   }
 
@@ -43,7 +44,7 @@ export class PluginRegistry {
       throw new FluxStackError(
         `Plugin '${plugin.name}' is already registered`,
         'PLUGIN_ALREADY_REGISTERED',
-        400
+        400,
       )
     }
 
@@ -72,7 +73,7 @@ export class PluginRegistry {
     this.logger?.debug(`Plugin '${plugin.name}' registered successfully`, {
       plugin: plugin.name,
       version: plugin.version,
-      dependencies: plugin.dependencies
+      dependencies: plugin.dependencies,
     })
 
     // Execute onPluginRegister hooks on all registered plugins
@@ -90,11 +91,11 @@ export class PluginRegistry {
             pluginName: registeredPlugin.name,
             pluginVersion: registeredPlugin.version,
             timestamp: Date.now(),
-            data: { plugin: registeredPlugin }
+            data: { plugin: registeredPlugin },
           })
         } catch (error) {
           this.logger?.error(`Plugin '${plugin.name}' onPluginRegister hook failed`, {
-            error: error instanceof Error ? error.message : String(error)
+            error: error instanceof Error ? error.message : String(error),
           })
         }
       }
@@ -104,18 +105,21 @@ export class PluginRegistry {
   /**
    * Execute onPluginUnregister hooks on all plugins
    */
-  private async executePluginUnregisterHooks(unregisteredPluginName: string, version?: string): Promise<void> {
+  private async executePluginUnregisterHooks(
+    unregisteredPluginName: string,
+    version?: string,
+  ): Promise<void> {
     for (const plugin of this.plugins.values()) {
       if (plugin.onPluginUnregister && typeof plugin.onPluginUnregister === 'function') {
         try {
           await plugin.onPluginUnregister({
             pluginName: unregisteredPluginName,
             pluginVersion: version,
-            timestamp: Date.now()
+            timestamp: Date.now(),
           })
         } catch (error) {
           this.logger?.error(`Plugin '${plugin.name}' onPluginUnregister hook failed`, {
-            error: error instanceof Error ? error.message : String(error)
+            error: error instanceof Error ? error.message : String(error),
           })
         }
       }
@@ -127,11 +131,7 @@ export class PluginRegistry {
    */
   async unregister(name: string): Promise<void> {
     if (!this.plugins.has(name)) {
-      throw new FluxStackError(
-        `Plugin '${name}' is not registered`,
-        'PLUGIN_NOT_FOUND',
-        404
-      )
+      throw new FluxStackError(`Plugin '${name}' is not registered`, 'PLUGIN_NOT_FOUND', 404)
     }
 
     // Check if other plugins depend on this one
@@ -140,7 +140,7 @@ export class PluginRegistry {
       throw new FluxStackError(
         `Cannot unregister plugin '${name}' because it is required by: ${dependents.join(', ')}`,
         'PLUGIN_HAS_DEPENDENTS',
-        400
+        400,
       )
     }
 
@@ -150,7 +150,7 @@ export class PluginRegistry {
     this.plugins.delete(name)
     this.manifests.delete(name)
     this.dependencies.delete(name)
-    this.loadOrder = this.loadOrder.filter(pluginName => pluginName !== name)
+    this.loadOrder = this.loadOrder.filter((pluginName) => pluginName !== name)
 
     this.logger?.debug(`Plugin '${name}' unregistered successfully`)
 
@@ -198,13 +198,13 @@ export class PluginRegistry {
    */
   getDependents(pluginName: string): string[] {
     const dependents: string[] = []
-    
+
     for (const [name, deps] of this.dependencies.entries()) {
       if (deps.includes(pluginName)) {
         dependents.push(name)
       }
     }
-    
+
     return dependents
   }
 
@@ -231,7 +231,7 @@ export class PluginRegistry {
       enabledPlugins: this.config?.plugins.enabled.length || 0,
       disabledPlugins: this.config?.plugins.disabled.length || 0,
       conflicts: this.conflicts.length,
-      loadOrder: this.loadOrder.length
+      loadOrder: this.loadOrder.length,
     }
   }
 
@@ -258,7 +258,7 @@ export class PluginRegistry {
         `Plugin dependency validation failed: ${this.conflicts.join('; ')}`,
         'PLUGIN_DEPENDENCY_ERROR',
         400,
-        { conflicts: this.conflicts }
+        { conflicts: this.conflicts },
       )
     }
   }
@@ -272,7 +272,7 @@ export class PluginRegistry {
       directories = ['plugins'],
       patterns: _patterns = ['**/plugin.{js,ts}', '**/index.{js,ts}'],
       includeBuiltIn: _includeBuiltIn = false,
-      includeExternal: _includeExternal = true
+      includeExternal: _includeExternal = true,
     } = options
 
     // Descobrir plugins
@@ -291,7 +291,7 @@ export class PluginRegistry {
         this.logger?.warn(`Failed to discover plugins in directory '${directory}'`, { error })
         results.push({
           success: false,
-          error: `Failed to scan directory: ${error instanceof Error ? error.message : String(error)}`
+          error: `Failed to scan directory: ${error instanceof Error ? error.message : String(error)}`,
         })
       }
     }
@@ -334,7 +334,7 @@ export class PluginRegistry {
                 keywords: packageJson.keywords || [],
                 dependencies: packageJson.dependencies || {},
                 peerDependencies: packageJson.peerDependencies,
-                fluxstack: packageJson.fluxstack
+                fluxstack: packageJson.fluxstack,
               }
             }
           } catch (error) {
@@ -344,16 +344,21 @@ export class PluginRegistry {
       }
 
       // Install dependencies BEFORE importing the plugin
-      if (manifest && manifest.dependencies && Object.keys(manifest.dependencies).length > 0) {
+      if (manifest?.dependencies && Object.keys(manifest.dependencies).length > 0) {
         try {
           const resolution = await this.dependencyManager.resolvePluginDependencies(pluginPath)
           if (resolution.dependencies.length > 0) {
             // Install dependencies directly in the plugin directory
-            await this.dependencyManager.installPluginDependenciesLocally(pluginPath, resolution.dependencies)
+            await this.dependencyManager.installPluginDependenciesLocally(
+              pluginPath,
+              resolution.dependencies,
+            )
             this.logger?.debug(`Dependencies installed for plugin at: ${pluginPath}`)
           }
         } catch (error) {
-          this.logger?.warn(`Failed to install dependencies for plugin at '${pluginPath}'`, { error })
+          this.logger?.warn(`Failed to install dependencies for plugin at '${pluginPath}'`, {
+            error,
+          })
         }
       }
 
@@ -364,7 +369,7 @@ export class PluginRegistry {
       if (!plugin || typeof plugin !== 'object' || !plugin.name) {
         return {
           success: false,
-          error: 'Invalid plugin: must export a plugin object with a name property'
+          error: 'Invalid plugin: must export a plugin object with a name property',
         }
       }
 
@@ -374,12 +379,12 @@ export class PluginRegistry {
       return {
         success: true,
         plugin,
-        warnings: manifest ? [] : ['No plugin manifest found']
+        warnings: manifest ? [] : ['No plugin manifest found'],
       }
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       }
     }
   }
@@ -392,32 +397,24 @@ export class PluginRegistry {
       throw new FluxStackError(
         'Plugin must have a valid name property',
         'INVALID_PLUGIN_STRUCTURE',
-        400
+        400,
       )
     }
 
     if (plugin.version && typeof plugin.version !== 'string') {
-      throw new FluxStackError(
-        'Plugin version must be a string',
-        'INVALID_PLUGIN_STRUCTURE',
-        400
-      )
+      throw new FluxStackError('Plugin version must be a string', 'INVALID_PLUGIN_STRUCTURE', 400)
     }
 
     if (plugin.dependencies && !Array.isArray(plugin.dependencies)) {
       throw new FluxStackError(
         'Plugin dependencies must be an array',
         'INVALID_PLUGIN_STRUCTURE',
-        400
+        400,
       )
     }
 
     if (plugin.priority && typeof plugin.priority !== 'number') {
-      throw new FluxStackError(
-        'Plugin priority must be a number',
-        'INVALID_PLUGIN_STRUCTURE',
-        400
-      )
+      throw new FluxStackError('Plugin priority must be a number', 'INVALID_PLUGIN_STRUCTURE', 400)
     }
   }
 
@@ -436,7 +433,7 @@ export class PluginRegistry {
           throw new FluxStackError(
             `Plugin '${plugin.name}' configuration missing required field: ${requiredField}`,
             'INVALID_PLUGIN_CONFIG',
-            400
+            400,
           )
         }
       }
@@ -456,7 +453,7 @@ export class PluginRegistry {
         throw new FluxStackError(
           `Circular dependency detected involving plugin '${pluginName}'`,
           'CIRCULAR_DEPENDENCY',
-          400
+          400,
         )
       }
 
@@ -513,12 +510,14 @@ export class PluginRegistry {
 
             if (!resolution.resolved) {
               this.logger?.warn(`Plugin '${result.plugin.name}' has dependency conflicts`, {
-                conflicts: resolution.conflicts.length
+                conflicts: resolution.conflicts.length,
               })
             }
           }
         } catch (error) {
-          this.logger?.warn(`Failed to check dependencies for plugin '${result.plugin.name}'`, { error })
+          this.logger?.warn(`Failed to check dependencies for plugin '${result.plugin.name}'`, {
+            error,
+          })
         }
       }
     }
@@ -528,10 +527,7 @@ export class PluginRegistry {
    * Encontrar diretório de um plugin pelo nome
    */
   private findPluginDirectory(pluginName: string): string | null {
-    const possiblePaths = [
-      `plugins/${pluginName}`,
-      `core/plugins/built-in/${pluginName}`
-    ]
+    const possiblePaths = [`plugins/${pluginName}`, `core/plugins/built-in/${pluginName}`]
 
     for (const path of possiblePaths) {
       if (existsSync(path)) {
@@ -547,28 +543,29 @@ export class PluginRegistry {
    */
   private async discoverPluginsInDirectory(
     directory: string,
-    _patterns: string[]
+    _patterns: string[],
   ): Promise<PluginLoadResult[]> {
     const results: PluginLoadResult[] = []
-    
+
     try {
       const entries = await readdir(directory, { withFileTypes: true })
-      
+
       for (const entry of entries) {
         if (entry.isDirectory()) {
           const pluginDir = join(directory, entry.name)
-          
+
           // Check if this looks like a plugin directory
           // Skip if it's just an index file in the root of built-in directory
           if (directory === 'core/plugins/built-in' && entry.name === 'index.ts') {
             continue
           }
-          
-          const hasPluginFile = existsSync(join(pluginDir, 'index.ts')) || 
-                               existsSync(join(pluginDir, 'index.js')) ||
-                               existsSync(join(pluginDir, 'plugin.ts')) ||
-                               existsSync(join(pluginDir, 'plugin.js'))
-          
+
+          const hasPluginFile =
+            existsSync(join(pluginDir, 'index.ts')) ||
+            existsSync(join(pluginDir, 'index.js')) ||
+            existsSync(join(pluginDir, 'plugin.ts')) ||
+            existsSync(join(pluginDir, 'plugin.js'))
+
           if (hasPluginFile) {
             this.logger?.debug(`Loading plugin from: ${pluginDir}`)
             const result = await this.loadPlugin(pluginDir)
@@ -579,7 +576,7 @@ export class PluginRegistry {
     } catch (error) {
       this.logger?.error(`Failed to read directory '${directory}'`, { error })
     }
-    
+
     return results
   }
 }

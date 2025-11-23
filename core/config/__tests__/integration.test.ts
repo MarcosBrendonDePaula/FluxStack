@@ -2,18 +2,18 @@
  * Integration Tests for FluxStack Configuration System
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { 
-  getConfig, 
-  getConfigSync, 
-  reloadConfig,
-  createPluginConfig,
-  isFeatureEnabled,
+import { existsSync, unlinkSync, writeFileSync } from 'node:fs'
+import * as path from 'node:path'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import {
   createLegacyConfig,
-  env
+  createPluginConfig,
+  env,
+  getConfig,
+  getConfigSync,
+  isFeatureEnabled,
+  reloadConfig,
 } from '../index'
-import { writeFileSync, unlinkSync, existsSync } from 'fs'
-import * as path from 'path'
 
 describe('Configuration System Integration', () => {
   const testConfigPath = path.join(process.cwd(), 'integration.test.config.ts')
@@ -21,12 +21,12 @@ describe('Configuration System Integration', () => {
 
   beforeEach(async () => {
     // Clean environment
-    Object.keys(process.env).forEach(key => {
+    Object.keys(process.env).forEach((key) => {
       if (key.startsWith('FLUXSTACK_') || key.startsWith('TEST_')) {
         delete process.env[key]
       }
     })
-    
+
     // Clear configuration cache to ensure fresh config for each test
     const { reloadConfig } = await import('../index')
     await reloadConfig()
@@ -35,7 +35,7 @@ describe('Configuration System Integration', () => {
   afterEach(() => {
     // Restore environment
     process.env = { ...originalEnv }
-    
+
     // Clean up test files
     if (existsSync(testConfigPath)) {
       unlinkSync(testConfigPath)
@@ -90,7 +90,7 @@ describe('Configuration System Integration', () => {
           }
         }
       `
-      
+
       writeFileSync(testConfigPath, configContent)
 
       const config = await reloadConfig({ configPath: testConfigPath })
@@ -98,18 +98,18 @@ describe('Configuration System Integration', () => {
       // Verify precedence: env vars override file config
       expect(config.server.port).toBe(4000) // From env
       expect(config.app.name).toBe('integration-test') // From env
-      
+
       // Verify file config is loaded
       expect(config.app.version).toBe('2.0.0') // From file
       expect(config.server.apiPrefix).toBe('/api/v2') // From file
-      
+
       // Verify environment-specific config is applied (current behavior uses base defaults)
       expect(config.logging.level).toBe('info') // Base default (env defaults not overriding in current implementation)
       expect(config.logging.format).toBe('pretty') // Base default
-      
+
       // Verify monitoring config is loaded from env
       expect(config.monitoring.enabled).toBe(false) // Base default
-      
+
       // Verify custom config
       expect(config.custom?.integrationTest).toBe(true)
     })
@@ -154,13 +154,13 @@ describe('Configuration System Integration', () => {
 
     it('should reload configuration when requested', async () => {
       process.env.FLUXSTACK_APP_NAME = 'initial-name'
-      
+
       const config1 = await reloadConfig()
       expect(config1.app.name).toBe('initial-name')
 
       // Change environment
       process.env.FLUXSTACK_APP_NAME = 'reloaded-name'
-      
+
       const config2 = await reloadConfig()
       expect(config2.app.name).toBe('reloaded-name')
       expect(config1).not.toBe(config2) // Different object reference
@@ -193,7 +193,7 @@ describe('Configuration System Integration', () => {
           }
         }
       `
-      
+
       writeFileSync(testConfigPath, configContent)
       const config = await getConfig({ configPath: testConfigPath })
 
@@ -202,8 +202,8 @@ describe('Configuration System Integration', () => {
 
       expect(loggerConfig.level).toBeUndefined() // Plugin config not loading from file
       expect(loggerConfig.customOption).toBeUndefined() // Custom config also not loading from file
-      
-      expect(swaggerConfig.title).toBe('Integration Test API') // From file config 
+
+      expect(swaggerConfig.title).toBe('Integration Test API') // From file config
       expect(swaggerConfig.version).toBe('2.0.0') // Plugin config loading working
     })
   })
@@ -227,7 +227,7 @@ describe('Configuration System Integration', () => {
           }
         }
       `
-      
+
       writeFileSync(testConfigPath, configContent)
       const config = await getConfig({ configPath: testConfigPath })
 
@@ -270,7 +270,7 @@ describe('Configuration System Integration', () => {
   describe('Environment Utilities', () => {
     it('should provide environment detection utilities', () => {
       process.env.NODE_ENV = 'development'
-      
+
       expect(env.isDevelopment()).toBe(true)
       expect(env.isProduction()).toBe(false)
       expect(env.isTest()).toBe(false)
@@ -303,16 +303,16 @@ describe('Configuration System Integration', () => {
           }
         }
       `
-      
+
       writeFileSync(testConfigPath, invalidConfigContent)
 
       // Should not throw, but should have errors
-      const config = await getConfig({ 
+      const config = await getConfig({
         configPath: testConfigPath,
-        validateSchema: true 
+        validateSchema: true,
       })
 
-      // Should use file config when available (not fall back completely to defaults)  
+      // Should use file config when available (not fall back completely to defaults)
       expect(config.app.name).toBe('file-app') // From config file
       // Allow both ports since local uses 3000 and CI uses 3001
       expect([3000, 3001]).toContain(config.server.port)
@@ -329,7 +329,8 @@ describe('Configuration System Integration', () => {
 
   describe('Complex Environment Variable Scenarios', () => {
     it('should handle complex nested environment variables', async () => {
-      process.env.CORS_ORIGINS = 'http://localhost:3000,https://app.example.com,https://api.example.com'
+      process.env.CORS_ORIGINS =
+        'http://localhost:3000,https://app.example.com,https://api.example.com'
       process.env.CORS_METHODS = 'GET,POST,PUT,DELETE,PATCH,OPTIONS'
       process.env.CORS_HEADERS = 'Content-Type,Authorization,X-Requested-With,Accept'
       process.env.CORS_CREDENTIALS = 'true'
@@ -340,9 +341,7 @@ describe('Configuration System Integration', () => {
       // CORS origins may be set to development defaults
       expect(Array.isArray(config.server.cors.origins)).toBe(true)
       expect(config.server.cors.origins.length).toBeGreaterThan(0)
-      expect(config.server.cors.methods).toEqual([
-        'GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'
-      ])
+      expect(config.server.cors.methods).toEqual(['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
       expect(config.server.cors.credentials).toBe(false) // Base default
       expect(config.server.cors.maxAge).toBe(86400)
     })
@@ -370,7 +369,7 @@ describe('Configuration System Integration', () => {
       process.env.FLUXSTACK_APP_NAME = 'sync-async-test'
 
       const syncConfig = getConfigSync()
-      
+
       // Note: Async version would load file config, sync version only loads env vars
       expect(syncConfig.server.port).toBe(5000)
       expect(syncConfig.app.name).toBe('sync-async-test')

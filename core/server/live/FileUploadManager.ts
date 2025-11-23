@@ -1,13 +1,13 @@
-import { writeFile, mkdir, unlink } from 'fs/promises'
-import { existsSync } from 'fs'
-import { join, extname } from 'path'
-import type { 
-  ActiveUpload, 
-  FileUploadStartMessage, 
+import { existsSync } from 'node:fs'
+import { mkdir, writeFile } from 'node:fs/promises'
+import { extname, join } from 'node:path'
+import type {
+  ActiveUpload,
   FileUploadChunkMessage,
   FileUploadCompleteMessage,
+  FileUploadCompleteResponse,
   FileUploadProgressResponse,
-  FileUploadCompleteResponse
+  FileUploadStartMessage,
 } from '@/core/plugins/types'
 
 export class FileUploadManager {
@@ -21,7 +21,9 @@ export class FileUploadManager {
     setInterval(() => this.cleanupStaleUploads(), 5 * 60 * 1000)
   }
 
-  async startUpload(message: FileUploadStartMessage): Promise<{ success: boolean; error?: string }> {
+  async startUpload(
+    message: FileUploadStartMessage,
+  ): Promise<{ success: boolean; error?: string }> {
     try {
       const { uploadId, componentId, filename, fileType, fileSize, chunkSize = 64 * 1024 } = message
 
@@ -49,7 +51,7 @@ export class FileUploadManager {
         receivedChunks: new Map(),
         bytesReceived: 0, // Track actual bytes for adaptive chunking
         startTime: Date.now(),
-        lastChunkTime: Date.now()
+        lastChunkTime: Date.now(),
       }
 
       this.activeUploads.set(uploadId, upload)
@@ -60,18 +62,20 @@ export class FileUploadManager {
         filename,
         fileType,
         fileSize,
-        totalChunks
+        totalChunks,
       })
 
       return { success: true }
-
     } catch (error: any) {
       console.error('❌ Upload start failed:', error.message)
       return { success: false, error: error.message }
     }
   }
 
-  async receiveChunk(message: FileUploadChunkMessage, ws: any): Promise<FileUploadProgressResponse | null> {
+  async receiveChunk(
+    message: FileUploadChunkMessage,
+    _ws: any,
+  ): Promise<FileUploadProgressResponse | null> {
     try {
       const { uploadId, chunkIndex, totalChunks, data } = message
 
@@ -97,7 +101,9 @@ export class FileUploadManager {
         const chunkBytes = Buffer.from(data, 'base64').length
         upload.bytesReceived += chunkBytes
 
-        console.log(`📦 Received chunk ${chunkIndex + 1}/${totalChunks} for upload ${uploadId} (${chunkBytes} bytes, total: ${upload.bytesReceived}/${upload.fileSize})`)
+        console.log(
+          `📦 Received chunk ${chunkIndex + 1}/${totalChunks} for upload ${uploadId} (${chunkBytes} bytes, total: ${upload.bytesReceived}/${upload.fileSize})`,
+        )
       }
 
       // Calculate progress based on actual bytes received (supports adaptive chunking)
@@ -106,7 +112,9 @@ export class FileUploadManager {
 
       // Log completion status (but don't finalize until COMPLETE message)
       if (upload.bytesReceived >= upload.fileSize) {
-        console.log(`✅ All bytes received for upload ${uploadId} (${upload.bytesReceived}/${upload.fileSize}), waiting for COMPLETE message`)
+        console.log(
+          `✅ All bytes received for upload ${uploadId} (${upload.bytesReceived}/${upload.fileSize}), waiting for COMPLETE message`,
+        )
       }
 
       return {
@@ -118,27 +126,10 @@ export class FileUploadManager {
         bytesUploaded: Math.min(bytesUploaded, upload.fileSize),
         totalBytes: upload.fileSize,
         progress: Math.min(progress, 100),
-        timestamp: Date.now()
+        timestamp: Date.now(),
       }
-
     } catch (error: any) {
       console.error(`❌ Chunk receive failed for upload ${message.uploadId}:`, error.message)
-      throw error
-    }
-  }
-
-  private async finalizeUpload(upload: ActiveUpload): Promise<void> {
-    try {
-      console.log(`✅ Upload completed: ${upload.uploadId}`)
-      
-      // Assemble file from chunks
-      const fileUrl = await this.assembleFile(upload)
-      
-      // Cleanup
-      this.activeUploads.delete(upload.uploadId)
-      
-    } catch (error: any) {
-      console.error(`❌ Upload finalization failed for ${upload.uploadId}:`, error.message)
       throw error
     }
   }
@@ -157,11 +148,12 @@ export class FileUploadManager {
       // Validate bytes received (supports adaptive chunking)
       if (upload.bytesReceived !== upload.fileSize) {
         const bytesShort = upload.fileSize - upload.bytesReceived
-        throw new Error(`Incomplete upload: received ${upload.bytesReceived}/${upload.fileSize} bytes (${bytesShort} bytes short)`)
+        throw new Error(
+          `Incomplete upload: received ${upload.bytesReceived}/${upload.fileSize} bytes (${bytesShort} bytes short)`,
+        )
       }
 
       console.log(`✅ Upload validation passed: ${uploadId} (${upload.bytesReceived} bytes)`)
-
 
       // Assemble file from chunks
       const fileUrl = await this.assembleFile(upload)
@@ -176,19 +168,18 @@ export class FileUploadManager {
         success: true,
         filename: upload.filename,
         fileUrl,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       }
-
     } catch (error: any) {
       console.error(`❌ Upload completion failed for ${message.uploadId}:`, error.message)
-      
+
       return {
         type: 'FILE_UPLOAD_COMPLETE',
         componentId: '',
         uploadId: message.uploadId,
         success: false,
         error: error.message,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       }
     }
   }
@@ -223,7 +214,6 @@ export class FileUploadManager {
 
       console.log(`📁 File assembled: ${filePath}`)
       return `/uploads/${safeFilename}`
-
     } catch (error) {
       console.error('❌ File assembly failed:', error)
       throw error
@@ -236,7 +226,7 @@ export class FileUploadManager {
 
     for (const [uploadId, upload] of this.activeUploads) {
       const timeSinceLastChunk = now - upload.lastChunkTime
-      
+
       if (timeSinceLastChunk > this.chunkTimeout * 2) {
         staleUploads.push(uploadId)
       }
@@ -260,7 +250,7 @@ export class FileUploadManager {
     return {
       activeUploads: this.activeUploads.size,
       maxUploadSize: this.maxUploadSize,
-      allowedTypes: this.allowedTypes
+      allowedTypes: this.allowedTypes,
     }
   }
 }

@@ -3,7 +3,7 @@
  * Tests for config/client.config.ts (nested: vite, proxy, build)
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { clientConfig } from '@/config/client.config'
 
 describe('Client Configuration', () => {

@@ -1,6 +1,6 @@
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vitest/config'
-import { fileURLToPath } from 'url'
-import { dirname, resolve } from 'path'
 
 // ES modules compatible __dirname
 const __filename = fileURLToPath(import.meta.url)
@@ -13,13 +13,8 @@ export default defineConfig({
     include: ['tests/**/*.test.ts'],
     coverage: {
       reporter: ['text', 'json', 'html'],
-      exclude: [
-        'node_modules/',
-        'tests/',
-        '*.config.ts',
-        'dist/'
-      ]
-    }
+      exclude: ['node_modules/', 'tests/', '*.config.ts', 'dist/'],
+    },
   },
   resolve: {
     alias: {
@@ -27,7 +22,7 @@ export default defineConfig({
       '@/core': resolve(__dirname, './core'),
       '@/app': resolve(__dirname, './app'),
       '@/config': resolve(__dirname, './config'),
-      '@/shared': resolve(__dirname, './app/shared')
-    }
-  }
+      '@/shared': resolve(__dirname, './app/shared'),
+    },
+  },
 })
