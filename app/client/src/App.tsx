@@ -30,15 +30,15 @@ function MinimalLiveClock() {
     'LiveClock',
     initialClockState,
     {
-      // When connected (fresh mount), change format to 12h
-      onConnect: () => {
-        console.log('onConnect called - changing format to 12h')
+      // Called after fresh mount (no prior state)
+      onMount: () => {
+        console.log('onMount called - changing format to 12h')
         setValue('format', '12h')
       },
-      // When reconnected (rehydration), also change format to 12h
-      onReconnect: () => {
-        console.log('onReconnect called - changing format to 12h')
-        setValue('format', '12h')
+      // Called after successful rehydration (restoring prior state)
+      onRehydrate: () => {
+        console.log('onRehydrate called - keeping format 24h')
+        setValue('format', '24h')
       }
     }
   )

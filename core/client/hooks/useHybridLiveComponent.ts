@@ -166,9 +166,9 @@ export function useHybridLiveComponent<T = any>(
     userId,
     autoMount = true,
     debug = false,
-    onConnect,
+    onMount,
     onDisconnect,
-    onReconnect,
+    onRehydrate,
     onError,
     onStateChange
   } = options
@@ -265,8 +265,8 @@ export function useHybridLiveComponent<T = any>(
             setRehydrating(false)
             setError(null)
 
-            // Call onReconnect callback
-            onReconnect?.()
+            // Call onRehydrate callback
+            onRehydrate?.()
           }
           break
 
@@ -279,8 +279,8 @@ export function useHybridLiveComponent<T = any>(
             setRehydrating(false)
             setError(null)
 
-            // Call onReconnect callback
-            onReconnect?.()
+            // Call onRehydrate callback
+            onRehydrate?.()
           } else if (!message.success) {
             log('❌ Re-hydration failed', message.error)
             setRehydrating(false)
@@ -326,7 +326,7 @@ export function useHybridLiveComponent<T = any>(
       log('🗑️ Unregistering component from WebSocket context')
       unregister()
     }
-  }, [componentId, registerComponent, unregisterComponent, log, updateState, componentName, room, userId, rehydrating, stateData, onStateChange, onReconnect, onError])
+  }, [componentId, registerComponent, unregisterComponent, log, updateState, componentName, room, userId, rehydrating, stateData, onStateChange, onRehydrate, onError])
 
   // Automatic re-hydration on reconnection
   const attemptRehydration = useCallback(async () => {
@@ -384,8 +384,11 @@ export function useHybridLiveComponent<T = any>(
           lastKnownComponentIdRef.current = response.result.newComponentId
           mountedRef.current = true
 
-          // Call onReconnect callback after successful rehydration
-          onReconnect?.()
+          // Call onRehydrate callback after React has processed the state update
+          // This ensures the component is registered to receive messages before the callback runs
+          setTimeout(() => {
+            onRehydrate?.()
+          }, 0)
 
           return true
         } else {
@@ -411,7 +414,7 @@ export function useHybridLiveComponent<T = any>(
     globalRehydrationAttempts.set(componentName, rehydrationPromise)
 
     return await rehydrationPromise
-  }, [connected, rehydrating, componentName, contextSendMessageAndWait, log, onReconnect, onError])
+  }, [connected, rehydrating, componentName, contextSendMessageAndWait, log, onRehydrate, onError])
 
   // Mount component
   const mount = useCallback(async () => {
@@ -454,8 +457,11 @@ export function useHybridLiveComponent<T = any>(
 
         log('✅ Component mounted successfully', { componentId: newComponentId })
 
-        // Call onConnect callback
-        onConnect?.()
+        // Call onMount callback after React has processed the state update
+        // This ensures the component is registered to receive messages before the callback runs
+        setTimeout(() => {
+          onMount?.()
+        }, 0)
       } else {
         throw new Error(response?.error || 'No component ID returned from server')
       }
@@ -474,7 +480,7 @@ export function useHybridLiveComponent<T = any>(
       setMountLoading(false)
       mountingRef.current = false
     }
-  }, [connected, componentName, initialState, room, userId, contextSendMessageAndWait, log, fallbackToLocal, updateState, onConnect, onError])
+  }, [connected, componentName, initialState, room, userId, contextSendMessageAndWait, log, fallbackToLocal, updateState, onMount, onError])
 
   // Unmount component
   const unmount = useCallback(async () => {

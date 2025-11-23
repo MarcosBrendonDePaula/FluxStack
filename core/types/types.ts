@@ -126,10 +126,10 @@ export interface HybridComponentOptions {
   autoMount?: boolean
   debug?: boolean
 
-  // Connection lifecycle callbacks
-  onConnect?: () => void
-  onDisconnect?: () => void
-  onReconnect?: () => void
+  // Component lifecycle callbacks
+  onMount?: () => void        // Called after fresh mount (no prior state)
+  onRehydrate?: () => void    // Called after successful rehydration (restoring prior state)
+  onDisconnect?: () => void   // Called when WebSocket disconnects
   onError?: (error: string) => void
   onStateChange?: (newState: any, oldState: any) => void
 }
