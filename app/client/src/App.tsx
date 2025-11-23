@@ -1,53 +1,9 @@
 import { useState, useEffect } from 'react'
 import { api } from './lib/eden-api'
 import { FaFire, FaBook, FaGithub, FaClock, FaImage } from 'react-icons/fa'
-import { LiveComponentsProvider, useTypedLiveComponent } from '@/core/client'
+import { LiveComponentsProvider } from '@/core/client'
 import { FileUploadExample } from './components/FileUploadExample'
-
-// Import component types DIRECTLY from backend - no duplication needed!
-// TypeScript uses these for type inference only (not bundled)
-import type { LiveClockComponent } from '@/server/live/LiveClockComponent'
-
-// Minimal Live Clock Component with full type inference
-function MinimalLiveClock() {
-  // 🔥 Using typed hook - full autocomplete for actions!
-  // call and callAndWait have full type inference for action names and payloads
-  const { state, setValue } = useTypedLiveComponent<LiveClockComponent>(
-    'LiveClock',
-    {
-      currentTime: "Loading...",
-      timeZone: "America/Sao_Paulo",
-      format: "24h",
-      showSeconds: true,
-      showDate: true,
-      lastSync: new Date(),
-      serverUptime: 0,
-    },
-    {
-      // Called after fresh mount (no prior state)
-      onMount: () => {
-        console.log('onMount called - changing format to 12h')
-        setValue('format', '12h')
-      },
-      // Called after successful rehydration (restoring prior state)
-      onRehydrate: () => {
-        console.log('onRehydrate called - keeping format 24h')
-        setValue('format', '24h')
-      }
-    }
-  )
-
-  return (
-    <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-xl p-4 border border-blue-400/20">
-      <div className="text-4xl font-mono font-bold text-white text-center tracking-wider">
-        {state.currentTime}
-      </div>
-      <div className="text-center mt-2">
-        <span className="text-xs text-gray-400">{state.timeZone} ({state.format})</span>
-      </div>
-    </div>
-  )
-}
+import { MinimalLiveClock } from './live/MinimalLiveClock'
 
 function AppContent() {
   const [apiStatus, setApiStatus] = useState<'checking' | 'online' | 'offline'>('checking')

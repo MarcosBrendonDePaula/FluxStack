@@ -166,6 +166,7 @@ export function useHybridLiveComponent<T = any>(
     userId,
     autoMount = true,
     debug = false,
+    onConnect,
     onMount,
     onDisconnect,
     onRehydrate,
@@ -600,22 +601,27 @@ export function useHybridLiveComponent<T = any>(
       onDisconnect?.()
     }
 
-    if (!wasConnected && isConnected && !mountedRef.current && !mountingRef.current && !rehydrating) {
-      setTimeout(() => {
-        if (!mountedRef.current && !mountingRef.current && !rehydrating) {
-          const persistedState = getPersistedState(componentName)
+    if (!wasConnected && isConnected) {
+      // Call onConnect callback when WebSocket connects
+      onConnect?.()
 
-          if (persistedState?.signedState) {
-            attemptRehydration()
-          } else {
-            mount()
+      if (!mountedRef.current && !mountingRef.current && !rehydrating) {
+        setTimeout(() => {
+          if (!mountedRef.current && !mountingRef.current && !rehydrating) {
+            const persistedState = getPersistedState(componentName)
+
+            if (persistedState?.signedState) {
+              attemptRehydration()
+            } else {
+              mount()
+            }
           }
-        }
-      }, 100)
+        }, 100)
+      }
     }
 
     prevConnectedRef.current = connected
-  }, [connected, mount, componentId, attemptRehydration, componentName, rehydrating, onDisconnect])
+  }, [connected, mount, componentId, attemptRehydration, componentName, rehydrating, onDisconnect, onConnect])
 
   // Unmount on cleanup
   useEffect(() => {
