@@ -1,61 +1,28 @@
-# Runtime Config API
+# API de Configuração em Runtime (Config API)
 
-FluxStack expõe um conjunto de rotas REST para inspecionar e recarregar a configuração declarativa em tempo de execução. As rotas são definidas em `app/server/routes/config.ts` com prefixo `/api/config`.
+O FluxStack pode expor uma API RESTful para gerenciar a configuração da aplicação em tempo de execução, embora o uso principal seja via arquivos de configuração declarativa.
 
-## Endpoints
+## Propósito
 
-| Método | Rota                 | Descrição                                               |
-|--------|----------------------|---------------------------------------------------------|
-| GET    | `/api/config/`       | Retorna snapshot atual (`appRuntimeConfig.values`).     |
-| POST   | `/api/config/reload` | Recarrega valores a partir das variáveis de ambiente.   |
-| GET    | `/api/config/:field` | Busca um campo específico; inclui tipo e valor atual.   |
-| GET    | `/api/config/:field/exists` | Verifica se o campo existe.                    |
-| GET    | `/api/config/health` | Health-check do sistema de configuração.                |
+A Config API é útil para:
 
-### Resposta – Snapshot
-```jsonc
-{
-  "success": true,
-  "config": {
-    "app": { "name": "FluxStack", "env": "development" },
-    "server": { "port": 3000, "host": "localhost" },
-    "...": "..."
-  },
-  "timestamp": "2025-10-11T12:00:00.000Z"
-}
-```
+1.  **Inspeção**: Ler o estado atual da configuração da aplicação (útil para ferramentas de diagnóstico).
+2.  **Atualização Dinâmica**: Em ambientes que exigem mudanças de configuração sem *restart* (ex: nível de log, *feature flags*).
 
-### Recarregar Configuração
-O POST `/api/config/reload` lê novamente `.env` + `process.env` e exibe as diferenças detectadas:
-```jsonc
-{
-  "success": true,
-  "message": "Configuration reloaded successfully",
-  "changes": {
-    "server.port": { "old": 3000, "new": 4000 },
-    "logging.level": { "old": "debug", "new": "info" }
-  }
-}
-```
+## Acesso e Segurança
 
-Use com cuidado: alterações só produzem efeito quando a leitura é dinâmica (valores capturados em módulos estáticos precisam de reinicialização manual).
+*   **Endpoint**: O *endpoint* padrão é geralmente `/config` ou similar, e deve ser acessado com cautela.
+*   **Segurança**: **É crucial** que o acesso a esta API seja restrito e protegido por autenticação e autorização robustas, especialmente em ambientes de produção. A exposição não autorizada pode levar a vulnerabilidades de segurança ou instabilidade da aplicação.
 
-### Erros
-- Campo inexistente → `success: false`, HTTP 200 com mensagem `Field 'xyz' not found`.
-- Falha ao recarregar (ex.: valor inválido) → `success: false` e `error` com descrição.
+## Uso
 
-## Segurança
-- Por padrão, as rotas não aplicam autenticação. Em produção, proteja-as com middleware (ex.: `auth.middleware.ts`) ou desabilite a exposição importando as rotas condicionalmente.
-- Evite exibir secrets; a resposta inclui todos os campos presentes em `appRuntimeConfig`.
+A API de Configuração permite operações como:
 
-## Integração com o Sistema Declarativo
-- `appRuntimeConfig` encapsula `defineConfig` e permite:
-  - `values`: objeto atual.
-  - `reload()`: reaplica env/defaults.
-  - `get(key)`, `has(key)`.
-- A documentação detalhada dos schemas está em `project/configuration.md`.
+| Método | Endpoint | Descrição |
+| :--- | :--- | :--- |
+| `GET` | `/config` | Retorna a configuração atual da aplicação (filtrando segredos). |
+| `PATCH` | `/config` | Atualiza dinamicamente partes da configuração (ex: `logging.level`). |
 
-## Boas Práticas
-- Use `POST /reload` apenas em ambientes controlados (dev/staging).
-- Combine com logging para auditar mudanças.
-- Se adicionar novos campos a `fluxstack.config.ts`, atualize também `project/configuration.md` para manter a lista de chaves sincronizada.***
+**Nota:** A implementação exata desta API pode variar. Consulte o código-fonte em `core/server/plugins/config-api.ts` (se existir) para a implementação específica e os *schemas* de requisição/resposta.
+
+**Recomendação:** Para a maioria das configurações, prefira o sistema declarativo via arquivos e variáveis de ambiente, que é mais rastreável e seguro. Use a Config API apenas para necessidades de gerenciamento dinâmico.

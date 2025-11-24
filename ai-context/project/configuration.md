@@ -1,75 +1,43 @@
-# Sistema de Configuração do FluxStack
+# Configuração Declarativa no FluxStack
 
-## Visão Geral
-- **Arquivo central**: `fluxstack.config.ts` (raiz do projeto) – compõe a configuração completa do FluxStack a partir dos módulos em `config/`. Este é o arquivo principal usado pelo framework.
-- **Camada modular**: arquivos em `config/` (ex.: `server.config.ts`, `app.config.ts`, `logger.config.ts`) definem configurações específicas de cada área usando schemas tipados.
-- **Camada deprecated**: `config/fluxstack.config.ts` – mantido apenas para compatibilidade retroativa, redireciona para o sistema novo. Não use para novos projetos.
-- **Loader de ambiente**: `core/utils/env.ts` fornece acesso dinâmico a variáveis (`env`) e helpers (`helpers`) que respeitam a precedência `process.env` → runtime → `.env` → defaults.
+O FluxStack utiliza um sistema de configuração modular e declarativo, centralizado no diretório `config/`. Este sistema garante que a configuração seja tipada, fácil de gerenciar e que se adapte a diferentes ambientes (desenvolvimento, produção, teste).
 
-O objetivo é permitir ajustes via código ou variáveis de ambiente sem perder type-safety.
+## Arquitetura da Configuração
 
-## Camadas e Precedência
-1. **Defaults declarados** nos schemas (`configHelpers.string/number/boolean/array/enum`).
-2. **Overrides por ambiente** (blocos `environments.development`, `production`, `test` em `fluxstack.config.ts`).
-3. **Variáveis de ambiente** (prefíxos `FLUXSTACK_`, `BUILD_`, `CORS_`, etc.), processadas pelo helper.
-4. **Arquivo `.env`** (carregado automaticamente).
-5. **Valores em runtime** (via `env.set`/`env.update` se necessário).
+A configuração é composta a partir de múltiplos arquivos em `config/` e consolidada em `fluxstack.config.ts` na raiz do projeto.
 
-O helper `env.get(key, default)` cuida de coerção para number/boolean/array/JSON, evitando erros comuns.
+| Arquivo em `config/` | Responsabilidade |
+| :--- | :--- |
+| `app.config.ts` | Metadados da aplicação (nome, versão, ambiente). |
+| `server.config.ts` | Configurações do servidor Elysia (porta, host, CORS, prefixo da API). |
+| `client.config.ts` | Configurações do cliente/Vite (porta, proxy, opções de *build*). |
+| `database.config.ts` | Credenciais e configurações de conexão com o banco de dados. |
+| `monitoring.config.ts` | Configurações de métricas, *profiling* e *exporters*. |
+| `plugins.config.ts` | Configurações específicas para plugins (Swagger, arquivos estáticos). |
+| `logger.config.ts` | Nível de log e transportes (console, arquivo). |
 
-## Arquivos Importantes
-- `fluxstack.config.ts`: define o schema principal com `defineConfig`, incluindo presets dev/prod/test.
-- `config/index.ts`: ponto único que reexporta as configurações específicas.
-- `config/server.config.ts`: porta, host, prefixos, CORS, recursos ligados ao servidor Elysia.
-- `config/app.config.ts`: metadados gerais da aplicação (nome, versão, descrição, ambiente).
-- `config/logger.config.ts`: níveis e formatos (console/file) utilizados pelo `core/utils/logger`.
-- `config/runtime.config.ts`, `config/system.config.ts`, `config/services.config.ts`: valores auxiliares consumidos pelos serviços/app.
+## Prioridade e Ambientes
 
-## Consumindo Configuração
-- No backend: `app/server/index.ts` instancia o `FluxStackFramework` com dados de `serverConfig`, `appConfig`, `loggerConfig` e helpers (`helpers.getServerUrl()`).
-- Em plugins/core: `FluxStackFramework` usa `getConfigSync()` para recuperar a configuração processada.
-- No frontend: valores expostos via Vite podem ser lidos com `import.meta.env` (quando definidos com prefixo `VITE_`).
+O sistema segue uma hierarquia de prioridade para determinar o valor final de uma configuração:
 
-## Variáveis de Ambiente Relevantes
-As mais utilizadas:
-- `FLUXSTACK_APP_NAME`, `FLUXSTACK_APP_VERSION`, `FLUXSTACK_APP_DESCRIPTION`.
-- `PORT`, `HOST`, `API_PREFIX`, `VITE_PORT`.
-- `FLUXSTACK_PLUGINS_ENABLED`, `FLUXSTACK_PLUGINS_DISABLED`.
-- `LOG_LEVEL`, `LOG_FORMAT`.
-- `ENABLE_SWAGGER`, `ENABLE_MONITORING`, `ENABLE_METRICS`.
-- Flags de build: `BUILD_TARGET`, `BUILD_OUTDIR`, `BUILD_MINIFY`, `BUILD_SOURCEMAPS`.
+1.  **Variáveis de Ambiente (`.env`)**: Possuem a maior prioridade. Variáveis prefixadas com `FLUXSTACK_` sobrescrevem qualquer valor no código.
+2.  **Configuração do Ambiente (`fluxstack.config.ts` -> `environments`)**: A seção `environments` em `fluxstack.config.ts` define *overrides* específicos para `development`, `production` e `test`.
+3.  **Configuração Modular (`config/*.config.ts`)**: Os valores base definidos nos arquivos modulares.
+4.  **Padrões do Framework (`core/`)**: Os valores *default* definidos no *core* do FluxStack.
 
-Consulte `reference/environment-vars.md` para a lista expandida.
+**Exemplo de Uso:**
 
-## Ajustando Configurações
-1. **Por código**: edite os arquivos em `config/`. Ex.: alterar `serverConfig.port`.
-2. **Por ambiente**: defina variáveis no `.env` (ou em `process.env`) usando os nomes documentados.
-3. **Por preset**: modifique os blocos em `fluxstack.config.ts` dentro de `environments.{development,production,test}` para ajustar defaults.
+Para alterar a porta do servidor, você pode:
 
-### Exemplo: alterar porta do backend para 4000
-```bash
-export PORT=4000
-bun run dev
-# helpers.getServerUrl() agora resolve para http://localhost:4000
-```
+1.  Definir a variável de ambiente: `FLUXSTACK_SERVER_PORT=8080` (Prioridade Máxima).
+2.  Modificar o valor em `config/server.config.ts` (Prioridade Média).
 
-### Exemplo: habilitar monitoring em desenvolvimento
-```ts
-// fluxstack.config.ts (bloco environments.development)
-monitoring: {
-  enabled: true,
-  metrics: { enabled: true, httpMetrics: true, systemMetrics: true, customMetrics: false },
-  profiling: { enabled: false, sampleRate: 0.1, memoryProfiling: false, cpuProfiling: false },
-  exporters: ['console']
-}
-```
+## Configuração de Produção (`production` environment)
 
-## Boas Práticas
-- Mantenha secrets fora do repositório; use placeholders e injete valores no ambiente (ver `.env.example`).
-- Use `configHelpers.enum/array` para validações simples antes de runtime.
-- Utilize `helpers.getServerUrl()` e `helpers.getClientUrl()` ao formar URLs para evitar divergências.
-- Para novos módulos, exponha schemas em `fluxstack.config.ts` e crie um arquivo em `config/` para centralizar defaults + overrides.
+A configuração para o ambiente de `production` em `fluxstack.config.ts` é otimizada para desempenho e observabilidade:
 
----
+*   **Logging**: Nível `warn` ou superior, formato `json`, com transporte para arquivo (`logs/error.log`) para erros.
+*   **Build**: `minify: true`, `sourceMaps: false`.
+*   **Monitoring**: Ativado com métricas HTTP e de sistema, e *profiling* com baixa taxa de amostragem (`sampleRate: 0.01`).
 
-Resumo: o sistema de configuração combina schemas tipados, overrides por ambiente e leitura inteligente de variáveis, garantindo consistência entre ambientes e facilitando ajustes sem quebrar a experiência de desenvolvimento.***
+**Recomendação:** Sempre utilize variáveis de ambiente para credenciais sensíveis (banco de dados, chaves de API) e para ajustes de ambiente (portas, hosts).
