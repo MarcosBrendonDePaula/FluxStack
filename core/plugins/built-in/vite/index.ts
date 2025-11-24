@@ -17,16 +17,6 @@ const CONFIG = {
   indexFile: "index.html"
 }
 
-// Vite internal route patterns
-const VITE_INTERNAL_PATTERNS = [
-  "/@",           // All Vite internal routes (/@vite/, /@fs/, /@react-refresh, etc.)
-  "/__vite",      // Vite HMR and dev routes
-  "/node_modules" // Direct node_modules access
-] as const
-
-const VITE_INTERNAL_INCLUDES = ["/.vite/"] as const
-const VITE_INTERNAL_EXTENSIONS = [".js.map", ".css.map"] as const
-
 /**
  * Discover the base directory for static files
  */
@@ -97,10 +87,7 @@ function parseRequestURL(request: Request): URL {
 /**
  * Proxy request to Vite dev server
  */
-async function proxyToVite(
-  requestContext: RequestContext,
-  options: { checkStatus?: boolean } = {}
-): Promise<boolean> {
+async function proxyToVite(requestContext: RequestContext): Promise<void> {
   const viteHost = clientConfig.vite.host
   const vitePort = clientConfig.vite.port
 
@@ -116,11 +103,6 @@ async function proxyToVite(
         : undefined
     })
 
-    // Check status if required
-    if (options.checkStatus && !response.ok && response.status >= 500) {
-      return false
-    }
-
     const body = await response.arrayBuffer()
 
     requestContext.handled = true
@@ -129,13 +111,10 @@ async function proxyToVite(
       statusText: response.statusText,
       headers: response.headers
     })
-
-    return true
   } catch (viteError) {
     if (clientConfig.vite.enableLogging) {
       console.warn(`Vite proxy error: ${viteError}`)
     }
-    return false
   }
 }
 
@@ -198,19 +177,8 @@ export const vitePlugin: Plugin = {
       return
     }
 
-    // For Vite internal routes, proxy directly to Vite server
-    const isViteInternal =
-      VITE_INTERNAL_PATTERNS.some(p => requestContext.path.startsWith(p)) ||
-      VITE_INTERNAL_INCLUDES.some(p => requestContext.path.includes(p)) ||
-      VITE_INTERNAL_EXTENSIONS.some(p => requestContext.path.endsWith(p))
-
-    if (isViteInternal) {
-      await proxyToVite(requestContext)
-      return
-    }
-
-    // Proxy all other requests to Vite (with status check)
-    await proxyToVite(requestContext, { checkStatus: true })
+    // Proxy all remaining requests to Vite dev server
+    await proxyToVite(requestContext)
   }
 }
 
