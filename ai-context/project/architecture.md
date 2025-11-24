@@ -1,113 +1,41 @@
-# Arquitetura do FluxStack (v1.8)
+# Arquitetura Interna do FluxStack
 
-## Panorama
-FluxStack organiza-se como um monorepo onde o framework (`core/`) permanece estável e a aplicação (`app/`) concentra o código editável. A base oferece:
-- Backend Bun + Elysia com sistema de plugins.
-- Frontend React 19 + Vite com integração Eden Treaty.
-- CLI `flux` para desenvolvimento, build e geração de código.
-- Sistema declarativo de configuração com presets por ambiente.
-- Pipeline de build com manifest e artefatos Docker.
+A arquitetura do FluxStack é projetada para ser modular, extensível e com forte ênfase na segurança de tipos e no desempenho.
 
-## Estrutura de Alto Nível
-```
-┌─────────────────────────────────────────────┬──────────────┐
-│                 FluxStack Monorepo          │              │
-├─────────────────────────────────────────────┼──────────────┤
-│ app/                                        │ core/        │
-│  ├─ Frontend (React + Vite)                 │  ├─ Framework│
-│  ├─ Backend (Elysia API)                    │  ├─ Plugins  │
-│  └─ Shared Types / Utils                    │  └─ Build/CLI│
-└─────────────────────────────────────────────┴──────────────┘
+## O Coração do Framework: `FluxStackFramework`
+
+O ponto central da inicialização do servidor é a classe `FluxStackFramework` em `app/server/index.ts`.
+
+```typescript
+// app/server/index.ts
+const app = new FluxStackFramework({ /* ...config */ })
+  .use(cryptoAuthPlugin)
+  .use(vitePlugin)
+  .use(staticFilesPlugin)
+  .use(liveComponentsPlugin)
+  .routes(appInstance) // Rotas da aplicação (app/server/app.ts)
+  .use(swaggerPlugin)
+  .listen()
 ```
 
-## Estrutura de Pastas
-```
-FluxStack/
-├─ core/                    # Framework (read-only)
-│  ├─ framework/            # FluxStackFramework (Elysia + plugins)
-│  ├─ plugins/              # Registro, discovery e built-ins
-│  ├─ build/                # Bundler + optimizer + manifest/Docker
-│  ├─ cli/                  # Comandos flux
-│  ├─ config/               # Helpers e schema loaders
-│  └─ utils/                # Logger, env helpers, etc.
-├─ app/                     # Aplicação gerada (editável)
-│  ├─ client/               # React + Vite
-│  │  ├─ Components & Pages
-│  │  ├─ Hooks & Utils
-│  │  └─ Eden Treaty Client ←───────────────┐  # Consome API tipada
-│  ├─ server/               # Elysia API     │
-│  │  ├─ Controllers & Services             │
-│  │  └─ Routes + Schemas ──────────────────┘  # Inferência compartilhada
-│  └─ shared/               # Tipos comuns
-├─ config/                  # Config files derivados do schema central
-├─ plugins/                 # Plugins externos (ex.: crypto-auth)
-├─ examples/, tests/   # Exemplos e testes
-└─ ai-context/              # Documentação para assistentes
-```
+Esta estrutura de *chaining* (encadeamento) define a ordem de execução dos *plugins* e a montagem das rotas da aplicação.
 
-## Núcleo (`core/`)
-### FluxStackFramework (`core/framework/server.ts`)
-- Instancia Elysia, carrega `FluxStackConfig` e cria `FluxStackContext`.
-- Configura CORS, handlers HEAD e tratamento de erros padrão.
-- Utiliza `PluginManager` para descobrir, validar e executar hooks (`setup`, `onServerStart`, `onRequest`, `onResponse`, `onError`, `onBuild`, `onBuildComplete`, `onServerStop`).
-- `listen()` monta banner, registra sinais (`SIGINT`, `SIGTERM`) e inicia o servidor.
+## Fluxo de Requisição (Request Flow)
 
-### Sistema de plugins
-- `core/plugins/registry.ts`: mantém metadados, dependências e ordem de carga.
-- `core/plugins/manager.ts`: executa hooks respeitando prioridades e dependências.
-- `core/plugins/dependency-manager.ts`: instala dependências externas (`bun add`).
-- Built-ins: `swagger`, `vite`, `static`, `monitoring`, além do plugin auxiliar `staticFilesPlugin` (arquivos públicos) e `liveComponentsPlugin`.
+1.  **Entrada**: Uma requisição HTTP chega ao servidor Elysia (iniciado por `FluxStackFramework`).
+2.  **Plugins Core**: *Plugins* essenciais (como `vitePlugin` para *hot reload* e `staticFilesPlugin` para servir ativos) são executados.
+3.  **Plugins da Aplicação**: *Plugins* definidos pelo usuário (ex: `cryptoAuthPlugin`) são executados.
+4.  **Roteamento**: A requisição é mapeada para a rota correspondente definida em `app/server/routes/` (montadas via `appInstance`).
+5.  **Validação/Transformação**: O Elysia valida o corpo da requisição e os parâmetros contra os *schemas* definidos.
+6.  **Lógica de Negócio**: O *controller* ou serviço executa a lógica de negócio.
+7.  **Resposta**: A resposta é validada contra o *response schema* e enviada de volta ao cliente.
 
-### CLI (`core/cli`)
-- Comandos principais: `flux dev`, `flux frontend`, `flux backend`, `flux build`, `flux build:frontend`, `flux build:backend`, `flux start`, `flux create`.
-- Geradores e utilitários: `flux make:plugin`, `flux generate`, `flux plugin:deps {install|list|check|clean}`.
+## Type Safety End-to-End
 
-### Build (`core/build`)
-- `FluxStackBuilder` orquestra bundler (backend) e build Vite (frontend).
-- `Optimizer` aplica treeshake/minify/compress quando habilitado.
-- Gera manifest e `dist/Dockerfile` + `dist/docker-compose.yml`.
+A segurança de tipos é mantida através de três pilares:
 
-## Aplicação (`app/`)
-### Backend (`app/server`)
-- Usa o framework com plugins personalizados (ex.: crypto-auth).
-- Rotas em `routes/`, controllers/serviços focados em negócios, middlewares dedicados.
-- Live components expostos via WebSocket (`live/`).
+1.  **TypeScript em Todo Lugar**: Uso estrito do TypeScript no frontend e backend.
+2.  **Elysia Schemas**: O Elysia utiliza o `t.Object()` do `valibot` (ou similar) para definir *schemas* de requisição e resposta.
+3.  **Eden Treaty**: O cliente Eden Treaty é gerado a partir dos *schemas* do Elysia, garantindo que o frontend só possa fazer chamadas que correspondam exatamente ao que o backend espera e retorna.
 
-### Frontend (`app/client`)
-- SPA React com componentes de demonstração, hooks (`useAuth`, `useNotifications`), store Zustand.
-- `src/lib/eden-api.ts` expõe cliente tratado pelo Eden Treaty (`const { data, error } = await api.users.get()`).
-- `frontend-only.ts` permite servir apenas o frontend (`flux frontend`).
-
-### Compartilhados (`app/shared`)
-- Tipos e utilidades reaproveitados por client/server (garantem inferência compartilhada).
-
-## Configuração (`config/` + `fluxstack.config.ts`)
-- Schemas declarativos com `defineConfig` suportam defaults, validação e overrides por env (`FLUXSTACK_*`).
-- `config/index.ts` agrega todos os módulos (`appConfig`, `serverConfig`, `loggerConfig`, etc.) e reexporta parâmetros específicos.
-- Rotas `/api/config/*` permitem inspecionar/recarregar configuração em runtime (ver `reference/config-api.md`).
-
-## Plugins externos
-- `plugins/crypto-auth` é o exemplo principal: inclui CLI, client e server; registra middlewares de autenticação e comandos adicionais.
-- Novos plugins seguem estrutura `plugins/<nome>/` com `index.ts`, `config/`, `package.json` e hooks definidos em `FluxStack.Plugin`.
-
-## Fluxo de execução
-1. CLI (`bun run dev`/`flux dev`) inicializa backend + Vite (proxy reverso em `http://localhost:3000`).
-2. `FluxStackFramework.listen()` sobe Elysia; `vitePlugin` monitora Vite no modo dev.
-3. Frontend consome `api` tipada via Eden Treaty.
-4. Live Components comunicam-se via `/api/live/ws` (plugin WebSocket).
-5. Para executar apenas um lado: `flux frontend` ou `flux backend`.
-
-## Build e deploy
-- `flux build` gera artefatos completos (backend + frontend + manifest + Dockerfile).
-- Deploy containerizado: `bun run docker:build`, `docker run -p 3000:3000 fluxstack-app`.
-- Builds separados: `flux build:frontend`, `flux build:backend` quando necessário.
-
-## Testes e observabilidade
-- Testes: Vitest (`bun run test`), scripts específicos (`scripts/test-live-components.ts`).
-- Logger Winston configurável (`config/logger.config.ts`).
-- Monitoring plugin (opt-in) coleta métricas HTTP/Sistema e exporta via console/prometheus/json/arquivo (ver `development/monitoring.md`).
-
-## Extensibilidade
-- Plugins podem adicionar rotas, registrar hooks e expor comandos CLI.
-- Configuração declarativa facilita oferecer novos blocos (`fluxstack.config.ts` + `config/*.config.ts`).
-- `ai-context/` reúne toda a documentação contextualizada para assistentes (este arquivo faz parte).
+**Importante:** A centralização de tipos compartilhados em `app/shared/` é crucial para que tanto o backend quanto o frontend utilizem as mesmas definições de dados.
