@@ -13,12 +13,14 @@
 import { Elysia } from "elysia"
 import { apiRoutes } from "./routes"
 import { envTestRoute } from "./routes/env-test"
+import { ssrRoutes } from "./routes/ssr-routes"
 
 /**
  * Main application instance with all routes registered
  */
 export const appInstance = new Elysia()
   .use(envTestRoute)  // Environment test/debug endpoint
+  .use(ssrRoutes)     // SSR routes (must come before API routes)
   .use(apiRoutes)     // Main application routes
 
 // Export the type correctly for Eden Treaty
