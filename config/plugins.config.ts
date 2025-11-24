@@ -7,10 +7,7 @@ import { defineConfig, config } from '@/core/utils/config-schema'
 import { env } from '@/core/utils/env'
 import { FLUXSTACK_VERSION } from '@/core/utils/version'
 
-/**
- * Plugins configuration schema
- */
-const pluginsConfigSchema = {
+export const pluginsConfig = defineConfig({
   // Plugin management
   enabled: config.array(
     'FLUXSTACK_PLUGINS_ENABLED',
@@ -68,10 +65,12 @@ const pluginsConfigSchema = {
 
   // CORS plugin (configuration via server.config.ts)
   // Vite plugin
-  viteEnabled: config.boolean('VITE_PLUGIN_ENABLED', true)
-} as const
-
-export const pluginsConfig = defineConfig(pluginsConfigSchema)
+  viteEnabled: config.boolean('VITE_PLUGIN_ENABLED', true),
+  viteExcludePaths: config.array('VITE_EXCLUDE_PATHS', [
+    '/api',
+    '/swagger'
+  ])
+})
 
 // Export type
 export type PluginsConfig = typeof pluginsConfig
