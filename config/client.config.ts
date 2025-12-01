@@ -18,7 +18,9 @@ const viteSchema = {
 
   open: config.boolean('VITE_OPEN', false),
 
-  enableLogging: config.boolean('ENABLE_VITE_PROXY_LOGS', false)
+  enableLogging: config.boolean('ENABLE_VITE_PROXY_LOGS', false),
+
+  logLevel: config.enum('VITE_LOG_LEVEL', ['error' , 'warn' , 'info', 'silent'], undefined)
 } as const
 
 /**
@@ -82,7 +84,7 @@ const buildSchema = {
 export const clientConfig = defineNestedConfig({
   vite: viteSchema,
   proxy: proxySchema,
-  build: buildSchema
+  build: buildSchema,
 })
 
 // Export types

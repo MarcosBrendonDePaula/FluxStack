@@ -1,5 +1,6 @@
 import type { PluginContext } from "@/core/plugins/types"
 import { clientConfig } from '@/config/client.config'
+import type { LogLevel } from "vite"
 
 // Dynamic import type for vite
 type ViteDevServer = Awaited<ReturnType<typeof import('vite')['createServer']>>
@@ -7,27 +8,20 @@ type ViteDevServer = Awaited<ReturnType<typeof import('vite')['createServer']>>
 // Store vite server instance
 let viteServer: ViteDevServer | null = null
 
-// Default configuration values
-const DEFAULTS = {
-  port: clientConfig.vite.port,
-  host: clientConfig.vite.host
-}
-
 /**
  * Setup Vite development server
  * This file is only imported in development mode
  */
 export async function setupViteDev(context: PluginContext): Promise<void> {
-  const vitePort = DEFAULTS.port || clientConfig.vite.port || 5173
-  const viteHost = DEFAULTS.host || "localhost"
-
+  const vitePort = clientConfig.vite.port || 5173
+  const viteHost = clientConfig.vite.host || "localhost"
+  const logLevel = clientConfig.vite.logLevel as LogLevel
   // Import group logger utilities
   const { endGroup } = await import('@/core/utils/logger/group-logger')
 
   try {
     // Dynamic import of vite
     const { createServer } = await import('vite')
-
     // Start Vite dev server programmatically (silently)
     viteServer = await createServer({
       configFile: './vite.config.ts',
@@ -36,7 +30,7 @@ export async function setupViteDev(context: PluginContext): Promise<void> {
         host: viteHost,
         strictPort: true
       },
-      logLevel: 'silent'
+      logLevel: logLevel
     })
 
     await viteServer.listen()
